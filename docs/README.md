@@ -12,8 +12,15 @@
   - [Keeping T3 Code in sync](./user/server-updates.md)
   - [Keybindings](./user/keybindings.md)
 - [T3 Connect](./cloud/t3-connect-clerk.md)
-- [Integrations](./integrations/source-control-providers.md)
+- Integrations
+  - [Source-control providers](./integrations/source-control-providers.md)
+  - [T3 Code UI on the Moatless backend](./integrations/moatless-backend.md)
+  - [Local T3 Code + Moatless Rust workflow](./integrations/moatless-local-development.md)
 - [Mobile](./mobile/app.md)
 - [Operations](./operations/ci.md)
 - [Providers](./providers/codex.md)
-- [Reference](./reference/encyclopedia.md)
+- Reference
+  - [Encyclopedia](./reference/encyclopedia.md)
+  - [Client ↔ server contract](./reference/client-server-contract.md)
+  - [Workspace layout](./reference/workspace-layout.md)
+  - [Scripts](./reference/scripts.md)

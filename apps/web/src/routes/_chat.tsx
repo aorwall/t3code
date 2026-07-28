@@ -21,6 +21,7 @@ import { selectActiveRightPanel, useRightPanelStore } from "../rightPanelStore";
 import { useThreadSelectionStore } from "../threadSelectionStore";
 import { stackedThreadToast, toastManager } from "~/components/ui/toast";
 import { primaryServerKeybindingsAtom } from "~/state/server";
+import { rememberMoatlessAuthReturnTo } from "../environments/primary";
 
 function ChatRouteGlobalShortcuts() {
   const clearSelection = useThreadSelectionStore((state) => state.clearSelection);
@@ -189,7 +190,10 @@ export const Route = createFileRoute("/_chat")({
       context.authGateState.status !== "authenticated" &&
       context.authGateState.status !== "hosted-static"
     ) {
-      throw redirect({ to: "/pair", replace: true });
+      rememberMoatlessAuthReturnTo(
+        window.location.pathname + window.location.search + window.location.hash,
+      );
+      throw redirect({ to: "/login", replace: true });
     }
   },
   component: ChatRouteLayout,

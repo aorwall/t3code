@@ -12,8 +12,23 @@ import { loadRepoEnv } from "../../scripts/lib/public-config";
 const repoEnv = loadRepoEnv();
 Object.assign(process.env, repoEnv);
 
+// `loadRepoEnv` lets the ambient environment win over the repo's env files,
+// which is right for every value it resolves. The proxy target is the one
+// exception a fork needs: hosted sandboxes inject T3CODE_PROXY_TARGET pointing
+// at their own bundled server, and a checkout has to be able to say "no, use
+// mine" without editing the deployment. This name is file-only and, being
+// explicitly an override, outranks the ambient value.
+const repoFileEnv = loadRepoEnv({ baseEnv: {} });
+
 const port = Number(process.env.PORT ?? 5733);
 const host = process.env.HOST?.trim() || "localhost";
+
+// Left unset, Vite's HMR client derives its socket URL from the page's own
+// origin. That is what a hosted sandbox needs: it serves the dev server through
+// an HTTPS preview hostname on port 443, where a pinned `ws://<bind address>:<port>`
+// is both unreachable and blocked as mixed content. Pin the endpoint only when
+// HOST names an address a browser can actually dial — the Electron case the
+// explicit config below was written for, whose window loads http://localhost:<port>.
 const configuredWsUrl = process.env.VITE_WS_URL?.trim();
 const configuredRelayUrl = repoEnv.VITE_T3CODE_RELAY_URL?.trim() || "";
 const configuredClerkPublishableKey = repoEnv.VITE_CLERK_PUBLISHABLE_KEY?.trim() || "";
@@ -96,8 +111,13 @@ function resolveDevProxyTarget(wsUrl: string | undefined): string | undefined {
 // VITE_WS_URL for local `pnpm dev`; T3CODE_PORT or T3CODE_DEV_PROXY_TARGET
 // override the fallback, which otherwise assumes the dev-runner base port.
 const DEFAULT_DEV_SERVER_PORT = 13773;
-const devProxyTarget =
+const proxyTargetOverride =
   process.env.T3CODE_DEV_PROXY_TARGET?.trim() ||
+  repoFileEnv.T3CODE_PROXY_TARGET_OVERRIDE?.trim() ||
+  process.env.T3CODE_PROXY_TARGET?.trim() ||
+  process.env.MOATLESS_BASE_URL?.trim();
+const devProxyTarget =
+  proxyTargetOverride ||
   resolveDevProxyTarget(configuredWsUrl) ||
   `http://localhost:${process.env.T3CODE_PORT?.trim() || String(DEFAULT_DEV_SERVER_PORT)}`;
 
@@ -156,6 +176,26 @@ const allowedHosts: string[] | true =
         .map((entry) => entry.trim())
         .filter((entry) => entry.length > 0);
 
+// When the dev server is explicitly configured as the proxy, the browser must
+// talk to its own origin and let the proxy forward both HTTP and WebSocket
+// traffic. Otherwise the stock local flow keeps the configured WebSocket URL.
+const clientWsUrl = proxyTargetOverride ? "" : (configuredWsUrl ?? "");
+
+const clientDefine: Record<string, string> = {
+  "import.meta.env.VITE_WS_URL": JSON.stringify(clientWsUrl),
+  "import.meta.env.VITE_T3CODE_RELAY_URL": JSON.stringify(configuredRelayUrl),
+  "import.meta.env.VITE_CLERK_PUBLISHABLE_KEY": JSON.stringify(configuredClerkPublishableKey),
+  "import.meta.env.VITE_CLERK_JWT_TEMPLATE": JSON.stringify(configuredClerkJwtTemplate),
+  "import.meta.env.VITE_CLERK_CLI_OAUTH_CLIENT_ID": JSON.stringify(configuredClerkCliOAuthClientId),
+  "import.meta.env.VITE_RELAY_OTLP_TRACES_URL": JSON.stringify(configuredRelayTracingUrl),
+  "import.meta.env.VITE_RELAY_OTLP_TRACES_DATASET": JSON.stringify(configuredRelayTracingDataset),
+  "import.meta.env.VITE_RELAY_OTLP_TRACES_TOKEN": JSON.stringify(configuredRelayTracingToken),
+  "import.meta.env.VITE_HOSTED_APP_URL": JSON.stringify(configuredHostedAppUrl ?? ""),
+  "import.meta.env.VITE_HOSTED_APP_CHANNEL": JSON.stringify(configuredHostedAppChannel),
+  "import.meta.env.APP_VERSION": JSON.stringify(configuredAppVersion),
+  ...(proxyTargetOverride ? { "import.meta.env.VITE_HTTP_URL": JSON.stringify("") } : {}),
+};
+
 export default defineConfig(({ command, isPreview }) => {
   // Some hosts (containers, CI images, sandboxed preview environments) export
   // NODE_ENV=production process-wide. Vite derives `isProduction` from it even
@@ -194,24 +234,7 @@ export default defineConfig(({ command, isPreview }) => {
         "react-dom/client",
       ],
     },
-    define: {
-      // In dev mode, tell the web app where the WebSocket server lives
-      "import.meta.env.VITE_WS_URL": JSON.stringify(configuredWsUrl ?? ""),
-      "import.meta.env.VITE_T3CODE_RELAY_URL": JSON.stringify(configuredRelayUrl),
-      "import.meta.env.VITE_CLERK_PUBLISHABLE_KEY": JSON.stringify(configuredClerkPublishableKey),
-      "import.meta.env.VITE_CLERK_JWT_TEMPLATE": JSON.stringify(configuredClerkJwtTemplate),
-      "import.meta.env.VITE_CLERK_CLI_OAUTH_CLIENT_ID": JSON.stringify(
-        configuredClerkCliOAuthClientId,
-      ),
-      "import.meta.env.VITE_RELAY_OTLP_TRACES_URL": JSON.stringify(configuredRelayTracingUrl),
-      "import.meta.env.VITE_RELAY_OTLP_TRACES_DATASET": JSON.stringify(
-        configuredRelayTracingDataset,
-      ),
-      "import.meta.env.VITE_RELAY_OTLP_TRACES_TOKEN": JSON.stringify(configuredRelayTracingToken),
-      "import.meta.env.VITE_HOSTED_APP_URL": JSON.stringify(configuredHostedAppUrl ?? ""),
-      "import.meta.env.VITE_HOSTED_APP_CHANNEL": JSON.stringify(configuredHostedAppChannel),
-      "import.meta.env.APP_VERSION": JSON.stringify(configuredAppVersion),
-    },
+    define: clientDefine,
     resolve: {
       tsconfigPaths: true,
       dedupe: ["react", "react-dom"],

@@ -21,6 +21,7 @@ import {
 
 import { PrimaryEnvironmentHttpClient } from "./httpClient";
 import { runPrimaryHttp } from "../../lib/runtime";
+import { resolvePrimaryEnvironmentHttpUrl } from "./target";
 
 const PrimaryEnvironmentRequestOperation = Schema.Literals([
   "fetch-session-state",
@@ -143,10 +144,41 @@ export interface ServerClientSessionRecord {
 type ServerAuthGateState =
   | { status: "authenticated" }
   | {
-      status: "requires-auth";
+      status: "requires-login";
       auth: AuthSessionState["auth"];
       errorMessage?: string;
     };
+
+export type MoatlessAuthMode = "password" | "oauth";
+
+export interface MoatlessAuthModeState {
+  readonly mode: MoatlessAuthMode;
+  readonly provider: string;
+  readonly loginUrl: string | null;
+}
+
+const MOATLESS_BROWSER_COOKIE_AUTH: AuthSessionState["auth"] = {
+  policy: "remote-reachable",
+  bootstrapMethods: [],
+  sessionMethods: ["browser-session-cookie"],
+  sessionCookieName: "moatless_session",
+};
+
+export class MoatlessAuthRequestError extends Schema.TaggedErrorClass<MoatlessAuthRequestError>()(
+  "MoatlessAuthRequestError",
+  {
+    operation: Schema.Literals(["fetch-auth-mode", "password-login"]),
+    status: Schema.Number,
+    cause: Schema.Defect(),
+  },
+) {
+  override get message(): string {
+    if (this.operation === "password-login" && this.status === 401) {
+      return "Invalid username or password.";
+    }
+    return `Moatless authentication failed during ${this.operation} (HTTP ${this.status}).`;
+  }
+}
 
 let bootstrapPromise: Promise<ServerAuthGateState> | null = null;
 let resolvedAuthenticatedGateState: ServerAuthGateState | null = null;
@@ -319,14 +351,22 @@ function isTransientBootstrapError(error: unknown): boolean {
 
 async function bootstrapServerAuth(): Promise<ServerAuthGateState> {
   const bootstrapCredential = getDesktopBootstrapCredential();
-  const currentSession = await fetchSessionState();
+  const currentSession = await fetchSessionState().catch((error) => {
+    if (isPrimaryEnvironmentRequestError(error) && error.status === 401) {
+      return {
+        authenticated: false,
+        auth: MOATLESS_BROWSER_COOKIE_AUTH,
+      } satisfies AuthSessionState;
+    }
+    throw error;
+  });
   if (currentSession.authenticated) {
     return { status: "authenticated" };
   }
 
-  if (!bootstrapCredential) {
+  if (!bootstrapCredential || !currentSession.auth.bootstrapMethods.includes("desktop-bootstrap")) {
     return {
-      status: "requires-auth",
+      status: "requires-login",
       auth: currentSession.auth,
     };
   }
@@ -337,7 +377,7 @@ async function bootstrapServerAuth(): Promise<ServerAuthGateState> {
     return { status: "authenticated" };
   } catch (error) {
     return {
-      status: "requires-auth",
+      status: "requires-login",
       auth: currentSession.auth,
       errorMessage: error instanceof Error ? error.message : "Authentication failed.",
     };
@@ -540,6 +580,115 @@ export async function reauthenticatePrimaryEnvironment(): Promise<ServerAuthGate
   resolvedAuthenticatedGateState = null;
   bootstrapPromise = null;
   return resolveInitialServerAuthGateState();
+}
+
+const MOATLESS_AUTH_RETURN_TO_STORAGE_KEY = "t3code:moatless-auth:return-to";
+
+export function rememberMoatlessAuthReturnTo(path: string): void {
+  if (typeof window === "undefined" || !path || path === "/login" || path.startsWith("/login?")) {
+    return;
+  }
+  window.sessionStorage?.setItem(MOATLESS_AUTH_RETURN_TO_STORAGE_KEY, path);
+}
+
+export function consumeMoatlessAuthReturnTo(): string {
+  if (typeof window === "undefined") {
+    return "/";
+  }
+  const stored = window.sessionStorage?.getItem(MOATLESS_AUTH_RETURN_TO_STORAGE_KEY) ?? null;
+  window.sessionStorage?.removeItem(MOATLESS_AUTH_RETURN_TO_STORAGE_KEY);
+  return stored?.startsWith("/") && !stored.startsWith("//") ? stored : "/";
+}
+
+async function fetchMoatlessAuthJson(input: {
+  readonly path: string;
+  readonly operation: MoatlessAuthRequestError["operation"];
+  readonly init?: RequestInit;
+}): Promise<unknown> {
+  let response: Response;
+  try {
+    response = await fetch(resolvePrimaryEnvironmentHttpUrl(input.path), {
+      credentials: "include",
+      ...input.init,
+      headers: {
+        accept: "application/json",
+        ...input.init?.headers,
+      },
+    });
+  } catch (cause) {
+    throw new MoatlessAuthRequestError({
+      operation: input.operation,
+      status: 500,
+      cause,
+    });
+  }
+
+  if (!response.ok) {
+    throw new MoatlessAuthRequestError({
+      operation: input.operation,
+      status: response.status,
+      cause: await response.text().catch(() => ""),
+    });
+  }
+
+  return response.json();
+}
+
+function parseMoatlessAuthMode(raw: unknown): MoatlessAuthModeState {
+  if (typeof raw !== "object" || raw === null) {
+    throw new MoatlessAuthRequestError({
+      operation: "fetch-auth-mode",
+      status: 500,
+      cause: raw,
+    });
+  }
+  const record = raw as Record<string, unknown>;
+  const mode = record.mode === "password" || record.mode === "oauth" ? record.mode : null;
+  if (!mode || typeof record.provider !== "string") {
+    throw new MoatlessAuthRequestError({
+      operation: "fetch-auth-mode",
+      status: 500,
+      cause: raw,
+    });
+  }
+  return {
+    mode,
+    provider: record.provider,
+    loginUrl:
+      typeof record.loginUrl === "string" && record.loginUrl.length > 0 ? record.loginUrl : null,
+  };
+}
+
+export async function fetchMoatlessAuthMode(): Promise<MoatlessAuthModeState> {
+  return parseMoatlessAuthMode(
+    await fetchMoatlessAuthJson({
+      path: "/api/v1/auth/mode",
+      operation: "fetch-auth-mode",
+    }),
+  );
+}
+
+export async function submitMoatlessPasswordLogin(input: {
+  readonly username: string;
+  readonly password: string;
+}): Promise<void> {
+  await fetchMoatlessAuthJson({
+    path: "/api/v1/auth/password/login",
+    operation: "password-login",
+    init: {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(input),
+    },
+  });
+  resolvedAuthenticatedGateState = null;
+  bootstrapPromise = null;
+}
+
+export function resolveMoatlessOAuthLoginUrl(loginUrl: string | null): string {
+  return resolvePrimaryEnvironmentHttpUrl(loginUrl ?? "/api/v1/auth/login");
 }
 
 export function __resetServerAuthBootstrapForTests() {

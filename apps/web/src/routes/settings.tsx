@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSettingsRestore } from "../components/settings/SettingsPanels";
 import { Button } from "../components/ui/button";
 import { SidebarInset } from "../components/ui/sidebar";
+import { rememberMoatlessAuthReturnTo } from "../environments/primary";
 import { isElectron } from "../env";
 import { cn } from "~/lib/utils";
 import { COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS } from "~/workspaceTitlebar";
@@ -119,7 +120,10 @@ export const Route = createFileRoute("/settings")({
       context.authGateState.status !== "authenticated" &&
       context.authGateState.status !== "hosted-static"
     ) {
-      throw redirect({ to: "/pair", replace: true });
+      rememberMoatlessAuthReturnTo(
+        window.location.pathname + window.location.search + window.location.hash,
+      );
+      throw redirect({ to: "/login", replace: true });
     }
 
     if (location.pathname === "/settings") {

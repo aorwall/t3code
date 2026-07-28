@@ -18,6 +18,7 @@ type TestWindow = {
   history: {
     replaceState: (_data: unknown, _unused: string, url: string) => void;
   };
+  sessionStorage: Storage;
   desktopBridge?: DesktopBridge;
 };
 
@@ -63,12 +64,27 @@ function installTestBrowser(url: string) {
         testWindow.location = new URL(nextUrl, testWindow.location.href);
       },
     },
+    sessionStorage: createStorageStub(),
   };
 
   vi.stubGlobal("window", testWindow);
   vi.stubGlobal("document", { title: "T3 Code" });
 
   return testWindow;
+}
+
+function createStorageStub(): Storage {
+  const values = new Map<string, string>();
+  return {
+    get length() {
+      return values.size;
+    },
+    clear: () => values.clear(),
+    getItem: (key) => values.get(key) ?? null,
+    key: (index) => Array.from(values.keys())[index] ?? null,
+    removeItem: (key) => values.delete(key),
+    setItem: (key, value) => values.set(key, value),
+  } as Storage;
 }
 
 function installDesktopBootstrap() {
@@ -132,6 +148,7 @@ describe("resolveInitialServerAuthGateState", () => {
     __resetServerAuthBootstrapForTests();
     __setPrimaryHttpRunnerForTests();
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
     vi.useRealTimers();
     vi.restoreAllMocks();
   });
@@ -176,7 +193,7 @@ describe("resolveInitialServerAuthGateState", () => {
       await import("./environments/primary");
 
     await expect(resolveInitialServerAuthGateState()).resolves.toEqual({
-      status: "requires-auth",
+      status: "requires-login",
       auth: LOOPBACK_AUTH,
     });
     expect(resolvePrimaryEnvironmentHttpUrl("/api/auth/session")).toBe(
@@ -192,12 +209,37 @@ describe("resolveInitialServerAuthGateState", () => {
       await import("./environments/primary");
 
     await expect(resolveInitialServerAuthGateState()).resolves.toEqual({
-      status: "requires-auth",
+      status: "requires-login",
       auth: LOOPBACK_AUTH,
     });
     expect(resolvePrimaryEnvironmentHttpUrl("/api/auth/session")).toBe(
       "http://localhost:5735/api/auth/session",
     );
+  });
+
+  it("treats Moatless cookie-auth 401 session checks as requiring login", async () => {
+    const request = HttpClientRequest.get("http://localhost/api/auth/session");
+    const response = HttpClientResponse.fromWeb(
+      request,
+      new Response("Unauthorized", { status: 401 }),
+    );
+    __setPrimaryHttpRunnerForTests(async () => {
+      throw new HttpClientError.HttpClientError({
+        reason: new HttpClientError.StatusCodeError({ request, response }),
+      });
+    });
+
+    const { resolveInitialServerAuthGateState } = await import("./environments/primary");
+
+    await expect(resolveInitialServerAuthGateState()).resolves.toEqual({
+      status: "requires-login",
+      auth: {
+        policy: "remote-reachable",
+        bootstrapMethods: [],
+        sessionMethods: ["browser-session-cookie"],
+        sessionCookieName: "moatless_session",
+      },
+    });
   });
 
   it("uses the vite proxy for desktop-managed loopback auth requests during local dev", async () => {
@@ -220,7 +262,7 @@ describe("resolveInitialServerAuthGateState", () => {
       await import("./environments/primary");
 
     await expect(resolveInitialServerAuthGateState()).resolves.toEqual({
-      status: "requires-auth",
+      status: "requires-login",
       auth: DESKTOP_AUTH,
     });
     expect(resolvePrimaryEnvironmentHttpUrl("/api/auth/session")).toBe(
@@ -228,14 +270,116 @@ describe("resolveInitialServerAuthGateState", () => {
     );
   });
 
-  it("returns a requires-auth state instead of throwing when no bootstrap credential exists", async () => {
+  it("returns a requires-login state instead of throwing when no bootstrap credential exists", async () => {
     await installAuthApi({ session: () => unauthenticatedSession(LOOPBACK_AUTH) });
     const { resolveInitialServerAuthGateState } = await import("./environments/primary");
 
     await expect(resolveInitialServerAuthGateState()).resolves.toEqual({
-      status: "requires-auth",
+      status: "requires-login",
       auth: LOOPBACK_AUTH,
     });
+  });
+
+  it("does not exchange a desktop bootstrap token unless the server advertises desktop bootstrap", async () => {
+    const moatlessAuth = {
+      policy: "remote-reachable",
+      bootstrapMethods: [],
+      sessionMethods: ["browser-session-cookie"],
+      sessionCookieName: "moatless_session",
+    } as const;
+    const testApi = await installAuthApi({ session: () => unauthenticatedSession(moatlessAuth) });
+    const testWindow = installTestBrowser("https://t3.moatless.example/");
+    testWindow.desktopBridge = {
+      getLocalEnvironmentBootstraps: () => [
+        {
+          id: "primary",
+          label: "Moatless",
+          httpBaseUrl: "https://api.moatless.example",
+          wsBaseUrl: "wss://api.moatless.example",
+          bootstrapToken: "desktop-bootstrap-token",
+        },
+      ],
+    } as unknown as DesktopBridge;
+
+    const { resolveInitialServerAuthGateState } = await import("./environments/primary");
+
+    await expect(resolveInitialServerAuthGateState()).resolves.toEqual({
+      status: "requires-login",
+      auth: moatlessAuth,
+    });
+    expect(testApi.calls.browserSession).toEqual([]);
+  });
+
+  it("loads Moatless auth mode with browser credentials", async () => {
+    vi.stubEnv("VITE_HTTP_URL", "https://api.moatless.example");
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            mode: "password",
+            provider: "local",
+            loginUrl: null,
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { fetchMoatlessAuthMode } = await import("./environments/primary");
+
+    await expect(fetchMoatlessAuthMode()).resolves.toEqual({
+      mode: "password",
+      provider: "local",
+      loginUrl: null,
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.moatless.example/api/v1/auth/mode",
+      expect.objectContaining({ credentials: "include" }),
+    );
+  });
+
+  it("submits Moatless password login with browser credentials", async () => {
+    vi.stubEnv("VITE_HTTP_URL", "https://api.moatless.example");
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({ user: { login: "alice" }, expiresAt: "2026-04-05T00:00:00Z" }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { submitMoatlessPasswordLogin } = await import("./environments/primary");
+
+    await expect(
+      submitMoatlessPasswordLogin({ username: "alice", password: "correct horse battery staple" }),
+    ).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.moatless.example/api/v1/auth/password/login",
+      expect.objectContaining({
+        credentials: "include",
+        method: "POST",
+        body: JSON.stringify({
+          username: "alice",
+          password: "correct horse battery staple",
+        }),
+      }),
+    );
+  });
+
+  it("preserves and consumes the Moatless auth return target", async () => {
+    const testWindow = installTestBrowser("https://t3.moatless.example/");
+    const { consumeMoatlessAuthReturnTo, rememberMoatlessAuthReturnTo } =
+      await import("./environments/primary");
+
+    rememberMoatlessAuthReturnTo("/settings/general?tab=auth");
+
+    expect(testWindow.sessionStorage.length).toBe(1);
+    expect(consumeMoatlessAuthReturnTo()).toBe("/settings/general?tab=auth");
+    expect(consumeMoatlessAuthReturnTo()).toBe("/");
   });
 
   it("retries transient auth session bootstrap failures after restart", async () => {
@@ -263,7 +407,7 @@ describe("resolveInitialServerAuthGateState", () => {
     await vi.advanceTimersByTimeAsync(2_000);
 
     await expect(gateStatePromise).resolves.toEqual({
-      status: "requires-auth",
+      status: "requires-login",
       auth: LOOPBACK_AUTH,
     });
     expect(attempts).toBe(4);
@@ -286,7 +430,7 @@ describe("resolveInitialServerAuthGateState", () => {
     expect(testWindow.location.searchParams.get("token")).toBeNull();
   });
 
-  it("allows manual token submission after the initial auth check requires pairing", async () => {
+  it("allows manual token submission after the initial auth check requires login", async () => {
     const nextSession = sequence(
       unauthenticatedSession(LOOPBACK_AUTH),
       authenticatedSession(LOOPBACK_AUTH),
@@ -299,7 +443,7 @@ describe("resolveInitialServerAuthGateState", () => {
       await import("./environments/primary");
 
     await expect(resolveInitialServerAuthGateState()).resolves.toEqual({
-      status: "requires-auth",
+      status: "requires-login",
       auth: LOOPBACK_AUTH,
     });
     await expect(submitServerAuthCredential("retry-token")).resolves.toBeUndefined();
@@ -427,7 +571,7 @@ describe("resolveInitialServerAuthGateState", () => {
     await vi.advanceTimersByTimeAsync(2_000);
 
     await expect(gateStatePromise).resolves.toEqual({
-      status: "requires-auth",
+      status: "requires-login",
       auth: DESKTOP_AUTH,
       errorMessage: "Timed out waiting for authenticated session after bootstrap.",
     });

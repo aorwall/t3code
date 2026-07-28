@@ -1,9 +1,8 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import {
   HostedPairingRouteSurface,
   PairingPendingSurface,
-  PairingRouteSurface,
 } from "../components/auth/PairingRouteSurface";
 
 export const Route = createFileRoute("/pair")({
@@ -18,9 +17,7 @@ export const Route = createFileRoute("/pair")({
     if (authGateState.status === "authenticated" || authGateState.status === "hosted-static") {
       throw redirect({ to: "/", replace: true });
     }
-    return {
-      authGateState,
-    };
+    throw redirect({ to: "/login", replace: true });
   },
   component: PairRouteView,
   pendingComponent: PairRoutePendingView,
@@ -28,7 +25,6 @@ export const Route = createFileRoute("/pair")({
 
 function PairRouteView() {
   const { authGateState } = Route.useRouteContext();
-  const navigate = useNavigate();
 
   if (!authGateState) {
     return null;
@@ -38,15 +34,7 @@ function PairRouteView() {
     return <HostedPairingRouteSurface />;
   }
 
-  return (
-    <PairingRouteSurface
-      auth={authGateState.auth}
-      onAuthenticated={() => {
-        void navigate({ to: "/", replace: true });
-      }}
-      {...(authGateState.errorMessage ? { initialErrorMessage: authGateState.errorMessage } : {})}
-    />
-  );
+  return null;
 }
 
 function PairRoutePendingView() {
