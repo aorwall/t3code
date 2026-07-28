@@ -308,7 +308,13 @@ export function createDevRunnerEnv({
 
     if (isDesktopMode) {
       output.HOST = DESKTOP_DEV_LOOPBACK_HOST;
+      // Electron renders from a custom protocol origin (t3code-dev://app), so
+      // Vite's HMR client cannot derive the websocket URL from the page
+      // location and has to be pointed at the loopback dev server explicitly.
+      output.T3CODE_HMR_HOST = DESKTOP_DEV_LOOPBACK_HOST;
       delete output.T3CODE_DESKTOP_WS_URL;
+    } else {
+      delete output.T3CODE_HMR_HOST;
     }
 
     return output;

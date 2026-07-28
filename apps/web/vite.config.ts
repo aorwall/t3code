@@ -86,9 +86,87 @@ function resolveDevProxyTarget(wsUrl: string | undefined): string | undefined {
   }
 }
 
-const devProxyTarget = resolveDevProxyTarget(configuredWsUrl);
+// Everything the browser needs from the T3 server — the HTTP API, attachments,
+// OAuth metadata and the `/ws` socket — is proxied through this dev server so
+// the app runs on a single origin. That matters wherever the app is not reached
+// on localhost (a sandboxed preview domain, a tunnel, another device on the
+// LAN): with no VITE_WS_URL configured the client falls back to the window
+// origin for both HTTP and WebSocket (see environments/primary/target.ts), and
+// only the proxy can get those requests to the server. dev-runner.ts sets
+// VITE_WS_URL for local `pnpm dev`; T3CODE_PORT or T3CODE_DEV_PROXY_TARGET
+// override the fallback, which otherwise assumes the dev-runner base port.
+const DEFAULT_DEV_SERVER_PORT = 13773;
+const devProxyTarget =
+  process.env.T3CODE_DEV_PROXY_TARGET?.trim() ||
+  resolveDevProxyTarget(configuredWsUrl) ||
+  `http://localhost:${process.env.T3CODE_PORT?.trim() || String(DEFAULT_DEV_SERVER_PORT)}`;
 
-export default defineConfig(() => {
+const devProxyPaths = ["/.well-known", "/api", "/attachments", "/ws"] as const;
+const devProxy = Object.fromEntries(
+  devProxyPaths.map((path) => [
+    path,
+    {
+      target: devProxyTarget,
+      changeOrigin: true,
+      // `/ws` is the server's socket endpoint. Vite's own HMR socket lives on
+      // "/" with the `vite-hmr` subprotocol, so the two do not collide.
+      ws: path === "/ws",
+    },
+  ]),
+);
+
+// Electron loads the renderer from a custom protocol origin (t3code-dev://app),
+// so Vite's HMR client cannot derive the websocket URL from the page location
+// and must be pointed at the loopback dev server explicitly. dev-runner.ts sets
+// T3CODE_HMR_HOST for `dev:desktop`. Everyone else — plain browsers on
+// localhost and preview domains served over HTTPS through a reverse proxy —
+// gets Vite's default inference, which derives protocol/host/port from the
+// /@vite/client script URL (so wss on 443 behind the proxy). Hard-coding
+// protocol "ws" there would make the browser refuse the insecure socket.
+const hmrHost = process.env.T3CODE_HMR_HOST?.trim() || "";
+const hmr = hmrHost
+  ? {
+      // Vite 8 uses console.debug for connection logs — enable "Verbose" in
+      // DevTools to see them.
+      protocol: "ws" as const,
+      host: hmrHost,
+      clientPort: port,
+    }
+  : undefined;
+
+// Hosts the dev server answers to besides localhost. Vite's host check rejects
+// anything else, which breaks whenever the dev server is reached through
+// another hostname: a preview or sandbox domain, a tunnel, a LAN address.
+// Those hostnames are deployment-specific, so they are configured rather than
+// checked in — set a comma-separated T3CODE_ALLOWED_HOSTS in the environment or
+// in the repo's gitignored .env (loadRepoEnv above merges it into process.env).
+// A leading dot allows a domain and every subdomain under it, which is what
+// generated per-sandbox hostnames need:
+//
+//   T3CODE_ALLOWED_HOSTS=.preview.example.com,dev.example.com
+//
+// `true` disables the check entirely — convenient behind a trusted proxy, but
+// it drops the DNS-rebinding protection, so prefer listing the domains.
+const allowedHostsEnv = process.env.T3CODE_ALLOWED_HOSTS?.trim() ?? "";
+const allowedHosts: string[] | true =
+  allowedHostsEnv.toLowerCase() === "true"
+    ? true
+    : allowedHostsEnv
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0);
+
+export default defineConfig(({ command, isPreview }) => {
+  // Some hosts (containers, CI images, sandboxed preview environments) export
+  // NODE_ENV=production process-wide. Vite derives `isProduction` from it even
+  // when serving, which makes @vitejs/plugin-react skip the React Refresh
+  // preamble while the transform still emits `$RefreshReg$` calls — the app
+  // then dies on load with "$RefreshReg$ is not defined". A dev server is
+  // development by definition, so pin it back.
+  if (command === "serve" && !isPreview && process.env.NODE_ENV === "production") {
+    process.env.NODE_ENV = "development";
+  }
+
   return {
     plugins: [
       tanstackRouter(),
@@ -145,32 +223,9 @@ export default defineConfig(() => {
       host,
       port,
       strictPort: true,
-      ...(devProxyTarget
-        ? {
-            proxy: {
-              "/.well-known": {
-                target: devProxyTarget,
-                changeOrigin: true,
-              },
-              "/api": {
-                target: devProxyTarget,
-                changeOrigin: true,
-              },
-              "/attachments": {
-                target: devProxyTarget,
-                changeOrigin: true,
-              },
-            },
-          }
-        : {}),
-      hmr: {
-        // Explicit config so Vite's HMR WebSocket connects reliably
-        // inside Electron's BrowserWindow. Vite 8 uses console.debug for
-        // connection logs — enable "Verbose" in DevTools to see them.
-        protocol: "ws",
-        host,
-        clientPort: port,
-      },
+      allowedHosts,
+      proxy: devProxy,
+      ...(hmr ? { hmr } : {}),
     },
     build: {
       outDir: "dist",

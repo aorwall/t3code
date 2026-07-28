@@ -316,6 +316,29 @@ it.layer(NodeServices.layer)("dev-runner", (it) => {
         assert.equal(env.T3CODE_NO_BROWSER, undefined);
         assert.equal(env.T3CODE_HOST, undefined);
         assert.equal(env.VITE_WS_URL, "ws://127.0.0.1:4222");
+        assert.equal(env.T3CODE_HMR_HOST, "127.0.0.1");
+      }),
+    );
+
+    it.effect("leaves hmr host unset outside desktop dev so vite infers it", () =>
+      Effect.gen(function* () {
+        const env = yield* createDevRunnerEnv({
+          mode: "dev:web",
+          baseEnv: {
+            T3CODE_HMR_HOST: "127.0.0.1",
+          },
+          serverOffset: 0,
+          webOffset: 0,
+          t3Home: undefined,
+          browser: undefined,
+          autoBootstrapProjectFromCwd: undefined,
+          logWebSocketEvents: undefined,
+          host: undefined,
+          port: undefined,
+          devUrl: undefined,
+        });
+
+        assert.equal(env.T3CODE_HMR_HOST, undefined);
       }),
     );
 
