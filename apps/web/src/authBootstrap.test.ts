@@ -242,6 +242,66 @@ describe("resolveInitialServerAuthGateState", () => {
     });
   });
 
+  it("falls back to Moatless current-user auth when the T3 session route is unavailable", async () => {
+    const request = HttpClientRequest.get("http://localhost/api/auth/session");
+    const response = HttpClientResponse.fromWeb(request, new Response(null, { status: 404 }));
+    __setPrimaryHttpRunnerForTests(async () => {
+      throw new HttpClientError.HttpClientError({
+        reason: new HttpClientError.StatusCodeError({ request, response }),
+      });
+    });
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            user: { login: "alice" },
+            expiresAt: null,
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { resolveInitialServerAuthGateState } = await import("./environments/primary");
+
+    await expect(resolveInitialServerAuthGateState()).resolves.toEqual({
+      status: "authenticated",
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost/api/v1/auth/me",
+      expect.objectContaining({ credentials: "include" }),
+    );
+  });
+
+  it("uses Moatless current-user auth directly when configured as a Moatless proxy", async () => {
+    vi.stubEnv("VITE_MOATLESS_PROXY_AUTH", "true");
+    __setPrimaryHttpRunnerForTests(async () => {
+      throw new Error("T3 session endpoint should not be called");
+    });
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            user: { login: "alice" },
+            expiresAt: null,
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { resolveInitialServerAuthGateState } = await import("./environments/primary");
+
+    await expect(resolveInitialServerAuthGateState()).resolves.toEqual({
+      status: "authenticated",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost/api/v1/auth/me",
+      expect.objectContaining({ credentials: "include" }),
+    );
+  });
+
   it("uses the vite proxy for desktop-managed loopback auth requests during local dev", async () => {
     await installAuthApi({ session: () => unauthenticatedSession(DESKTOP_AUTH) });
     vi.stubEnv("VITE_DEV_SERVER_URL", "http://127.0.0.1:5733");

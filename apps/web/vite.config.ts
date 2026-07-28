@@ -193,6 +193,7 @@ const clientDefine: Record<string, string> = {
   "import.meta.env.VITE_HOSTED_APP_URL": JSON.stringify(configuredHostedAppUrl ?? ""),
   "import.meta.env.VITE_HOSTED_APP_CHANNEL": JSON.stringify(configuredHostedAppChannel),
   "import.meta.env.APP_VERSION": JSON.stringify(configuredAppVersion),
+  "import.meta.env.VITE_MOATLESS_PROXY_AUTH": JSON.stringify(proxyTargetOverride ? "true" : ""),
   ...(proxyTargetOverride ? { "import.meta.env.VITE_HTTP_URL": JSON.stringify("") } : {}),
 };
 

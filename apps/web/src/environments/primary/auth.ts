@@ -167,7 +167,7 @@ const MOATLESS_BROWSER_COOKIE_AUTH: AuthSessionState["auth"] = {
 export class MoatlessAuthRequestError extends Schema.TaggedErrorClass<MoatlessAuthRequestError>()(
   "MoatlessAuthRequestError",
   {
-    operation: Schema.Literals(["fetch-auth-mode", "password-login"]),
+    operation: Schema.Literals(["fetch-auth-mode", "fetch-current-user", "password-login"]),
     status: Schema.Number,
     cause: Schema.Defect(),
   },
@@ -179,6 +179,8 @@ export class MoatlessAuthRequestError extends Schema.TaggedErrorClass<MoatlessAu
     return `Moatless authentication failed during ${this.operation} (HTTP ${this.status}).`;
   }
 }
+
+const isMoatlessAuthRequestError = Schema.is(MoatlessAuthRequestError);
 
 let bootstrapPromise: Promise<ServerAuthGateState> | null = null;
 let resolvedAuthenticatedGateState: ServerAuthGateState | null = null;
@@ -351,15 +353,21 @@ function isTransientBootstrapError(error: unknown): boolean {
 
 async function bootstrapServerAuth(): Promise<ServerAuthGateState> {
   const bootstrapCredential = getDesktopBootstrapCredential();
-  const currentSession = await fetchSessionState().catch((error) => {
-    if (isPrimaryEnvironmentRequestError(error) && error.status === 401) {
-      return {
-        authenticated: false,
-        auth: MOATLESS_BROWSER_COOKIE_AUTH,
-      } satisfies AuthSessionState;
-    }
-    throw error;
-  });
+  const currentSession =
+    import.meta.env.VITE_MOATLESS_PROXY_AUTH === "true"
+      ? await fetchMoatlessCurrentSessionState()
+      : await fetchSessionState().catch((error) => {
+          if (isPrimaryEnvironmentRequestError(error) && error.status === 401) {
+            return {
+              authenticated: false,
+              auth: MOATLESS_BROWSER_COOKIE_AUTH,
+            } satisfies AuthSessionState;
+          }
+          if (isPrimaryEnvironmentRequestError(error) && error.status === 404) {
+            return fetchMoatlessCurrentSessionState();
+          }
+          throw error;
+        });
   if (currentSession.authenticated) {
     return { status: "authenticated" };
   }
@@ -666,6 +674,29 @@ export async function fetchMoatlessAuthMode(): Promise<MoatlessAuthModeState> {
       operation: "fetch-auth-mode",
     }),
   );
+}
+
+async function fetchMoatlessCurrentSessionState(): Promise<AuthSessionState> {
+  try {
+    await fetchMoatlessAuthJson({
+      path: "/api/v1/auth/me",
+      operation: "fetch-current-user",
+    });
+    return {
+      authenticated: true,
+      auth: MOATLESS_BROWSER_COOKIE_AUTH,
+      scopes: ["orchestration:read", "access:read", "relay:read"],
+      sessionMethod: "browser-session-cookie",
+    };
+  } catch (error) {
+    if (isMoatlessAuthRequestError(error) && error.status === 401) {
+      return {
+        authenticated: false,
+        auth: MOATLESS_BROWSER_COOKIE_AUTH,
+      };
+    }
+    throw error;
+  }
 }
 
 export async function submitMoatlessPasswordLogin(input: {
