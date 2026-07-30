@@ -40,9 +40,11 @@ For a persistent checkout-local target, use the ignored `.env.local`:
 T3CODE_PROXY_TARGET_OVERRIDE=http://localhost:8080
 ```
 
-`apps/web/vite.config.ts` proxies `/.well-known`, `/api`, `/attachments`, and
-the `/ws` upgrade to that target. It blanks the browser's configured HTTP and
-WebSocket endpoints so all traffic stays same-origin at port 5733.
+`apps/web/vite.config.ts` proxies the prefixes in `packages/shared/src/devProxy.ts`
+— `/api` (which covers attachments, served under `/api/assets`), `/oauth`,
+`/.well-known`, and the `/ws` upgrade — to that target. Naming a target also puts
+the dev server in single-origin mode, which blanks the browser's configured HTTP
+and WebSocket endpoints so all traffic stays same-origin at port 5733.
 
 ## Expected phase-one behavior
 
