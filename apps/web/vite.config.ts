@@ -7,6 +7,8 @@ import "vite-plus/test/config";
 import { defineConfig } from "vite-plus";
 import pkg from "./package.json" with { type: "json" };
 
+import { DEV_PROXIED_PATH_PREFIXES } from "@t3tools/shared/devProxy";
+
 import { loadRepoEnv } from "../../scripts/lib/public-config";
 
 const repoEnv = loadRepoEnv();
@@ -20,16 +22,34 @@ Object.assign(process.env, repoEnv);
 // explicitly an override, outranks the ambient value.
 const repoFileEnv = loadRepoEnv({ baseEnv: {} });
 
-const port = Number(process.env.PORT ?? 5733);
-const host = process.env.HOST?.trim() || "localhost";
+// Where this dev server proxies the backend, when it is not the bundled T3
+// server the runner starts. Pointing it at a Moatless environment is what makes
+// the fork's UI work against that backend; see docs/integrations/moatless-backend.md.
+const proxyTargetOverride =
+  process.env.T3CODE_DEV_PROXY_TARGET?.trim() ||
+  repoFileEnv.T3CODE_PROXY_TARGET_OVERRIDE?.trim() ||
+  process.env.T3CODE_PROXY_TARGET?.trim() ||
+  process.env.MOATLESS_BASE_URL?.trim() ||
+  undefined;
 
-// Left unset, Vite's HMR client derives its socket URL from the page's own
-// origin. That is what a hosted sandbox needs: it serves the dev server through
-// an HTTPS preview hostname on port 443, where a pinned `ws://<bind address>:<port>`
-// is both unreachable and blocked as mixed content. Pin the endpoint only when
-// HOST names an address a browser can actually dial — the Electron case the
-// explicit config below was written for, whose window loads http://localhost:<port>.
-const configuredWsUrl = process.env.VITE_WS_URL?.trim();
+// Single-origin dev is signalled positively, because it cannot be inferred
+// from the absence of VITE_HTTP_URL/VITE_WS_URL: the runner deletes those keys
+// but `loadRepoEnv` merges `.env`/`.env.local` *underneath* the process env, so
+// a developer with either URL in their `.env` gets it back here. Baking it then
+// pins the client to localhost and breaks every non-localhost origin — the
+// exact failure single-origin mode exists to prevent, and an invisible one
+// since the page still loads.
+// A configured proxy target implies it too: the whole point of naming one is
+// that the browser talks to this origin and lets the proxy forward everything,
+// so a baked-in VITE_HTTP_URL/VITE_WS_URL would route straight past it.
+const isSingleOriginDev =
+  process.env.T3CODE_SINGLE_ORIGIN_DEV === "1" || proxyTargetOverride !== undefined;
+
+const port = Number(process.env.PORT ?? 5733);
+const explicitHost = process.env.HOST?.trim();
+const host = explicitHost || "localhost";
+const configuredWsUrl = isSingleOriginDev ? undefined : process.env.VITE_WS_URL?.trim();
+const configuredHttpUrl = isSingleOriginDev ? undefined : process.env.VITE_HTTP_URL?.trim();
 const configuredRelayUrl = repoEnv.VITE_T3CODE_RELAY_URL?.trim() || "";
 const configuredClerkPublishableKey = repoEnv.VITE_CLERK_PUBLISHABLE_KEY?.trim() || "";
 const configuredClerkJwtTemplate = repoEnv.VITE_CLERK_JWT_TEMPLATE?.trim() || "";
@@ -80,7 +100,20 @@ const unitTestProject = {
   },
 } satisfies TestProjectInlineConfiguration;
 
-function resolveDevProxyTarget(wsUrl: string | undefined): string | undefined {
+function resolveDevProxyTarget(
+  backendPort: string | undefined,
+  wsUrl: string | undefined,
+): string | undefined {
+  // Browser dev is single-origin: the backend port is proxied through this
+  // server so the app works from any origin (localhost, tailnet, LAN, phone).
+  // T3CODE_PORT is set by scripts/dev-runner.ts for every non-desktop mode.
+  const port = Number(backendPort?.trim());
+  if (Number.isInteger(port) && port > 0) {
+    return `http://localhost:${port}/`;
+  }
+
+  // dev:desktop still points the renderer straight at the backend, so fall
+  // back to deriving the target from the explicit websocket URL.
   if (!wsUrl) {
     return undefined;
   }
@@ -101,101 +134,37 @@ function resolveDevProxyTarget(wsUrl: string | undefined): string | undefined {
   }
 }
 
-// Everything the browser needs from the T3 server — the HTTP API, attachments,
-// OAuth metadata and the `/ws` socket — is proxied through this dev server so
-// the app runs on a single origin. That matters wherever the app is not reached
-// on localhost (a sandboxed preview domain, a tunnel, another device on the
-// LAN): with no VITE_WS_URL configured the client falls back to the window
-// origin for both HTTP and WebSocket (see environments/primary/target.ts), and
-// only the proxy can get those requests to the server. dev-runner.ts sets
-// VITE_WS_URL for local `pnpm dev`; T3CODE_PORT or T3CODE_DEV_PROXY_TARGET
-// override the fallback, which otherwise assumes the dev-runner base port.
-const DEFAULT_DEV_SERVER_PORT = 13773;
-const proxyTargetOverride =
-  process.env.T3CODE_DEV_PROXY_TARGET?.trim() ||
-  repoFileEnv.T3CODE_PROXY_TARGET_OVERRIDE?.trim() ||
-  process.env.T3CODE_PROXY_TARGET?.trim() ||
-  process.env.MOATLESS_BASE_URL?.trim();
+// The override wins over T3CODE_PORT: the runner sets that unconditionally for
+// browser dev, so a hosted sandbox that wants its own backend proxied has no
+// other way to say so.
 const devProxyTarget =
-  proxyTargetOverride ||
-  resolveDevProxyTarget(configuredWsUrl) ||
-  `http://localhost:${process.env.T3CODE_PORT?.trim() || String(DEFAULT_DEV_SERVER_PORT)}`;
+  proxyTargetOverride ?? resolveDevProxyTarget(process.env.T3CODE_PORT, configuredWsUrl);
 
-const devProxyPaths = ["/.well-known", "/api", "/attachments", "/ws"] as const;
-const devProxy = Object.fromEntries(
-  devProxyPaths.map((path) => [
-    path,
-    {
-      target: devProxyTarget,
-      changeOrigin: true,
-      // `/ws` is the server's socket endpoint. Vite's own HMR socket lives on
-      // "/" with the `vite-hmr` subprotocol, so the two do not collide.
-      ws: path === "/ws",
-    },
-  ]),
-);
-
-// Electron loads the renderer from a custom protocol origin (t3code-dev://app),
-// so Vite's HMR client cannot derive the websocket URL from the page location
-// and must be pointed at the loopback dev server explicitly. dev-runner.ts sets
-// T3CODE_HMR_HOST for `dev:desktop`. Everyone else — plain browsers on
-// localhost and preview domains served over HTTPS through a reverse proxy —
-// gets Vite's default inference, which derives protocol/host/port from the
-// /@vite/client script URL (so wss on 443 behind the proxy). Hard-coding
-// protocol "ws" there would make the browser refuse the insecure socket.
-const hmrHost = process.env.T3CODE_HMR_HOST?.trim() || "";
-const hmr = hmrHost
-  ? {
-      // Vite 8 uses console.debug for connection logs — enable "Verbose" in
-      // DevTools to see them.
-      protocol: "ws" as const,
-      host: hmrHost,
-      clientPort: port,
-    }
-  : undefined;
-
-// Hosts the dev server answers to besides localhost. Vite's host check rejects
-// anything else, which breaks whenever the dev server is reached through
-// another hostname: a preview or sandbox domain, a tunnel, a LAN address.
-// Those hostnames are deployment-specific, so they are configured rather than
-// checked in — set a comma-separated T3CODE_ALLOWED_HOSTS in the environment or
-// in the repo's gitignored .env (loadRepoEnv above merges it into process.env).
-// A leading dot allows a domain and every subdomain under it, which is what
-// generated per-sandbox hostnames need:
+// Vite rejects requests whose Host header isn't localhost, which blocks sharing
+// a dev server over Tailscale/LAN. Tailnet names are safe to allow wholesale:
+// the DNS is controlled by tailscale, so they can't be rebound by an attacker.
+// Anything else (ngrok, a LAN IP alias, a hosted sandbox's preview domain) goes
+// through the env vars. T3CODE_ALLOWED_HOSTS is the fork's alias, kept because
+// deployments inject it by that name; a leading dot allows a domain and every
+// subdomain under it, which is what generated per-sandbox hostnames need:
 //
 //   T3CODE_ALLOWED_HOSTS=.preview.example.com,dev.example.com
 //
-// `true` disables the check entirely — convenient behind a trusted proxy, but
-// it drops the DNS-rebinding protection, so prefer listing the domains.
-const allowedHostsEnv = process.env.T3CODE_ALLOWED_HOSTS?.trim() ?? "";
-const allowedHosts: string[] | true =
-  allowedHostsEnv.toLowerCase() === "true"
-    ? true
-    : allowedHostsEnv
-        .split(",")
-        .map((entry) => entry.trim())
-        .filter((entry) => entry.length > 0);
-
-// When the dev server is explicitly configured as the proxy, the browser must
-// talk to its own origin and let the proxy forward both HTTP and WebSocket
-// traffic. Otherwise the stock local flow keeps the configured WebSocket URL.
-const clientWsUrl = proxyTargetOverride ? "" : (configuredWsUrl ?? "");
-
-const clientDefine: Record<string, string> = {
-  "import.meta.env.VITE_WS_URL": JSON.stringify(clientWsUrl),
-  "import.meta.env.VITE_T3CODE_RELAY_URL": JSON.stringify(configuredRelayUrl),
-  "import.meta.env.VITE_CLERK_PUBLISHABLE_KEY": JSON.stringify(configuredClerkPublishableKey),
-  "import.meta.env.VITE_CLERK_JWT_TEMPLATE": JSON.stringify(configuredClerkJwtTemplate),
-  "import.meta.env.VITE_CLERK_CLI_OAUTH_CLIENT_ID": JSON.stringify(configuredClerkCliOAuthClientId),
-  "import.meta.env.VITE_RELAY_OTLP_TRACES_URL": JSON.stringify(configuredRelayTracingUrl),
-  "import.meta.env.VITE_RELAY_OTLP_TRACES_DATASET": JSON.stringify(configuredRelayTracingDataset),
-  "import.meta.env.VITE_RELAY_OTLP_TRACES_TOKEN": JSON.stringify(configuredRelayTracingToken),
-  "import.meta.env.VITE_HOSTED_APP_URL": JSON.stringify(configuredHostedAppUrl ?? ""),
-  "import.meta.env.VITE_HOSTED_APP_CHANNEL": JSON.stringify(configuredHostedAppChannel),
-  "import.meta.env.APP_VERSION": JSON.stringify(configuredAppVersion),
-  "import.meta.env.VITE_MOATLESS_PROXY_AUTH": JSON.stringify(proxyTargetOverride ? "true" : ""),
-  ...(proxyTargetOverride ? { "import.meta.env.VITE_HTTP_URL": JSON.stringify("") } : {}),
-};
+// Either var set to `true` disables the check entirely — convenient behind a
+// trusted proxy, but it drops the DNS-rebinding protection, so prefer a list.
+const allowedHostsEnv = [
+  process.env.T3CODE_DEV_ALLOWED_HOSTS ?? "",
+  process.env.T3CODE_ALLOWED_HOSTS ?? "",
+];
+const configuredAllowedHosts = allowedHostsEnv
+  .flatMap((value) => value.split(","))
+  .map((entry) => entry.trim())
+  .filter((entry) => entry.length > 0);
+const allowedHosts: string[] | true = configuredAllowedHosts.some(
+  (entry) => entry.toLowerCase() === "true",
+)
+  ? true
+  : [".ts.net", ...configuredAllowedHosts];
 
 export default defineConfig(({ command, isPreview }) => {
   // Some hosts (containers, CI images, sandboxed preview environments) export
@@ -235,7 +204,32 @@ export default defineConfig(({ command, isPreview }) => {
         "react-dom/client",
       ],
     },
-    define: clientDefine,
+    define: {
+      // In dev mode, tell the web app where the WebSocket server lives
+      "import.meta.env.VITE_WS_URL": JSON.stringify(configuredWsUrl ?? ""),
+      // Pinned explicitly rather than left to Vite's automatic VITE_ exposure:
+      // under single-origin dev this must stay empty even when a `.env`
+      // supplies it, so the client falls back to window.location.origin.
+      "import.meta.env.VITE_HTTP_URL": JSON.stringify(configuredHttpUrl ?? ""),
+      "import.meta.env.VITE_T3CODE_RELAY_URL": JSON.stringify(configuredRelayUrl),
+      "import.meta.env.VITE_CLERK_PUBLISHABLE_KEY": JSON.stringify(configuredClerkPublishableKey),
+      "import.meta.env.VITE_CLERK_JWT_TEMPLATE": JSON.stringify(configuredClerkJwtTemplate),
+      "import.meta.env.VITE_CLERK_CLI_OAUTH_CLIENT_ID": JSON.stringify(
+        configuredClerkCliOAuthClientId,
+      ),
+      "import.meta.env.VITE_RELAY_OTLP_TRACES_URL": JSON.stringify(configuredRelayTracingUrl),
+      "import.meta.env.VITE_RELAY_OTLP_TRACES_DATASET": JSON.stringify(
+        configuredRelayTracingDataset,
+      ),
+      "import.meta.env.VITE_RELAY_OTLP_TRACES_TOKEN": JSON.stringify(configuredRelayTracingToken),
+      "import.meta.env.VITE_HOSTED_APP_URL": JSON.stringify(configuredHostedAppUrl ?? ""),
+      "import.meta.env.VITE_HOSTED_APP_CHANNEL": JSON.stringify(configuredHostedAppChannel),
+      "import.meta.env.APP_VERSION": JSON.stringify(configuredAppVersion),
+      // Proxying to a configured target means the backend is Moatless, whose
+      // session cookie is host-scoped and already sent same-origin. The client
+      // reads this to skip the token exchange — see environments/primary/auth.ts.
+      "import.meta.env.VITE_MOATLESS_PROXY_AUTH": JSON.stringify(proxyTargetOverride ? "true" : ""),
+    },
     resolve: {
       tsconfigPaths: true,
       dedupe: ["react", "react-dom"],
@@ -248,8 +242,40 @@ export default defineConfig(({ command, isPreview }) => {
       port,
       strictPort: true,
       allowedHosts,
-      proxy: devProxy,
-      ...(hmr ? { hmr } : {}),
+      ...(devProxyTarget
+        ? {
+            // One entry per shared prefix; the server's dev catch-all 404s the
+            // same list, so the two sides cannot drift. `/ws` is the app's own
+            // socket — Vite's HMR socket is matched separately and exactly
+            // (path "/" plus a vite-hmr subprotocol), so the two upgrade
+            // handlers don't collide.
+            proxy: Object.fromEntries(
+              DEV_PROXIED_PATH_PREFIXES.map((prefix) => [
+                prefix,
+                {
+                  target: devProxyTarget,
+                  changeOrigin: true,
+                  ...(prefix === "/ws" ? { ws: true } : {}),
+                },
+              ]),
+            ),
+          }
+        : {}),
+      // Electron's BrowserWindow needs the HMR socket pinned to an explicit
+      // host to connect reliably; dev:desktop is the only mode that sets HOST.
+      // Everywhere else, leaving this unset lets the client derive it from the
+      // page origin, which is what makes HMR work over Tailscale/LAN instead of
+      // failing an attempt against the wrong machine's localhost first.
+      // (Vite 8 logs connection state via console.debug — enable "Verbose".)
+      ...(explicitHost
+        ? {
+            hmr: {
+              protocol: "ws",
+              host: explicitHost,
+              clientPort: port,
+            },
+          }
+        : {}),
     },
     build: {
       outDir: "dist",

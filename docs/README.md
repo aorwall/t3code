@@ -12,6 +12,8 @@
   - [Keeping T3 Code in sync](./user/server-updates.md)
   - [Keybindings](./user/keybindings.md)
 - [T3 Connect](./cloud/t3-connect-clerk.md)
+- Fork
+  - [Upstream merge policy and decision log](./fork/upstream-merge-policy.md)
 - Integrations
   - [Source-control providers](./integrations/source-control-providers.md)
   - [T3 Code UI on the Moatless backend](./integrations/moatless-backend.md)
