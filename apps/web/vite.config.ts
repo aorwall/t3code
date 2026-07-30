@@ -48,6 +48,15 @@ const isSingleOriginDev =
 const port = Number(process.env.PORT ?? 5733);
 const explicitHost = process.env.HOST?.trim();
 const host = explicitHost || "localhost";
+// A wildcard bind address says "listen on every interface"; it is not an
+// address a browser can dial. A container or sandbox sets HOST=0.0.0.0 so the
+// dev server is reachable from outside it, and pinning the HMR socket to that
+// value sends the page to ws://0.0.0.0 — which is refused, and is insecure
+// content besides when the page itself is served over HTTPS. Deriving the host
+// from the page origin is right in exactly those deployments.
+const WILDCARD_BIND_HOSTS = new Set(["0.0.0.0", "::", "[::]", "::0", "0000::0"]);
+const hmrHost =
+  explicitHost && !WILDCARD_BIND_HOSTS.has(explicitHost.toLowerCase()) ? explicitHost : undefined;
 const configuredWsUrl = isSingleOriginDev ? undefined : process.env.VITE_WS_URL?.trim();
 const configuredHttpUrl = isSingleOriginDev ? undefined : process.env.VITE_HTTP_URL?.trim();
 const configuredRelayUrl = repoEnv.VITE_T3CODE_RELAY_URL?.trim() || "";
@@ -262,16 +271,16 @@ export default defineConfig(({ command, isPreview }) => {
           }
         : {}),
       // Electron's BrowserWindow needs the HMR socket pinned to an explicit
-      // host to connect reliably; dev:desktop is the only mode that sets HOST.
-      // Everywhere else, leaving this unset lets the client derive it from the
-      // page origin, which is what makes HMR work over Tailscale/LAN instead of
+      // host to connect reliably; dev:desktop sets HOST for that. Everywhere
+      // else, leaving this unset lets the client derive it from the page
+      // origin, which is what makes HMR work over Tailscale/LAN instead of
       // failing an attempt against the wrong machine's localhost first.
       // (Vite 8 logs connection state via console.debug — enable "Verbose".)
-      ...(explicitHost
+      ...(hmrHost
         ? {
             hmr: {
               protocol: "ws",
-              host: explicitHost,
+              host: hmrHost,
               clientPort: port,
             },
           }
