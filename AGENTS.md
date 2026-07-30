@@ -133,6 +133,10 @@ Full glossary with file links: `docs/reference/encyclopedia.md`
 - Our users drive agents all day and notice a dropped frame, a lying spinner, and a stale label. No continuously repainting animations; they peg the GPU on high-refresh displays.
 - If a rule here fights the task in front of you, say so loudly and get a human sign-off before breaking it.
 
+## This fork
+
+- This is a fork of pingdotgg/t3code. Before merging upstream, or when deciding whether a file is ours or theirs, read [docs/fork/upstream-merge-policy.md](./docs/fork/upstream-merge-policy.md). Record fork-level decisions there so the next merge inherits them.
+
 ## Additional tips
 
 - Don't verify with browsers or computer use unless the user explicitly agrees or requests it.
