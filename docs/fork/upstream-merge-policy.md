@@ -104,18 +104,19 @@ of the checklist exists.
 `converged` means take upstream wholesale, then re-apply only the deltas listed —
 never hand-merge a converged file, or the fork delta grows every time.
 
-| Path                                                                                                                                 | Policy                     | Why                                                                                                                                        |
-| ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `apps/web/src/environments/primary/auth.ts`                                                                                          | ours                       | Auth is fork-owned; we do not support the T3 backend.                                                                                      |
-| `apps/web/src/environments/primary/httpLayer.ts`                                                                                     | ours                       | Always sends the Moatless session cookie; upstream's same-origin gate is deliberately gone.                                                |
-| `apps/web/src/routes/login.tsx`                                                                                                      | ours                       | Fork-only route. Upstream has no `/login`.                                                                                                 |
-| `apps/web/src/authBootstrap.test.ts`                                                                                                 | ours                       | Covers the fork's auth path.                                                                                                               |
-| `apps/web/vite.config.ts`                                                                                                            | converged                  | See the delta list below.                                                                                                                  |
-| `docs/fork/**`                                                                                                                       | ours                       | This directory is fork-only by construction; upstream will never add files here.                                                           |
-| `docs/integrations/moatless-*.md`, `docs/reference/client-server-contract.md`, `docs/reference/moatless-concept-map.md`, `.plans/**` | ours                       | Fork-authored docs.                                                                                                                        |
-| `scripts/dev-runner.ts`, `scripts/dev-runner.test.ts`                                                                                | **theirs, verbatim**       | We had a delta here and gave it up (log 2026-07-30). If a conflict appears, we have re-grown one by accident — check why before resolving. |
-| unlisted, and outside the concerns above                                                                                             | theirs                     | Nothing to decide. Do not grow a fork delta without adding a row here.                                                                     |
-| unlisted, but inside a fork-owned concern                                                                                            | **decide, then add a row** | The table is behind reality; catch it up in this merge instead of leaving the next one to rediscover it.                                   |
+| Path                                                                                                                                 | Policy                     | Why                                                                                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apps/web/src/environments/primary/auth.ts`                                                                                          | ours                       | Auth is fork-owned; we do not support the T3 backend.                                                                                                              |
+| `apps/web/src/environments/primary/httpLayer.ts`                                                                                     | ours                       | Always sends the Moatless session cookie; upstream's same-origin gate is deliberately gone.                                                                        |
+| `apps/web/src/routes/login.tsx`                                                                                                      | ours                       | Fork-only route. Upstream has no `/login`.                                                                                                                         |
+| `apps/web/src/authBootstrap.test.ts`                                                                                                 | ours                       | Covers the fork's auth path.                                                                                                                                       |
+| `apps/web/vite.config.ts`                                                                                                            | converged                  | See the delta list below.                                                                                                                                          |
+| `docs/fork/**`                                                                                                                       | ours                       | This directory is fork-only by construction; upstream will never add files here.                                                                                   |
+| `docs/integrations/moatless-*.md`, `docs/reference/client-server-contract.md`, `docs/reference/moatless-concept-map.md`, `.plans/**` | ours                       | Fork-authored docs.                                                                                                                                                |
+| `scripts/dev-runner.ts`, `scripts/dev-runner.test.ts`                                                                                | **theirs, verbatim**       | We had a delta here and gave it up (log 2026-07-30). If a conflict appears, we have re-grown one by accident — check why before resolving.                         |
+| `.github/workflows/**`                                                                                                               | ours                       | All nine workflows are renamed to `*.yml.disabled` and cannot run here (log 2026-07-30). Keep the rename; let upstream's content changes land on the renamed path. |
+| unlisted, and outside the concerns above                                                                                             | theirs                     | Nothing to decide. Do not grow a fork delta without adding a row here.                                                                                             |
+| unlisted, but inside a fork-owned concern                                                                                            | **decide, then add a row** | The table is behind reality; catch it up in this merge instead of leaving the next one to rediscover it.                                                           |
 
 ### Fork delta in the web vite config
 
@@ -191,6 +192,28 @@ path is ours outright rather than a Moatless branch layered over upstream's.
   pairing URLs. That is the non-Moatless branch at `auth.ts:359`. Removing the T3
   auth path breaks local dev and agent testing until that skill runs against a
   local Moatless instead.
+
+### 2026-07-30 — disabled every GitHub workflow
+
+Nine workflows, zero successful runs in this fork, ever. `ci.yml`, `release.yml`,
+`deploy-relay.yml` and the mobile workflows all require `blacksmith-*` runners;
+upstream runs CI on Blacksmith and this fork has no installation, so those jobs
+queue with no runner assigned and never start. `pr-size.yml` and `pr-vouch.yml`
+are upstream's public-OSS contributor automation and fail before executing a
+step. `issue-labels.yml` maintains upstream's label taxonomy.
+
+Renamed to `*.yml.disabled` rather than deleted, because GitHub only reads
+`.yml`/`.yaml` here and a content-preserving rename lets upstream's edits land on
+the renamed path instead of raising a delete/modify conflict on every merge.
+Verified: merging `upstream/main` produced no workflow conflict, and the merged
+`ci.yml.disabled` was byte-identical to upstream's `ci.yml`.
+
+**Consequence:** there is no CI on this fork, and there was none before. Every
+merge's verification is local — `pnpm typecheck && pnpm test && pnpm lint &&
+pnpm fmt:check` — which is why checklist step 5 exists and why the merge entries
+above record what was run by hand. Restoring CI means installing Blacksmith or
+switching `runs-on` to GitHub-hosted runners; the latter is a fork delta on a
+high-churn file and needs its own row here.
 
 ### 2026-07-30 — merged upstream to v0.0.31, gave up the dev-runner delta
 
