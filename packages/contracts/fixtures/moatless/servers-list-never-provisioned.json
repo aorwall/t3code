@@ -1,0 +1,15 @@
+{
+  "servers": [
+    {
+      "name": "web",
+      "label": "T3 Code (Moatless)",
+      "port": 5733,
+      "status": "starting",
+      "url": "https://91f70cd4-256a-45c2-bc3f-8d301789d6e5--5733.preview.soaplabstest.com",
+      "error": null,
+      "detail": null,
+      "default": true
+    }
+  ],
+  "sandboxStatus": "not_created"
+}

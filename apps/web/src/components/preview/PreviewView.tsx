@@ -14,6 +14,7 @@ import { useComposerDraftStore } from "~/composerDraftStore";
 import { previewAnnotationScreenshotFile } from "~/lib/previewAnnotation";
 import { ensureLocalApi } from "~/localApi";
 import {
+  previewRuntimeCapability,
   rememberPreviewUrl,
   updatePreviewServerSnapshot,
   useThreadPreviewState,
@@ -38,7 +39,11 @@ import {
 } from "~/browser/browserViewportActions";
 import { resolveResponsiveBrowserViewportSize } from "~/browser/browserViewportLayout";
 import { previewRuntimeTabId } from "~/browser/previewRuntimeTabId";
+import { reloadHostedFrame } from "~/browser/hostedFrameReload";
 import { PreviewUnreachable } from "./PreviewUnreachable";
+import { PreviewFrameUnrendered, useFrameUnrenderedHint } from "./PreviewFrameUnrendered";
+import { PreviewServerNotStarted } from "./PreviewServerNotStarted";
+import { useFramedServerStatus } from "./useFramedServerStatus";
 import { revealInFileExplorerLabel } from "./fileExplorerLabel";
 import { shouldShowPreviewEmptyState } from "./previewEmptyStateLogic";
 import { BrowserSurfaceSlot } from "~/browser/BrowserSurfaceSlot";
@@ -83,7 +88,11 @@ export function PreviewView({ threadRef, tabId: requestedTabId, configuredUrls, 
   const environment = useEnvironment(threadRef.environmentId);
   const environmentHttpBaseUrl = useEnvironmentHttpBaseUrl(threadRef.environmentId);
   const open = useAtomCommand(previewEnvironment.open);
+  const navigate = useAtomCommand(previewEnvironment.navigate, "preview navigate");
   const resize = useAtomCommand(previewEnvironment.resize, "preview viewport resize");
+  // A frame is driven, never read: it cannot report where it went, so the
+  // server's record of the tab is the only account of it there is.
+  const framed = previewRuntimeCapability() === "frame";
 
   usePreviewSession(threadRef);
 
@@ -128,6 +137,15 @@ export function PreviewView({ threadRef, tabId: requestedTabId, configuredUrls, 
   const panelRect = useBrowserSurfaceStore((state) =>
     runtimeTabId ? (state.byTabId[runtimeTabId]?.rect ?? null) : null,
   );
+  // What a frame cannot say about itself, its server can. Nothing consults
+  // this on the desktop app, where the page reports its own failures.
+  const framedServer = useFramedServerStatus(framed ? threadRef : null, url);
+  const frameHintElapsed = useFrameUnrenderedHint(
+    framed ? url : "",
+    framedServer?.status === "started",
+  );
+  const showFrameUnrenderedHint =
+    framed && frameHintElapsed && !showEmptyState && framedServer?.status === "started";
 
   const navigateToResolvedUrl = useCallback(
     async (resolvedUrl: string) => {
@@ -135,6 +153,16 @@ export function PreviewView({ threadRef, tabId: requestedTabId, configuredUrls, 
         // Drive the webview imperatively; `usePreviewBridge` mirrors the
         // resolved URL back to the server so other clients stay in sync.
         await previewBridge.navigate(runtimeTabId, resolvedUrl);
+        rememberPreviewUrl(threadRef, resolvedUrl);
+      } else if (framed && tabId) {
+        // The server's record is what the frame follows, so the navigation is
+        // the write. Every client on the thread sees it, including this one.
+        const result = await navigate({
+          environmentId: threadRef.environmentId,
+          input: { threadId: threadRef.threadId, tabId, url: resolvedUrl },
+        });
+        if (result._tag === "Failure") throw squashAtomCommandFailure(result);
+        updatePreviewServerSnapshot(threadRef, result.value);
         rememberPreviewUrl(threadRef, resolvedUrl);
       } else {
         await openPreviewSession({
@@ -144,7 +172,7 @@ export function PreviewView({ threadRef, tabId: requestedTabId, configuredUrls, 
         });
       }
     },
-    [open, runtimeTabId, threadRef],
+    [framed, navigate, open, runtimeTabId, tabId, threadRef],
   );
 
   const handleSubmitUrl = useCallback(
@@ -170,8 +198,14 @@ export function PreviewView({ threadRef, tabId: requestedTabId, configuredUrls, 
   );
 
   const handleRefresh = useCallback(() => {
-    if (previewBridge && runtimeTabId) void previewBridge.refresh(runtimeTabId);
-  }, [runtimeTabId]);
+    if (previewBridge && runtimeTabId) {
+      void previewBridge.refresh(runtimeTabId);
+      return;
+    }
+    // Replacing the element is the only way to reload a cross-origin frame,
+    // and `preview.refresh` moves no server state, so nothing is sent.
+    if (framed && runtimeTabId) reloadHostedFrame(runtimeTabId);
+  }, [framed, runtimeTabId]);
 
   const handleZoomIn = useCallback(() => {
     if (previewBridge && runtimeTabId) void previewBridge.zoomIn(runtimeTabId);
@@ -239,9 +273,15 @@ export function PreviewView({ threadRef, tabId: requestedTabId, configuredUrls, 
   }, [runtimeTabId]);
 
   const handleOpenInBrowser = useCallback(() => {
-    if (!localApi || !url) return;
+    if (!url) return;
+    // Already in a browser: the OS shell is neither reachable nor wanted.
+    if (framed) {
+      window.open(url, "_blank", "noopener");
+      return;
+    }
+    if (!localApi) return;
     void localApi.shell.openExternal(url).catch(() => undefined);
-  }, [url]);
+  }, [framed, url]);
 
   const handlePictureInPicture = useCallback(() => {
     if (!tabId) return;
@@ -618,8 +658,10 @@ export function PreviewView({ threadRef, tabId: requestedTabId, configuredUrls, 
         canGoForward={canGoForward}
         refreshDisabled={refreshDisabled}
         focusUrlNonce={focusUrlNonce}
-        onBack={handleBack}
-        onForward={handleForward}
+        // A frame keeps no history the panel can walk, so the two controls
+        // are absent rather than present and permanently dead.
+        onBack={framed ? undefined : handleBack}
+        onForward={framed ? undefined : handleForward}
         onRefresh={handleRefresh}
         onSubmit={(next) => void handleSubmitUrl(next)}
         onOpenInBrowser={tabId ? handleOpenInBrowser : undefined}
@@ -695,6 +737,17 @@ export function PreviewView({ threadRef, tabId: requestedTabId, configuredUrls, 
               onReload={handleRefresh}
             />
           </div>
+        ) : null}
+        {framedServer && framedServer.status !== "started" ? (
+          <div className="absolute inset-0 z-10 bg-background">
+            <PreviewServerNotStarted
+              server={framedServer}
+              onOpenInBrowser={tabId ? handleOpenInBrowser : undefined}
+            />
+          </div>
+        ) : null}
+        {showFrameUnrenderedHint ? (
+          <PreviewFrameUnrendered onOpenInBrowser={handleOpenInBrowser} />
         ) : null}
       </div>
     </div>

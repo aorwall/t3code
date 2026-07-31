@@ -19,6 +19,23 @@ const mocks = vi.hoisted(() => ({
   closePictureInPicture: vi.fn(async (_tabId: string): Promise<void> => undefined),
   pictureInPicture: false,
   showEmptyState: false,
+  capability: "webview" as "webview" | "frame" | "none",
+  previewBridge: null as unknown,
+  reloadHostedFrame: vi.fn(),
+  navigateCommand: vi.fn(async (_input: unknown) => ({
+    _tag: "Success" as const,
+    value: {
+      threadId: "thread-1",
+      tabId: "tab-1",
+      navStatus: { _tag: "Success" as const, url: "http://example.com/", title: "" },
+      canGoBack: false,
+      canGoForward: false,
+      updatedAt: "2026-07-31T00:00:00.000Z",
+    },
+  })),
+  chromeBack: undefined as (() => void) | undefined,
+  chromeForward: undefined as (() => void) | undefined,
+  chromeRefresh: null as (() => void) | null,
 }));
 
 vi.mock("~/state/session", () => ({
@@ -40,6 +57,7 @@ vi.mock("~/localApi", () => ({
 }));
 
 vi.mock("~/previewStateStore", () => ({
+  previewRuntimeCapability: () => mocks.capability,
   rememberPreviewUrl: mocks.rememberPreviewUrl,
   updatePreviewServerSnapshot: vi.fn(),
   useThreadPreviewState: () => ({
@@ -82,11 +100,23 @@ vi.mock("~/state/environments", () => ({
 }));
 
 vi.mock("~/state/preview", () => ({
-  previewEnvironment: { open: {}, resize: {} },
+  previewEnvironment: { open: {}, navigate: {}, resize: {} },
 }));
 
 vi.mock("~/state/use-atom-command", () => ({
-  useAtomCommand: () => vi.fn(),
+  useAtomCommand: (_atom: unknown, label?: string) =>
+    label === "preview navigate" ? mocks.navigateCommand : vi.fn(),
+}));
+
+vi.mock("~/browser/hostedFrameReload", () => ({
+  reloadHostedFrame: mocks.reloadHostedFrame,
+}));
+
+vi.mock("./useFramedServerStatus", () => ({ useFramedServerStatus: () => null }));
+vi.mock("./PreviewServerNotStarted", () => ({ PreviewServerNotStarted: () => null }));
+vi.mock("./PreviewFrameUnrendered", () => ({
+  PreviewFrameUnrendered: () => null,
+  useFrameUnrenderedHint: () => false,
 }));
 
 vi.mock("~/browser/browserRecording", () => ({
@@ -142,18 +172,19 @@ vi.mock("~/components/ui/toast", () => ({
 }));
 
 vi.mock("./previewBridge", () => ({
-  previewBridge: {
-    navigate: mocks.navigate,
-    pictureInPicture: {
-      open: mocks.openPictureInPicture,
-      close: mocks.closePictureInPicture,
-    },
+  // A getter, so a test can take the bridge away and exercise the browser path
+  // on the same module graph.
+  get previewBridge() {
+    return mocks.previewBridge;
   },
 }));
 
 vi.mock("./PreviewChromeRow", () => ({
   PreviewChromeRow: (props: {
     onSubmit: (url: string) => void;
+    onBack?: (() => void) | undefined;
+    onForward?: (() => void) | undefined;
+    onRefresh: () => void;
     onPictureInPicture?: () => void;
     pictureInPicture?: boolean;
     trailingActions?: {
@@ -161,6 +192,9 @@ vi.mock("./PreviewChromeRow", () => ({
     };
   }) => {
     mocks.submittedUrl = props.onSubmit;
+    mocks.chromeBack = props.onBack;
+    mocks.chromeForward = props.onForward;
+    mocks.chromeRefresh = props.onRefresh;
     mocks.togglePictureInPicture = props.onPictureInPicture ?? null;
     mocks.toggleNativePictureInPicture =
       props.trailingActions?.props.onNativePictureInPicture ?? null;
@@ -215,6 +249,19 @@ describe("PreviewView navigation", () => {
     mocks.closePictureInPicture.mockClear();
     mocks.pictureInPicture = false;
     mocks.showEmptyState = false;
+    mocks.capability = "webview";
+    mocks.previewBridge = {
+      navigate: mocks.navigate,
+      pictureInPicture: {
+        open: mocks.openPictureInPicture,
+        close: mocks.closePictureInPicture,
+      },
+    };
+    mocks.reloadHostedFrame.mockClear();
+    mocks.navigateCommand.mockClear();
+    mocks.chromeBack = undefined;
+    mocks.chromeForward = undefined;
+    mocks.chromeRefresh = null;
   });
 
   it.each([
@@ -326,5 +373,67 @@ describe("PreviewView navigation", () => {
     await vi.waitFor(() =>
       expect(mocks.closePictureInPicture).toHaveBeenCalledWith(TEST_RUNTIME_TAB_ID),
     );
+  });
+});
+
+describe("PreviewView under the frame capability", () => {
+  const props = {
+    threadRef: {
+      environmentId: EnvironmentId.make("environment-1"),
+      threadId: ThreadId.make("thread-1"),
+    },
+    tabId: "tab-1",
+    visible: true,
+  } as const;
+
+  beforeEach(() => {
+    mocks.capability = "frame";
+    // There is no desktop bridge in a browser, which is what makes the
+    // capability "frame" in the first place.
+    mocks.previewBridge = null;
+    mocks.navigate.mockClear();
+    mocks.rememberPreviewUrl.mockClear();
+    mocks.reloadHostedFrame.mockClear();
+    mocks.navigateCommand.mockClear();
+    mocks.submittedUrl = null;
+    mocks.chromeBack = undefined;
+    mocks.chromeForward = undefined;
+    mocks.chromeRefresh = null;
+    mocks.showEmptyState = false;
+    mocks.miniPlayerTabId = null;
+  });
+
+  it("offers no back or forward, because a frame keeps no history to walk", () => {
+    renderToStaticMarkup(<PreviewView {...props} />);
+
+    expect(mocks.chromeBack).toBeUndefined();
+    expect(mocks.chromeForward).toBeUndefined();
+  });
+
+  it("still offers refresh, which replaces the frame element", () => {
+    renderToStaticMarkup(<PreviewView {...props} />);
+
+    expect(mocks.chromeRefresh).not.toBeNull();
+    mocks.chromeRefresh?.();
+    expect(mocks.reloadHostedFrame).toHaveBeenCalledWith(TEST_RUNTIME_TAB_ID);
+  });
+
+  it("navigates by writing to the server rather than through the desktop bridge", async () => {
+    renderToStaticMarkup(<PreviewView {...props} />);
+
+    expect(mocks.submittedUrl).not.toBeNull();
+    mocks.submittedUrl?.("localhost:5173/app");
+
+    await vi.waitFor(() =>
+      expect(mocks.navigateCommand).toHaveBeenCalledWith({
+        environmentId: "environment-1",
+        input: {
+          threadId: "thread-1",
+          tabId: "tab-1",
+          url: "http://localhost:5173/app",
+        },
+      }),
+    );
+    expect(mocks.navigate).not.toHaveBeenCalled();
   });
 });

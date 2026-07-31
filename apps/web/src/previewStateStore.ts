@@ -448,9 +448,28 @@ export function removePreviewThread(ref: ScopedThreadRef): void {
   changedPreviewThreadKeys.delete(threadKey);
 }
 
+/**
+ * What kind of page surface this runtime can host.
+ *
+ * - `webview` — a Chromium <webview> the renderer can read, navigate and
+ *   capture. Only the desktop app has one.
+ * - `frame` — a cross-origin <iframe>. It shows the page and nothing more:
+ *   no history, no title, no way to tell a blank page from a refused one.
+ * - `none` — no DOM at all, which is server rendering.
+ *
+ * `previewBridge` is resolved at import time, so this is stable for the life
+ * of the page and does not need to be a hook.
+ */
+export type PreviewRuntimeCapability = "webview" | "frame" | "none";
+
+export function previewRuntimeCapability(): PreviewRuntimeCapability {
+  if (typeof window === "undefined") return "none";
+  return window.desktopBridge?.preview ? "webview" : "frame";
+}
+
+/** Whether this runtime can show a page at all, by any means. */
 export function isPreviewSupportedInRuntime(): boolean {
-  if (typeof window === "undefined") return false;
-  return Boolean(window.desktopBridge?.preview);
+  return previewRuntimeCapability() !== "none";
 }
 
 export function resetPreviewStateForTests(): void {

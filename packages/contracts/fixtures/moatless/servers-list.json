@@ -1,0 +1,35 @@
+{
+  "servers": [
+    {
+      "name": "web",
+      "label": "T3 Code (Moatless)",
+      "port": 5733,
+      "status": "started",
+      "url": "https://91f70cd4-256a-45c2-bc3f-8d301789d6e5--5733.preview.soaplabstest.com",
+      "error": null,
+      "detail": null,
+      "default": true
+    },
+    {
+      "name": "shadow-backend",
+      "label": "Shadow Backend",
+      "port": 8080,
+      "status": "starting",
+      "url": null,
+      "error": null,
+      "detail": null,
+      "default": false
+    },
+    {
+      "name": "docs",
+      "label": "Docs",
+      "port": 4000,
+      "status": "failed",
+      "url": null,
+      "error": "CrashLoopBackOff",
+      "detail": "bash: line 1: vp: command not found",
+      "default": false
+    }
+  ],
+  "sandboxStatus": "ready"
+}

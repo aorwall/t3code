@@ -6,11 +6,11 @@ each merge is decided almost entirely by how quickly the person doing it can
 answer one question per conflict: **is this ours, theirs, or converged?**
 
 This file answers that. It is the merge-time lookup table, not a history essay;
-the reasoning lives in [the decision log](#4-decision-log) at the bottom.
+the reasoning lives in [the decision log](#5-decision-log) at the bottom.
 
 ## Why a table and not just notes
 
-A merge can hurt us in four different ways, and only the first one is the one
+A merge can hurt us in five different ways, and only the first one is the one
 git warns you about.
 
 1. **Conflict.** Upstream and we edited the same lines. Git stops. You need to
@@ -19,24 +19,34 @@ git warns you about.
    back in a _new_ file, or adds a new call site inside code we kept. Git reports
    a clean add and merges it without a word. Nothing conflicts, nothing fails,
    and the thing we removed is back → [§2 Deleted surfaces](#2-deleted-upstream-surfaces).
-3. **Silent convergence.** Upstream independently builds the thing we forked in
+3. **Silent loss.** We changed something, upstream changed it too, and whoever
+   resolves the conflict cannot tell our line from theirs — so they take theirs
+   and our change is gone. Git does warn here, but only that the lines collided;
+   it cannot say which side was deliberate → [§3 Fork inventory](#3-fork-inventory--what-we-changed).
+4. **Silent convergence.** Upstream independently builds the thing we forked in
    order to build. Nothing conflicts textually, but our version is now redundant
-   and the two implementations rot against each other → [§3 Convergence watch
-   list](#3-convergence-watch-list).
-4. **Silent adoption.** Upstream does new work in an area we own, in files that
+   and the two implementations rot against each other → [§4 Convergence watch
+   list](#4-convergence-watch-list).
+5. **Silent adoption.** Upstream does new work in an area we own, in files that
    did not exist at the fork point. No conflict, no tripwire — we simply inherit
    a decision nobody made → checklist step 3, read against
    [§1's concerns](#fork-owned-concerns).
 
-Hazards 2 and 4 are the dangerous pair, because both are invisible: the merge is
+Hazards 2 and 5 are the dangerous pair, because both are invisible: the merge is
 clean and the tests pass. Prose cannot catch either, so §2 is written as greps
 that must return nothing, and step 3 of the checklist is a command that lists what
 to decide on.
 
-Hazard 4 is also why there is no blanket "anything unlisted is theirs" rule. Every
+Hazard 5 is also why there is no blanket "anything unlisted is theirs" rule. Every
 merge brings genuinely new upstream work, and some of it lands in areas we own. A
 default of "theirs" would quietly accept all of it — see the 2026-07-30 merge
-entry in [§4](#4-decision-log) for a live example that got in exactly that way.
+entry in [§5](#5-decision-log) for a live example that got in exactly that way.
+
+Hazard 3 is the one §1 alone cannot cover. The path table is a list of files we
+expect to fight over; §3 is a list of changes we made, which is a different set
+and a larger one. Most fork changes never conflict and so never earn a row in
+§1 — until the merge where they do, by which point nobody remembers they were
+ours.
 
 ## Merge checklist
 
@@ -62,16 +72,25 @@ git merge upstream/main
 
    Read the hits against the [fork-owned concerns](#fork-owned-concerns). Most
    will be irrelevant; the ones that are not are new decisions, and they go in
-   [§4](#4-decision-log) whichever way you decide. Widen the filter if a concern
+   [§5](#5-decision-log) whichever way you decide. Widen the filter if a concern
    grows vocabulary the pattern does not cover.
 
-4. Read [§3](#3-convergence-watch-list) and check whether upstream has since
+4. Check every conflicting path against [§3](#3-fork-inventory--what-we-changed)
+   before resolving it. A path listed there carries a change we made on purpose;
+   taking upstream's side drops it silently.
+5. Read [§4](#4-convergence-watch-list) and check whether upstream has since
    built any of it. If so, prefer their implementation and shrink our delta.
-5. `pnpm typecheck && pnpm test && pnpm lint && pnpm fmt:check`.
-6. Append a dated entry to [§4](#4-decision-log): what step 3 surfaced and what
+6. `pnpm typecheck && pnpm test && pnpm lint && pnpm fmt:check`.
+7. Append a dated entry to [§5](#5-decision-log): what step 3 surfaced and what
    you decided, plus any conflict you resolved by judgement rather than by
    looking it up here. An entry saying "swept, nothing to decide" is worth
    writing — it tells the next merge the sweep happened.
+
+**Outside a merge:** a change that grows the fork delta adds its row to
+[§3](#3-fork-inventory--what-we-changed) in the same commit that makes it. The
+inventory is only worth reading if it is complete, and the moment it is cheapest
+to write is the moment the change is being made — not the merge that trips over
+it months later.
 
 ## 1. Ownership
 
@@ -104,19 +123,21 @@ of the checklist exists.
 `converged` means take upstream wholesale, then re-apply only the deltas listed —
 never hand-merge a converged file, or the fork delta grows every time.
 
-| Path                                                                                                                                 | Policy                     | Why                                                                                                                                                                |
-| ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `apps/web/src/environments/primary/auth.ts`                                                                                          | ours                       | Auth is fork-owned; we do not support the T3 backend.                                                                                                              |
-| `apps/web/src/environments/primary/httpLayer.ts`                                                                                     | ours                       | Always sends the Moatless session cookie; upstream's same-origin gate is deliberately gone.                                                                        |
-| `apps/web/src/routes/login.tsx`                                                                                                      | ours                       | Fork-only route. Upstream has no `/login`.                                                                                                                         |
-| `apps/web/src/authBootstrap.test.ts`                                                                                                 | ours                       | Covers the fork's auth path.                                                                                                                                       |
-| `apps/web/vite.config.ts`                                                                                                            | converged                  | See the delta list below.                                                                                                                                          |
-| `docs/fork/**`                                                                                                                       | ours                       | This directory is fork-only by construction; upstream will never add files here.                                                                                   |
-| `docs/integrations/moatless-*.md`, `docs/reference/client-server-contract.md`, `docs/reference/moatless-concept-map.md`, `.plans/**` | ours                       | Fork-authored docs.                                                                                                                                                |
-| `scripts/dev-runner.ts`, `scripts/dev-runner.test.ts`                                                                                | **theirs, verbatim**       | We had a delta here and gave it up (log 2026-07-30). If a conflict appears, we have re-grown one by accident — check why before resolving.                         |
-| `.github/workflows/**`                                                                                                               | ours                       | All nine workflows are renamed to `*.yml.disabled` and cannot run here (log 2026-07-30). Keep the rename; let upstream's content changes land on the renamed path. |
-| unlisted, and outside the concerns above                                                                                             | theirs                     | Nothing to decide. Do not grow a fork delta without adding a row here.                                                                                             |
-| unlisted, but inside a fork-owned concern                                                                                            | **decide, then add a row** | The table is behind reality; catch it up in this merge instead of leaving the next one to rediscover it.                                                           |
+| Path                                                                                                                                                                                                                             | Policy                     | Why                                                                                                                                                                |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apps/web/src/environments/primary/auth.ts`                                                                                                                                                                                      | ours                       | Auth is fork-owned; we do not support the T3 backend.                                                                                                              |
+| `apps/web/src/environments/primary/httpLayer.ts`                                                                                                                                                                                 | ours                       | Always sends the Moatless session cookie; upstream's same-origin gate is deliberately gone.                                                                        |
+| `apps/web/src/routes/login.tsx`                                                                                                                                                                                                  | ours                       | Fork-only route. Upstream has no `/login`.                                                                                                                         |
+| `apps/web/src/authBootstrap.test.ts`                                                                                                                                                                                             | ours                       | Covers the fork's auth path.                                                                                                                                       |
+| `apps/web/vite.config.ts`                                                                                                                                                                                                        | converged                  | See the delta list below.                                                                                                                                          |
+| `docs/fork/**`                                                                                                                                                                                                                   | ours                       | This directory is fork-only by construction; upstream will never add files here.                                                                                   |
+| `docs/integrations/moatless-*.md`, `docs/reference/client-server-contract.md`, `docs/reference/moatless-concept-map.md`, `.plans/**`                                                                                             | ours                       | Fork-authored docs.                                                                                                                                                |
+| `scripts/dev-runner.ts`, `scripts/dev-runner.test.ts`                                                                                                                                                                            | **theirs, verbatim**       | We had a delta here and gave it up (log 2026-07-30). If a conflict appears, we have re-grown one by accident — check why before resolving.                         |
+| `apps/web/src/components/servers/**`, `apps/web/src/browser/**`, `apps/web/src/state/servers.ts`, `packages/contracts/src/servers.ts`, `packages/contracts/fixtures/moatless/**`, `packages/client-runtime/src/state/servers.ts` | ours                       | Fork-only files. Upstream has no thread-servers concept and no hosted preview frame — see [§3](#3-fork-inventory--what-we-changed).                                |
+| `apps/server/src/ws.ts`, `apps/server/src/auth/RpcAuthorization.ts`                                                                                                                                                              | converged                  | Upstream's, plus exactly three `servers.*` method entries in each. Take theirs, re-add the three. Never take ours wholesale — these are high-churn upstream files. |
+| `.github/workflows/**`                                                                                                                                                                                                           | ours                       | All nine workflows are renamed to `*.yml.disabled` and cannot run here (log 2026-07-30). Keep the rename; let upstream's content changes land on the renamed path. |
+| unlisted, and outside the concerns above                                                                                                                                                                                         | theirs                     | Nothing to decide. Do not grow a fork delta without adding a row here.                                                                                             |
+| unlisted, but inside a fork-owned concern                                                                                                                                                                                        | **decide, then add a row** | The table is behind reality; catch it up in this merge instead of leaving the next one to rediscover it.                                                           |
 
 ### Fork delta in the web vite config
 
@@ -155,7 +176,56 @@ source and is expected to keep mentioning whatever it mentions.
 > `removed` in the same commit that does the removal, and only then does its
 > tripwire mean anything.
 
-## 3. Convergence watch list
+## 3. Fork inventory — what we changed
+
+[§1](#1-ownership) says who wins a conflict. This says what we actually changed
+and why — including the changes that have never conflicted and so have no row
+up there. Read it when resolving a conflict (is this line ours?), when a test
+fails after a merge (did we own that behaviour?), and when deciding whether a
+fork change can finally be dropped.
+
+Grouped by surface. A row's paths are the whole of that change; if you find fork
+code outside them, the inventory is behind reality — add it.
+
+### Auth and session
+
+| Change                                                            | Paths                                                                                                                                  | Why it exists                                                                                                                                                              |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Moatless cookie session replaces upstream's bootstrap and pairing | `apps/web/src/environments/primary/auth.ts`, `.../httpLayer.ts`, `apps/web/src/routes/login.tsx`, `apps/web/src/authBootstrap.test.ts` | We do not run the T3 backend, so there is no backend to bootstrap a session against. `httpLayer` always sends the Moatless cookie and upstream's same-origin gate is gone. |
+
+Clerk, device pairing and the T3 session bootstrap are decided-out but still in
+the tree; they are tracked as removals in [§2](#2-deleted-upstream-surfaces),
+not as changes here.
+
+### Dev server and hosting
+
+| Change                                | Paths                     | Why it exists                                                                                                                                                                                                                     |
+| ------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Proxy target, allowed hosts, dev pins | `apps/web/vite.config.ts` | The web app is served from a sandbox and proxied to a Moatless backend that is not on the port upstream assumes. The exact delta is [in §1](#fork-delta-in-the-web-vite-config) — this file is converged, so never hand-merge it. |
+
+### Repo hygiene
+
+| Change                                | Paths                                                                                                                                                | Why it exists                                                                                      |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Every GitHub workflow renamed off     | `.github/workflows/*.yml.disabled`, `.github/workflows/README.md`                                                                                    | No Blacksmith runners here, so all nine queued forever (log 2026-07-30).                           |
+| Fork-authored documentation and plans | `docs/fork/**`, `docs/integrations/moatless-*.md`, `docs/reference/client-server-contract.md`, `docs/reference/moatless-concept-map.md`, `.plans/**` | Describes the Moatless side of the fork; upstream has no equivalent and will never add files here. |
+
+### Thread servers and the web preview
+
+Added 2026-07-31 (`.plans/preview-servers-in-t3-web.md`). A hosted environment
+runs a thread's servers in containers and can name a URL for each; upstream's own
+server runs threads on the machine it is on and has no such concept. The whole
+group is therefore fork-added, and it is the largest single delta in the tree.
+
+| Change                                           | Paths                                                                                                                                                                                                                      | Why it exists                                                                                                                                                                                                                                   |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The `servers.*` contract group                   | `packages/contracts/src/servers.ts`, and its wiring in `.../rpc.ts`, `.../index.ts`, `.../preview.ts`; fixtures under `packages/contracts/fixtures/moatless/`                                                              | Three methods — list, status subscription, log subscription. The fixtures are recorded Moatless responses, so a backend change that breaks the shape fails a test here rather than in a browser.                                                |
+| Server state in the client runtime               | `packages/client-runtime/src/state/servers.ts` (+ test), `.../src/rpc/client.ts`, `packages/client-runtime/package.json`                                                                                                   | Every other client surface reads its state through the runtime; servers had to as well or the web app would be the only thing that knows about them.                                                                                            |
+| The Servers view in the right panel              | `apps/web/src/components/servers/**`, `apps/web/src/state/servers.ts`, `apps/web/src/components/RightPanelTabs.tsx`, `apps/web/src/rightPanelStore.ts`, `apps/web/src/components/ChatView.tsx`, `apps/web/src/AppRoot.tsx` | Lists what a thread declares, its status, and streams one server's log.                                                                                                                                                                         |
+| Preview pages hosted in a frame on the web       | `apps/web/src/browser/**`, `apps/web/src/components/preview/**`, `apps/web/src/previewStateStore.ts`, `apps/web/src/previewRuntimeCapability.test.ts`                                                                      | Desktop drives a real browser; the web build cannot, so a preview target becomes an iframe with its own chrome and its own not-started state.                                                                                                   |
+| Three `servers.*` stubs in upstream's own server | `apps/server/src/ws.ts`, `apps/server/src/auth/RpcAuthorization.ts`                                                                                                                                                        | **The one fork change inside upstream's server.** A method in `WS_METHODS` that no server answers is a runtime hole, so this one answers with an empty list and two silent streams. If upstream ships anything server-shaped, drop these first. |
+
+## 4. Convergence watch list
 
 Places where we built something because upstream had not. If upstream ships its
 own version, theirs wins and our delta should shrink or disappear.
@@ -165,12 +235,38 @@ own version, theirs wins and our delta should shrink or disappear.
 | Auth                      | Moatless cookie session, `/login` route         | Nothing — auth is fork-owned by decision, not by accident. Take ours even if upstream reworks it.                                                                           |
 | Dev proxy / single-origin | `proxyTargetOverride` chain in `vite.config.ts` | Already converged once (2026-07-30). Any further upstream work on `DEV_PROXIED_PATH_PREFIXES`, `T3CODE_SINGLE_ORIGIN_DEV` or `resolveDevProxyTarget` should be taken as-is. |
 | Allowed hosts             | `T3CODE_ALLOWED_HOSTS` alias                    | Upstream consolidating on `T3CODE_DEV_ALLOWED_HOSTS`. If deployments can be changed to inject that name, drop our alias.                                                    |
+| Thread servers            | The `servers.*` contract group and its UI       | Any upstream concept of a server a thread owns — theirs wins and the whole group goes, stubs first. Watch `WS_METHODS` for names in that shape.                             |
+| Hosted preview            | `apps/web/src/browser/**` iframe host           | Upstream giving the web build a preview surface of its own. Today only desktop has one, which is why this exists.                                                           |
 
-## 4. Decision log
+## 5. Decision log
 
 Append-only. Newest first. Each entry records what was decided, by whom, and the
 upstream context at the time — so a future merge can tell a deliberate choice
 from an accident.
+
+### 2026-07-31 — started tracking our own delta, not just upstream's
+
+This file could answer "who wins this conflict" but not "what did we change" —
+and the second question is the one you are actually asking when git stops on a
+line you do not recognise. [§1](#1-ownership) only ever listed files we expected
+to fight over, which is a much smaller set than the files we changed: the whole
+thread-servers group, roughly forty files, appeared nowhere. So a merge that
+touched any of it would have been resolved by guesswork.
+
+[§3](#3-fork-inventory--what-we-changed) is that missing list, and hazard 3 in
+the preamble is the failure it exists to prevent. Two things follow from it being
+worth having: it is only useful if complete, so the checklist now asks for a row
+in the same commit as the change rather than at the next merge; and step 4 now
+makes reading it part of resolving a conflict rather than something to remember.
+
+The one entry worth reading twice is the last row of the thread-servers table.
+`apps/server/src/ws.ts` and `apps/server/src/auth/RpcAuthorization.ts` are
+upstream's, and we changed them — the only place in the fork where that is true
+of the T3 server. The `servers.*` methods live in the shared contract, so a
+client can call them against any server, and upstream's would otherwise fail the
+call outright. Three stubs — an empty list and two streams that never emit — keep
+that honest. High-churn files, so expect the conflict; the resolution is to keep
+the three method entries and take upstream's everything else.
 
 ### 2026-07-30 — auth is fork-owned; drop Clerk and pairing
 

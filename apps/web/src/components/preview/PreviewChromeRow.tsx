@@ -32,8 +32,9 @@ interface Props {
   inputDisabled?: boolean | undefined;
   /** Bumping this value re-focuses and selects the URL input. */
   focusUrlNonce?: number | undefined;
-  onBack: () => void;
-  onForward: () => void;
+  /** Omit where the surface keeps no history to walk; the button is then absent. */
+  onBack?: (() => void) | undefined;
+  onForward?: (() => void) | undefined;
   onRefresh: () => void;
   onSubmit: (url: string) => void;
   /** When provided, renders an "Open in browser" affordance to the right. */
@@ -113,40 +114,44 @@ export function PreviewChromeRow({
     <div className="relative">
       <form onSubmit={submit} className="surface-subheader gap-1 px-2" data-surface-subheader>
         <div className="flex items-center gap-0.5" role="group" aria-label="Navigation">
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={canGoBack ? onBack : NOOP}
-                  disabled={!canGoBack}
-                  aria-label="Back"
-                  type="button"
-                />
-              }
-            >
-              <ArrowLeft />
-            </TooltipTrigger>
-            <TooltipPopup>Back</TooltipPopup>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={canGoForward ? onForward : NOOP}
-                  disabled={!canGoForward}
-                  aria-label="Forward"
-                  type="button"
-                />
-              }
-            >
-              <ArrowRight />
-            </TooltipTrigger>
-            <TooltipPopup>Forward</TooltipPopup>
-          </Tooltip>
+          {onBack ? (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={canGoBack ? onBack : NOOP}
+                    disabled={!canGoBack}
+                    aria-label="Back"
+                    type="button"
+                  />
+                }
+              >
+                <ArrowLeft />
+              </TooltipTrigger>
+              <TooltipPopup>Back</TooltipPopup>
+            </Tooltip>
+          ) : null}
+          {onForward ? (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={canGoForward ? onForward : NOOP}
+                    disabled={!canGoForward}
+                    aria-label="Forward"
+                    type="button"
+                  />
+                }
+              >
+                <ArrowRight />
+              </TooltipTrigger>
+              <TooltipPopup>Forward</TooltipPopup>
+            </Tooltip>
+          ) : null}
           <Tooltip>
             <TooltipTrigger
               render={

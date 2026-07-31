@@ -1,0 +1,26 @@
+{
+  "sessions": [
+    {
+      "threadId": "91f70cd4-256a-45c2-bc3f-8d301789d6e5",
+      "tabId": "0b1cf3a2-2f2e-4a4e-9a2b-1f38a8a5a2d1",
+      "navStatus": {
+        "_tag": "Success",
+        "url": "https://91f70cd4-256a-45c2-bc3f-8d301789d6e5--5733.preview.soaplabstest.com",
+        "title": ""
+      },
+      "canGoBack": false,
+      "canGoForward": false,
+      "updatedAt": "2026-07-31T09:12:44.187293Z"
+    },
+    {
+      "threadId": "91f70cd4-256a-45c2-bc3f-8d301789d6e5",
+      "tabId": "6a0c9e51-8f34-4f9c-8a26-3d0e2c9a1b77",
+      "navStatus": { "_tag": "Idle" },
+      "canGoBack": false,
+      "canGoForward": false,
+      "updatedAt": "2026-07-31T09:13:02.004881Z"
+    }
+  ],
+  "serverEpoch": "2f6f4f8c-7d3a-4a1c-9a4a-0c6f8a4e2b19",
+  "revision": 7
+}

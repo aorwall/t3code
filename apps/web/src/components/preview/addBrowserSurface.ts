@@ -13,10 +13,13 @@ import { openPreviewSession } from "./openPreviewSession";
 export async function addBrowserSurface<E>(input: {
   readonly threadRef: ScopedThreadRef;
   readonly openPreview: OpenPreviewMutation<E>;
+  /** Omit for an empty tab the user can type into. */
+  readonly url?: string | undefined;
 }): Promise<AtomCommandResult<void, E>> {
   const result = await openPreviewSession({
     openPreview: input.openPreview,
     threadRef: input.threadRef,
+    ...(input.url === undefined ? {} : { url: input.url }),
   });
   return mapAtomCommandResult(result, (snapshot) => {
     useRightPanelStore.getState().openBrowser(input.threadRef, snapshot.tabId);

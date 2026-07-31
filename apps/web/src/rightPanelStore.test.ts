@@ -447,3 +447,76 @@ describe("rightPanelStore", () => {
     ).toEqual(["terminal:term-1", "browser:tab-b", "browser:tab-c"]);
   });
 });
+
+describe("rightPanelStore servers surface", () => {
+  it("keeps existing surfaces when a version 7 workspace gains the servers kind", () => {
+    expect(
+      migratePersistedRightPanelState({
+        byThreadKey: {
+          "env-1:thread-A": {
+            isOpen: true,
+            activeSurfaceId: "diff",
+            surfaces: [
+              { id: "browser:tab-a", kind: "preview", resourceId: "tab-a" },
+              { id: "diff", kind: "diff" },
+            ],
+          },
+        },
+      }),
+    ).toEqual({
+      byThreadKey: {
+        "env-1:thread-A": {
+          isOpen: true,
+          activeSurfaceId: "diff",
+          surfaces: [
+            { id: "browser:tab-a", kind: "preview", resourceId: "tab-a" },
+            { id: "diff", kind: "diff" },
+          ],
+        },
+      },
+    });
+  });
+
+  it("drops a surface kind this build does not know, and keeps the rest", () => {
+    expect(
+      migratePersistedRightPanelState({
+        byThreadKey: {
+          "env-1:thread-A": {
+            isOpen: true,
+            activeSurfaceId: "from-the-future",
+            surfaces: [
+              { id: "diff", kind: "diff" },
+              { id: "from-the-future", kind: "from-the-future" },
+            ],
+          },
+        },
+      }),
+    ).toEqual({
+      byThreadKey: {
+        "env-1:thread-A": {
+          isOpen: true,
+          activeSurfaceId: null,
+          surfaces: [{ id: "diff", kind: "diff" }],
+        },
+      },
+    });
+  });
+
+  it("keeps servers as a singleton surface", () => {
+    useRightPanelStore.getState().open(refA, "servers");
+    useRightPanelStore.getState().open(refA, "diff");
+    useRightPanelStore.getState().open(refA, "servers");
+
+    const state = selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refA);
+    expect(state.surfaces.map((surface) => surface.id)).toEqual(["servers", "diff"]);
+    expect(state.activeSurfaceId).toBe("servers");
+  });
+
+  it("keeps the servers surface out of another thread", () => {
+    useRightPanelStore.getState().open(refA, "servers");
+
+    expect(
+      selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refB).surfaces,
+    ).toEqual([]);
+  });
+});

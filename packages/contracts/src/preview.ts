@@ -1,10 +1,15 @@
 /**
  * Preview - Schemas for the in-app browser preview surface.
  *
- * The preview is desktop-only (Chromium <webview>); the server tracks per-thread
- * tab metadata so it survives client reconnects and multi-window. The desktop
- * renderer mediates: it owns the actual <webview> and reports navigation back to
- * the server via these RPCs, the server fans events to all subscribers.
+ * The server tracks per-thread tab metadata so it survives client reconnects and
+ * multi-window. The renderer owns the page surface — a Chromium <webview> on the
+ * desktop app, a sandboxed <iframe> in the browser — and drives it through these
+ * RPCs; the server fans events to all subscribers.
+ *
+ * Only the desktop renderer can read the page it hosts, so `preview.reportStatus`,
+ * `canGoBack` and `canGoForward` are desktop-only in practice. A browser client
+ * navigates and lists like any other, and leaves navigation state at whatever the
+ * last desktop report left it.
  *
  * @module Preview
  */

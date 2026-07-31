@@ -49,4 +49,26 @@ describe("addBrowserSurface", () => {
       ).surfaces.map((surface) => surface.id),
     ).toEqual(["browser:tab-1", "browser:tab-2"]);
   });
+
+  it("opens the chosen server's URL rather than an empty tab", async () => {
+    const opened = {
+      ...snapshot("tab-1"),
+      navStatus: { _tag: "Success", url: "https://task--5733.example.com/", title: "" },
+    } as const;
+    const openPreview = vi.fn(async (_input: PreviewOpenInput) => AsyncResult.success(opened));
+
+    await addBrowserSurface({
+      threadRef,
+      openPreview: ({ input }) => openPreview(input),
+      url: "https://task--5733.example.com/",
+    });
+
+    expect(openPreview).toHaveBeenCalledWith({
+      threadId: "thread-1",
+      url: "https://task--5733.example.com/",
+    });
+    expect(readThreadPreviewState(threadRef).recentlySeenUrls).toEqual([
+      "https://task--5733.example.com/",
+    ]);
+  });
 });

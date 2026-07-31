@@ -143,6 +143,14 @@ import {
   ResourceTelemetryRetryResult,
   ResourceTelemetrySnapshot,
 } from "./resourceTelemetry.ts";
+import {
+  ServerLogLine,
+  ServerLogsSubscribeInput,
+  ServersListInput,
+  ServersListResult,
+  ServerStatusSnapshot,
+  ServerStatusSubscribeInput,
+} from "./servers.ts";
 import { ServerSettings, ServerSettingsError, ServerSettingsPatch } from "./settings.ts";
 import {
   SourceControlCloneRepositoryInput,
@@ -212,6 +220,10 @@ export const WS_METHODS = {
   previewAutomationRespond: "previewAutomation.respond",
   previewAutomationFocusHost: "previewAutomation.focusHost",
 
+  // Thread server methods
+  serversList: "servers.list",
+  serversSubscribeLogs: "servers.subscribeLogs",
+
   // Server meta
   serverProbe: "server.probe",
   serverGetConfig: "server.getConfig",
@@ -247,6 +259,7 @@ export const WS_METHODS = {
   subscribeTerminalEvents: "subscribeTerminalEvents",
   subscribeTerminalMetadata: "subscribeTerminalMetadata",
   subscribePreviewEvents: "subscribePreviewEvents",
+  subscribeServerStatus: "subscribeServerStatus",
   subscribeDiscoveredLocalServers: "subscribeDiscoveredLocalServers",
   subscribeServerConfig: "subscribeServerConfig",
   subscribeServerLifecycle: "subscribeServerLifecycle",
@@ -644,6 +657,30 @@ export const WsSubscribePreviewEventsRpc = Rpc.make(WS_METHODS.subscribePreviewE
   stream: true,
 });
 
+export const WsServersListRpc = Rpc.make(WS_METHODS.serversList, {
+  payload: ServersListInput,
+  success: ServersListResult,
+  error: EnvironmentAuthorizationError,
+});
+
+/**
+ * Pushes a whole list whenever it changes. An idle subscription is silent,
+ * so the absence of a message means nothing moved rather than nothing is known.
+ */
+export const WsSubscribeServerStatusRpc = Rpc.make(WS_METHODS.subscribeServerStatus, {
+  payload: ServerStatusSubscribeInput,
+  success: ServerStatusSnapshot,
+  error: EnvironmentAuthorizationError,
+  stream: true,
+});
+
+export const WsServersSubscribeLogsRpc = Rpc.make(WS_METHODS.serversSubscribeLogs, {
+  payload: ServerLogsSubscribeInput,
+  success: ServerLogLine,
+  error: EnvironmentAuthorizationError,
+  stream: true,
+});
+
 export const WsSubscribeDiscoveredLocalServersRpc = Rpc.make(
   WS_METHODS.subscribeDiscoveredLocalServers,
   {
@@ -818,6 +855,9 @@ export const WsRpcGroup = RpcGroup.make(
   WsPreviewAutomationRespondRpc,
   WsPreviewAutomationFocusHostRpc,
   WsSubscribePreviewEventsRpc,
+  WsServersListRpc,
+  WsSubscribeServerStatusRpc,
+  WsServersSubscribeLogsRpc,
   WsSubscribeDiscoveredLocalServersRpc,
   WsSubscribeServerConfigRpc,
   WsSubscribeServerLifecycleRpc,
