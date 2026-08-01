@@ -129,6 +129,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
@@ -145,6 +146,10 @@ jobs:
           # and everything after it — a cache would export hundreds of MB per
           # run to serve a hit rate near zero. The cold build is ~2 minutes.
 
+      # Runs on failure too, so it has to report what happened rather than what
+      # was intended: `publish` only says the run was allowed to push, and a run
+      # whose push was rejected still has it set. Read the build step's outcome
+      # for the other half.
       - name: Summarize
         if: always()
         run: |
@@ -153,11 +158,14 @@ jobs:
             echo ""
             echo "| Field | Value |"
             echo "| --- | --- |"
-            if [ "${{ steps.refs.outputs.publish }}" = "true" ]; then
-              echo "| pushed | \`${{ steps.refs.outputs.tag-list }}\` |"
-            else
+            if [ "${{ steps.refs.outputs.publish }}" != "true" ]; then
               echo "| pushed | no — pull request builds do not publish |"
               echo "| would push | \`${{ steps.refs.outputs.tag-list }}\` |"
+            elif [ "${{ steps.build.outcome }}" = "success" ]; then
+              echo "| pushed | \`${{ steps.refs.outputs.tag-list }}\` |"
+            else
+              echo "| pushed | **no** — the build and push step did not succeed |"
+              echo "| would have pushed | \`${{ steps.refs.outputs.tag-list }}\` |"
             fi
             echo "| commit | \`${{ github.sha }}\` |"
           } >> "$GITHUB_STEP_SUMMARY"

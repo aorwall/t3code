@@ -19,6 +19,13 @@ To publish it needs `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` on this
 repository, with write access to the `aorwall` namespace. Neither is read on the
 pull request path.
 
+Write access to the *namespace*, not to a list of repositories — the first push
+has to create `aorwall/moatless-t3`, and a repository-scoped token cannot name a
+repository that does not exist yet. That failure is easy to misread: `docker
+login` succeeds, because logging in only proves who you are, and the job dies
+later at the push with `401 Unauthorized: access token has insufficient scopes`.
+It is the token's scopes, not the username, not the secret being absent.
+
 ## Runners: only self-hosted ones start here
 
 `staging-runners-large` is an org-scoped ARC scale set defined in
