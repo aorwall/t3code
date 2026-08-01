@@ -7,12 +7,17 @@
  * sees "unexpected server error" where they should have seen nothing at all.
  * A surface we cannot serve therefore has to be absent, not merely broken.
  *
- * # Flipping one on
+ * # Turning one on
  *
- * Change its `false` to `true` here. Nothing else in the tree decides it, and
- * nothing reads a flag it does not name — turning a surface back on is one
- * edit in one file, which is the point of the table being here rather than at
- * each call site.
+ * Delete it. Not `false` → `true`: remove the entry from `FEATURES` and remove
+ * every gate that named it, so the code reads the way upstream's does. A flag
+ * left at `true` is a gate that can never be false — dead weight on every merge
+ * and a standing invitation to wonder what it is still protecting.
+ *
+ * Every name below is therefore a surface this build does *not* show, and the
+ * table's length is how much of T3 the backend has yet to reach. Deleting a
+ * flag is the last commit of the work that made its surface real, not a
+ * separate cleanup to schedule.
  *
  * # Why a constant and not a server capability
  *
@@ -43,8 +48,6 @@ export const FEATURES = {
   terminal: false,
   /** Git and VCS controls: the header's git menu and the composer's context strip. */
   versionControl: false,
-  /** Diff panels, and the toggle and keybinding that open them. */
-  diffs: false,
   /** Adding and removing projects, and the source-control settings behind them. */
   projectManagement: false,
   /** Searching workspace files by path or content. Reading and listing are served. */
