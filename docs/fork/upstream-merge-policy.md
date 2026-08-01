@@ -33,7 +33,7 @@ git warns you about.
    [§1's concerns](#fork-owned-concerns).
 
 Hazards 2 and 5 are the dangerous pair, because both are invisible: the merge is
-clean and the tests pass. Prose cannot catch either, so §2 is written as greps
+clean and the tests pass. Narrative documentation cannot catch either, so §2 is written as greps
 with explicit statuses, and step 3 of the checklist is a command that lists what
 to decide on.
 
