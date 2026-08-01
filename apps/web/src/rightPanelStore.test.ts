@@ -448,7 +448,7 @@ describe("rightPanelStore", () => {
   });
 });
 
-describe("rightPanelStore servers surface", () => {
+describe("rightPanelStore migration", () => {
   it("keeps existing surfaces when a version 7 workspace gains the servers kind", () => {
     expect(
       migratePersistedRightPanelState({
@@ -502,21 +502,25 @@ describe("rightPanelStore servers surface", () => {
     });
   });
 
-  it("keeps servers as a singleton surface", () => {
-    useRightPanelStore.getState().open(refA, "servers");
-    useRightPanelStore.getState().open(refA, "diff");
-    useRightPanelStore.getState().open(refA, "servers");
-
-    const state = selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refA);
-    expect(state.surfaces.map((surface) => surface.id)).toEqual(["servers", "diff"]);
-    expect(state.activeSurfaceId).toBe("servers");
-  });
-
-  it("keeps the servers surface out of another thread", () => {
-    useRightPanelStore.getState().open(refA, "servers");
-
+  it("drops persisted servers surfaces from older builds", () => {
     expect(
-      selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refB).surfaces,
-    ).toEqual([]);
+      migratePersistedRightPanelState({
+        byThreadKey: {
+          "env-1:thread-A": {
+            isOpen: true,
+            activeSurfaceId: "servers",
+            surfaces: [{ id: "servers", kind: "servers" }],
+          },
+        },
+      }),
+    ).toEqual({
+      byThreadKey: {
+        "env-1:thread-A": {
+          isOpen: false,
+          activeSurfaceId: null,
+          surfaces: [],
+        },
+      },
+    });
   });
 });

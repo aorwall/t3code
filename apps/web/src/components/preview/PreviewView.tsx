@@ -63,7 +63,6 @@ import { stackedThreadToast, toastManager } from "~/components/ui/toast";
 interface Props {
   threadRef: ScopedThreadRef;
   tabId?: string | null;
-  configuredUrls?: ReadonlyArray<string> | undefined;
   visible: boolean;
 }
 
@@ -73,7 +72,7 @@ const localApi = typeof window === "undefined" ? null : ensureLocalApi();
  * Single-tab preview surface: chrome row on top, one webview below, empty
  * state when no session exists for the thread.
  */
-export function PreviewView({ threadRef, tabId: requestedTabId, configuredUrls, visible }: Props) {
+export function PreviewView({ threadRef, tabId: requestedTabId, visible }: Props) {
   const [focusUrlNonce, setFocusUrlNonce] = useState<number | undefined>(undefined);
   const [pickActive, setPickActive] = useState(false);
   const activeRecordingTabIds = useActiveBrowserRecordingTabIds();
@@ -707,9 +706,7 @@ export function PreviewView({ threadRef, tabId: requestedTabId, configuredUrls, 
         ) : null}
         {showEmptyState ? (
           <PreviewEmptyState
-            environmentId={threadRef.environmentId}
-            configuredUrls={configuredUrls}
-            recentlySeenUrls={previewState.recentlySeenUrls}
+            threadRef={threadRef}
             onOpenUrl={(next) => void handleOpenServerUrl(next)}
           />
         ) : null}

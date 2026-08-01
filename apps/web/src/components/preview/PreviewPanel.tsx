@@ -11,11 +11,10 @@ interface Props {
   mode: PreviewPanelMode;
   threadRef: ScopedThreadRef;
   tabId?: string | null;
-  configuredUrls?: ReadonlyArray<string> | undefined;
   visible: boolean;
 }
 
-export function PreviewPanel({ mode, threadRef, tabId, configuredUrls, visible }: Props) {
+export function PreviewPanel({ mode, threadRef, tabId, visible }: Props) {
   // Nothing to draw into: server rendering, where there is no DOM at all.
   if (previewRuntimeCapability() === "none") {
     return (
@@ -34,7 +33,6 @@ export function PreviewPanel({ mode, threadRef, tabId, configuredUrls, visible }
       <PreviewView
         threadRef={threadRef}
         {...(tabId !== undefined ? { tabId } : {})}
-        configuredUrls={configuredUrls}
         visible={visible}
       />
     </PreviewPanelShell>

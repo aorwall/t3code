@@ -2,7 +2,7 @@
 
 import type { ScopedThreadRef, ThreadServer } from "@t3tools/contracts";
 
-import { useThreadServers } from "~/components/servers/useThreadServers";
+import { useThreadPreviewServers } from "./useThreadPreviewServers";
 
 function sameOrigin(left: string, right: string): boolean {
   try {
@@ -26,7 +26,7 @@ export function useFramedServerStatus(
   threadRef: ScopedThreadRef | null,
   url: string,
 ): ThreadServer | null {
-  const { servers } = useThreadServers(threadRef);
+  const { servers } = useThreadPreviewServers(threadRef);
   if (url === "") return null;
   return servers.find((server) => server.url !== null && sameOrigin(server.url, url)) ?? null;
 }
