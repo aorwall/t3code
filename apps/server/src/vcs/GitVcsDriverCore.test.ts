@@ -153,6 +153,51 @@ it.effect("uses stable diagnostics for every parsed non-repository command", () 
   }).pipe(Effect.provide(layer));
 });
 
+it.effect("invalidates origin remote cache when a driver mutation adds origin", () =>
+  Effect.gen(function* () {
+    const driver = yield* GitVcsDriver.GitVcsDriver;
+    const cwd = yield* makeTmpDir();
+    const remote = yield* makeTmpDir("git-vcs-driver-remote-");
+    yield* initRepoWithCommit(cwd);
+    yield* git(remote, ["init", "--bare"]);
+
+    const before = yield* driver.statusDetailsLocal(cwd);
+    assert.equal(before.hasOriginRemote, false);
+
+    yield* driver.ensureRemote({ cwd, preferredName: "origin", url: remote });
+
+    const after = yield* driver.statusDetailsLocal(cwd);
+    assert.equal(after.hasOriginRemote, true);
+  }).pipe(Effect.provide(TestLayer)),
+);
+
+it.effect("re-reads origin remote status after cache TTL expiry and bypassed invalidation", () =>
+  Effect.gen(function* () {
+    const driver = yield* GitVcsDriver.GitVcsDriver;
+    const cwd = yield* makeTmpDir();
+    const remote = yield* makeTmpDir("git-vcs-driver-remote-");
+    yield* initRepoWithCommit(cwd);
+    yield* git(remote, ["init", "--bare"]);
+
+    // First call caches hasOriginRemote = false (5-min TTL)
+    assert.equal((yield* driver.statusDetailsLocal(cwd)).hasOriginRemote, false);
+
+    // Add origin via raw git (bypasses invalidation hook)
+    yield* git(cwd, ["remote", "add", "origin", remote]);
+
+    // Cache still has the stale false (TTL not yet expired)
+    const stillCached = yield* driver.statusDetailsLocal(cwd);
+    assert.equal(stillCached.hasOriginRemote, false);
+
+    // Advance past the 5-minute TTL so the cache entry expires
+    yield* TestClock.adjust("6 minutes");
+
+    // After expiry, the next call re-executes and picks up the remote
+    const afterExpiry = yield* driver.statusDetailsLocal(cwd);
+    assert.equal(afterExpiry.hasOriginRemote, true);
+  }).pipe(Effect.provide(TestLayer)),
+);
+
 it.effect("coalesces concurrent ref pages into one repository snapshot", () =>
   Effect.scoped(
     Effect.gen(function* () {
@@ -905,60 +950,68 @@ it.layer(TestLayer)("GitVcsDriver core integration", (it) => {
 
     it.effect("makes background upstream status fetches non-interactive", () =>
       Effect.gen(function* () {
+        const delegate = yield* ChildProcessSpawner.ChildProcessSpawner;
+        const fetchEnv = yield* Ref.make<NodeJS.ProcessEnv | null>(null);
+        const interceptingSpawner = ChildProcessSpawner.make((command) =>
+          Effect.gen(function* () {
+            if (!ChildProcess.isStandardCommand(command)) {
+              return yield* Effect.die("expected a standard Git command");
+            }
+            const isStatusFetch =
+              command.args.includes("fetch") &&
+              command.args.includes("--quiet") &&
+              command.args.includes("--no-tags");
+            if (isStatusFetch) {
+              yield* Ref.set(fetchEnv, command.options.env ?? {});
+              return makeNonRepositoryHandle();
+            }
+            return yield* delegate.spawn(command);
+          }),
+        );
+        const driver = yield* makeGitVcsDriverCore().pipe(
+          Effect.provideService(ChildProcessSpawner.ChildProcessSpawner, interceptingSpawner),
+          Effect.provide(ServerConfigLayer),
+        );
         const cwd = yield* makeTmpDir();
-        const tempDir = yield* makeTmpDir("git-vcs-driver-ssh-env-");
-        const { initialBranch } = yield* initRepoWithCommit(cwd);
-        const fileSystem = yield* FileSystem.FileSystem;
-        const pathService = yield* Path.Path;
-        const sshLogPath = pathService.join(tempDir, "ssh-env.txt");
-        const sshWrapperPath = pathService.join(tempDir, "ssh-wrapper.sh");
+        const remote = yield* makeTmpDir("git-vcs-driver-remote-");
+        const runGit = (workingDirectory: string, args: ReadonlyArray<string>) =>
+          git(workingDirectory, args).pipe(
+            Effect.provideService(GitVcsDriver.GitVcsDriver, driver),
+          );
+        const { initialBranch } = yield* initRepoWithCommit(cwd).pipe(
+          Effect.provideService(GitVcsDriver.GitVcsDriver, driver),
+        );
         const envKeys = [
           "GCM_INTERACTIVE",
           "GIT_ASKPASS",
-          "GIT_SSH",
           "GIT_TERMINAL_PROMPT",
           "SSH_ASKPASS",
           "SSH_ASKPASS_REQUIRE",
-          "T3_TEST_SSH_ASKPASS_LOG",
         ] as const;
         const previousEnv = new Map(envKeys.map((key) => [key, process.env[key]]));
 
-        yield* fileSystem.writeFileString(
-          sshWrapperPath,
-          [
-            "#!/bin/sh",
-            'printf "GCM_INTERACTIVE=%s\\n" "${GCM_INTERACTIVE:-}" > "$T3_TEST_SSH_ASKPASS_LOG"',
-            'printf "GIT_ASKPASS=%s\\n" "${GIT_ASKPASS:-}" >> "$T3_TEST_SSH_ASKPASS_LOG"',
-            'printf "GIT_TERMINAL_PROMPT=%s\\n" "${GIT_TERMINAL_PROMPT:-}" >> "$T3_TEST_SSH_ASKPASS_LOG"',
-            'printf "SSH_ASKPASS=%s\\n" "${SSH_ASKPASS:-}" >> "$T3_TEST_SSH_ASKPASS_LOG"',
-            'printf "SSH_ASKPASS_REQUIRE=%s\\n" "${SSH_ASKPASS_REQUIRE:-}" >> "$T3_TEST_SSH_ASKPASS_LOG"',
-            "exit 1",
-            "",
-          ].join("\n"),
-        );
-        yield* fileSystem.chmod(sshWrapperPath, 0o755);
-        yield* git(cwd, ["remote", "add", "origin", "ssh://example.invalid/repo.git"]);
-        yield* git(cwd, ["update-ref", `refs/remotes/origin/${initialBranch}`, "HEAD"]);
-        yield* git(cwd, ["branch", "--set-upstream-to", `origin/${initialBranch}`]);
+        yield* runGit(remote, ["init", "--bare"]);
+        yield* runGit(cwd, ["remote", "add", "origin", remote]);
+        yield* runGit(cwd, ["push", "-u", "origin", initialBranch]);
 
         yield* Effect.gen(function* () {
-          process.env.GIT_SSH = sshWrapperPath;
           process.env.GCM_INTERACTIVE = "always";
           process.env.GIT_ASKPASS = "git-askpass";
           process.env.GIT_TERMINAL_PROMPT = "1";
           process.env.SSH_ASKPASS = "ssh-askpass";
           process.env.SSH_ASKPASS_REQUIRE = "force";
-          process.env.T3_TEST_SSH_ASKPASS_LOG = sshLogPath;
 
-          yield* (yield* GitVcsDriver.GitVcsDriver).statusDetails(cwd);
+          yield* driver.statusDetails(cwd);
 
-          assert.deepEqual((yield* fileSystem.readFileString(sshLogPath)).trim().split(/\r?\n/), [
-            "GCM_INTERACTIVE=never",
-            "GIT_ASKPASS=",
-            "GIT_TERMINAL_PROMPT=0",
-            "SSH_ASKPASS=",
-            "SSH_ASKPASS_REQUIRE=never",
-          ]);
+          const env = yield* Ref.get(fetchEnv);
+          if (env === null) {
+            assert.fail("expected statusDetails to spawn an upstream fetch");
+          }
+          assert.equal(env.GCM_INTERACTIVE, "never");
+          assert.equal(env.GIT_ASKPASS, "");
+          assert.equal(env.GIT_TERMINAL_PROMPT, "0");
+          assert.equal(env.SSH_ASKPASS, "");
+          assert.equal(env.SSH_ASKPASS_REQUIRE, "never");
         }).pipe(
           Effect.ensuring(
             Effect.sync(() => {
