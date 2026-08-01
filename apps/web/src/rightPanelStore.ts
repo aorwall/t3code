@@ -12,6 +12,7 @@ import type { ScopedThreadRef } from "@t3tools/contracts";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import { FEATURES } from "./fork/features";
 import { resolveStorage } from "./lib/storage";
 
 export const RIGHT_PANEL_KINDS = ["plan", "diff", "files", "file", "preview", "terminal"] as const;
@@ -239,6 +240,28 @@ export function migratePersistedRightPanelState(persistedState: unknown): {
         )
       : {};
   return { byThreadKey };
+}
+
+/** Fork-only. Strips restored surfaces this build no longer shows. */
+function dropHiddenSurfaces(state: { byThreadKey: Record<string, ThreadRightPanelState> }): {
+  byThreadKey: Record<string, ThreadRightPanelState>;
+} {
+  if (FEATURES.terminal && FEATURES.diffs) return state;
+  return {
+    byThreadKey: Object.fromEntries(
+      Object.entries(state.byThreadKey).map(([threadKey, threadState]) => [
+        threadKey,
+        {
+          ...threadState,
+          surfaces: threadState.surfaces.filter(
+            (surface) =>
+              (surface.kind !== "terminal" || FEATURES.terminal) &&
+              (surface.kind !== "diff" || FEATURES.diffs),
+          ),
+        },
+      ]),
+    ),
+  };
 }
 
 export const useRightPanelStore = create<RightPanelStoreState>()(
@@ -534,7 +557,11 @@ export const useRightPanelStore = create<RightPanelStoreState>()(
         resolveStorage(typeof window !== "undefined" ? window.localStorage : undefined),
       ),
       partialize: (state) => ({ byThreadKey: state.byThreadKey }),
-      migrate: migratePersistedRightPanelState,
+      // Fork-only, and wrapped rather than folded into the function above so
+      // that function stays upstream's, tests and all. A layout saved while a
+      // surface was shown restores without it — the same disposal the migrate
+      // already gives a surface kind this build does not know.
+      migrate: (persisted) => dropHiddenSurfaces(migratePersistedRightPanelState(persisted)),
     },
   ),
 );

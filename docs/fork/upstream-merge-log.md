@@ -18,6 +18,38 @@ few bullets, move the durable rule into
 
 ## Log
 
+### 2026-08-01 — the fork hides surfaces it cannot serve
+
+- Decision: Moatless answers 32 of the contract's 82 methods and 6 of its 20
+  dispatch commands, and the gap reached people as defects — an unimplemented
+  method returns a `Die` cause, so the button showed a server error. Surfaces
+  we cannot serve are now absent. Fork inventory row: §3 _Surface gating_.
+- **A build constant, not a server capability.** A capability on the wire was
+  built first and thrown away: it cost a contract field, a decode path, a
+  default that had to point the opposite way to every flag beside it, and a
+  subscription at every call site — all to express something that does not vary
+  at runtime. `apps/web/src/fork/features.ts` is one table, and flipping a
+  surface on is one edit in it. Nothing in `packages/contracts` changed, and the
+  backend declares nothing.
+- **Hide, not disable.** Upstream's `available` / `disabledReason` means "not
+  usable yet, and here is why"; a surface this build does not show has nothing
+  worth explaining. The two stay separate — `SurfaceMenuItem` now takes both.
+- **Gates are additive and never re-indent.** No gate adds a prop, an effect or
+  state, and where a conditional would have wrapped existing JSX the gate moved
+  somewhere that filters instead. A re-indented block is what turns a nearby
+  upstream edit into a conflict, so a new gate has to keep this shape.
+- Cheapest hooks found, each replacing several edits: `/settings`'s existing
+  `beforeLoad` covers every gated section at once, and `rightPanelStore`'s
+  migrate already drops surface kinds a build does not know, which is exactly
+  what a saved layout holding a now-hidden surface needs.
+- Hazard: both lookup maps key off strings that live in upstream code — a route
+  path and a palette action's `value` — and both treat an unknown key as
+  _enabled_, so an upstream rename un-gates silently. `features.test.ts` reads
+  the keys back out of the upstream sources rather than restating them.
+- Not gated: Settings General, Appearance and Providers. `splitPatch` routes
+  much of them to localStorage and they keep working; only the server-backed
+  "add provider instance" is gated inside.
+
 ### 2026-08-01 — merged upstream to 0ad91b6e
 
 - Upstream: `0ad91b6e` from base `6efcf3e1` (`56` commits).

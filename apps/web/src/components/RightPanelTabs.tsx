@@ -22,6 +22,7 @@ import { faviconUrlForOrigin } from "~/lib/favicon";
 import { useTheme } from "~/hooks/useTheme";
 import { COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS } from "~/workspaceTitlebar";
 
+import { FEATURES, type FeatureName } from "../fork/features";
 import { PreviewPanelShell, type PreviewPanelMode } from "./preview/PreviewPanelShell";
 import { PierreEntryIcon } from "./chat/PierreEntryIcon";
 
@@ -70,10 +71,14 @@ function DisabledReasonTooltip(props: { reason: string; trigger: ReactElement })
 
 function SurfaceMenuItem(props: {
   available: boolean;
+  /** Fork-only. `available` dims the item and says why; this leaves it out
+      entirely, for a surface this build does not show at all. */
+  feature?: FeatureName;
   disabledReason?: string;
   onClick: () => void;
   children: ReactNode;
 }) {
+  if (props.feature && !FEATURES[props.feature]) return null;
   const item = (
     <MenuItem
       className={!props.available ? "data-disabled:pointer-events-auto" : undefined}
@@ -109,6 +114,7 @@ function RightPanelEmptyState(props: {
       label: "Terminal",
       description: "Start a shell in this workspace.",
       icon: TerminalSquare,
+      feature: "terminal",
       available: true,
       disabledReason: null,
       onClick: props.onAddTerminal,
@@ -125,11 +131,17 @@ function RightPanelEmptyState(props: {
       label: "Diff",
       description: "Review changes in this thread.",
       icon: FileDiff,
+      feature: "diffs",
       available: props.diffAvailable,
       disabledReason: SURFACE_DISABLED_REASONS.diff,
       onClick: props.onAddDiff,
     },
   ] as const;
+  // Filtered after `as const` so the literal `available: true` still narrows
+  // away the terminal card's absent `disabledReason` below.
+  const visibleActions = actions.filter(
+    (action) => !("feature" in action) || FEATURES[action.feature],
+  );
 
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center p-6">
@@ -141,7 +153,7 @@ function RightPanelEmptyState(props: {
           </p>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          {actions.map((action) => {
+          {visibleActions.map((action) => {
             const Icon = action.icon;
             const content = (
               <>
@@ -464,7 +476,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
                     <Globe2 />
                     Browser
                   </SurfaceMenuItem>
-                  <SurfaceMenuItem available onClick={props.onAddTerminal}>
+                  <SurfaceMenuItem feature="terminal" available onClick={props.onAddTerminal}>
                     <TerminalSquare />
                     Terminal
                   </SurfaceMenuItem>
@@ -477,6 +489,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
                     Files
                   </SurfaceMenuItem>
                   <SurfaceMenuItem
+                    feature="diffs"
                     available={props.diffAvailable}
                     disabledReason={SURFACE_DISABLED_REASONS.diff}
                     onClick={props.onAddDiff}

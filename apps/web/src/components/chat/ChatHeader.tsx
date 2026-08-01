@@ -16,6 +16,7 @@ import ProjectScriptsControl, {
 } from "../ProjectScriptsControl";
 import { OpenInPicker } from "./OpenInPicker";
 import { usePrimaryEnvironmentId } from "../../state/environments";
+import { FEATURES } from "../../fork/features";
 import { useT3ProjectFileScripts } from "~/hooks/useT3ProjectFileScripts";
 import { ProjectFavicon } from "../ProjectFavicon";
 import { cn } from "~/lib/utils";
@@ -152,7 +153,7 @@ export const ChatHeader = memo(function ChatHeader({
             onDeleteScript={onDeleteProjectScript}
           />
         )}
-        {showOpenInPicker && (
+        {showOpenInPicker && FEATURES.workspaceOpenIn && (
           <OpenInPicker
             environmentId={activeThreadEnvironmentId}
             keybindings={keybindings}
@@ -160,7 +161,7 @@ export const ChatHeader = memo(function ChatHeader({
             openInCwd={openInCwd}
           />
         )}
-        {activeProjectName && (
+        {activeProjectName && FEATURES.versionControl && (
           <GitActionsControl
             gitCwd={gitCwd}
             activeThreadRef={scopeThreadRef(activeThreadEnvironmentId, activeThreadId)}

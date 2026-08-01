@@ -91,6 +91,7 @@ import { useClientSettings, useUpdateClientSettings } from "../hooks/useSettings
 import { useCopyToClipboard } from "../hooks/useCopyToClipboard";
 import { useNowMinute } from "../hooks/useNowMinute";
 import { useEnvironments, usePrimaryEnvironmentId } from "../state/environments";
+import { FEATURES } from "../fork/features";
 import { useProjects, useThreadShells } from "../state/entities";
 import { environmentServerConfigsAtom, primaryServerKeybindingsAtom } from "../state/server";
 import { vcsEnvironment } from "../state/vcs";
@@ -2147,7 +2148,9 @@ export default function SidebarV2() {
               : []),
             ...(titleRegenerationMenuItem ? [titleRegenerationMenuItem] : []),
             { id: "mark-unread", label: `Mark unread (${count})` },
-            { id: "delete", label: `Delete (${count})`, destructive: true },
+            ...(FEATURES.threadArchival
+              ? [{ id: "delete", label: `Delete (${count})`, destructive: true }]
+              : []),
           ],
           position,
         ),
@@ -2347,7 +2350,9 @@ export default function SidebarV2() {
               { id: "mark-unread", label: "Mark unread" },
               { id: "copy-path", label: "Copy path", icon: "copy" },
               ...(thread.branch ? [{ id: "copy-branch", label: "Copy branch", icon: "copy" }] : []),
-              { id: "delete", label: "Delete", destructive: true, icon: "trash" },
+              ...(FEATURES.threadArchival
+                ? [{ id: "delete", label: "Delete", destructive: true, icon: "trash" }]
+                : []),
             ],
             position,
           ),

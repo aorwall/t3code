@@ -62,6 +62,7 @@ import {
   useEnvironmentStageLabel,
 } from "../SidebarStageBackdrop";
 import { isElectron } from "../../env";
+import { FEATURES } from "../../fork/features";
 import { buildHostedChannelSelectionUrl, type HostedAppChannel } from "../../hostedPairing";
 import { useTheme } from "../../hooks/useTheme";
 import { usePrimarySettings, useUpdatePrimarySettings } from "../../hooks/useSettings";
@@ -1996,22 +1997,26 @@ export function ProviderSettingsPanel() {
         headerAction={
           <div className="flex items-center gap-1.5">
             <ProviderLastChecked lastCheckedAt={lastCheckedAt} />
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    size="icon-xs"
-                    variant="ghost"
-                    className="size-5 rounded-sm p-0 text-muted-foreground hover:text-foreground"
-                    onClick={() => setIsAddInstanceDialogOpen(true)}
-                    aria-label="Add provider instance"
-                  >
-                    <PlusIcon className="size-3" />
-                  </Button>
-                }
-              />
-              <TooltipPopup side="top">Add provider instance</TooltipPopup>
-            </Tooltip>
+            {/* The provider list is a read every server serves; configuring an
+                instance is not, so only this affordance goes. */}
+            {FEATURES.serverAdministration ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      size="icon-xs"
+                      variant="ghost"
+                      className="size-5 rounded-sm p-0 text-muted-foreground hover:text-foreground"
+                      onClick={() => setIsAddInstanceDialogOpen(true)}
+                      aria-label="Add provider instance"
+                    >
+                      <PlusIcon className="size-3" />
+                    </Button>
+                  }
+                />
+                <TooltipPopup side="top">Add provider instance</TooltipPopup>
+              </Tooltip>
+            ) : null}
             <Tooltip>
               <TooltipTrigger
                 render={

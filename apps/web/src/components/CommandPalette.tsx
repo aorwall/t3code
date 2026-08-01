@@ -59,6 +59,7 @@ import { useHandleNewThread } from "../hooks/useHandleNewThread";
 import { useClientSettings } from "../hooks/useSettings";
 import { readLocalApi } from "../localApi";
 import { desktopLocalBackendId } from "../connection/desktopLocal";
+import { paletteActionEnabled } from "../fork/features";
 import { filesystemEnvironment } from "../state/filesystem";
 import { projectEnvironment } from "../state/projects";
 import { useEnvironmentQuery } from "../state/query";
@@ -1475,7 +1476,12 @@ function OpenCommandPaletteDialog(props: {
     },
   });
 
-  const rootGroups = buildRootGroups({ actionItems, recentThreadItems });
+  // Filtered here rather than at each `push` above, so the blocks that build
+  // them stay byte-identical to upstream and carry through a merge untouched.
+  const rootGroups = buildRootGroups({
+    actionItems: actionItems.filter((item) => paletteActionEnabled(item.value)),
+    recentThreadItems,
+  });
   const sourceSelectionViewValue =
     addProjectEnvironmentId === null ? null : `sources:${addProjectEnvironmentId}`;
   const activeGroups =

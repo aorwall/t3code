@@ -197,6 +197,7 @@ import {
 import { appendPreviewAnnotationPrompt } from "../lib/previewAnnotation";
 import { appendReviewCommentsToPrompt, type ReviewCommentContext } from "../reviewCommentContext";
 import { environmentCatalog } from "../connection/catalog";
+import { FEATURES } from "../fork/features";
 import { selectThreadTerminalUiState, useTerminalUiStateStore } from "../terminalUiStateStore";
 import { useKnownTerminalSessions, useThreadRunningTerminalIds } from "../state/terminalSessions";
 import { projectEnvironment } from "../state/projects";
@@ -2509,7 +2510,7 @@ function ChatViewContent(props: ChatViewProps) {
     terminalUiLaunchContext?.threadId === activeThreadId ? terminalUiLaunchContext : null;
   // Default true while loading to avoid toolbar flicker.
   const isGitRepo = gitStatusQuery.data?.isRepo ?? true;
-  const showComposerContextStrip = isGitRepo && activeProject !== null;
+  const showComposerContextStrip = isGitRepo && activeProject !== null && FEATURES.versionControl;
   const initialDiffPanelGitScope =
     gitStatusQuery.data?.hasWorkingTreeChanges === true ? "unstaged" : "branch";
   const diffPanelGitStatusResolutionKey = gitStatusQuery.data ? "resolved" : "pending";
@@ -2540,7 +2541,7 @@ function ChatViewContent(props: ChatViewProps) {
     [keybindings, terminalShortcutLabelOptions],
   );
   const onToggleDiff = useCallback(() => {
-    if (!isServerThread) {
+    if (!isServerThread || !FEATURES.diffs) {
       return;
     }
     if (!diffOpen) {
@@ -3122,7 +3123,7 @@ function ChatViewContent(props: ChatViewProps) {
     void addBrowserSurface({ threadRef: activeThreadRef, openPreview });
   }, [activeThreadRef, openPreview]);
   const addDiffSurface = useCallback(() => {
-    if (!activeThreadRef || !isServerThread || !isGitRepo) return;
+    if (!activeThreadRef || !isServerThread || !isGitRepo || !FEATURES.diffs) return;
     if (planSidebarOpen) {
       dismissPlanSidebarForCurrentTurn();
     }
@@ -3167,7 +3168,7 @@ function ChatViewContent(props: ChatViewProps) {
     }
   }, [activeThreadRef]);
   const addTerminalSurface = useCallback(() => {
-    if (!activeThreadRef || !activeThreadId || !activeProject) return;
+    if (!activeThreadRef || !activeThreadId || !activeProject || !FEATURES.terminal) return;
     const cwd = gitCwd ?? activeProject.workspaceRoot;
     const terminalId = nextTerminalId(allocatableActiveTerminalIds);
     useRightPanelStore.getState().openTerminal(activeThreadRef, terminalId);
@@ -4391,6 +4392,10 @@ function ChatViewContent(props: ChatViewProps) {
         context: shortcutContext,
       });
       if (!command) return;
+
+      // A shortcut is the one terminal entry point with nothing on screen to
+      // hide, so the whole family is refused here rather than at each branch.
+      if (command.startsWith("terminal.") && !FEATURES.terminal) return;
 
       if (command === "terminal.toggle") {
         event.preventDefault();
@@ -5640,7 +5645,7 @@ function ChatViewContent(props: ChatViewProps) {
 
   const panelToggleControls = (
     <PanelLayoutControls
-      terminalAvailable={activeProject !== null}
+      terminalAvailable={activeProject !== null && FEATURES.terminal}
       terminalOpen={terminalUiState.terminalOpen}
       terminalShortcutLabel={shortcutLabelForCommand(keybindings, "terminal.toggle")}
       rightPanelAvailable={activeProject !== null}
