@@ -13,6 +13,7 @@ import { useSettingsRestore } from "../components/settings/SettingsPanels";
 import { Button } from "../components/ui/button";
 import { SidebarInset } from "../components/ui/sidebar";
 import { rememberMoatlessAuthReturnTo } from "../environments/primary";
+import { settingsPathEnabled } from "../fork/features";
 import { isElectron } from "../env";
 import { cn } from "~/lib/utils";
 import { COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS } from "~/workspaceTitlebar";
@@ -132,7 +133,7 @@ export const Route = createFileRoute("/settings")({
       throw redirect({ to: "/login", replace: true });
     }
 
-    if (location.pathname === "/settings") {
+    if (location.pathname === "/settings" || !settingsPathEnabled(location.pathname)) {
       throw redirect({ to: "/settings/general", replace: true });
     }
   },

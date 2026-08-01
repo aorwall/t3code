@@ -12,6 +12,7 @@ import type { ScopedThreadRef } from "@t3tools/contracts";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import { FEATURES } from "./fork/features";
 import { resolveStorage } from "./lib/storage";
 
 export const RIGHT_PANEL_KINDS = ["plan", "diff", "files", "file", "preview", "terminal"] as const;
@@ -69,14 +70,6 @@ interface RightPanelStoreState {
   closeAllSurfaces: (ref: ScopedThreadRef) => void;
   reconcileBrowserSurfaces: (ref: ScopedThreadRef, tabIds: readonly string[]) => void;
   reconcileFileSurfaces: (ref: ScopedThreadRef, workspaceAvailable: boolean) => void;
-  /** Fork-only. Drops surfaces whose environment cannot serve them. The panel
-      state is persisted per thread, so a surface opened before a server said it
-      could not serve it — or before the thread moved environments — outlives
-      the entry points that were hidden. */
-  reconcileSupportedSurfaces: (
-    ref: ScopedThreadRef,
-    supported: { readonly terminal: boolean; readonly diffs: boolean },
-  ) => void;
   show: (ref: ScopedThreadRef) => void;
   close: (ref: ScopedThreadRef) => void;
   toggleVisibility: (ref: ScopedThreadRef) => void;
@@ -247,6 +240,28 @@ export function migratePersistedRightPanelState(persistedState: unknown): {
         )
       : {};
   return { byThreadKey };
+}
+
+/** Fork-only. Strips restored surfaces this build no longer shows. */
+function dropHiddenSurfaces(state: { byThreadKey: Record<string, ThreadRightPanelState> }): {
+  byThreadKey: Record<string, ThreadRightPanelState>;
+} {
+  if (FEATURES.terminal && FEATURES.diffs) return state;
+  return {
+    byThreadKey: Object.fromEntries(
+      Object.entries(state.byThreadKey).map(([threadKey, threadState]) => [
+        threadKey,
+        {
+          ...threadState,
+          surfaces: threadState.surfaces.filter(
+            (surface) =>
+              (surface.kind !== "terminal" || FEATURES.terminal) &&
+              (surface.kind !== "diff" || FEATURES.diffs),
+          ),
+        },
+      ]),
+    ),
+  };
 }
 
 export const useRightPanelStore = create<RightPanelStoreState>()(
@@ -492,29 +507,6 @@ export const useRightPanelStore = create<RightPanelStoreState>()(
             };
           }),
         })),
-      reconcileSupportedSurfaces: (ref, supported) =>
-        set((state) => ({
-          byThreadKey: updateThread(state.byThreadKey, scopedThreadKey(ref), (current) => {
-            if (supported.terminal && supported.diffs) return current;
-            const surfaces = current.surfaces.filter(
-              (surface) =>
-                !(surface.kind === "terminal" && !supported.terminal) &&
-                !(surface.kind === "diff" && !supported.diffs),
-            );
-            if (surfaces.length === current.surfaces.length) return current;
-            const activeStillExists = surfaces.some(
-              (surface) => surface.id === current.activeSurfaceId,
-            );
-            return {
-              ...current,
-              isOpen: surfaces.length > 0 ? current.isOpen : false,
-              surfaces,
-              activeSurfaceId: activeStillExists
-                ? current.activeSurfaceId
-                : (surfaces.at(-1)?.id ?? null),
-            };
-          }),
-        })),
       show: (ref) =>
         set((state) => ({
           byThreadKey: updateThread(state.byThreadKey, scopedThreadKey(ref), (current) =>
@@ -565,7 +557,11 @@ export const useRightPanelStore = create<RightPanelStoreState>()(
         resolveStorage(typeof window !== "undefined" ? window.localStorage : undefined),
       ),
       partialize: (state) => ({ byThreadKey: state.byThreadKey }),
-      migrate: migratePersistedRightPanelState,
+      // Fork-only, and wrapped rather than folded into the function above so
+      // that function stays upstream's, tests and all. A layout saved while a
+      // surface was shown restores without it — the same disposal the migrate
+      // already gives a surface kind this build does not know.
+      migrate: (persisted) => dropHiddenSurfaces(migratePersistedRightPanelState(persisted)),
     },
   ),
 );

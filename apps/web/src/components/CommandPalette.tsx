@@ -59,7 +59,7 @@ import { useHandleNewThread } from "../hooks/useHandleNewThread";
 import { useClientSettings } from "../hooks/useSettings";
 import { readLocalApi } from "../localApi";
 import { desktopLocalBackendId } from "../connection/desktopLocal";
-import { serverConfigFeatures } from "../state/environmentFeatures";
+import { paletteActionEnabled } from "../fork/features";
 import { filesystemEnvironment } from "../state/filesystem";
 import { projectEnvironment } from "../state/projects";
 import { useEnvironmentQuery } from "../state/query";
@@ -67,7 +67,7 @@ import { sourceControlEnvironment } from "../state/sourceControl";
 import { useAtomCommand } from "../state/use-atom-command";
 import { useAtomQueryRunner } from "../state/use-atom-query-runner";
 import { useEnvironments, usePrimaryEnvironmentId } from "../state/environments";
-import { useProjects, useServerConfigs, useThreadShells } from "../state/entities";
+import { useProjects, useThreadShells } from "../state/entities";
 import { useThreadSearch } from "../state/queries";
 import { resolveThreadActionProjectRef, startNewThreadFromContext } from "../lib/chatThreadActions";
 import {
@@ -556,7 +556,6 @@ function OpenCommandPaletteDialog(props: {
   const projects = useProjects();
   const projectOrder = useUiStateStore((store) => store.projectOrder);
   const threads = useThreadShells();
-  const serverConfigs = useServerConfigs();
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
   const providers = useAtomValue(primaryServerProvidersAtom);
   const [viewStack, setViewStack] = useState<CommandPaletteView[]>([]);
@@ -684,36 +683,21 @@ function OpenCommandPaletteDialog(props: {
     [projectPickerEntries],
   );
 
-  // File and content search act on the project the palette would target, so
-  // that environment is the one asked.
-  const supportsWorkspaceSearch = serverConfigFeatures(
-    contextualProjectRef ? serverConfigs.get(contextualProjectRef.environmentId) : null,
-  ).workspaceWrites;
-
   const addProjectEnvironmentOptions = useMemo(() => {
-    // An environment that cannot manage projects is left out of the picker
-    // entirely, which is also what removes the "Add project" action when no
-    // environment can: the action is offered only where there is somewhere for
-    // it to land.
-    const options = environments
-      .filter(
-        (environment) =>
-          serverConfigFeatures(serverConfigs.get(environment.environmentId)).projectManagement,
-      )
-      .map((environment): AddProjectEnvironmentOption => {
-        const isPrimary = environment.entry.target._tag === "PrimaryConnectionTarget";
-        return {
-          environmentId: environment.environmentId,
-          label: resolveEnvironmentOptionLabel({
-            isPrimary,
-            environmentId: environment.environmentId,
-            runtimeLabel: environment.label,
-          }),
+    const options = environments.map((environment): AddProjectEnvironmentOption => {
+      const isPrimary = environment.entry.target._tag === "PrimaryConnectionTarget";
+      return {
+        environmentId: environment.environmentId,
+        label: resolveEnvironmentOptionLabel({
           isPrimary,
-          isConnected: canCreateProjectInEnvironment(environment.connection.phase),
-          status: connectionStatusText(environment.connection),
-        };
-      });
+          environmentId: environment.environmentId,
+          runtimeLabel: environment.label,
+        }),
+        isPrimary,
+        isConnected: canCreateProjectInEnvironment(environment.connection.phase),
+        status: connectionStatusText(environment.connection),
+      };
+    });
 
     options.sort((left, right) => {
       if (left.isPrimary !== right.isPrimary) {
@@ -723,7 +707,7 @@ function OpenCommandPaletteDialog(props: {
     });
 
     return options;
-  }, [environments, serverConfigs]);
+  }, [environments]);
   const defaultAddProjectEnvironmentId =
     addProjectEnvironmentOptions.find((option) => option.isConnected)?.environmentId ?? null;
   const wslAddProjectEnvironmentOption = useMemo(
@@ -1410,68 +1394,61 @@ function OpenCommandPaletteDialog(props: {
     });
   }
 
-  // Both drive `projects.searchEntries` / `projects.searchContents`, which an
-  // environment may not serve — unlike reading and listing, which back the
-  // file browser and stay.
-  if (supportsWorkspaceSearch) {
-    actionItems.push({
-      kind: "action",
-      value: "action:open-file-picker",
-      searchTerms: ["go to file", "open file", "file picker", "find file", "quick open"],
-      title: "Go to file",
-      icon: <FileSearchIcon className={ITEM_ICON_CLASS} />,
-      keepOpen: true,
-      shortcutCommand: "filePicker.toggle",
-      run: async () => {
-        openOverlayMode("files");
-      },
-    });
+  actionItems.push({
+    kind: "action",
+    value: "action:open-file-picker",
+    searchTerms: ["go to file", "open file", "file picker", "find file", "quick open"],
+    title: "Go to file",
+    icon: <FileSearchIcon className={ITEM_ICON_CLASS} />,
+    keepOpen: true,
+    shortcutCommand: "filePicker.toggle",
+    run: async () => {
+      openOverlayMode("files");
+    },
+  });
 
-    actionItems.push({
-      kind: "action",
-      value: "action:search-project-contents",
-      searchTerms: ["search project", "find in files", "grep", "content search", "text search"],
-      title: "Search project contents",
-      icon: <TextSearchIcon className={ITEM_ICON_CLASS} />,
-      keepOpen: true,
-      shortcutCommand: "projectSearch.toggle",
-      run: async () => {
-        openOverlayMode("content");
-      },
-    });
-  }
+  actionItems.push({
+    kind: "action",
+    value: "action:search-project-contents",
+    searchTerms: ["search project", "find in files", "grep", "content search", "text search"],
+    title: "Search project contents",
+    icon: <TextSearchIcon className={ITEM_ICON_CLASS} />,
+    keepOpen: true,
+    shortcutCommand: "projectSearch.toggle",
+    run: async () => {
+      openOverlayMode("content");
+    },
+  });
 
-  if (addProjectEnvironmentOptions.length > 0) {
-    actionItems.push({
-      kind: "action",
-      value: "action:add-project",
-      searchTerms: [
-        "add project",
-        "folder",
-        "directory",
-        "browse",
-        "clone",
-        "remote",
-        "repository",
-        "repo",
-        "git",
-        "github",
-        "gitlab",
-        "bitbucket",
-        "azure",
-        "devops",
-        "url",
-        "environment",
-      ],
-      title: "Add project",
-      disabled: defaultAddProjectEnvironmentId === null,
-      icon: <FolderPlusIcon className={ITEM_ICON_CLASS} />,
-      keepOpen: true,
-      run: async () => {
-        openAddProjectFlow();
-      },
-    });
-  }
+  actionItems.push({
+    kind: "action",
+    value: "action:add-project",
+    searchTerms: [
+      "add project",
+      "folder",
+      "directory",
+      "browse",
+      "clone",
+      "remote",
+      "repository",
+      "repo",
+      "git",
+      "github",
+      "gitlab",
+      "bitbucket",
+      "azure",
+      "devops",
+      "url",
+      "environment",
+    ],
+    title: "Add project",
+    disabled: defaultAddProjectEnvironmentId === null,
+    icon: <FolderPlusIcon className={ITEM_ICON_CLASS} />,
+    keepOpen: true,
+    run: async () => {
+      openAddProjectFlow();
+    },
+  });
 
   if (wslAddProjectEnvironmentOption) {
     actionItems.push({
@@ -1499,7 +1476,12 @@ function OpenCommandPaletteDialog(props: {
     },
   });
 
-  const rootGroups = buildRootGroups({ actionItems, recentThreadItems });
+  // Filtered here rather than at each `push` above, so the blocks that build
+  // them stay byte-identical to upstream and carry through a merge untouched.
+  const rootGroups = buildRootGroups({
+    actionItems: actionItems.filter((item) => paletteActionEnabled(item.value)),
+    recentThreadItems,
+  });
   const sourceSelectionViewValue =
     addProjectEnvironmentId === null ? null : `sources:${addProjectEnvironmentId}`;
   const activeGroups =

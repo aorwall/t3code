@@ -35,9 +35,7 @@ import {
   useSidebar,
 } from "../ui/sidebar";
 import { T3ConnectSidebarAvatar, T3ConnectSidebarSignIn } from "../clerk/T3ConnectSidebarSignIn";
-import { usePrimaryEnvironmentId } from "../../state/environments";
-import { useEnvironmentFeatures } from "../../state/environmentFeatures";
-import { SETTINGS_SECTION_FEATURE } from "./sectionFeatures";
+import { settingsPathEnabled } from "../../fork/features";
 import { scrollToSettingsTarget } from "./settingsLayout";
 import {
   searchSettings,
@@ -82,24 +80,11 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [activeResultIndex, setActiveResultIndex] = useState(0);
-  // Settings act on the primary environment, so that is the one asked what it
-  // can serve. Both ways into a section are filtered: the nav list below and
-  // search, which would otherwise be a route into a section the nav hides.
-  const features = useEnvironmentFeatures(usePrimaryEnvironmentId());
-  const isSupportedSection = useCallback(
-    (to: SettingsPath) => {
-      const required = SETTINGS_SECTION_FEATURE[to];
-      return required === undefined || features[required];
-    },
-    [features],
-  );
-  const navItems = useMemo(
-    () => SETTINGS_NAV_ITEMS.filter((item) => isSupportedSection(item.to)),
-    [isSupportedSection],
-  );
+  // Search is a second way into a section, so it filters alongside the nav
+  // list — a result that jumps to a section the nav hides is the same hole.
   const results = useMemo(
-    () => searchSettings(query).filter((item) => isSupportedSection(item.to)),
-    [isSupportedSection, query],
+    () => searchSettings(query).filter((item) => settingsPathEnabled(item.to)),
+    [query],
   );
   const isSearching = query.trim().length > 0;
   const hasResults = results.length > 0;
@@ -299,7 +284,7 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))
-              : navItems.map((item) => {
+              : SETTINGS_NAV_ITEMS.filter((item) => settingsPathEnabled(item.to)).map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname === item.to;
                   return (

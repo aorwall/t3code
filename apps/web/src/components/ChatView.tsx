@@ -197,6 +197,7 @@ import {
 import { appendPreviewAnnotationPrompt } from "../lib/previewAnnotation";
 import { appendReviewCommentsToPrompt, type ReviewCommentContext } from "../reviewCommentContext";
 import { environmentCatalog } from "../connection/catalog";
+import { FEATURES } from "../fork/features";
 import { selectThreadTerminalUiState, useTerminalUiStateStore } from "../terminalUiStateStore";
 import { useKnownTerminalSessions, useThreadRunningTerminalIds } from "../state/terminalSessions";
 import { projectEnvironment } from "../state/projects";
@@ -207,7 +208,6 @@ import {
   primaryServerSettingsAtom,
   serverEnvironment,
 } from "../state/server";
-import { serverConfigFeatures } from "../state/environmentFeatures";
 import { terminalEnvironment } from "../state/terminal";
 import { threadEnvironment } from "../state/threads";
 import { vcsEnvironment } from "../state/vcs";
@@ -1386,22 +1386,13 @@ function ChatViewContent(props: ChatViewProps) {
     [draftThreadsByThreadKey],
   );
   const [mountedTerminalThreadKeys, setMountedTerminalThreadKeys] = useState<string[]>([]);
-  // Each mounted drawer belongs to its own thread, and threads can sit in
-  // different environments — so the feature is read per ref rather than from
-  // the active thread's. A drawer left open on a thread whose environment
-  // cannot serve terminals unmounts here rather than rendering a dead panel.
   const mountedTerminalThreadRefs = useMemo(
     () =>
       mountedTerminalThreadKeys.flatMap((mountedThreadKey) => {
         const mountedThreadRef = parseScopedThreadKey(mountedThreadKey);
-        if (!mountedThreadRef) return [];
-        const features = serverConfigFeatures(
-          environmentById.get(mountedThreadRef.environmentId)?.serverConfig,
-        );
-        if (!features.terminal) return [];
-        return [{ key: mountedThreadKey, threadRef: mountedThreadRef }];
+        return mountedThreadRef ? [{ key: mountedThreadKey, threadRef: mountedThreadRef }] : [];
       }),
-    [environmentById, mountedTerminalThreadKeys],
+    [mountedTerminalThreadKeys],
   );
 
   const fallbackDraftProjectRef = draftThread
@@ -1893,25 +1884,6 @@ function ChatViewContent(props: ChatViewProps) {
   const serverConfig = activeThread
     ? (activeEnvironment?.serverConfig ?? null)
     : (primaryEnvironment?.serverConfig ?? null);
-  // What this thread's environment can serve at all. Distinct from the
-  // `*Available` flags below, which say a surface is here but not usable yet:
-  // a surface the environment cannot serve is not rendered in the first place.
-  const environmentFeatures = serverConfigFeatures(serverConfig);
-  // The panel state outlives the entry points: a terminal or diff surface
-  // opened while it was offered stays in the store after the environment says
-  // it cannot serve one, so it is dropped here rather than left to render.
-  useEffect(() => {
-    if (!activeThreadRef || !activeEnvironmentBootstrapComplete) return;
-    useRightPanelStore.getState().reconcileSupportedSurfaces(activeThreadRef, {
-      terminal: environmentFeatures.terminal,
-      diffs: environmentFeatures.diffs,
-    });
-  }, [
-    activeEnvironmentBootstrapComplete,
-    activeThreadRef,
-    environmentFeatures.diffs,
-    environmentFeatures.terminal,
-  ]);
   const versionMismatch = resolveServerConfigVersionMismatch(serverConfig);
   const versionMismatchDismissKey =
     versionMismatch && activeThread
@@ -2538,8 +2510,7 @@ function ChatViewContent(props: ChatViewProps) {
     terminalUiLaunchContext?.threadId === activeThreadId ? terminalUiLaunchContext : null;
   // Default true while loading to avoid toolbar flicker.
   const isGitRepo = gitStatusQuery.data?.isRepo ?? true;
-  const showComposerContextStrip =
-    isGitRepo && activeProject !== null && environmentFeatures.versionControl;
+  const showComposerContextStrip = isGitRepo && activeProject !== null && FEATURES.versionControl;
   const initialDiffPanelGitScope =
     gitStatusQuery.data?.hasWorkingTreeChanges === true ? "unstaged" : "branch";
   const diffPanelGitStatusResolutionKey = gitStatusQuery.data ? "resolved" : "pending";
@@ -2570,7 +2541,7 @@ function ChatViewContent(props: ChatViewProps) {
     [keybindings, terminalShortcutLabelOptions],
   );
   const onToggleDiff = useCallback(() => {
-    if (!isServerThread || !environmentFeatures.diffs) {
+    if (!isServerThread || !FEATURES.diffs) {
       return;
     }
     if (!diffOpen) {
@@ -2579,7 +2550,7 @@ function ChatViewContent(props: ChatViewProps) {
     if (activeThreadRef) {
       useRightPanelStore.getState().toggle(activeThreadRef, "diff");
     }
-  }, [activeThreadRef, diffOpen, environmentFeatures.diffs, isServerThread, onDiffPanelOpen]);
+  }, [activeThreadRef, diffOpen, isServerThread, onDiffPanelOpen]);
 
   const envLocked = Boolean(
     activeThread &&
@@ -3152,7 +3123,7 @@ function ChatViewContent(props: ChatViewProps) {
     void addBrowserSurface({ threadRef: activeThreadRef, openPreview });
   }, [activeThreadRef, openPreview]);
   const addDiffSurface = useCallback(() => {
-    if (!activeThreadRef || !isServerThread || !isGitRepo || !environmentFeatures.diffs) return;
+    if (!activeThreadRef || !isServerThread || !isGitRepo || !FEATURES.diffs) return;
     if (planSidebarOpen) {
       dismissPlanSidebarForCurrentTurn();
     }
@@ -3161,7 +3132,6 @@ function ChatViewContent(props: ChatViewProps) {
   }, [
     activeThreadRef,
     dismissPlanSidebarForCurrentTurn,
-    environmentFeatures.diffs,
     isGitRepo,
     isServerThread,
     onDiffPanelOpen,
@@ -3198,8 +3168,7 @@ function ChatViewContent(props: ChatViewProps) {
     }
   }, [activeThreadRef]);
   const addTerminalSurface = useCallback(() => {
-    if (!activeThreadRef || !activeThreadId || !activeProject || !environmentFeatures.terminal)
-      return;
+    if (!activeThreadRef || !activeThreadId || !activeProject || !FEATURES.terminal) return;
     const cwd = gitCwd ?? activeProject.workspaceRoot;
     const terminalId = nextTerminalId(allocatableActiveTerminalIds);
     useRightPanelStore.getState().openTerminal(activeThreadRef, terminalId);
@@ -3223,7 +3192,6 @@ function ChatViewContent(props: ChatViewProps) {
     activeThreadRef,
     activeThreadWorktreePath,
     allocatableActiveTerminalIds,
-    environmentFeatures.terminal,
     gitCwd,
     openTerminal,
   ]);
@@ -4427,7 +4395,7 @@ function ChatViewContent(props: ChatViewProps) {
 
       // A shortcut is the one terminal entry point with nothing on screen to
       // hide, so the whole family is refused here rather than at each branch.
-      if (command.startsWith("terminal.") && !environmentFeatures.terminal) return;
+      if (command.startsWith("terminal.") && !FEATURES.terminal) return;
 
       if (command === "terminal.toggle") {
         event.preventDefault();
@@ -4525,7 +4493,6 @@ function ChatViewContent(props: ChatViewProps) {
     activeProject,
     activeRightPanelSurface,
     addTerminalSurface,
-    environmentFeatures.terminal,
     terminalUiState.terminalOpen,
     terminalUiState.activeTerminalId,
     activeThreadId,
@@ -5678,7 +5645,7 @@ function ChatViewContent(props: ChatViewProps) {
 
   const panelToggleControls = (
     <PanelLayoutControls
-      terminalAvailable={activeProject !== null && environmentFeatures.terminal}
+      terminalAvailable={activeProject !== null && FEATURES.terminal}
       terminalOpen={terminalUiState.terminalOpen}
       terminalShortcutLabel={shortcutLabelForCommand(keybindings, "terminal.toggle")}
       rightPanelAvailable={activeProject !== null}
@@ -6183,8 +6150,6 @@ function ChatViewContent(props: ChatViewProps) {
           browserAvailable={isPreviewSupportedInRuntime()}
           diffAvailable={isServerThread && isGitRepo}
           filesAvailable={activeProject !== null}
-          terminalSupported={environmentFeatures.terminal}
-          diffSupported={environmentFeatures.diffs}
         >
           {rightPanelContent}
         </RightPanelTabs>
@@ -6213,8 +6178,6 @@ function ChatViewContent(props: ChatViewProps) {
             browserAvailable={isPreviewSupportedInRuntime()}
             diffAvailable={isServerThread && isGitRepo}
             filesAvailable={activeProject !== null}
-            terminalSupported={environmentFeatures.terminal}
-            diffSupported={environmentFeatures.diffs}
           >
             {rightPanelContent}
           </RightPanelTabs>

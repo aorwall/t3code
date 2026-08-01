@@ -2,7 +2,6 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
 import { EnvironmentId, ProjectId, ThreadId, TrimmedNonEmptyString } from "./baseSchemas.ts";
-import { EnvironmentFeatures } from "./environmentFeatures.ts";
 
 export const ExecutionEnvironmentPlatformOs = Schema.Literals([
   "darwin",
@@ -58,11 +57,6 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
   /** Server can stream self-update progress before acknowledging the
       restart. Clients fall back to server.updateServer when absent. */
   serverSelfUpdateProgress: Schema.optionalKey(Schema.Boolean),
-  /** Which product surfaces this server can serve. Absent means all of them,
-      which is the opposite default to the flags above — see
-      `environmentFeatures.ts`. Read it through `resolveEnvironmentFeatures`
-      rather than directly, so absent and partial both come back whole. */
-  features: Schema.optionalKey(EnvironmentFeatures),
 });
 export type ExecutionEnvironmentCapabilities = typeof ExecutionEnvironmentCapabilities.Type;
 

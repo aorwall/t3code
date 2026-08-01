@@ -22,6 +22,7 @@ import { faviconUrlForOrigin } from "~/lib/favicon";
 import { useTheme } from "~/hooks/useTheme";
 import { COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS } from "~/workspaceTitlebar";
 
+import { FEATURES, type FeatureName } from "../fork/features";
 import { PreviewPanelShell, type PreviewPanelMode } from "./preview/PreviewPanelShell";
 import { PierreEntryIcon } from "./chat/PierreEntryIcon";
 
@@ -48,11 +49,6 @@ interface RightPanelTabsProps {
   browserAvailable: boolean;
   diffAvailable: boolean;
   filesAvailable: boolean;
-  /** Fork-only. `available` says a surface is here but cannot be used yet and
-      shows why; these say the environment cannot serve it at all, so it is left
-      out entirely rather than explained. */
-  terminalSupported: boolean;
-  diffSupported: boolean;
   children: ReactNode;
 }
 
@@ -75,10 +71,14 @@ function DisabledReasonTooltip(props: { reason: string; trigger: ReactElement })
 
 function SurfaceMenuItem(props: {
   available: boolean;
+  /** Fork-only. `available` dims the item and says why; this leaves it out
+      entirely, for a surface this build does not show at all. */
+  feature?: FeatureName;
   disabledReason?: string;
   onClick: () => void;
   children: ReactNode;
 }) {
+  if (props.feature && !FEATURES[props.feature]) return null;
   const item = (
     <MenuItem
       className={!props.available ? "data-disabled:pointer-events-auto" : undefined}
@@ -100,15 +100,12 @@ function RightPanelEmptyState(props: {
   browserAvailable: boolean;
   diffAvailable: boolean;
   filesAvailable: boolean;
-  terminalSupported: boolean;
-  diffSupported: boolean;
 }) {
   const actions = [
     {
       label: "Browser",
       description: "Open a local app or URL.",
       icon: Globe2,
-      supported: true,
       available: props.browserAvailable,
       disabledReason: SURFACE_DISABLED_REASONS.browser,
       onClick: props.onAddBrowser,
@@ -117,7 +114,7 @@ function RightPanelEmptyState(props: {
       label: "Terminal",
       description: "Start a shell in this workspace.",
       icon: TerminalSquare,
-      supported: props.terminalSupported,
+      feature: "terminal",
       available: true,
       disabledReason: null,
       onClick: props.onAddTerminal,
@@ -126,7 +123,6 @@ function RightPanelEmptyState(props: {
       label: "Files",
       description: "Browse and read workspace files.",
       icon: Files,
-      supported: true,
       available: props.filesAvailable,
       disabledReason: SURFACE_DISABLED_REASONS.files,
       onClick: props.onAddFiles,
@@ -135,17 +131,17 @@ function RightPanelEmptyState(props: {
       label: "Diff",
       description: "Review changes in this thread.",
       icon: FileDiff,
-      supported: props.diffSupported,
+      feature: "diffs",
       available: props.diffAvailable,
       disabledReason: SURFACE_DISABLED_REASONS.diff,
       onClick: props.onAddDiff,
     },
   ] as const;
-  // `supported` is the fork's environment gate and `available` upstream's
-  // not-usable-yet one: the first removes the card, the second dims it and says
-  // why. Filtering after `as const` keeps the literal `available: true` that
-  // narrows away the terminal card's absent reason below.
-  const visibleActions = actions.filter((action) => action.supported);
+  // Filtered after `as const` so the literal `available: true` still narrows
+  // away the terminal card's absent `disabledReason` below.
+  const visibleActions = actions.filter(
+    (action) => !("feature" in action) || FEATURES[action.feature],
+  );
 
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center p-6">
@@ -480,12 +476,10 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
                     <Globe2 />
                     Browser
                   </SurfaceMenuItem>
-                  {props.terminalSupported ? (
-                    <SurfaceMenuItem available onClick={props.onAddTerminal}>
-                      <TerminalSquare />
-                      Terminal
-                    </SurfaceMenuItem>
-                  ) : null}
+                  <SurfaceMenuItem feature="terminal" available onClick={props.onAddTerminal}>
+                    <TerminalSquare />
+                    Terminal
+                  </SurfaceMenuItem>
                   <SurfaceMenuItem
                     available={props.filesAvailable}
                     disabledReason={SURFACE_DISABLED_REASONS.files}
@@ -494,16 +488,15 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
                     <Files />
                     Files
                   </SurfaceMenuItem>
-                  {props.diffSupported ? (
-                    <SurfaceMenuItem
-                      available={props.diffAvailable}
-                      disabledReason={SURFACE_DISABLED_REASONS.diff}
-                      onClick={props.onAddDiff}
-                    >
-                      <FileDiff />
-                      Diff
-                    </SurfaceMenuItem>
-                  ) : null}
+                  <SurfaceMenuItem
+                    feature="diffs"
+                    available={props.diffAvailable}
+                    disabledReason={SURFACE_DISABLED_REASONS.diff}
+                    onClick={props.onAddDiff}
+                  >
+                    <FileDiff />
+                    Diff
+                  </SurfaceMenuItem>
                 </MenuPopup>
               </Menu>
             ) : null}
@@ -521,8 +514,6 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             browserAvailable={props.browserAvailable}
             diffAvailable={props.diffAvailable}
             filesAvailable={props.filesAvailable}
-            terminalSupported={props.terminalSupported}
-            diffSupported={props.diffSupported}
           />
         ) : (
           props.children
