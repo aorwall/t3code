@@ -6,7 +6,7 @@ each merge is decided almost entirely by how quickly the person doing it can
 answer one question per conflict: **is this ours, theirs, or converged?**
 
 This file answers that. It is the merge-time lookup table, not a history essay;
-the reasoning lives in [the decision log](#5-decision-log) at the bottom.
+merge decisions live in [the upstream merge tracker](./upstream-merge-log.md).
 
 ## Why a table and not just notes
 
@@ -34,13 +34,14 @@ git warns you about.
 
 Hazards 2 and 5 are the dangerous pair, because both are invisible: the merge is
 clean and the tests pass. Prose cannot catch either, so §2 is written as greps
-that must return nothing, and step 3 of the checklist is a command that lists what
+with explicit statuses, and step 3 of the checklist is a command that lists what
 to decide on.
 
 Hazard 5 is also why there is no blanket "anything unlisted is theirs" rule. Every
 merge brings genuinely new upstream work, and some of it lands in areas we own. A
 default of "theirs" would quietly accept all of it — see the 2026-07-30 merge
-entry in [§5](#5-decision-log) for a live example that got in exactly that way.
+entry in [the tracker](./upstream-merge-log.md) for a live example that got in
+exactly that way.
 
 Hazard 3 is the one §1 alone cannot cover. The path table is a list of files we
 expect to fight over; §3 is a list of changes we made, which is a different set
@@ -52,13 +53,15 @@ ours.
 
 ```bash
 git fetch upstream
+UPSTREAM_BASE="$(git merge-base HEAD upstream/main)"
 git merge upstream/main
 ```
 
 1. For every conflict, look the path up in [§1](#1-ownership).
-2. Run every tripwire in [§2](#2-deleted-upstream-surfaces). Each must return no
-   matches. A match means upstream re-introduced a surface we removed — delete
-   it again in the merge commit, not in a follow-up.
+2. Run the tripwires in [§2](#2-deleted-upstream-surfaces). A `removed` surface
+   must return no matches. A `decided, not yet removed` surface is advisory:
+   existing matches are known debt, but new upstream additions in that surface
+   must be rejected or explicitly accepted in the merge commit.
 3. **Sweep the new upstream surfaces.** Conflicts and tripwires only cover things
    we already have an opinion about. Every merge also brings work upstream did in
    areas we own, in files that did not exist before — so nothing conflicts and no
@@ -66,14 +69,14 @@ git merge upstream/main
 
    ```bash
    git diff --diff-filter=A --name-only \
-     "$(git merge-base HEAD upstream/main)..upstream/main" -- ':(exclude).repos' \
+     "$UPSTREAM_BASE..upstream/main" -- ':(exclude).repos' \
      | grep -Ei 'auth|pair|session|clerk|cloud|relay|connect|proxy|origin|host'
    ```
 
    Read the hits against the [fork-owned concerns](#fork-owned-concerns). Most
    will be irrelevant; the ones that are not are new decisions, and they go in
-   [§5](#5-decision-log) whichever way you decide. Widen the filter if a concern
-   grows vocabulary the pattern does not cover.
+   [the tracker](./upstream-merge-log.md) whichever way you decide. Widen the
+   filter if a concern grows vocabulary the pattern does not cover.
 
 4. Check every conflicting path against [§3](#3-fork-inventory--what-we-changed)
    before resolving it. A path listed there carries a change we made on purpose;
@@ -81,10 +84,11 @@ git merge upstream/main
 5. Read [§4](#4-convergence-watch-list) and check whether upstream has since
    built any of it. If so, prefer their implementation and shrink our delta.
 6. `pnpm typecheck && pnpm test && pnpm lint && pnpm fmt:check`.
-7. Append a dated entry to [§5](#5-decision-log): what step 3 surfaced and what
-   you decided, plus any conflict you resolved by judgement rather than by
-   looking it up here. An entry saying "swept, nothing to decide" is worth
-   writing — it tells the next merge the sweep happened.
+7. Append a compact dated entry to [the tracker](./upstream-merge-log.md): the
+   upstream head/base, conflict decisions, step 3 owned-surface decisions, and
+   verification. An entry saying "swept, nothing to decide" is worth writing —
+   it tells the next merge the sweep happened. Keep durable rules in this policy
+   or [§3](#3-fork-inventory--what-we-changed), not in a long log entry.
 
 **Outside a merge:** a change that grows the fork delta adds its row to
 [§3](#3-fork-inventory--what-we-changed) in the same commit that makes it. The
@@ -101,8 +105,8 @@ ones, so when a path is not in the table, the question is not "is it listed?" bu
 
 ### Fork-owned concerns
 
-If an unlisted file touches one of these, it needs a decision and a log entry. If
-it does not, take upstream's version and move on.
+If an unlisted file touches one of these, it needs a decision and a tracker
+entry. If it does not, take upstream's version and move on.
 
 | Concern                                                          | Our position                                                                  | When upstream adds to it                                                              |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
@@ -157,8 +161,10 @@ is upstream's and should stay upstream's.
 
 ## 2. Deleted upstream surfaces
 
-Surfaces we removed on purpose. Each tripwire must return **no matches** after a
-merge. Run from the repo root.
+Surfaces we removed, or have decided to remove, on purpose. Run from the repo
+root. A `removed` surface must return **no matches** after a merge. A
+`decided, not yet removed` surface may still match existing code, but new
+upstream additions in that surface must be rejected or explicitly accepted.
 
 | Surface                               | Status                       | Tripwire                                                                                   |
 | ------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------ |
@@ -237,165 +243,3 @@ own version, theirs wins and our delta should shrink or disappear.
 | Allowed hosts             | `T3CODE_ALLOWED_HOSTS` alias                    | Upstream consolidating on `T3CODE_DEV_ALLOWED_HOSTS`. If deployments can be changed to inject that name, drop our alias.                                                    |
 | Thread servers            | The `servers.*` contract group and its UI       | Any upstream concept of a server a thread owns — theirs wins and the whole group goes, stubs first. Watch `WS_METHODS` for names in that shape.                             |
 | Hosted preview            | `apps/web/src/browser/**` iframe host           | Upstream giving the web build a preview surface of its own. Today only desktop has one, which is why this exists.                                                           |
-
-## 5. Decision log
-
-Append-only. Newest first. Each entry records what was decided, by whom, and the
-upstream context at the time — so a future merge can tell a deliberate choice
-from an accident.
-
-### 2026-08-01 — merged upstream to 0ad91b6e
-
-56 upstream commits, merge base `6efcf3e1`, upstream head `0ad91b6e`.
-
-Conflicts were all documentation layout conflicts. Upstream moved the docs tree
-from `docs/reference/**` to `docs/internals/**` and from
-`docs/integrations/**` to `docs/user/**`; kept the fork-authored Moatless docs
-but accepted those upstream locations, then updated this policy's owned paths.
-`docs/README.md` took upstream's new structure with the Moatless links added
-back in the matching sections.
-
-The new-upstream-surface sweep found mobile connection wakeups, the Ghostty web
-terminal files, `docs/internals/connection-runtime.md`, and the new
-`apps/server/src/cli/pair.ts` command. The first three were accepted as
-irrelevant false positives for the owned-concern filter. `t3 pair` was rejected:
-it is new device-pairing CLI work, and device pairing is fork-owned and replaced
-by Moatless. The added command, test, import, and CLI subcommand registration
-were removed in this merge commit.
-
-Verification surfaced two test-only adaptations. Upstream's relay deploy test
-reads `.github/workflows/release.yml`; this fork keeps that workflow disabled as
-`.github/workflows/release.yml.disabled`, so the test follows the fork-owned
-workflow path. The web image-compression tests were also shrunk to use small
-synthetic blobs; they still exercise the same budget branches without spending
-the full-suite timeout base64-encoding multi-megabyte fixtures.
-
-### 2026-07-31 — the fork publishes its own container image
-
-Decided by @aorwall. Moatless deploys the T3 UI from its Helm chart, so the fork
-needs a container image; upstream ships `apps/web` to Vercel and has no
-container build to inherit. `docker/**` and
-`.github/workflows/build-moatless-t3-image.yml` are therefore fork-only, and
-`build-moatless-t3-image.yml` is the first workflow to run in this fork — the
-blanket "every workflow here is disabled" statement in the workflows README is
-no longer true and was rewritten rather than left as a near-truth.
-
-It also turned up a second runner problem. The first attempt ran on
-`ubuntu-latest` and failed in 30 seconds with no runner assigned and no step
-recorded — the same shape as every `ubuntu-*` job in this repository's history,
-including `pr-size` and `pr-vouch`. GitHub-hosted runners do not start here at
-all, so the 2026-07-30 entry below is right that those two workflows never
-worked but wrong about why. Self-hosted `staging-runners-large` is the only
-label that runs, and any workflow re-enabled here has to name it.
-
-Two things this deliberately did **not** do:
-
-- **No proxy in the image.** The SPA and the backend share one host, and the
-  chart's Traefik routes `/api`, `/ws`, `/.well-known/t3` and `/oauth/token` to
-  the backend. Teaching nginx the same prefixes would give every one of them two
-  possible answers. If upstream later adds a container build that proxies, that
-  is a different deployment shape, not a convergence.
-- **No runtime backend URL.** The client derives its HTTP and WebSocket origins
-  from `window.location.origin`, which is the existing single-origin behaviour
-  in `apps/web/vite.config.ts` — the image just makes sure it is switched on, by
-  building with a non-empty `MOATLESS_BASE_URL`. That build-time flag is the
-  same fork delta already listed above under the web vite config; the image adds
-  a consumer, not a delta.
-
-### 2026-07-31 — started tracking our own delta, not just upstream's
-
-This file could answer "who wins this conflict" but not "what did we change" —
-and the second question is the one you are actually asking when git stops on a
-line you do not recognise. [§1](#1-ownership) only ever listed files we expected
-to fight over, which is a much smaller set than the files we changed: the whole
-thread-servers group, roughly forty files, appeared nowhere. So a merge that
-touched any of it would have been resolved by guesswork.
-
-[§3](#3-fork-inventory--what-we-changed) is that missing list, and hazard 3 in
-the preamble is the failure it exists to prevent. Two things follow from it being
-worth having: it is only useful if complete, so the checklist now asks for a row
-in the same commit as the change rather than at the next merge; and step 4 now
-makes reading it part of resolving a conflict rather than something to remember.
-
-The one entry worth reading twice is the last row of the thread-servers table.
-`apps/server/src/ws.ts` and `apps/server/src/auth/RpcAuthorization.ts` are
-upstream's, and we changed them — the only place in the fork where that is true
-of the T3 server. The `servers.*` methods live in the shared contract, so a
-client can call them against any server, and upstream's would otherwise fail the
-call outright. Three stubs — an empty list and two streams that never emit — keep
-that honest. High-churn files, so expect the conflict; the resolution is to keep
-the three method entries and take upstream's everything else.
-
-### 2026-07-30 — auth is fork-owned; drop Clerk and pairing
-
-Decided by @aorwall. We no longer need to support the T3 backend, so the auth
-path is ours outright rather than a Moatless branch layered over upstream's.
-
-- **Device pairing** is replaced by Moatless. Upstream's pairing credentials and
-  client-session management come out.
-- **Clerk** comes out. Note the blast radius is wider than `apps/web`:
-  `@clerk/electron` (web, desktop), `@clerk/expo` (mobile) and `@clerk/backend`
-  (`infra/relay`, which uses `verifyToken` to authenticate the T3 Connect tunnel).
-  Removing Clerk therefore removes T3 Connect. **Open:** confirm that is intended
-  before touching `infra/relay`.
-- **Electron** stays in the tree, but is explicitly _not_ a compliance target for
-  now. Do not spend merge effort keeping desktop auth working; do not delete the
-  app either.
-- **Consequence not yet resolved:** `.agents/skills/test-t3-app/SKILL.md` drives
-  local dev by starting the bundled T3 server and authenticating with one-time
-  pairing URLs. That is the non-Moatless branch at `auth.ts:359`. Removing the T3
-  auth path breaks local dev and agent testing until that skill runs against a
-  local Moatless instead.
-
-### 2026-07-30 — disabled every GitHub workflow
-
-Nine workflows, zero successful runs in this fork, ever. `ci.yml`, `release.yml`,
-`deploy-relay.yml` and the mobile workflows all require `blacksmith-*` runners;
-upstream runs CI on Blacksmith and this fork has no installation, so those jobs
-queue with no runner assigned and never start. `pr-size.yml` and `pr-vouch.yml`
-are upstream's public-OSS contributor automation and fail before executing a
-step. `issue-labels.yml` maintains upstream's label taxonomy.
-
-Renamed to `*.yml.disabled` rather than deleted, because GitHub only reads
-`.yml`/`.yaml` here and a content-preserving rename lets upstream's edits land on
-the renamed path instead of raising a delete/modify conflict on every merge.
-Verified: merging `upstream/main` produced no workflow conflict, and the merged
-`ci.yml.disabled` was byte-identical to upstream's `ci.yml`.
-
-**Consequence:** there is no CI on this fork, and there was none before. Every
-merge's verification is local — `pnpm typecheck && pnpm test && pnpm lint &&
-pnpm fmt:check` — which is why checklist step 5 exists and why the merge entries
-above record what was run by hand. Restoring CI means installing Blacksmith or
-switching `runs-on` to GitHub-hosted runners; the latter is a fork delta on a
-high-churn file and needs its own row here.
-
-### 2026-07-30 — merged upstream to v0.0.31, gave up the dev-runner delta
-
-81 upstream commits, merge base `5719e8ac`, upstream head `6efcf3e1`. One
-conflict: `apps/web/vite.config.ts`.
-
-Upstream had independently shipped single-origin browser dev (#4555, #4556,
-#4608) covering the same ground as the fork's proxy-origin work (#3). Resolved by
-taking upstream's implementation wholesale and re-applying only the fork-specific
-pieces now listed in [§1](#fork-delta-in-the-web-vite-config). The fork
-delta on that file went from 171 lines to 70.
-
-Two fork changes were dropped as superseded:
-
-- `T3CODE_HMR_HOST` and its `dev-runner` plumbing. Upstream now deletes an
-  inherited `HOST` for every non-desktop mode and gates the HMR pin on
-  `explicitHost` — the same fix, with upstream's own tests. `scripts/dev-runner.ts`
-  and its test are byte-identical to upstream again, which is why §1 lists them
-  as _theirs, verbatim_.
-- The separate `/attachments` proxy entry. Prefixes now come from
-  `packages/shared/src/devProxy.ts`, and attachments moved under `/api/assets`
-  (`ASSET_ROUTE_PREFIX`), which `/api` already covers.
-
-**New upstream surfaces swept afterwards, not at merge time.** This merge added
-101 new upstream files; 17 fell inside fork-owned concerns, including
-`apps/web/src/components/clerk/authRedirect.ts` — a brand-new Clerk file, added on
-the same day we decided to remove Clerk. It merged cleanly, no tripwire existed
-yet, and nothing flagged it. That is hazard 4, and it is why checklist step 3
-exists. Also swept in: `apps/server/src/auth/RpcAuthorization.ts` and
-`infra/relay/src/environments/ManagedTunnelLimits.ts`. All three are accepted for
-now and will be removed with their surfaces rather than picked out individually.

@@ -144,7 +144,7 @@ Full glossary with file links: `docs/internals/glossary.md`
 
 ## This fork
 
-- This is a fork of pingdotgg/t3code. Before merging upstream, or when deciding whether a file is ours or theirs, read [docs/fork/upstream-merge-policy.md](./docs/fork/upstream-merge-policy.md). Record fork-level decisions there so the next merge inherits them.
+- This is a fork of pingdotgg/t3code. Before merging upstream, or when deciding whether a file is ours or theirs, read [docs/fork/upstream-merge-policy.md](./docs/fork/upstream-merge-policy.md). Record durable fork rules in that policy or its inventory, and compact merge decisions in [docs/fork/upstream-merge-log.md](./docs/fork/upstream-merge-log.md).
 
 ## Additional tips
 
