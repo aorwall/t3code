@@ -131,7 +131,6 @@ function RightPanelEmptyState(props: {
       label: "Diff",
       description: "Review changes in this thread.",
       icon: FileDiff,
-      feature: "diffs",
       available: props.diffAvailable,
       disabledReason: SURFACE_DISABLED_REASONS.diff,
       onClick: props.onAddDiff,
@@ -489,7 +488,6 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
                     Files
                   </SurfaceMenuItem>
                   <SurfaceMenuItem
-                    feature="diffs"
                     available={props.diffAvailable}
                     disabledReason={SURFACE_DISABLED_REASONS.diff}
                     onClick={props.onAddDiff}

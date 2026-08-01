@@ -246,18 +246,14 @@ export function migratePersistedRightPanelState(persistedState: unknown): {
 function dropHiddenSurfaces(state: { byThreadKey: Record<string, ThreadRightPanelState> }): {
   byThreadKey: Record<string, ThreadRightPanelState>;
 } {
-  if (FEATURES.terminal && FEATURES.diffs) return state;
+  if (FEATURES.terminal) return state;
   return {
     byThreadKey: Object.fromEntries(
       Object.entries(state.byThreadKey).map(([threadKey, threadState]) => [
         threadKey,
         {
           ...threadState,
-          surfaces: threadState.surfaces.filter(
-            (surface) =>
-              (surface.kind !== "terminal" || FEATURES.terminal) &&
-              (surface.kind !== "diff" || FEATURES.diffs),
-          ),
+          surfaces: threadState.surfaces.filter((surface) => surface.kind !== "terminal"),
         },
       ]),
     ),

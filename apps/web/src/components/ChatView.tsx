@@ -2541,7 +2541,7 @@ function ChatViewContent(props: ChatViewProps) {
     [keybindings, terminalShortcutLabelOptions],
   );
   const onToggleDiff = useCallback(() => {
-    if (!isServerThread || !FEATURES.diffs) {
+    if (!isServerThread) {
       return;
     }
     if (!diffOpen) {
@@ -3123,7 +3123,7 @@ function ChatViewContent(props: ChatViewProps) {
     void addBrowserSurface({ threadRef: activeThreadRef, openPreview });
   }, [activeThreadRef, openPreview]);
   const addDiffSurface = useCallback(() => {
-    if (!activeThreadRef || !isServerThread || !isGitRepo || !FEATURES.diffs) return;
+    if (!activeThreadRef || !isServerThread || !isGitRepo) return;
     if (planSidebarOpen) {
       dismissPlanSidebarForCurrentTurn();
     }
