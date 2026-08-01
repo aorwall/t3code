@@ -1,15 +1,6 @@
 import type { ContextMenuItem, PreviewSessionSnapshot } from "@t3tools/contracts";
 import { getTerminalLabel } from "@t3tools/shared/terminalLabels";
-import {
-  ClipboardList,
-  FileDiff,
-  Files,
-  Globe2,
-  Plus,
-  Server,
-  TerminalSquare,
-  X,
-} from "lucide-react";
+import { ClipboardList, FileDiff, Files, Globe2, Plus, TerminalSquare, X } from "lucide-react";
 import {
   type MouseEvent as ReactMouseEvent,
   type ReactElement,
@@ -42,6 +33,7 @@ interface RightPanelTabsProps {
   activeSurfaceId: string | null;
   pendingSurfaceIds: ReadonlySet<string>;
   previewSessions: Readonly<Record<string, PreviewSessionSnapshot>>;
+  previewServerLabelsByOrigin: ReadonlyMap<string, string>;
   terminalLabelsById: ReadonlyMap<string, string>;
   onActivate: (surface: RightPanelSurface) => void;
   onCloseSurface: (surface: RightPanelSurface) => void;
@@ -53,11 +45,9 @@ interface RightPanelTabsProps {
   onAddTerminal: () => void;
   onAddDiff: () => void;
   onAddFiles: () => void;
-  onAddServers: () => void;
   browserAvailable: boolean;
   diffAvailable: boolean;
   filesAvailable: boolean;
-  serversAvailable: boolean;
   /** Fork-only. `available` says a surface is here but cannot be used yet and
       shows why; these say the environment cannot serve it at all, so it is left
       out entirely rather than explained. */
@@ -70,7 +60,6 @@ const SURFACE_DISABLED_REASONS = {
   browser: "Browser previews are not available in this runtime.",
   files: "Files are only available when a project is open.",
   diff: "Diff is only available for server threads in Git repositories.",
-  servers: "This thread's environment declares no servers.",
 } as const;
 
 type TabContextMenuAction = "copy-path" | "close" | "close-others" | "close-to-right" | "close-all";
@@ -108,11 +97,9 @@ function RightPanelEmptyState(props: {
   onAddTerminal: () => void;
   onAddDiff: () => void;
   onAddFiles: () => void;
-  onAddServers: () => void;
   browserAvailable: boolean;
   diffAvailable: boolean;
   filesAvailable: boolean;
-  serversAvailable: boolean;
   terminalSupported: boolean;
   diffSupported: boolean;
 }) {
@@ -152,15 +139,6 @@ function RightPanelEmptyState(props: {
       available: props.diffAvailable,
       disabledReason: SURFACE_DISABLED_REASONS.diff,
       onClick: props.onAddDiff,
-    },
-    {
-      label: "Servers",
-      description: "See what this environment is running.",
-      icon: Server,
-      supported: true,
-      available: props.serversAvailable,
-      disabledReason: SURFACE_DISABLED_REASONS.servers,
-      onClick: props.onAddServers,
     },
   ] as const;
   // `supported` is the fork's environment gate and `available` upstream's
@@ -228,6 +206,7 @@ function RightPanelEmptyState(props: {
 function surfaceTitle(
   surface: RightPanelSurface,
   sessions: Readonly<Record<string, PreviewSessionSnapshot>>,
+  previewServerLabelsByOrigin: ReadonlyMap<string, string>,
   terminalLabelsById: ReadonlyMap<string, string>,
 ): string {
   switch (surface.kind) {
@@ -244,11 +223,15 @@ function surfaceTitle(
       );
     case "plan":
       return "Plan";
-    case "servers":
-      return "Servers";
     case "preview": {
       const snapshot = surface.resourceId ? sessions[surface.resourceId] : null;
       if (!snapshot || snapshot.navStatus._tag === "Idle") return "Browser";
+      try {
+        const serverLabel = previewServerLabelsByOrigin.get(new URL(snapshot.navStatus.url).origin);
+        if (serverLabel) return serverLabel;
+      } catch {
+        // Fall through to the existing title/host fallbacks.
+      }
       if (snapshot.navStatus.title.trim().length > 0) return snapshot.navStatus.title;
       try {
         return new URL(snapshot.navStatus.url).host || "Browser";
@@ -307,8 +290,6 @@ function SurfaceIcon({
       return <TerminalSquare className="size-3.5 shrink-0" />;
     case "plan":
       return <ClipboardList className="size-3.5 shrink-0" />;
-    case "servers":
-      return <Server className="size-3.5 shrink-0" />;
   }
 }
 
@@ -419,7 +400,12 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             {props.surfaces.map((surface) => {
               const active = surface.id === props.activeSurfaceId;
               const pending = props.pendingSurfaceIds.has(surface.id);
-              const title = surfaceTitle(surface, props.previewSessions, props.terminalLabelsById);
+              const title = surfaceTitle(
+                surface,
+                props.previewSessions,
+                props.previewServerLabelsByOrigin,
+                props.terminalLabelsById,
+              );
               return (
                 <div
                   key={surface.id}
@@ -518,14 +504,6 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
                       Diff
                     </SurfaceMenuItem>
                   ) : null}
-                  <SurfaceMenuItem
-                    available={props.serversAvailable}
-                    disabledReason={SURFACE_DISABLED_REASONS.servers}
-                    onClick={props.onAddServers}
-                  >
-                    <Server />
-                    Servers
-                  </SurfaceMenuItem>
                 </MenuPopup>
               </Menu>
             ) : null}
@@ -540,11 +518,9 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             onAddTerminal={props.onAddTerminal}
             onAddDiff={props.onAddDiff}
             onAddFiles={props.onAddFiles}
-            onAddServers={props.onAddServers}
             browserAvailable={props.browserAvailable}
             diffAvailable={props.diffAvailable}
             filesAvailable={props.filesAvailable}
-            serversAvailable={props.serversAvailable}
             terminalSupported={props.terminalSupported}
             diffSupported={props.diffSupported}
           />

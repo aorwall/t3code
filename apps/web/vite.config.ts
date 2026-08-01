@@ -24,7 +24,7 @@ const repoFileEnv = loadRepoEnv({ baseEnv: {} });
 
 // Where this dev server proxies the backend, when it is not the bundled T3
 // server the runner starts. Pointing it at a Moatless environment is what makes
-// the fork's UI work against that backend; see docs/integrations/moatless-backend.md.
+// the fork's UI work against that backend; see docs/user/moatless-backend.md.
 const proxyTargetOverride =
   process.env.T3CODE_DEV_PROXY_TARGET?.trim() ||
   repoFileEnv.T3CODE_PROXY_TARGET_OVERRIDE?.trim() ||
@@ -187,6 +187,7 @@ export default defineConfig(({ command, isPreview }) => {
   }
 
   return {
+    assetsInclude: ["**/*.wasm"],
     plugins: [
       tanstackRouter(),
       react(),

@@ -1,28 +1,50 @@
-# Documentation
+# T3 Code docs
 
-- [Getting started](./getting-started/quick-start.md)
-- Architecture
-  - [Overview](./architecture/overview.md)
-  - [Connection runtime](./architecture/connection-runtime.md)
-  - [Remote environments](./architecture/remote.md)
-  - [Server updates](./architecture/server-updates.md)
-- User guides
-  - [Background service](./user/background-service.md)
-  - [Remote access](./user/remote-access.md)
-  - [Keeping T3 Code in sync](./user/server-updates.md)
-  - [Keybindings](./user/keybindings.md)
-- [T3 Connect](./cloud/t3-connect-clerk.md)
-- Fork
-  - [Upstream merge policy and decision log](./fork/upstream-merge-policy.md)
-- Integrations
-  - [Source-control providers](./integrations/source-control-providers.md)
-  - [T3 Code UI on the Moatless backend](./integrations/moatless-backend.md)
-  - [Local T3 Code + Moatless Rust workflow](./integrations/moatless-local-development.md)
-- [Mobile](./mobile/app.md)
-- [Operations](./operations/ci.md)
-- [Providers](./providers/codex.md)
-- Reference
-  - [Encyclopedia](./reference/encyclopedia.md)
-  - [Client ↔ server contract](./reference/client-server-contract.md)
-  - [Workspace layout](./reference/workspace-layout.md)
-  - [Scripts](./reference/scripts.md)
+## Using T3 Code
+
+- [Install and first run](./user/install.md)
+- [Permission modes](./user/permission-modes.md)
+- [Keyboard shortcuts](./user/keybindings.md)
+- [Remote access](./user/remote-access.md)
+- [Keeping app and server in sync](./user/updating.md)
+- [Source control integrations](./user/source-control.md)
+- [T3 Code UI on the Moatless backend](./user/moatless-backend.md)
+- [Local T3 Code + Moatless Rust workflow](./user/moatless-local-development.md)
+- [Background service (Linux)](./user/background-service.md)
+- Providers: [Codex](./user/providers-codex.md) · [Claude](./user/providers-claude.md)
+
+Mobile app: [apps/mobile/README.md](../apps/mobile/README.md)
+
+---
+
+## Working on T3 Code
+
+Everything below is for maintainers. Setup lives in the [root README](../README.md);
+policy in [CONTRIBUTING.md](../CONTRIBUTING.md); agent rules in [AGENTS.md](../AGENTS.md).
+
+- [Architecture overview](./internals/overview.md)
+- [Workspace layout](./internals/workspace-layout.md)
+- [Glossary](./internals/glossary.md)
+- [Scripts](./internals/scripts.md)
+- [Connection runtime](./internals/connection-runtime.md)
+- [Providers](./internals/providers.md)
+- [Remote environments](./internals/remote.md)
+- [Server updates](./internals/server-updates.md)
+- [Resource telemetry](./internals/resource-telemetry.md)
+- [Environment auth](./internals/environment-auth.md)
+- [T3 Connect](./internals/t3-connect.md)
+- [CI gates](./internals/ci.md)
+- [Client/server contract](./internals/client-server-contract.md)
+- [Moatless concept map](./internals/moatless-concept-map.md)
+
+### Fork
+
+- [Upstream merge policy](./fork/upstream-merge-policy.md)
+- [Upstream merge tracker](./fork/upstream-merge-log.md)
+
+### Runbooks
+
+- [Release](./operations/release.md)
+- [Observability](./operations/observability.md)
+- [Relay observability](./operations/relay-observability.md)
+- [Mobile app store screenshots](./operations/mobile-app-store-screenshots.md)

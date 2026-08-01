@@ -19,7 +19,7 @@ To publish it needs `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` on this
 repository, with write access to the `aorwall` namespace. Neither is read on the
 pull request path.
 
-Write access to the *namespace*, not to a list of repositories — the first push
+Write access to the _namespace_, not to a list of repositories — the first push
 has to create `aorwall/moatless-t3`, and a repository-scoped token cannot name a
 repository that does not exist yet. That failure is easy to misread: `docker
 login` succeeds, because logging in only proves who you are, and the job dies

@@ -16,14 +16,15 @@
  * **Diagnostics** is gated too, but has no entry here because it has none in
  * the nav either — it is reached by URL, so its route is the only place to gate
  * it.
+ *
+ * The nav reads this, and so does settings search: a result that jumps into a
+ * hidden section is the same hole as a nav entry that does.
  */
 import type { EnvironmentFeatureName } from "@t3tools/contracts";
 
-import type { SettingsSectionPath } from "./SettingsSidebarNav";
+import type { SettingsPath } from "./settingsSearch";
 
-export const SETTINGS_SECTION_FEATURE: Partial<
-  Record<SettingsSectionPath, EnvironmentFeatureName>
-> = {
+export const SETTINGS_SECTION_FEATURE: Partial<Record<SettingsPath, EnvironmentFeatureName>> = {
   "/settings/keybindings": "serverAdministration",
   "/settings/source-control": "projectManagement",
   "/settings/archived": "threadArchival",

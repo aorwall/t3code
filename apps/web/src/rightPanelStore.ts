@@ -14,15 +14,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 import { resolveStorage } from "./lib/storage";
 
-export const RIGHT_PANEL_KINDS = [
-  "plan",
-  "diff",
-  "files",
-  "file",
-  "preview",
-  "servers",
-  "terminal",
-] as const;
+export const RIGHT_PANEL_KINDS = ["plan", "diff", "files", "file", "preview", "terminal"] as const;
 export type RightPanelKind = (typeof RIGHT_PANEL_KINDS)[number];
 
 export type RightPanelSurface =
@@ -45,8 +37,7 @@ export type RightPanelSurface =
       revealLine: number | null;
       revealRequestId: number;
     }
-  | { id: "plan"; kind: "plan" }
-  | { id: "servers"; kind: "servers" };
+  | { id: "plan"; kind: "plan" };
 
 const RIGHT_PANEL_STORAGE_KEY = "t3code:right-panel-state:v2";
 const RIGHT_PANEL_STORAGE_VERSION = 8;
@@ -109,8 +100,6 @@ const singletonSurface = (
       return { id: "files", kind };
     case "plan":
       return { id: "plan", kind };
-    case "servers":
-      return { id: "servers", kind };
   }
 };
 
@@ -248,9 +237,10 @@ export function migratePersistedRightPanelState(persistedState: unknown): {
                 ? (validThreadState?.activeSurfaceId ?? null)
                 : null;
               const isOpen =
-                typeof validThreadState?.isOpen === "boolean"
+                surfaces.length > 0 &&
+                (typeof validThreadState?.isOpen === "boolean"
                   ? validThreadState.isOpen
-                  : activeSurfaceId !== null;
+                  : activeSurfaceId !== null);
               return [threadKey, { isOpen, surfaces, activeSurfaceId }];
             },
           ),
