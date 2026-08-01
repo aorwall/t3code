@@ -78,6 +78,14 @@ interface RightPanelStoreState {
   closeAllSurfaces: (ref: ScopedThreadRef) => void;
   reconcileBrowserSurfaces: (ref: ScopedThreadRef, tabIds: readonly string[]) => void;
   reconcileFileSurfaces: (ref: ScopedThreadRef, workspaceAvailable: boolean) => void;
+  /** Fork-only. Drops surfaces whose environment cannot serve them. The panel
+      state is persisted per thread, so a surface opened before a server said it
+      could not serve it — or before the thread moved environments — outlives
+      the entry points that were hidden. */
+  reconcileSupportedSurfaces: (
+    ref: ScopedThreadRef,
+    supported: { readonly terminal: boolean; readonly diffs: boolean },
+  ) => void;
   show: (ref: ScopedThreadRef) => void;
   close: (ref: ScopedThreadRef) => void;
   toggleVisibility: (ref: ScopedThreadRef) => void;
@@ -479,6 +487,29 @@ export const useRightPanelStore = create<RightPanelStoreState>()(
             if (workspaceAvailable) return current;
             const surfaces = current.surfaces.filter(
               (surface) => surface.kind !== "files" && surface.kind !== "file",
+            );
+            if (surfaces.length === current.surfaces.length) return current;
+            const activeStillExists = surfaces.some(
+              (surface) => surface.id === current.activeSurfaceId,
+            );
+            return {
+              ...current,
+              isOpen: surfaces.length > 0 ? current.isOpen : false,
+              surfaces,
+              activeSurfaceId: activeStillExists
+                ? current.activeSurfaceId
+                : (surfaces.at(-1)?.id ?? null),
+            };
+          }),
+        })),
+      reconcileSupportedSurfaces: (ref, supported) =>
+        set((state) => ({
+          byThreadKey: updateThread(state.byThreadKey, scopedThreadKey(ref), (current) => {
+            if (supported.terminal && supported.diffs) return current;
+            const surfaces = current.surfaces.filter(
+              (surface) =>
+                !(surface.kind === "terminal" && !supported.terminal) &&
+                !(surface.kind === "diff" && !supported.diffs),
             );
             if (surfaces.length === current.surfaces.length) return current;
             const activeStillExists = surfaces.some(

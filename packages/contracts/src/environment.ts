@@ -2,6 +2,7 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
 import { EnvironmentId, ProjectId, ThreadId, TrimmedNonEmptyString } from "./baseSchemas.ts";
+import { EnvironmentFeatures } from "./environmentFeatures.ts";
 
 export const ExecutionEnvironmentPlatformOs = Schema.Literals([
   "darwin",
@@ -51,6 +52,11 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
       servers that must be relaunched manually (dev checkouts, Windows
       foreground runs, pre-update servers). */
   serverSelfUpdate: Schema.optionalKey(ServerSelfUpdateCapability),
+  /** Which product surfaces this server can serve. Absent means all of them,
+      which is the opposite default to the flags above — see
+      `environmentFeatures.ts`. Read it through `resolveEnvironmentFeatures`
+      rather than directly, so absent and partial both come back whole. */
+  features: Schema.optionalKey(EnvironmentFeatures),
 });
 export type ExecutionEnvironmentCapabilities = typeof ExecutionEnvironmentCapabilities.Type;
 

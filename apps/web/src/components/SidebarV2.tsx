@@ -90,6 +90,7 @@ import { useClientSettings, useUpdateClientSettings } from "../hooks/useSettings
 import { useCopyToClipboard } from "../hooks/useCopyToClipboard";
 import { useNowMinute } from "../hooks/useNowMinute";
 import { useEnvironments, usePrimaryEnvironmentId } from "../state/environments";
+import { serverConfigFeatures } from "../state/environmentFeatures";
 import { useProjects, useThreadShells } from "../state/entities";
 import { environmentServerConfigsAtom, primaryServerKeybindingsAtom } from "../state/server";
 import { vcsEnvironment } from "../state/vcs";
@@ -1922,6 +1923,12 @@ export default function SidebarV2() {
           serverConfigs.get(thread.environmentId)?.environment.capabilities.threadSnooze === true &&
           canSnooze(thread, { now: selectionNow }),
       );
+      // A mixed selection is only deletable where every environment in it can
+      // archive; offering it otherwise would half-apply, exactly as snooze
+      // above avoids.
+      const canDeleteSelection = snoozableThreads.every(
+        (thread) => serverConfigFeatures(serverConfigs.get(thread.environmentId)).threadArchival,
+      );
       const snoozePresets = resolveSnoozePresets(new Date());
       const clicked = await settlePromise(() =>
         api.contextMenu.show(
@@ -1940,7 +1947,9 @@ export default function SidebarV2() {
                 ]
               : []),
             { id: "mark-unread", label: `Mark unread (${count})` },
-            { id: "delete", label: `Delete (${count})`, destructive: true },
+            ...(canDeleteSelection
+              ? [{ id: "delete", label: `Delete (${count})`, destructive: true }]
+              : []),
           ],
           position,
         ),
@@ -2063,6 +2072,9 @@ export default function SidebarV2() {
           true;
         const supportsSnooze =
           serverConfigs.get(thread.environmentId)?.environment.capabilities.threadSnooze === true;
+        const supportsArchival = serverConfigFeatures(
+          serverConfigs.get(thread.environmentId),
+        ).threadArchival;
         const isSettled = settledThreadKeysRef.current.has(threadKey);
         const isSnoozed = snoozedThreadKeysRef.current.has(threadKey);
         // Presets resolve at menu-open time (same as the popover).
@@ -2104,7 +2116,9 @@ export default function SidebarV2() {
               { id: "mark-unread", label: "Mark unread" },
               { id: "copy-path", label: "Copy path", icon: "copy" },
               ...(thread.branch ? [{ id: "copy-branch", label: "Copy branch", icon: "copy" }] : []),
-              { id: "delete", label: "Delete", destructive: true, icon: "trash" },
+              ...(supportsArchival
+                ? [{ id: "delete", label: "Delete", destructive: true, icon: "trash" }]
+                : []),
             ],
             position,
           ),

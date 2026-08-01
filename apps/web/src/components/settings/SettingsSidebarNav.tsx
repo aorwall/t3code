@@ -22,6 +22,9 @@ import {
   useSidebar,
 } from "../ui/sidebar";
 import { T3ConnectSidebarAvatar, T3ConnectSidebarSignIn } from "../clerk/T3ConnectSidebarSignIn";
+import { usePrimaryEnvironmentId } from "../../state/environments";
+import { useEnvironmentFeatures } from "../../state/environmentFeatures";
+import { SETTINGS_SECTION_FEATURE } from "./sectionFeatures";
 
 export type SettingsSectionPath =
   | "/settings/general"
@@ -52,6 +55,13 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
   const navigate = useNavigate();
   const canGoBack = useCanGoBack();
   const { isMobile, setOpenMobile } = useSidebar();
+  // Settings act on the primary environment, so that is the one asked what it
+  // can serve.
+  const features = useEnvironmentFeatures(usePrimaryEnvironmentId());
+  const navItems = SETTINGS_NAV_ITEMS.filter((item) => {
+    const required = SETTINGS_SECTION_FEATURE[item.to];
+    return required === undefined || features[required];
+  });
   const handleSectionClick = useCallback(
     (to: SettingsSectionPath) => {
       if (isMobile) {
@@ -77,7 +87,7 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
       <SidebarContent className="overflow-x-hidden">
         <SidebarGroup className="p-2">
           <SidebarMenu>
-            {SETTINGS_NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.to;
               return (

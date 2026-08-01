@@ -123,21 +123,24 @@ of the checklist exists.
 `converged` means take upstream wholesale, then re-apply only the deltas listed —
 never hand-merge a converged file, or the fork delta grows every time.
 
-| Path                                                                                                                                                                                                                             | Policy                     | Why                                                                                                                                                                |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `apps/web/src/environments/primary/auth.ts`                                                                                                                                                                                      | ours                       | Auth is fork-owned; we do not support the T3 backend.                                                                                                              |
-| `apps/web/src/environments/primary/httpLayer.ts`                                                                                                                                                                                 | ours                       | Always sends the Moatless session cookie; upstream's same-origin gate is deliberately gone.                                                                        |
-| `apps/web/src/routes/login.tsx`                                                                                                                                                                                                  | ours                       | Fork-only route. Upstream has no `/login`.                                                                                                                         |
-| `apps/web/src/authBootstrap.test.ts`                                                                                                                                                                                             | ours                       | Covers the fork's auth path.                                                                                                                                       |
-| `apps/web/vite.config.ts`                                                                                                                                                                                                        | converged                  | See the delta list below.                                                                                                                                          |
-| `docs/fork/**`                                                                                                                                                                                                                   | ours                       | This directory is fork-only by construction; upstream will never add files here.                                                                                   |
-| `docs/integrations/moatless-*.md`, `docs/reference/client-server-contract.md`, `docs/reference/moatless-concept-map.md`, `.plans/**`                                                                                             | ours                       | Fork-authored docs.                                                                                                                                                |
-| `scripts/dev-runner.ts`, `scripts/dev-runner.test.ts`                                                                                                                                                                            | **theirs, verbatim**       | We had a delta here and gave it up (log 2026-07-30). If a conflict appears, we have re-grown one by accident — check why before resolving.                         |
-| `apps/web/src/components/servers/**`, `apps/web/src/browser/**`, `apps/web/src/state/servers.ts`, `packages/contracts/src/servers.ts`, `packages/contracts/fixtures/moatless/**`, `packages/client-runtime/src/state/servers.ts` | ours                       | Fork-only files. Upstream has no thread-servers concept and no hosted preview frame — see [§3](#3-fork-inventory--what-we-changed).                                |
-| `apps/server/src/ws.ts`, `apps/server/src/auth/RpcAuthorization.ts`                                                                                                                                                              | converged                  | Upstream's, plus exactly three `servers.*` method entries in each. Take theirs, re-add the three. Never take ours wholesale — these are high-churn upstream files. |
-| `.github/workflows/**`                                                                                                                                                                                                           | ours                       | All nine workflows are renamed to `*.yml.disabled` and cannot run here (log 2026-07-30). Keep the rename; let upstream's content changes land on the renamed path. |
-| unlisted, and outside the concerns above                                                                                                                                                                                         | theirs                     | Nothing to decide. Do not grow a fork delta without adding a row here.                                                                                             |
-| unlisted, but inside a fork-owned concern                                                                                                                                                                                        | **decide, then add a row** | The table is behind reality; catch it up in this merge instead of leaving the next one to rediscover it.                                                           |
+| Path                                                                                                                                                                                                                              | Policy                     | Why                                                                                                                                                                |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apps/web/src/environments/primary/auth.ts`                                                                                                                                                                                       | ours                       | Auth is fork-owned; we do not support the T3 backend.                                                                                                              |
+| `apps/web/src/environments/primary/httpLayer.ts`                                                                                                                                                                                  | ours                       | Always sends the Moatless session cookie; upstream's same-origin gate is deliberately gone.                                                                        |
+| `apps/web/src/routes/login.tsx`                                                                                                                                                                                                   | ours                       | Fork-only route. Upstream has no `/login`.                                                                                                                         |
+| `apps/web/src/authBootstrap.test.ts`                                                                                                                                                                                              | ours                       | Covers the fork's auth path.                                                                                                                                       |
+| `apps/web/vite.config.ts`                                                                                                                                                                                                         | converged                  | See the delta list below.                                                                                                                                          |
+| `docs/fork/**`                                                                                                                                                                                                                    | ours                       | This directory is fork-only by construction; upstream will never add files here.                                                                                   |
+| `docs/integrations/moatless-*.md`, `docs/reference/client-server-contract.md`, `docs/reference/moatless-concept-map.md`, `.plans/**`                                                                                              | ours                       | Fork-authored docs.                                                                                                                                                |
+| `scripts/dev-runner.ts`, `scripts/dev-runner.test.ts`                                                                                                                                                                             | **theirs, verbatim**       | We had a delta here and gave it up (log 2026-07-30). If a conflict appears, we have re-grown one by accident — check why before resolving.                         |
+| `apps/web/src/components/servers/**`, `apps/web/src/browser/**`, `apps/web/src/state/servers.ts`, `packages/contracts/src/servers.ts`, `packages/contracts/fixtures/moatless/**`, `packages/client-runtime/src/state/servers.ts`  | ours                       | Fork-only files. Upstream has no thread-servers concept and no hosted preview frame — see [§3](#3-fork-inventory--what-we-changed).                                |
+| `apps/server/src/ws.ts`, `apps/server/src/auth/RpcAuthorization.ts`                                                                                                                                                               | converged                  | Upstream's, plus exactly three `servers.*` method entries in each. Take theirs, re-add the three. Never take ours wholesale — these are high-churn upstream files. |
+| `packages/contracts/src/environmentFeatures.ts` (+ `.test.ts`), `apps/web/src/state/environmentFeatures.ts`, `apps/web/src/components/settings/sectionFeatures.ts`, `apps/web/src/components/settings/SettingsFeatureSection.tsx` | ours                       | Fork-only files. Upstream serves every surface itself and so has no notion of an environment withholding one — see [§3](#3-fork-inventory--what-we-changed).       |
+| `packages/contracts/src/environment.ts`                                                                                                                                                                                           | converged                  | Upstream's, plus one `features` field on `ExecutionEnvironmentCapabilities` and its import. Take theirs, re-add those two lines.                                   |
+| The feature-gated components listed in [§3](#surface-gating-by-environment)                                                                                                                                                       | converged                  | Upstream's, plus the gates named there. Every gate is additive — take theirs and re-apply, never hand-merge.                                                       |
+| `.github/workflows/**`                                                                                                                                                                                                            | ours                       | All nine workflows are renamed to `*.yml.disabled` and cannot run here (log 2026-07-30). Keep the rename; let upstream's content changes land on the renamed path. |
+| unlisted, and outside the concerns above                                                                                                                                                                                          | theirs                     | Nothing to decide. Do not grow a fork delta without adding a row here.                                                                                             |
+| unlisted, but inside a fork-owned concern                                                                                                                                                                                         | **decide, then add a row** | The table is behind reality; catch it up in this merge instead of leaving the next one to rediscover it.                                                           |
 
 ### Fork delta in the web vite config
 
@@ -225,6 +228,39 @@ group is therefore fork-added, and it is the largest single delta in the tree.
 | Preview pages hosted in a frame on the web       | `apps/web/src/browser/**`, `apps/web/src/components/preview/**`, `apps/web/src/previewStateStore.ts`, `apps/web/src/previewRuntimeCapability.test.ts`                                                                      | Desktop drives a real browser; the web build cannot, so a preview target becomes an iframe with its own chrome and its own not-started state.                                                                                                   |
 | Three `servers.*` stubs in upstream's own server | `apps/server/src/ws.ts`, `apps/server/src/auth/RpcAuthorization.ts`                                                                                                                                                        | **The one fork change inside upstream's server.** A method in `WS_METHODS` that no server answers is a runtime hole, so this one answers with an empty list and two silent streams. If upstream ships anything server-shaped, drop these first. |
 
+### Surface gating by environment
+
+Added 2026-08-01. Moatless implements part of the client contract, and calling a
+method it does not implement comes back as a defect rather than an error the UI
+can render — so a surface it cannot serve has to be absent, not merely broken.
+Upstream's server answers everything, so upstream has no such notion; the whole
+group is fork-added.
+
+The mechanism is one optional `features` field on the capability struct the
+server already sends, read only through `resolveEnvironmentFeatures`. **Absence
+means every feature on**, which is the opposite of the `threadSettlement` and
+`threadSnooze` flags beside it — an upstream server sends no `features` and must
+keep its whole UI. Getting that backwards costs the entire interface with nothing
+on screen to explain it, which is why `environmentFeatures.test.ts` decodes each
+shape rather than reasoning about it.
+
+Gates are per environment, not per build: the web client talks to several at once
+(the command palette lists every environment, the sidebar reads each thread's).
+
+| Change                                   | Paths                                                                                                                                                                                                                                 | Why it exists                                                                                                                                                                                                                                           |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The `features` contract and its defaults | `packages/contracts/src/environmentFeatures.ts` (+ test), one field and one import in `.../environment.ts`, one export line in `.../index.ts`, `packages/contracts/fixtures/moatless/environment-descriptor.json`                     | Eight names — `terminal`, `versionControl`, `diffs`, `projectManagement`, `workspaceWrites`, `serverAdministration`, `diagnostics`, `threadArchival`. The fixture is Moatless's real descriptor, so a backend that stops withholding fails a test here. |
+| Reading them in the client               | `apps/web/src/state/environmentFeatures.ts`                                                                                                                                                                                           | Every accessor answers with a whole `EnvironmentFeatures`. A config that has not arrived yet resolves all-on, so a surface appears late rather than appearing and vanishing.                                                                            |
+| Gates on chat surfaces                   | `apps/web/src/components/ChatView.tsx`, `.../RightPanelTabs.tsx`, `.../chat/ChatHeader.tsx`, `apps/web/src/rightPanelStore.ts`                                                                                                        | Terminal and diff surfaces, their keybindings, the composer context strip and the header's git and open-in controls. `reconcileSupportedSurfaces` also drops surfaces that a persisted layout restores after the entry point is gone.                   |
+| Gates on navigation                      | `apps/web/src/components/CommandPalette.tsx`, `.../SidebarV2.tsx`                                                                                                                                                                     | "Add project" is offered only for environments that can take one; thread delete only where archival exists, including the bulk action.                                                                                                                  |
+| Gates on settings                        | `apps/web/src/components/settings/sectionFeatures.ts`, `.../SettingsFeatureSection.tsx`, `.../SettingsSidebarNav.tsx`, `.../SettingsPanels.tsx`, `apps/web/src/routes/settings.{keybindings,source-control,archived,diagnostics}.tsx` | Sidebar entry and route both gate, so a typed URL cannot reach a hidden page. General and Providers stay: `splitPatch` routes much of both to localStorage, which works regardless. Only the server-backed "add provider instance" is gated inside.     |
+| What the backend declares                | `backend/src/ui_rpc/mod.rs` in the Moatless repo                                                                                                                                                                                      | All eight are `false` today. A flag is `false` exactly when `handle_request` has no arm for its methods or `dispatch` refuses its commands; a test there asserts the names match this contract.                                                         |
+
+Gates are additive and one-directional — they hide, they never re-style or
+disable. Upstream's own `available` / `disabledReason` pair means "here but not
+usable yet, and here is why"; these mean "this server cannot serve it", which has
+no explanation worth rendering. Keep the two apart when resolving a conflict.
+
 ## 4. Convergence watch list
 
 Places where we built something because upstream had not. If upstream ships its
@@ -237,12 +273,48 @@ own version, theirs wins and our delta should shrink or disappear.
 | Allowed hosts             | `T3CODE_ALLOWED_HOSTS` alias                    | Upstream consolidating on `T3CODE_DEV_ALLOWED_HOSTS`. If deployments can be changed to inject that name, drop our alias.                                                    |
 | Thread servers            | The `servers.*` contract group and its UI       | Any upstream concept of a server a thread owns — theirs wins and the whole group goes, stubs first. Watch `WS_METHODS` for names in that shape.                             |
 | Hosted preview            | `apps/web/src/browser/**` iframe host           | Upstream giving the web build a preview surface of its own. Today only desktop has one, which is why this exists.                                                           |
+| Surface gating            | `capabilities.features` and its client gates    | Any upstream way to say a server does not serve a surface. Theirs wins — the eight flags collapse into it and the gates re-point. Watch `ExecutionEnvironmentCapabilities`. |
 
 ## 5. Decision log
 
 Append-only. Newest first. Each entry records what was decided, by whom, and the
 upstream context at the time — so a future merge can tell a deliberate choice
 from an accident.
+
+### 2026-08-01 — a server may withhold surfaces; the client hides them
+
+Decided by @aorwall. Moatless answers 32 of the contract's 82 methods and 6 of
+its 20 dispatch commands. The gap was reaching people as defects: a terminal
+button, a diff tab or "add project" would call a method with no arm behind it and
+surface a server error. The fix is for the server to say what it cannot do, in
+the descriptor it already sends, and for the client to leave those surfaces out.
+
+Three choices worth recording, because each had a defensible other side:
+
+- **Hide, not disable.** Upstream already has `available` / `disabledReason`,
+  which dims a control and explains itself. That is the right shape for "not yet"
+  and the wrong one for "never here" — a permanent tooltip is an apology on every
+  screen. So gating removes the affordance outright, and the two mechanisms stay
+  separate in the code.
+- **Static, not configurable.** The flags are a table in `ui_rpc/mod.rs`, with no
+  env-var override. What a server can serve is a fact about its code, not about
+  its deployment; an override would let the two disagree and the disagreement
+  would present as the defect this exists to prevent. A flag flips in the commit
+  that implements the methods behind it.
+- **One `projectManagement` group.** Adding a project, removing one, and the
+  source-control settings that configure them arrive together and would only ever
+  be split to gate something nobody asked to gate separately.
+
+The inverted default is the one hazard here: `features` is absent from every
+upstream descriptor and must mean _everything on_, where `threadSettlement` and
+`threadSnooze` on the same struct mean the opposite when absent. Point it the
+wrong way and every upstream server loses its whole UI silently. That asymmetry
+is asserted in `environmentFeatures.test.ts` rather than left to be remembered.
+
+Settings General and Providers are deliberately not gated as pages. `splitPatch`
+in `hooks/useSettings.ts` routes many of their controls to localStorage, which
+works whatever the server implements; hiding the pages would take working
+controls away. Only the server-backed "add provider instance" is gated inside.
 
 ### 2026-07-31 — the fork publishes its own container image
 
