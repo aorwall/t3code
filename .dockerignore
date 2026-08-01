@@ -1,0 +1,41 @@
+# Build context for docker/Dockerfile (the moatless-t3 image).
+#
+# The image builds `@t3tools/web` from source, so the context has to keep every
+# workspace manifest — `pnpm install --frozen-lockfile` verifies the lockfile
+# against the package.json of every project in pnpm-workspace.yaml, and a
+# missing one fails the install rather than being skipped. Only content that no
+# part of the web build reads is excluded.
+
+.git
+.gitattributes
+
+# Vendored read-only reference sources (~128 MB), never imported by the app.
+.repos
+
+# Installed and generated locally; the image installs and builds its own.
+node_modules
+**/node_modules
+**/dist
+**/dist-electron
+**/.vite-plus
+.vite-hooks
+*.tsbuildinfo
+
+# Never bake local environment files into an image. `loadRepoEnv` in
+# apps/web/vite.config.ts reads .env/.env.local at build time, so a stray one in
+# a developer's checkout would silently change the published bundle.
+.env
+.env.*
+
+# Brand/source material and prose the build does not read.
+assets
+docs
+.plans
+experiments
+.claude
+.codex
+.cursor
+.agents
+.macroscope
+.devcontainer
+.vscode

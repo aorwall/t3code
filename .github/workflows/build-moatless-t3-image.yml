@@ -1,0 +1,163 @@
+# Build the T3 Code web app into a static image and publish it as
+# `aorwall/moatless-t3` on Docker Hub, where the Moatless Helm chart pulls it
+# from.
+#
+# This is a fork-only workflow and the one active workflow in this repository —
+# every workflow inherited from upstream is suffixed `.disabled` because it
+# needs Blacksmith runners this fork does not have. See the README in this
+# directory.
+#
+# What runs when:
+#   pull_request       build only, no registry credentials, no push. This is
+#                      what proves the Dockerfile and the nginx config still
+#                      work; the image build runs `nginx -t`.
+#   push to main       build and publish `:latest` and `:sha-<short>`.
+#   workflow_dispatch  same, with a chooseable tag, for republishing without a
+#                      commit.
+#
+# Configuration:
+#   secrets.DOCKERHUB_USERNAME / secrets.DOCKERHUB_TOKEN
+#                      Docker Hub credentials with write access to the target
+#                      namespace. Only read on the publishing paths.
+#   vars.REGISTRY_ORG  registry namespace, defaults to `aorwall` (same
+#                      convention as the moatless repository's workflows).
+#   vars.DOCKER_BUILD_RUNNER
+#                      runner label, defaults to `staging-runners-large`. See
+#                      the runner notes below.
+#
+# Runners:
+#   `staging-runners-large` is an org-scoped ARC scale set defined in
+#   soaplabs/soap-platform-gitops (`apps/nonprod/arc-runner-large-set`) — 4 CPU
+#   and 8 GiB with a DinD sidecar, which is the set meant for image builds. It
+#   is org-scoped (`githubConfigUrl: https://github.com/soaplabs`), so this
+#   repository can use it with nothing to configure.
+#
+#   It is not merely preferred over GitHub-hosted runners, it is the only thing
+#   that works: every `ubuntu-*` job in this repository's history fails in about
+#   30 seconds with no runner assigned and no step recorded.
+#
+#   Two properties of that set shape the Dockerfile. Its nodes are spot, so a
+#   job can vanish mid-step with no logs — retry before investigating. And its
+#   egress allowlist permits only 443/TCP outbound, so anything the build
+#   fetches over plain HTTP hangs until it times out rather than failing fast.
+
+name: Build moatless-t3 image
+
+# The two path lists are duplicated rather than shared through a YAML anchor:
+# the Actions workflow parser does not resolve anchors. Keep them in step.
+on:
+  pull_request:
+    paths:
+      - apps/web/**
+      - packages/**
+      - scripts/**
+      - patches/**
+      - docker/**
+      - .dockerignore
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - tsconfig.base.json
+      - vite.config.ts
+      - .github/workflows/build-moatless-t3-image.yml
+  push:
+    branches:
+      - main
+    paths:
+      - apps/web/**
+      - packages/**
+      - scripts/**
+      - patches/**
+      - docker/**
+      - .dockerignore
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - tsconfig.base.json
+      - vite.config.ts
+      - .github/workflows/build-moatless-t3-image.yml
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish as (the image is always also tagged sha-<short>)"
+        type: string
+        default: "latest"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: moatless-t3-image-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: Build & push moatless-t3
+    runs-on: ${{ vars.DOCKER_BUILD_RUNNER || 'staging-runners-large' }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Compute image refs
+        id: refs
+        env:
+          IMAGE: ${{ vars.REGISTRY_ORG || 'aorwall' }}/moatless-t3
+          # A pull request builds to prove the Dockerfile still works; only the
+          # branch that is deployed publishes.
+          PUBLISH: ${{ github.event_name != 'pull_request' }}
+          REQUESTED_TAG: ${{ inputs.tag || 'latest' }}
+        run: |
+          set -euo pipefail
+          SHORT="${GITHUB_SHA::7}"
+          {
+            echo "publish=${PUBLISH}"
+            echo "tag-list=${IMAGE}:${REQUESTED_TAG}, ${IMAGE}:sha-${SHORT}"
+            echo "tags<<EOF"
+            echo "${IMAGE}:${REQUESTED_TAG}"
+            echo "${IMAGE}:sha-${SHORT}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+
+      - name: Login to Docker Hub
+        if: steps.refs.outputs.publish == 'true'
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          # The Moatless clusters are amd64. Building the other architecture
+          # would roughly double the job for an image nothing pulls.
+          platforms: linux/amd64
+          push: ${{ steps.refs.outputs.publish == 'true' }}
+          tags: ${{ steps.refs.outputs.tags }}
+          build-args: |
+            SOURCE_COMMIT=${{ github.sha }}
+          # No layer cache. The Dockerfile copies the whole context before
+          # installing, so any change to any file invalidates the install layer
+          # and everything after it — a cache would export hundreds of MB per
+          # run to serve a hit rate near zero. The cold build is ~2 minutes.
+
+      - name: Summarize
+        if: always()
+        run: |
+          {
+            echo "## moatless-t3"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            if [ "${{ steps.refs.outputs.publish }}" = "true" ]; then
+              echo "| pushed | \`${{ steps.refs.outputs.tag-list }}\` |"
+            else
+              echo "| pushed | no — pull request builds do not publish |"
+              echo "| would push | \`${{ steps.refs.outputs.tag-list }}\` |"
+            fi
+            echo "| commit | \`${{ github.sha }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

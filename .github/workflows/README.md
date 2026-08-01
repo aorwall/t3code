@@ -1,10 +1,58 @@
-# Workflows are disabled in this fork
+# Workflows in this fork
 
-Every workflow here is suffixed `.disabled`. GitHub only reads `.yml`/`.yaml` in
-this directory, so the suffix is all it takes — the files are otherwise
-untouched.
+One workflow runs here. Every workflow inherited from upstream is suffixed
+`.disabled`. GitHub only reads `.yml`/`.yaml` in this directory, so the suffix is
+all it takes — the files are otherwise untouched.
 
-## Why
+## The one that runs
+
+| Workflow                      | Runner                                                   | What it does                                                                                                 |
+| ----------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `build-moatless-t3-image.yml` | `vars.DOCKER_BUILD_RUNNER`, else `staging-runners-large` | Builds `apps/web` into a static nginx image and publishes `aorwall/moatless-t3` for the Moatless Helm chart. |
+
+It is fork-only — upstream has no equivalent, so there is nothing for a merge to
+conflict with. Pull requests build without publishing, which is also the only
+place `docker/nginx.conf` is executed before it reaches a cluster. See
+[`docker/README.md`](../../docker/README.md).
+
+To publish it needs `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` on this
+repository, with write access to the `aorwall` namespace. Neither is read on the
+pull request path.
+
+## Runners: only self-hosted ones start here
+
+`staging-runners-large` is an org-scoped ARC scale set defined in
+[soaplabs/soap-platform-gitops](https://github.com/soaplabs/soap-platform-gitops)
+under `apps/nonprod/arc-runner-large-set` — 4 CPU and 8 GiB with a DinD sidecar,
+the set intended for image builds. Because it is scoped to the org rather than a
+repository list, this fork can use it with nothing to configure.
+
+It is the default here because **GitHub-hosted runners do not work in this
+repository at all**. Every
+`ubuntu-*` job in its history — `pr-size`, `pr-vouch`, and the first attempt at
+this workflow — fails in about 30 seconds with `runner_name` empty and not one
+step recorded, which is the shape of a job that was never dispatched rather than
+one that ran and failed:
+
+```bash
+gh api repos/soaplabs/t3code/actions/runs/<id>/jobs \
+  --jq '.jobs[] | {name, conclusion, runner_name, steps: (.steps | length)}'
+```
+
+So there are two distinct runner problems in this repository, not one:
+Blacksmith labels nothing answers, and GitHub-hosted labels that are answered by
+nothing either. Any workflow re-enabled here has to name a self-hosted set.
+
+Two properties of that set are worth knowing before debugging a red run:
+
+- **Its nodes are spot.** A job can disappear mid-step with no logs uploaded,
+  which looks like a build that hung rather than one that was preempted. Re-run
+  before investigating.
+- **Its egress allowlist permits only 443/TCP.** Anything a build fetches over
+  plain HTTP — Debian's default apt sources, for one — hangs until it times out
+  instead of failing fast.
+
+## Why the rest are disabled
 
 None of them can do useful work in `soaplabs/t3code`, and their run history says
 so — nine workflows, zero successful runs, ever:
@@ -27,11 +75,14 @@ Two separate causes:
   rather than GitHub-hosted runners. This fork has no Blacksmith installation, so
   those jobs queue with no runner assigned and never start. They are not slow —
   they never run at all.
-- **Upstream's contributor automation.** `pr-size` labels PRs by effective
-  changed lines and `pr-vouch` gates external contributors against
-  `.github/VOUCHED.td`. Both are for running a public OSS project and fail here
-  before executing a single step. `issue-labels` maintains upstream's issue
-  label taxonomy.
+- **GitHub-hosted runners.** `pr-size` and `pr-vouch` ask for `ubuntu-24.04`,
+  and nothing answers that label here either — see the section above. They are
+  also upstream's contributor automation and would not be wanted regardless:
+  `pr-size` labels PRs by effective changed lines, `pr-vouch` gates external
+  contributors against `.github/VOUCHED.td`, and `issue-labels` maintains
+  upstream's issue label taxonomy. (An earlier version of this file put their
+  failures down to that second reason alone. They never reached the code that
+  would have made it true.)
 
 The practical effect was a permanent red X on every PR from workflows that could
 never have passed, and no signal from the one that mattered.
@@ -46,8 +97,10 @@ git mv .github/workflows/ci.yml.disabled .github/workflows/ci.yml
 
 `ci.yml` also needs a runner it can actually reach. Either install Blacksmith on
 the fork, or change `runs-on: blacksmith-8vcpu-ubuntu-2404` to
-`runs-on: ubuntu-24.04` (and the macOS job to `macos-14`). Note that the second
-option is a fork delta on a file upstream edits often, so it will want a row in
+`runs-on: staging-runners-large` — not to `ubuntu-24.04`, which does not start
+here. The macOS job has no self-hosted equivalent and stays disabled either way.
+Note that the second option is a fork delta on a file upstream edits often, so
+it will want a row in
 [the merge policy](../../docs/fork/upstream-merge-policy.md).
 
 ## Why renamed rather than deleted
@@ -58,4 +111,6 @@ instead of conflicting. Deleting them would raise a delete/modify conflict on
 every upstream edit — and upstream edits `ci.yml` and `release.yml` regularly.
 
 Until CI is restored, verification is local and manual:
-`pnpm typecheck && pnpm test && pnpm lint && pnpm fmt:check`.
+`pnpm typecheck && pnpm test && pnpm lint && pnpm fmt:check`. The image workflow
+does not stand in for that — it proves `apps/web` builds and the nginx config
+parses, and nothing about the rest of the monorepo.

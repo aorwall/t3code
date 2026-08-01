@@ -244,6 +244,38 @@ Append-only. Newest first. Each entry records what was decided, by whom, and the
 upstream context at the time — so a future merge can tell a deliberate choice
 from an accident.
 
+### 2026-07-31 — the fork publishes its own container image
+
+Decided by @aorwall. Moatless deploys the T3 UI from its Helm chart, so the fork
+needs a container image; upstream ships `apps/web` to Vercel and has no
+container build to inherit. `docker/**` and
+`.github/workflows/build-moatless-t3-image.yml` are therefore fork-only, and
+`build-moatless-t3-image.yml` is the first workflow to run in this fork — the
+blanket "every workflow here is disabled" statement in the workflows README is
+no longer true and was rewritten rather than left as a near-truth.
+
+It also turned up a second runner problem. The first attempt ran on
+`ubuntu-latest` and failed in 30 seconds with no runner assigned and no step
+recorded — the same shape as every `ubuntu-*` job in this repository's history,
+including `pr-size` and `pr-vouch`. GitHub-hosted runners do not start here at
+all, so the 2026-07-30 entry below is right that those two workflows never
+worked but wrong about why. Self-hosted `staging-runners-large` is the only
+label that runs, and any workflow re-enabled here has to name it.
+
+Two things this deliberately did **not** do:
+
+- **No proxy in the image.** The SPA and the backend share one host, and the
+  chart's Traefik routes `/api`, `/ws`, `/.well-known/t3` and `/oauth/token` to
+  the backend. Teaching nginx the same prefixes would give every one of them two
+  possible answers. If upstream later adds a container build that proxies, that
+  is a different deployment shape, not a convergence.
+- **No runtime backend URL.** The client derives its HTTP and WebSocket origins
+  from `window.location.origin`, which is the existing single-origin behaviour
+  in `apps/web/vite.config.ts` — the image just makes sure it is switched on, by
+  building with a non-empty `MOATLESS_BASE_URL`. That build-time flag is the
+  same fork delta already listed above under the web vite config; the image adds
+  a consumer, not a delta.
+
 ### 2026-07-31 — started tracking our own delta, not just upstream's
 
 This file could answer "who wins this conflict" but not "what did we change" —
