@@ -110,7 +110,7 @@ it does not, take upstream's version and move on.
 | Client / device identity                                         | Moatless replaces device pairing.                                             | Do not adopt. See [§2](#2-deleted-upstream-surfaces).                                 |
 | Cloud, relay, T3 Connect                                         | Being removed with Clerk.                                                     | Do not adopt.                                                                         |
 | Dev-server origin and proxy                                      | Upstream's single-origin dev, plus our proxy-target override.                 | Adopt — this is converged, theirs is the base. Re-apply our delta.                    |
-| Backend contract (what the client assumes the server implements) | Whatever Moatless implements; see `docs/reference/client-server-contract.md`. | Adopt only if Moatless implements it, otherwise it is a client that talks to nothing. |
+| Backend contract (what the client assumes the server implements) | Whatever Moatless implements; see `docs/internals/client-server-contract.md`. | Adopt only if Moatless implements it, otherwise it is a client that talks to nothing. |
 | Electron / desktop                                               | Kept in the tree, explicitly not a compliance target.                         | Take theirs. Do not spend merge effort making it work, and do not delete the app.     |
 
 Anything outside these concerns is upstream's: take theirs, no decision needed.
@@ -131,7 +131,7 @@ never hand-merge a converged file, or the fork delta grows every time.
 | `apps/web/src/authBootstrap.test.ts`                                                                                                                                                                                             | ours                       | Covers the fork's auth path.                                                                                                                                       |
 | `apps/web/vite.config.ts`                                                                                                                                                                                                        | converged                  | See the delta list below.                                                                                                                                          |
 | `docs/fork/**`                                                                                                                                                                                                                   | ours                       | This directory is fork-only by construction; upstream will never add files here.                                                                                   |
-| `docs/integrations/moatless-*.md`, `docs/reference/client-server-contract.md`, `docs/reference/moatless-concept-map.md`, `.plans/**`                                                                                             | ours                       | Fork-authored docs.                                                                                                                                                |
+| `docs/user/moatless-*.md`, `docs/internals/client-server-contract.md`, `docs/internals/moatless-concept-map.md`, `.plans/**`                                                                                                     | ours                       | Fork-authored docs.                                                                                                                                                |
 | `scripts/dev-runner.ts`, `scripts/dev-runner.test.ts`                                                                                                                                                                            | **theirs, verbatim**       | We had a delta here and gave it up (log 2026-07-30). If a conflict appears, we have re-grown one by accident — check why before resolving.                         |
 | `apps/web/src/components/servers/**`, `apps/web/src/browser/**`, `apps/web/src/state/servers.ts`, `packages/contracts/src/servers.ts`, `packages/contracts/fixtures/moatless/**`, `packages/client-runtime/src/state/servers.ts` | ours                       | Fork-only files. Upstream has no thread-servers concept and no hosted preview frame — see [§3](#3-fork-inventory--what-we-changed).                                |
 | `apps/server/src/ws.ts`, `apps/server/src/auth/RpcAuthorization.ts`                                                                                                                                                              | converged                  | Upstream's, plus exactly three `servers.*` method entries in each. Take theirs, re-add the three. Never take ours wholesale — these are high-churn upstream files. |
@@ -205,10 +205,10 @@ not as changes here.
 
 ### Repo hygiene
 
-| Change                                | Paths                                                                                                                                                | Why it exists                                                                                      |
-| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Every GitHub workflow renamed off     | `.github/workflows/*.yml.disabled`, `.github/workflows/README.md`                                                                                    | No Blacksmith runners here, so all nine queued forever (log 2026-07-30).                           |
-| Fork-authored documentation and plans | `docs/fork/**`, `docs/integrations/moatless-*.md`, `docs/reference/client-server-contract.md`, `docs/reference/moatless-concept-map.md`, `.plans/**` | Describes the Moatless side of the fork; upstream has no equivalent and will never add files here. |
+| Change                                | Paths                                                                                                                                        | Why it exists                                                                                      |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Every GitHub workflow renamed off     | `.github/workflows/*.yml.disabled`, `.github/workflows/README.md`                                                                            | No Blacksmith runners here, so all nine queued forever (log 2026-07-30).                           |
+| Fork-authored documentation and plans | `docs/fork/**`, `docs/user/moatless-*.md`, `docs/internals/client-server-contract.md`, `docs/internals/moatless-concept-map.md`, `.plans/**` | Describes the Moatless side of the fork; upstream has no equivalent and will never add files here. |
 
 ### Thread servers and the web preview
 
@@ -243,6 +243,32 @@ own version, theirs wins and our delta should shrink or disappear.
 Append-only. Newest first. Each entry records what was decided, by whom, and the
 upstream context at the time — so a future merge can tell a deliberate choice
 from an accident.
+
+### 2026-08-01 — merged upstream to 0ad91b6e
+
+56 upstream commits, merge base `6efcf3e1`, upstream head `0ad91b6e`.
+
+Conflicts were all documentation layout conflicts. Upstream moved the docs tree
+from `docs/reference/**` to `docs/internals/**` and from
+`docs/integrations/**` to `docs/user/**`; kept the fork-authored Moatless docs
+but accepted those upstream locations, then updated this policy's owned paths.
+`docs/README.md` took upstream's new structure with the Moatless links added
+back in the matching sections.
+
+The new-upstream-surface sweep found mobile connection wakeups, the Ghostty web
+terminal files, `docs/internals/connection-runtime.md`, and the new
+`apps/server/src/cli/pair.ts` command. The first three were accepted as
+irrelevant false positives for the owned-concern filter. `t3 pair` was rejected:
+it is new device-pairing CLI work, and device pairing is fork-owned and replaced
+by Moatless. The added command, test, import, and CLI subcommand registration
+were removed in this merge commit.
+
+Verification surfaced two test-only adaptations. Upstream's relay deploy test
+reads `.github/workflows/release.yml`; this fork keeps that workflow disabled as
+`.github/workflows/release.yml.disabled`, so the test follows the fork-owned
+workflow path. The web image-compression tests were also shrunk to use small
+synthetic blobs; they still exercise the same budget branches without spending
+the full-suite timeout base64-encoding multi-megabyte fixtures.
 
 ### 2026-07-31 — the fork publishes its own container image
 
