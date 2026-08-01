@@ -104,7 +104,7 @@ describe("review comment serialization", () => {
     );
   });
 
-  it("keeps fenced examples in comment prose separate from the context fence", () => {
+  it("keeps fenced examples in comment text separate from the context fence", () => {
     const [segment] = parseReviewCommentMessageSegments(
       [
         '<review_comment sectionId="section-1" sectionTitle="Working tree" filePath="src/app.ts" startIndex="0" endIndex="0" rangeLabel="+1">',

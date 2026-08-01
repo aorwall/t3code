@@ -122,10 +122,10 @@ The most reliable sources are the executable contracts and current implementatio
 - Moatless: `CONTEXT.md`, `openapi-specs.json`, `crates/api-schemas`, `crates/events`,
   `backend`, `sandbox`, and `apps/frontend`.
 
-Some prose is stale. In particular, Moatless `docs/architecture-overview.md` still
+Some documentation text is stale. In particular, Moatless `docs/architecture-overview.md` still
 describes an older TypeScript/Hono shape, while the current backend and Sandbox are
 Rust. T3 `docs/architecture/providers.md` also understates the current provider-driver
-set. This document follows source and generated OpenAPI where they disagree with prose.
+set. This document follows source and generated OpenAPI where they disagree with documentation.
 
 ## Decision vocabulary
 

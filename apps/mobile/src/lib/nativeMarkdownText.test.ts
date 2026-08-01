@@ -395,7 +395,7 @@ describe("nativeMarkdownListItemBlocks", () => {
             },
           ],
         },
-        { type: "text", content: "Trailing prose." },
+        { type: "text", content: "Trailing text." },
       ],
     };
 
@@ -503,7 +503,7 @@ describe("nativeMarkdownDocumentChunks", () => {
     ).toBe("\u20079.\tNinth\n10.\tTenth");
   });
 
-  it("keeps prose selectable while exposing rich AST blocks", () => {
+  it("keeps text selectable while exposing rich AST blocks", () => {
     const document: MarkdownNode = {
       type: "document",
       children: [
@@ -578,7 +578,7 @@ describe("nativeMarkdownDocumentChunks", () => {
     ]);
   });
 
-  it("keeps surrounding prose selectable when rich nodes have no source offsets", () => {
+  it("keeps surrounding text selectable when rich nodes have no source offsets", () => {
     const document: MarkdownNode = {
       type: "document",
       children: [
