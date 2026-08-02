@@ -51,6 +51,7 @@ interface RightPanelTabsProps {
   filesAvailable: boolean;
   surfaceDisabled?: boolean | undefined;
   surfaceDisabledReason?: string | undefined;
+  sandboxControl?: ReactNode;
   children: ReactNode;
 }
 
@@ -500,6 +501,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             ) : null}
           </div>
         </ScrollArea>
+        {props.sandboxControl}
         {props.layoutControls}
       </div>
       <div className="flex min-h-0 flex-1 flex-col">

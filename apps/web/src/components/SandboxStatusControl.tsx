@@ -45,6 +45,11 @@ interface SandboxStatusControlProps {
   readonly threadRef: ScopedThreadRef;
   readonly status: EnvironmentQueryView<SandboxStatusResult>;
   readonly className?: string | undefined;
+  /**
+   * Drop the status text and keep only the indicator and its action, for hosts
+   * too narrow to spare the width. The text moves to the hover title.
+   */
+  readonly compact?: boolean | undefined;
 }
 
 function failureMessage(error: unknown): string {
@@ -53,7 +58,12 @@ function failureMessage(error: unknown): string {
     : "The sandbox request failed.";
 }
 
-export function SandboxStatusControl({ threadRef, status, className }: SandboxStatusControlProps) {
+export function SandboxStatusControl({
+  threadRef,
+  status,
+  className,
+  compact,
+}: SandboxStatusControlProps) {
   const startSandbox = useAtomCommand(sandboxEnvironment.start, { reportFailure: false });
   const stopSandbox = useAtomCommand(sandboxEnvironment.stop, { reportFailure: false });
   const [pendingAction, setPendingAction] = useState<"start" | "stop" | null>(null);
@@ -114,6 +124,7 @@ export function SandboxStatusControl({ threadRef, status, className }: SandboxSt
   return (
     <div
       aria-live="polite"
+      title={compact ? label : undefined}
       className={cn(
         "flex min-w-0 shrink-0 items-center gap-2 rounded-md border border-border/70 bg-background px-2 py-1 shadow-xs",
         tone === "error" && "border-destructive/35 bg-destructive/5",
@@ -129,7 +140,14 @@ export function SandboxStatusControl({ threadRef, status, className }: SandboxSt
         ) : (
           <span className="size-2 shrink-0 rounded-full bg-warning" />
         )}
-        <div className="min-w-0 truncate text-xs font-medium text-foreground">{label}</div>
+        <div
+          className={cn(
+            "min-w-0 truncate text-xs font-medium text-foreground",
+            compact && "sr-only",
+          )}
+        >
+          {label}
+        </div>
       </div>
       {showRetry ? (
         <Button size="xs" variant="outline" onClick={status.refresh}>
