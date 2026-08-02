@@ -92,6 +92,7 @@ import { useCopyToClipboard } from "../hooks/useCopyToClipboard";
 import { useNowMinute } from "../hooks/useNowMinute";
 import { useEnvironments, usePrimaryEnvironmentId } from "../state/environments";
 import { FEATURES } from "../fork/features";
+import { useTouchContextMenu } from "../fork/touchContextMenu";
 import { useProjects, useThreadShells } from "../state/entities";
 import { environmentServerConfigsAtom, primaryServerKeybindingsAtom } from "../state/server";
 import { vcsEnvironment } from "../state/vcs";
@@ -592,6 +593,9 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
     },
     [onContextMenu, threadRef],
   );
+  // Fork: a long press reaches the same menu on a touch device, where there is
+  // no right-click and the inline row actions never leave their hover state.
+  const touchContextMenuProps = useTouchContextMenu(handleContextMenu);
   const handleKeyDown = useCallback(
     (event: ReactKeyboardEvent) => {
       if (event.target !== event.currentTarget) return;
@@ -799,7 +803,7 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
                 onClick={handleClick}
                 onDoubleClick={handleDoubleClick}
                 onKeyDown={handleKeyDown}
-                onContextMenu={handleContextMenu}
+                {...touchContextMenuProps}
               />
             }
           >
@@ -915,7 +919,7 @@ const SidebarV2Row = memo(function SidebarV2Row(props: {
               onClick={handleClick}
               onDoubleClick={handleDoubleClick}
               onKeyDown={handleKeyDown}
-              onContextMenu={handleContextMenu}
+              {...touchContextMenuProps}
             />
           }
         >

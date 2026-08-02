@@ -116,6 +116,7 @@ import { threadEnvironment, useEnvironmentThread } from "../state/threads";
 import { vcsEnvironment } from "../state/vcs";
 import { useEnvironment, useEnvironments, usePrimaryEnvironmentId } from "../state/environments";
 import { FEATURES } from "../fork/features";
+import { useTouchContextMenu } from "../fork/touchContextMenu";
 import {
   buildThreadRouteParams,
   resolveActiveThreadRouteRef,
@@ -562,6 +563,9 @@ export const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThr
     },
     [clearSelection, handleMultiSelectContextMenu, handleThreadContextMenu, isSelected, threadRef],
   );
+  // Fork: a long press reaches the same menu on a touch device, where there is
+  // no right-click and the inline row actions never leave their hover state.
+  const touchContextMenuProps = useTouchContextMenu(handleRowContextMenu);
   const handlePrClick = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
       if (!prStatus) return;
@@ -676,7 +680,7 @@ export const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThr
         onClick={handleRowClick}
         onDoubleClick={handleRowDoubleClick}
         onKeyDown={handleRowKeyDown}
-        onContextMenu={handleRowContextMenu}
+        {...touchContextMenuProps}
       >
         <div className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
           {prStatus && (

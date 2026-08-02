@@ -17,6 +17,7 @@ import {
 } from "~/components/ui/sheet";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip";
+import { MobileSidebarDrawer } from "~/fork/MobileSidebarDrawer";
 import { useIsMobile } from "~/hooks/useMediaQuery";
 import { getLocalStorageItem, setLocalStorageItem } from "~/hooks/useLocalStorage";
 import { resolveSidebarState, type ResponsiveSidebarState } from "./sidebarState";
@@ -224,6 +225,25 @@ function Sidebar({
         >
           {children}
         </div>
+      </SidebarInstanceContext>
+    );
+  }
+
+  // Fork: the left sidebar is the app's primary navigation, so on a touch
+  // device it is a drawer the finger can drag in from the edge rather than a
+  // sheet that only answers the trigger. Everything else keeps the sheet.
+  if (isMobile && side === "left") {
+    return (
+      <SidebarInstanceContext value={instanceContextValue}>
+        <MobileSidebarDrawer
+          className={className}
+          onOpenChange={setOpenMobile}
+          open={openMobile}
+          side={side}
+          {...props}
+        >
+          {children}
+        </MobileSidebarDrawer>
       </SidebarInstanceContext>
     );
   }

@@ -166,18 +166,18 @@ export function showContextMenuFallback<T extends string>(
 
       const menu = document.createElement("div");
       menu.className =
-        "dropdown-glass fixed z-[10000] min-w-32 max-w-sm overflow-hidden rounded-lg bg-clip-padding text-popover-foreground outline-none";
+        "dropdown-glass fixed z-[10000] min-w-32 max-w-[min(24rem,calc(100vw-0.5rem))] overflow-hidden rounded-lg bg-clip-padding text-popover-foreground outline-none";
       menu.style.cssText =
-        "position:fixed;z-index:10000;min-width:8rem;max-width:24rem;overflow:hidden;border-radius:var(--radius-lg);background-clip:padding-box;color:var(--popover-foreground);outline:none;pointer-events:auto;";
+        "position:fixed;z-index:10000;min-width:8rem;max-width:min(24rem,calc(100vw - 0.5rem));overflow:hidden;border-radius:var(--radius-lg);background-clip:padding-box;color:var(--popover-foreground);outline:none;pointer-events:auto;";
       menu.style.left = `${preferredLeft}px`;
       menu.style.top = `${preferredTop}px`;
       menu.dataset.level = String(level);
 
       const inner = document.createElement("div");
       inner.className =
-        "max-h-[min(24rem,70vh)] min-w-0 max-w-sm overflow-y-auto overflow-x-hidden p-1";
+        "max-h-[min(24rem,70vh)] min-w-0 max-w-[min(24rem,calc(100vw-0.5rem))] overflow-y-auto overflow-x-hidden p-1";
       inner.style.cssText =
-        "max-height:min(24rem,70vh);min-width:0;max-width:24rem;overflow-x:hidden;overflow-y:auto;padding:0.25rem;";
+        "max-height:min(24rem,70vh);min-width:0;max-width:min(24rem,calc(100vw - 0.5rem));overflow-x:hidden;overflow-y:auto;padding:0.25rem;";
 
       for (const item of entries) {
         if (item.header === true) {
@@ -250,7 +250,7 @@ export function showContextMenuFallback<T extends string>(
           });
 
           if (hasChildren) {
-            button.addEventListener("mouseenter", () => {
+            const openSubmenu = () => {
               const rect = button.getBoundingClientRect();
               const nextLeft = rect.right + 4;
               const nextTop = rect.top;
@@ -264,9 +264,15 @@ export function showContextMenuFallback<T extends string>(
               if (childRect.right > window.innerWidth) {
                 clampMenuPosition(childMenu, rect.left - childRect.width - 4, rect.top);
               }
-            });
+            };
+            button.addEventListener("mouseenter", openSubmenu);
+            // Opening on click as well as on hover is what makes a submenu
+            // reachable with a finger: a tap raises no `mouseenter`, so
+            // without this the Snooze presets can only ever be opened by a
+            // mouse.
             button.addEventListener("click", (event) => {
               event.preventDefault();
+              openSubmenu();
             });
           } else {
             button.addEventListener("mouseenter", () => {
