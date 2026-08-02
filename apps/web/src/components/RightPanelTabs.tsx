@@ -24,6 +24,7 @@ import { COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS } from "~/workspaceTitlebar";
 
 import { PreviewPanelShell, type PreviewPanelMode } from "./preview/PreviewPanelShell";
 import { PierreEntryIcon } from "./chat/PierreEntryIcon";
+import { RightPanelDisabledState } from "./sandbox/RightPanelDisabledState";
 
 interface RightPanelTabsProps {
   mode: PreviewPanelMode;
@@ -48,6 +49,8 @@ interface RightPanelTabsProps {
   browserAvailable: boolean;
   diffAvailable: boolean;
   filesAvailable: boolean;
+  surfaceDisabled?: boolean | undefined;
+  surfaceDisabledReason?: string | undefined;
   children: ReactNode;
 }
 
@@ -70,7 +73,7 @@ function DisabledReasonTooltip(props: { reason: string; trigger: ReactElement })
 
 function SurfaceMenuItem(props: {
   available: boolean;
-  disabledReason?: string;
+  disabledReason?: string | undefined;
   onClick: () => void;
   children: ReactNode;
 }) {
@@ -280,6 +283,11 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
   const ownsDesktopTitleBar = isElectron && props.mode === "inline";
   const { resolvedTheme } = useTheme();
   const tabListRef = useRef<HTMLDivElement>(null);
+  const surfaceDisabledReason =
+    props.surfaceDisabledReason ?? "Start the sandbox to use right-panel surfaces.";
+  const surfaceAvailable = (available: boolean) => available && !props.surfaceDisabled;
+  const disabledReason = (reason: string) =>
+    props.surfaceDisabled ? surfaceDisabledReason : reason;
 
   const handleTabContextMenu = useCallback(
     async (event: ReactMouseEvent, surface: RightPanelSurface) => {
@@ -456,28 +464,32 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
                 </MenuTrigger>
                 <MenuPopup align="start" side="bottom" sideOffset={6} className="min-w-44">
                   <SurfaceMenuItem
-                    available={props.browserAvailable}
-                    disabledReason={SURFACE_DISABLED_REASONS.browser}
+                    available={surfaceAvailable(props.browserAvailable)}
+                    disabledReason={disabledReason(SURFACE_DISABLED_REASONS.browser)}
                     onClick={props.onAddBrowser}
                   >
                     <Globe2 />
                     Browser
                   </SurfaceMenuItem>
-                  <SurfaceMenuItem available onClick={props.onAddTerminal}>
+                  <SurfaceMenuItem
+                    available={!props.surfaceDisabled}
+                    disabledReason={props.surfaceDisabled ? surfaceDisabledReason : undefined}
+                    onClick={props.onAddTerminal}
+                  >
                     <TerminalSquare />
                     Terminal
                   </SurfaceMenuItem>
                   <SurfaceMenuItem
-                    available={props.filesAvailable}
-                    disabledReason={SURFACE_DISABLED_REASONS.files}
+                    available={surfaceAvailable(props.filesAvailable)}
+                    disabledReason={disabledReason(SURFACE_DISABLED_REASONS.files)}
                     onClick={props.onAddFiles}
                   >
                     <Files />
                     Files
                   </SurfaceMenuItem>
                   <SurfaceMenuItem
-                    available={props.diffAvailable}
-                    disabledReason={SURFACE_DISABLED_REASONS.diff}
+                    available={surfaceAvailable(props.diffAvailable)}
+                    disabledReason={disabledReason(SURFACE_DISABLED_REASONS.diff)}
                     onClick={props.onAddDiff}
                   >
                     <FileDiff />
@@ -491,7 +503,9 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
         {props.layoutControls}
       </div>
       <div className="flex min-h-0 flex-1 flex-col">
-        {props.activeSurfaceId === null ? (
+        {props.surfaceDisabled ? (
+          <RightPanelDisabledState reason={surfaceDisabledReason} />
+        ) : props.activeSurfaceId === null ? (
           <RightPanelEmptyState
             onAddBrowser={props.onAddBrowser}
             onAddTerminal={props.onAddTerminal}

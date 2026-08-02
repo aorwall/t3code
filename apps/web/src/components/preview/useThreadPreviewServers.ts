@@ -10,6 +10,7 @@ export interface ThreadPreviewServersView {
   readonly sandboxStatus: ServersListResult["sandboxStatus"] | null;
   readonly isPending: boolean;
   readonly error: string | null;
+  readonly refresh: () => void;
 }
 
 export function useThreadPreviewServers(
@@ -37,5 +38,6 @@ export function useThreadPreviewServers(
     sandboxStatus: seed.data?.sandboxStatus ?? null,
     isPending: seed.isPending && seed.data === null,
     error: seed.error ?? live.error,
+    refresh: seed.refresh,
   };
 }

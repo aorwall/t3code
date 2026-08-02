@@ -80,6 +80,18 @@ export const ServersListResult = Schema.Struct({
 });
 export type ServersListResult = typeof ServersListResult.Type;
 
+export const SandboxStatusInput = ServersListInput;
+export type SandboxStatusInput = typeof SandboxStatusInput.Type;
+export const SandboxStatusResult = Schema.Struct({
+  sandboxStatus: ServerSandboxStatus,
+});
+export type SandboxStatusResult = typeof SandboxStatusResult.Type;
+
+export const SandboxStartInput = SandboxStatusInput;
+export type SandboxStartInput = typeof SandboxStartInput.Type;
+export const SandboxStartResult = SandboxStatusResult;
+export type SandboxStartResult = typeof SandboxStartResult.Type;
+
 export const ServerStatusSubscribeInput = Schema.Struct({
   threadId: ThreadId,
 });

@@ -1986,13 +1986,25 @@ const makeWsRpcLayer = (
         // Thread servers are containers a hosted environment declares and runs.
         // This server runs threads directly on the machine it is on, so it
         // declares none — the honest answer is an empty list rather than an
-        // unsupported method, and both subscriptions have nothing to report.
-        // A hosted environment answers the same three methods with real data.
+        // unsupported method, and the subscriptions have nothing to report.
+        // A hosted environment answers these methods with real data.
         [WS_METHODS.serversList]: (_input) =>
           observeRpcEffect(
             WS_METHODS.serversList,
             Effect.succeed({ servers: [], sandboxStatus: "not_created" as const }),
             { "rpc.aggregate": "servers" },
+          ),
+        [WS_METHODS.sandboxStatus]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.sandboxStatus,
+            Effect.succeed({ sandboxStatus: "not_created" as const }),
+            { "rpc.aggregate": "sandbox" },
+          ),
+        [WS_METHODS.sandboxStart]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.sandboxStart,
+            Effect.succeed({ sandboxStatus: "not_created" as const }),
+            { "rpc.aggregate": "sandbox" },
           ),
         [WS_METHODS.subscribeServerStatus]: (_input) =>
           observeRpcStream(WS_METHODS.subscribeServerStatus, Stream.never, {
