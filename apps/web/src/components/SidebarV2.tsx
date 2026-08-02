@@ -1189,8 +1189,14 @@ export default function SidebarV2() {
   const confirmThreadDelete = useClientSettings((s) => s.confirmThreadDelete);
   const sidebarProjectSortOrder = useClientSettings((s) => s.sidebarProjectSortOrder);
   const projectGroupingSettings = useClientSettings(selectProjectGroupingSettings);
-  const { settleThread, unsettleThread, snoozeThread, unsnoozeThread, deleteThread } =
-    useThreadActions();
+  const {
+    settleThread,
+    unsettleThread,
+    snoozeThread,
+    unsnoozeThread,
+    archiveThread,
+    deleteThread,
+  } = useThreadActions();
   const updateThreadMetadata = useAtomCommand(threadEnvironment.updateMetadata, {
     reportFailure: false,
   });
@@ -2157,7 +2163,7 @@ export default function SidebarV2() {
               : []),
             ...(titleRegenerationMenuItem ? [titleRegenerationMenuItem] : []),
             { id: "mark-unread", label: `Mark unread (${count})` },
-            ...(FEATURES.threadArchival
+            ...(FEATURES.threadDeletion
               ? [{ id: "delete", label: `Delete (${count})`, destructive: true }]
               : []),
           ],
@@ -2359,7 +2365,8 @@ export default function SidebarV2() {
               { id: "mark-unread", label: "Mark unread" },
               { id: "copy-path", label: "Copy path", icon: "copy" },
               ...(thread.branch ? [{ id: "copy-branch", label: "Copy branch", icon: "copy" }] : []),
-              ...(FEATURES.threadArchival
+              { id: "archive", label: "Archive thread" },
+              ...(FEATURES.threadDeletion
                 ? [{ id: "delete", label: "Delete", destructive: true, icon: "trash" }]
                 : []),
             ],
@@ -2449,6 +2456,20 @@ export default function SidebarV2() {
               copyBranchToClipboard(thread.branch, { branch: thread.branch });
             }
             return;
+          case "archive": {
+            const result = await archiveThread(threadRef);
+            if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
+              const error = squashAtomCommandFailure(result);
+              toastManager.add(
+                stackedThreadToast({
+                  type: "error",
+                  title: "Failed to archive thread",
+                  description: error instanceof Error ? error.message : "An error occurred.",
+                }),
+              );
+            }
+            return;
+          }
           case "delete": {
             if (confirmThreadDelete) {
               const confirmed = await settlePromise(() =>
@@ -2481,6 +2502,7 @@ export default function SidebarV2() {
       })();
     },
     [
+      archiveThread,
       attemptSettle,
       attemptSnooze,
       attemptUnsettle,

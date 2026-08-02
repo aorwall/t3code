@@ -1548,60 +1548,58 @@ export function GeneralSettingsPanel() {
           />
         ) : null}
 
-        {FEATURES.threadArchival ? (
-          <>
-            <SettingsRow
-              {...searchableSetting("archive-confirmation")}
-              description="Require a second click on the inline archive action before a thread is archived."
-              resetAction={
-                settings.confirmThreadArchive !== DEFAULT_UNIFIED_SETTINGS.confirmThreadArchive ? (
-                  <SettingResetButton
-                    label="archive confirmation"
-                    onClick={() =>
-                      updateSettings({
-                        confirmThreadArchive: DEFAULT_UNIFIED_SETTINGS.confirmThreadArchive,
-                      })
-                    }
-                  />
-                ) : null
+        <SettingsRow
+          {...searchableSetting("archive-confirmation")}
+          description="Require a second click on the inline archive action before a thread is archived."
+          resetAction={
+            settings.confirmThreadArchive !== DEFAULT_UNIFIED_SETTINGS.confirmThreadArchive ? (
+              <SettingResetButton
+                label="archive confirmation"
+                onClick={() =>
+                  updateSettings({
+                    confirmThreadArchive: DEFAULT_UNIFIED_SETTINGS.confirmThreadArchive,
+                  })
+                }
+              />
+            ) : null
+          }
+          control={
+            <Switch
+              checked={settings.confirmThreadArchive}
+              onCheckedChange={(checked) =>
+                updateSettings({ confirmThreadArchive: Boolean(checked) })
               }
-              control={
-                <Switch
-                  checked={settings.confirmThreadArchive}
-                  onCheckedChange={(checked) =>
-                    updateSettings({ confirmThreadArchive: Boolean(checked) })
-                  }
-                  aria-label="Confirm thread archiving"
-                />
-              }
+              aria-label="Confirm thread archiving"
             />
+          }
+        />
 
-            <SettingsRow
-              {...searchableSetting("delete-confirmation")}
-              description="Ask before deleting a thread and its chat history."
-              resetAction={
-                settings.confirmThreadDelete !== DEFAULT_UNIFIED_SETTINGS.confirmThreadDelete ? (
-                  <SettingResetButton
-                    label="delete confirmation"
-                    onClick={() =>
-                      updateSettings({
-                        confirmThreadDelete: DEFAULT_UNIFIED_SETTINGS.confirmThreadDelete,
-                      })
-                    }
-                  />
-                ) : null
-              }
-              control={
-                <Switch
-                  checked={settings.confirmThreadDelete}
-                  onCheckedChange={(checked) =>
-                    updateSettings({ confirmThreadDelete: Boolean(checked) })
+        {FEATURES.threadDeletion ? (
+          <SettingsRow
+            {...searchableSetting("delete-confirmation")}
+            description="Ask before deleting a thread and its chat history."
+            resetAction={
+              settings.confirmThreadDelete !== DEFAULT_UNIFIED_SETTINGS.confirmThreadDelete ? (
+                <SettingResetButton
+                  label="delete confirmation"
+                  onClick={() =>
+                    updateSettings({
+                      confirmThreadDelete: DEFAULT_UNIFIED_SETTINGS.confirmThreadDelete,
+                    })
                   }
-                  aria-label="Confirm thread deletion"
                 />
-              }
-            />
-          </>
+              ) : null
+            }
+            control={
+              <Switch
+                checked={settings.confirmThreadDelete}
+                onCheckedChange={(checked) =>
+                  updateSettings({ confirmThreadDelete: Boolean(checked) })
+                }
+                aria-label="Confirm thread deletion"
+              />
+            }
+          />
         ) : null}
 
         <SettingsRow
@@ -2293,7 +2291,9 @@ export function ArchivedThreadsPanel() {
       const clicked = await api.contextMenu.show(
         [
           { id: "unarchive", label: "Unarchive" },
-          { id: "delete", label: "Delete", destructive: true },
+          ...(FEATURES.threadDeletion
+            ? [{ id: "delete", label: "Delete", destructive: true }]
+            : []),
         ],
         position,
       );

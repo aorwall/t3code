@@ -21,6 +21,26 @@ few bullets, move the durable rule into
 
 ## Log
 
+### 2026-08-02 — archiving a thread reaches the backend, and gets a way in
+
+- Decision: the fork's `threadArchival` flag becomes `threadDeletion`. The two
+  rode one name because both were refused; the backend now serves
+  `thread.archive` and `thread.unarchive` by closing and reopening the Task, so
+  only deletion is still hidden. Fork inventory row: _Archive in the sidebar v2
+  row menu_.
+- Upstream keeps archive out of v2 row menus — `thread-list-v2-items.tsx` says
+  archive "keeps its own surface (thread screen / settings)", and
+  `threadListV2.ts` offers it only when the server has no settlement. That
+  reasoning does not carry: settling in Moatless is inbox triage a later message
+  undoes, and archiving ends the Task and removes the Sandbox. A person needs
+  both, so the row menu gets one `archive` item. No bulk item — that is surface
+  upstream's v2 never had.
+- Settings keeps the rest: the archived list and its unarchive were already
+  built and only gated, and are now reachable, so the way out exists.
+- Verification: `pnpm typecheck`, `pnpm lint`, `pnpm fmt:check` clean.
+  `pnpm test` fails the same 20 `promptStashStore`/`authBootstrap` tests noted
+  in the entry below, on Node 25.6.0 against the pinned `^24.13.1`.
+
 ### 2026-08-02 — upstream workflows are switched off in GitHub, not renamed
 
 - Decision: the nine inherited workflows take their upstream filenames back and

@@ -10,7 +10,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import commandPaletteSource from "../components/CommandPalette.tsx?raw";
-import archivedRouteSource from "../routes/settings.archived.tsx?raw";
 import connectionsRouteSource from "../routes/settings.connections.tsx?raw";
 import diagnosticsRouteSource from "../routes/settings.diagnostics.tsx?raw";
 import keybindingsRouteSource from "../routes/settings.keybindings.tsx?raw";
@@ -29,7 +28,6 @@ const ROUTE_SOURCES: Readonly<Record<string, string>> = {
   "/settings/providers": providersRouteSource,
   "/settings/source-control": sourceControlRouteSource,
   "/settings/connections": connectionsRouteSource,
-  "/settings/archived": archivedRouteSource,
   "/settings/diagnostics": diagnosticsRouteSource,
 };
 
