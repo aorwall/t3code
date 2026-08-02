@@ -99,6 +99,7 @@ export const RPC_REQUIRED_SCOPES = {
   [WS_METHODS.serversList]: AuthOrchestrationReadScope,
   [WS_METHODS.sandboxStatus]: AuthOrchestrationReadScope,
   [WS_METHODS.sandboxStart]: AuthOrchestrationOperateScope,
+  [WS_METHODS.sandboxStop]: AuthOrchestrationOperateScope,
   [WS_METHODS.subscribeServerStatus]: AuthOrchestrationReadScope,
   [WS_METHODS.serversSubscribeLogs]: AuthOrchestrationReadScope,
   [WS_METHODS.subscribeServerConfig]: AuthOrchestrationReadScope,

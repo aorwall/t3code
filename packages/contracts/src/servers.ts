@@ -92,6 +92,11 @@ export type SandboxStartInput = typeof SandboxStartInput.Type;
 export const SandboxStartResult = SandboxStatusResult;
 export type SandboxStartResult = typeof SandboxStartResult.Type;
 
+export const SandboxStopInput = SandboxStatusInput;
+export type SandboxStopInput = typeof SandboxStopInput.Type;
+export const SandboxStopResult = SandboxStatusResult;
+export type SandboxStopResult = typeof SandboxStopResult.Type;
+
 export const ServerStatusSubscribeInput = Schema.Struct({
   threadId: ThreadId,
 });

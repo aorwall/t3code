@@ -3,7 +3,7 @@ import {
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
 import type { SandboxStatusResult, ScopedThreadRef } from "@t3tools/contracts";
-import { AlertTriangleIcon, LoaderCircleIcon, PlayIcon } from "lucide-react";
+import { AlertTriangleIcon, LoaderCircleIcon, PlayIcon, SquareIcon } from "lucide-react";
 import { useCallback, useState } from "react";
 
 import { cn } from "~/lib/utils";
@@ -50,49 +50,66 @@ interface SandboxStatusControlProps {
 function failureMessage(error: unknown): string {
   return error instanceof Error && error.message.trim().length > 0
     ? error.message
-    : "Could not start the sandbox.";
+    : "The sandbox request failed.";
 }
 
 export function SandboxStatusControl({ threadRef, status, className }: SandboxStatusControlProps) {
   const startSandbox = useAtomCommand(serversEnvironment.startSandbox, { reportFailure: false });
-  const [isStarting, setIsStarting] = useState(false);
-  const [startError, setStartError] = useState<string | null>(null);
+  const stopSandbox = useAtomCommand(serversEnvironment.stopSandbox, { reportFailure: false });
+  const [pendingAction, setPendingAction] = useState<"start" | "stop" | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const { refresh } = status;
   const sandboxStatus = status.data?.sandboxStatus ?? null;
 
   const startable =
     !status.isPending && sandboxStatus !== null && STARTABLE_STATUSES.has(sandboxStatus);
+  const stoppable = !status.isPending && sandboxStatus === "ready";
 
   const handleStart = useCallback(async () => {
-    setStartError(null);
-    setIsStarting(true);
+    setActionError(null);
+    setPendingAction("start");
     const result = await startSandbox({
       environmentId: threadRef.environmentId,
       input: { threadId: threadRef.threadId },
     });
-    setIsStarting(false);
+    setPendingAction(null);
     refresh();
     if (result._tag === "Success" || isAtomCommandInterrupted(result)) {
       return;
     }
-    setStartError(failureMessage(squashAtomCommandFailure(result)));
+    setActionError(failureMessage(squashAtomCommandFailure(result)));
   }, [refresh, startSandbox, threadRef.environmentId, threadRef.threadId]);
+
+  const handleStop = useCallback(async () => {
+    setActionError(null);
+    setPendingAction("stop");
+    const result = await stopSandbox({
+      environmentId: threadRef.environmentId,
+      input: { threadId: threadRef.threadId },
+    });
+    setPendingAction(null);
+    refresh();
+    if (result._tag === "Success" || isAtomCommandInterrupted(result)) {
+      return;
+    }
+    setActionError(failureMessage(squashAtomCommandFailure(result)));
+  }, [refresh, stopSandbox, threadRef.environmentId, threadRef.threadId]);
 
   const statusMeta = !status.isPending && sandboxStatus ? STATUS_COPY[sandboxStatus] : null;
   const tone =
-    startError || status.error
+    actionError || status.error
       ? "error"
       : status.isPending
         ? "muted"
         : (statusMeta?.tone ?? "warning");
   const label =
-    status.isPending && !startError && !status.error
+    status.isPending && !actionError && !status.error
       ? "Checking sandbox status"
       : sandboxStatus === "ready"
         ? "Sandbox running"
         : "Sandbox unavailable";
   const showRetry = Boolean(status.error) && !startable;
-  const actionLabel = sandboxStatus === "error" || startError ? "Retry" : "Start";
+  const actionLabel = sandboxStatus === "error" || actionError ? "Retry" : "Start";
 
   return (
     <div
@@ -119,13 +136,22 @@ export function SandboxStatusControl({ threadRef, status, className }: SandboxSt
           Retry
         </Button>
       ) : startable ? (
-        <Button size="xs" variant="outline" disabled={isStarting} onClick={handleStart}>
-          {isStarting ? (
+        <Button size="xs" variant="outline" disabled={pendingAction !== null} onClick={handleStart}>
+          {pendingAction === "start" ? (
             <LoaderCircleIcon className="size-3.5 animate-spin" />
           ) : (
             <PlayIcon className="size-3.5" />
           )}
           <span>{actionLabel}</span>
+        </Button>
+      ) : stoppable ? (
+        <Button size="xs" variant="outline" disabled={pendingAction !== null} onClick={handleStop}>
+          {pendingAction === "stop" ? (
+            <LoaderCircleIcon className="size-3.5 animate-spin" />
+          ) : (
+            <SquareIcon className="size-3.5" />
+          )}
+          <span>Stop</span>
         </Button>
       ) : null}
     </div>

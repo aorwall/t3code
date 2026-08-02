@@ -35,6 +35,7 @@ interface ChatHeaderProps {
   availableEditors: ReadonlyArray<EditorId>;
   rightPanelOpen: boolean;
   gitCwd: string | null;
+  actionsPrefix?: ReactNode;
   actionsOverride?: ReactNode;
   onNewThreadInProject: () => void;
   onRunProjectScript: (script: ProjectScript) => void;
@@ -72,6 +73,7 @@ export const ChatHeader = memo(function ChatHeader({
   availableEditors,
   rightPanelOpen,
   gitCwd,
+  actionsPrefix,
   actionsOverride,
   onNewThreadInProject,
   onRunProjectScript,
@@ -143,8 +145,9 @@ export const ChatHeader = memo(function ChatHeader({
           rightPanelOpen ? "pr-0" : "pr-16",
         )}
       >
+        {actionsPrefix}
         {actionsOverride}
-        {!actionsOverride && activeProjectScripts && (
+        {!actionsOverride && activeProjectScripts && FEATURES.projectScripts && (
           <ProjectScriptsControl
             scripts={activeProjectScripts}
             fileScripts={fileScripts}

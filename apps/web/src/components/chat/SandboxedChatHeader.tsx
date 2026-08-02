@@ -14,11 +14,20 @@ export function SandboxedChatHeader(props: SandboxedChatHeaderProps) {
   );
   const sandboxAvailability = useSandboxAvailability(threadRef);
 
+  // Draft threads have no sandbox to control yet, so the sandbox status
+  // buttons don't belong in their header.
+  const isDraft = props.draftId !== undefined;
+
   return (
     <ChatHeader
       {...props}
+      actionsPrefix={
+        !isDraft && sandboxAvailability.ready ? (
+          <SandboxStatusControl threadRef={threadRef} status={sandboxAvailability.status} />
+        ) : undefined
+      }
       actionsOverride={
-        sandboxAvailability.ready ? undefined : (
+        isDraft || sandboxAvailability.ready ? undefined : (
           <SandboxStatusControl threadRef={threadRef} status={sandboxAvailability.status} />
         )
       }

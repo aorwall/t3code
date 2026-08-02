@@ -4,6 +4,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeAll, describe, expect, it, vi } from "vite-plus/test";
 import type { LegendListRef } from "@legendapp/list/react";
 
+// The inline per-turn changed-files card is gated behind the `turnDiffs` fork
+// flag (off in this build). Enable it here so these tests exercise the card.
+vi.mock("../../fork/features", async (importActual) => {
+  const actual = await importActual<typeof import("../../fork/features")>();
+  return { ...actual, FEATURES: { ...actual.FEATURES, turnDiffs: true } };
+});
+
 vi.mock("@legendapp/list/react", async () => {
   const legendListTestId = "legend-list";
 

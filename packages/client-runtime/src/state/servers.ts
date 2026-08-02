@@ -64,6 +64,10 @@ export function createServersEnvironmentAtoms<R, E>(
       label: "environment-data:sandbox:start",
       tag: WS_METHODS.sandboxStart,
     }),
+    stopSandbox: createEnvironmentRpcCommand(runtime, {
+      label: "environment-data:sandbox:stop",
+      tag: WS_METHODS.sandboxStop,
+    }),
     status: createEnvironmentRpcSubscriptionAtomFamily(runtime, {
       label: "environment-data:servers:status",
       tag: WS_METHODS.subscribeServerStatus,

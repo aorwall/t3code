@@ -157,6 +157,8 @@ import {
   SandboxStartResult,
   SandboxStatusInput,
   SandboxStatusResult,
+  SandboxStopInput,
+  SandboxStopResult,
   ServersListInput,
   ServersListResult,
   ServerStatusSnapshot,
@@ -239,6 +241,7 @@ export const WS_METHODS = {
   // Sandbox methods
   sandboxStatus: "sandbox.status",
   sandboxStart: "sandbox.start",
+  sandboxStop: "sandbox.stop",
 
   // Server meta
   serverProbe: "server.probe",
@@ -776,6 +779,12 @@ export const WsSandboxStartRpc = Rpc.make(WS_METHODS.sandboxStart, {
   error: EnvironmentAuthorizationError,
 });
 
+export const WsSandboxStopRpc = Rpc.make(WS_METHODS.sandboxStop, {
+  payload: SandboxStopInput,
+  success: SandboxStopResult,
+  error: EnvironmentAuthorizationError,
+});
+
 /**
  * Pushes a whole list whenever it changes. An idle subscription is silent,
  * so the absence of a message means nothing moved rather than nothing is known.
@@ -987,6 +996,7 @@ export const WsRpcGroup = RpcGroup.make(
   WsServersListRpc,
   WsSandboxStatusRpc,
   WsSandboxStartRpc,
+  WsSandboxStopRpc,
   WsSubscribeServerStatusRpc,
   WsServersSubscribeLogsRpc,
   WsSubscribeDiscoveredLocalServersRpc,

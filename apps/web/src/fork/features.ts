@@ -52,6 +52,15 @@
 export const FEATURES = {
   /** Git and VCS controls: the header's git menu and the composer's context strip. */
   versionControl: false,
+  /** Project scripts: the header's actions dropdown for running project commands. */
+  projectScripts: false,
+  /**
+   * Per-turn git diffs: the diff panel's "Latest turn" / "Turn" scopes and the
+   * inline changed-files cards under each assistant turn. Backed by the
+   * `orchestration.getTurnDiff` / `getFullThreadDiff` RPCs, which the backend
+   * does not serve. Working-tree and branch-range diffs are unaffected.
+   */
+  turnDiffs: false,
   /** Adding and removing projects, and the source-control settings behind them. */
   projectManagement: false,
   /**
@@ -71,6 +80,23 @@ export const FEATURES = {
   diagnostics: false,
   /** Deleting and archiving threads. */
   threadArchival: false,
+  /**
+   * The Connections settings page: device pairing, SSH environments, WSL, and
+   * server-exposure controls for a self-hosted T3 server. The Moatless backend
+   * is reached over the web and manages none of this.
+   */
+  connections: false,
+  /**
+   * Streaming assistant output token-by-token. The Moatless backend delivers
+   * each assistant message once it is complete, so the setting governs nothing.
+   */
+  assistantStreaming: false,
+  /**
+   * The sidebar's project-grouping setting, which combines matching
+   * repositories across environments. This build runs a single environment, so
+   * there is nothing to group across.
+   */
+  projectGrouping: false,
 } satisfies Record<string, boolean>;
 
 export type FeatureName = keyof typeof FEATURES;
@@ -84,13 +110,14 @@ export type FeatureName = keyof typeof FEATURES;
  *
  * A section is deliberately absent when its page mixes server-backed and
  * client-only state. **General** and **Appearance** persist through
- * `splitPatch` to `localStorage` and keep working; **Providers** renders a
- * list the server does publish. Hiding those would take working controls with
- * them, so the server-only affordances inside them are gated one by one.
+ * `splitPatch` to `localStorage` and keep working, so the server-only
+ * affordances inside them are gated one by one instead.
  */
 export const FEATURE_BY_SETTINGS_PATH: Readonly<Record<string, FeatureName>> = {
   "/settings/keybindings": "serverAdministration",
+  "/settings/providers": "serverAdministration",
   "/settings/source-control": "projectManagement",
+  "/settings/connections": "connections",
   "/settings/archived": "threadArchival",
   "/settings/diagnostics": "diagnostics",
 };

@@ -1171,41 +1171,44 @@ export function GeneralSettingsPanel() {
   return (
     <SettingsPageContainer>
       <SettingsSection title="General">
-        <SettingsRow
-          {...searchableSetting("project-grouping")}
-          description="Combine matching repositories across environments."
-          resetAction={
-            settings.sidebarProjectGroupingMode !==
-            DEFAULT_UNIFIED_SETTINGS.sidebarProjectGroupingMode ? (
-              <SettingResetButton
-                label="project grouping"
-                onClick={() =>
+        {FEATURES.projectGrouping ? (
+          <SettingsRow
+            {...searchableSetting("project-grouping")}
+            description="Combine matching repositories across environments."
+            resetAction={
+              settings.sidebarProjectGroupingMode !==
+              DEFAULT_UNIFIED_SETTINGS.sidebarProjectGroupingMode ? (
+                <SettingResetButton
+                  label="project grouping"
+                  onClick={() =>
+                    updateSettings({
+                      sidebarProjectGroupingMode:
+                        DEFAULT_UNIFIED_SETTINGS.sidebarProjectGroupingMode,
+                    })
+                  }
+                />
+              ) : null
+            }
+            control={
+              <Switch
+                checked={isProjectGroupingEnabled(settings.sidebarProjectGroupingMode)}
+                onCheckedChange={(checked) => {
+                  if (!checked && settings.sidebarProjectGroupingMode !== "separate") {
+                    lastEnabledProjectGroupingMode.current = settings.sidebarProjectGroupingMode;
+                    rememberEnabledProjectGroupingMode(settings.sidebarProjectGroupingMode);
+                  }
                   updateSettings({
-                    sidebarProjectGroupingMode: DEFAULT_UNIFIED_SETTINGS.sidebarProjectGroupingMode,
-                  })
-                }
+                    sidebarProjectGroupingMode: projectGroupingModeFromToggle(
+                      checked,
+                      lastEnabledProjectGroupingMode.current,
+                    ),
+                  });
+                }}
+                aria-label="Project grouping"
               />
-            ) : null
-          }
-          control={
-            <Switch
-              checked={isProjectGroupingEnabled(settings.sidebarProjectGroupingMode)}
-              onCheckedChange={(checked) => {
-                if (!checked && settings.sidebarProjectGroupingMode !== "separate") {
-                  lastEnabledProjectGroupingMode.current = settings.sidebarProjectGroupingMode;
-                  rememberEnabledProjectGroupingMode(settings.sidebarProjectGroupingMode);
-                }
-                updateSettings({
-                  sidebarProjectGroupingMode: projectGroupingModeFromToggle(
-                    checked,
-                    lastEnabledProjectGroupingMode.current,
-                  ),
-                });
-              }}
-              aria-label="Project grouping"
-            />
-          }
-        />
+            }
+          />
+        ) : null}
 
         <SettingsRow
           {...searchableSetting("time-format")}
@@ -1275,32 +1278,34 @@ export function GeneralSettingsPanel() {
           }
         />
 
-        <SettingsRow
-          {...searchableSetting("assistant-output")}
-          description="Show token-by-token output while a response is in progress."
-          resetAction={
-            settings.enableAssistantStreaming !==
-            DEFAULT_UNIFIED_SETTINGS.enableAssistantStreaming ? (
-              <SettingResetButton
-                label="assistant output"
-                onClick={() =>
-                  updateSettings({
-                    enableAssistantStreaming: DEFAULT_UNIFIED_SETTINGS.enableAssistantStreaming,
-                  })
+        {FEATURES.assistantStreaming ? (
+          <SettingsRow
+            {...searchableSetting("assistant-output")}
+            description="Show token-by-token output while a response is in progress."
+            resetAction={
+              settings.enableAssistantStreaming !==
+              DEFAULT_UNIFIED_SETTINGS.enableAssistantStreaming ? (
+                <SettingResetButton
+                  label="assistant output"
+                  onClick={() =>
+                    updateSettings({
+                      enableAssistantStreaming: DEFAULT_UNIFIED_SETTINGS.enableAssistantStreaming,
+                    })
+                  }
+                />
+              ) : null
+            }
+            control={
+              <Switch
+                checked={settings.enableAssistantStreaming}
+                onCheckedChange={(checked) =>
+                  updateSettings({ enableAssistantStreaming: Boolean(checked) })
                 }
+                aria-label="Stream assistant messages"
               />
-            ) : null
-          }
-          control={
-            <Switch
-              checked={settings.enableAssistantStreaming}
-              onCheckedChange={(checked) =>
-                updateSettings({ enableAssistantStreaming: Boolean(checked) })
-              }
-              aria-label="Stream assistant messages"
-            />
-          }
-        />
+            }
+          />
+        ) : null}
 
         <SettingsRow
           {...searchableSetting("provider-update-checks")}
@@ -1513,85 +1518,91 @@ export function GeneralSettingsPanel() {
           />
         ) : null}
 
-        <SettingsRow
-          {...searchableSetting("add-project-starts-in")}
-          description='Leave empty to use "~/" when the Add Project browser opens.'
-          resetAction={
-            settings.addProjectBaseDirectory !==
-            DEFAULT_UNIFIED_SETTINGS.addProjectBaseDirectory ? (
-              <SettingResetButton
-                label="add project base directory"
-                onClick={() =>
-                  updateSettings({
-                    addProjectBaseDirectory: DEFAULT_UNIFIED_SETTINGS.addProjectBaseDirectory,
-                  })
-                }
+        {FEATURES.projectManagement ? (
+          <SettingsRow
+            {...searchableSetting("add-project-starts-in")}
+            description='Leave empty to use "~/" when the Add Project browser opens.'
+            resetAction={
+              settings.addProjectBaseDirectory !==
+              DEFAULT_UNIFIED_SETTINGS.addProjectBaseDirectory ? (
+                <SettingResetButton
+                  label="add project base directory"
+                  onClick={() =>
+                    updateSettings({
+                      addProjectBaseDirectory: DEFAULT_UNIFIED_SETTINGS.addProjectBaseDirectory,
+                    })
+                  }
+                />
+              ) : null
+            }
+            control={
+              <DraftInput
+                className="w-full sm:w-72"
+                value={settings.addProjectBaseDirectory}
+                onCommit={(next) => updateSettings({ addProjectBaseDirectory: next })}
+                placeholder="~/"
+                spellCheck={false}
+                aria-label="Add project base directory"
               />
-            ) : null
-          }
-          control={
-            <DraftInput
-              className="w-full sm:w-72"
-              value={settings.addProjectBaseDirectory}
-              onCommit={(next) => updateSettings({ addProjectBaseDirectory: next })}
-              placeholder="~/"
-              spellCheck={false}
-              aria-label="Add project base directory"
-            />
-          }
-        />
+            }
+          />
+        ) : null}
 
-        <SettingsRow
-          {...searchableSetting("archive-confirmation")}
-          description="Require a second click on the inline archive action before a thread is archived."
-          resetAction={
-            settings.confirmThreadArchive !== DEFAULT_UNIFIED_SETTINGS.confirmThreadArchive ? (
-              <SettingResetButton
-                label="archive confirmation"
-                onClick={() =>
-                  updateSettings({
-                    confirmThreadArchive: DEFAULT_UNIFIED_SETTINGS.confirmThreadArchive,
-                  })
-                }
-              />
-            ) : null
-          }
-          control={
-            <Switch
-              checked={settings.confirmThreadArchive}
-              onCheckedChange={(checked) =>
-                updateSettings({ confirmThreadArchive: Boolean(checked) })
+        {FEATURES.threadArchival ? (
+          <>
+            <SettingsRow
+              {...searchableSetting("archive-confirmation")}
+              description="Require a second click on the inline archive action before a thread is archived."
+              resetAction={
+                settings.confirmThreadArchive !== DEFAULT_UNIFIED_SETTINGS.confirmThreadArchive ? (
+                  <SettingResetButton
+                    label="archive confirmation"
+                    onClick={() =>
+                      updateSettings({
+                        confirmThreadArchive: DEFAULT_UNIFIED_SETTINGS.confirmThreadArchive,
+                      })
+                    }
+                  />
+                ) : null
               }
-              aria-label="Confirm thread archiving"
+              control={
+                <Switch
+                  checked={settings.confirmThreadArchive}
+                  onCheckedChange={(checked) =>
+                    updateSettings({ confirmThreadArchive: Boolean(checked) })
+                  }
+                  aria-label="Confirm thread archiving"
+                />
+              }
             />
-          }
-        />
 
-        <SettingsRow
-          {...searchableSetting("delete-confirmation")}
-          description="Ask before deleting a thread and its chat history."
-          resetAction={
-            settings.confirmThreadDelete !== DEFAULT_UNIFIED_SETTINGS.confirmThreadDelete ? (
-              <SettingResetButton
-                label="delete confirmation"
-                onClick={() =>
-                  updateSettings({
-                    confirmThreadDelete: DEFAULT_UNIFIED_SETTINGS.confirmThreadDelete,
-                  })
-                }
-              />
-            ) : null
-          }
-          control={
-            <Switch
-              checked={settings.confirmThreadDelete}
-              onCheckedChange={(checked) =>
-                updateSettings({ confirmThreadDelete: Boolean(checked) })
+            <SettingsRow
+              {...searchableSetting("delete-confirmation")}
+              description="Ask before deleting a thread and its chat history."
+              resetAction={
+                settings.confirmThreadDelete !== DEFAULT_UNIFIED_SETTINGS.confirmThreadDelete ? (
+                  <SettingResetButton
+                    label="delete confirmation"
+                    onClick={() =>
+                      updateSettings({
+                        confirmThreadDelete: DEFAULT_UNIFIED_SETTINGS.confirmThreadDelete,
+                      })
+                    }
+                  />
+                ) : null
               }
-              aria-label="Confirm thread deletion"
+              control={
+                <Switch
+                  checked={settings.confirmThreadDelete}
+                  onCheckedChange={(checked) =>
+                    updateSettings({ confirmThreadDelete: Boolean(checked) })
+                  }
+                  aria-label="Confirm thread deletion"
+                />
+              }
             />
-          }
-        />
+          </>
+        ) : null}
 
         <SettingsRow
           {...searchableSetting("text-generation-model")}

@@ -71,6 +71,7 @@ import { serverEnvironment } from "../state/server";
 import { reviewEnvironment } from "../state/review";
 import { vcsEnvironment } from "../state/vcs";
 import { buildBaseRefChoices, filterBaseRefChoices } from "../lib/baseRefChoices";
+import { FEATURES } from "../fork/features";
 
 type DiffRenderMode = "stacked" | "split";
 type DiffThemeType = "light" | "dark";
@@ -562,43 +563,49 @@ export default function DiffPanel({
             >
               <span>Branch changes</span>
             </DropdownMenuItem>
-            <DropdownMenuItem
-              className={
-                selectedTurnId !== null && selectedTurn?.turnId === latestTurn?.turnId
-                  ? "bg-foreground/[0.08]"
-                  : undefined
-              }
-              onClick={() => {
-                if (latestTurn) selectTurn(latestTurn.turnId);
-              }}
-            >
-              <span>Latest turn</span>
-            </DropdownMenuItem>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>Turn</DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="w-64">
-                {orderedTurnDiffSummaries.map((summary) => {
-                  const turnCount =
-                    summary.checkpointTurnCount ??
-                    inferredCheckpointTurnCountByTurnId[summary.turnId] ??
-                    "?";
-                  return (
-                    <DropdownMenuItem
-                      key={summary.turnId}
-                      className={
-                        summary.turnId === selectedTurn?.turnId ? "bg-foreground/[0.08]" : undefined
-                      }
-                      onClick={() => selectTurn(summary.turnId)}
-                    >
-                      <span>Turn {turnCount}</span>
-                      <span className="ml-auto text-xs tabular-nums text-muted-foreground">
-                        {formatShortTimestamp(summary.completedAt, settings.timestampFormat)}
-                      </span>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
+            {FEATURES.turnDiffs && (
+              <>
+                <DropdownMenuItem
+                  className={
+                    selectedTurnId !== null && selectedTurn?.turnId === latestTurn?.turnId
+                      ? "bg-foreground/[0.08]"
+                      : undefined
+                  }
+                  onClick={() => {
+                    if (latestTurn) selectTurn(latestTurn.turnId);
+                  }}
+                >
+                  <span>Latest turn</span>
+                </DropdownMenuItem>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>Turn</DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-64">
+                    {orderedTurnDiffSummaries.map((summary) => {
+                      const turnCount =
+                        summary.checkpointTurnCount ??
+                        inferredCheckpointTurnCountByTurnId[summary.turnId] ??
+                        "?";
+                      return (
+                        <DropdownMenuItem
+                          key={summary.turnId}
+                          className={
+                            summary.turnId === selectedTurn?.turnId
+                              ? "bg-foreground/[0.08]"
+                              : undefined
+                          }
+                          onClick={() => selectTurn(summary.turnId)}
+                        >
+                          <span>Turn {turnCount}</span>
+                          <span className="ml-auto text-xs tabular-nums text-muted-foreground">
+                            {formatShortTimestamp(summary.completedAt, settings.timestampFormat)}
+                          </span>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
         {selectedTurnId === null && selectedGitScope === "branch" && selectedGitSource?.baseRef && (

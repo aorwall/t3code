@@ -2006,6 +2006,12 @@ const makeWsRpcLayer = (
             Effect.succeed({ sandboxStatus: "not_created" as const }),
             { "rpc.aggregate": "sandbox" },
           ),
+        [WS_METHODS.sandboxStop]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.sandboxStop,
+            Effect.succeed({ sandboxStatus: "not_created" as const }),
+            { "rpc.aggregate": "sandbox" },
+          ),
         [WS_METHODS.subscribeServerStatus]: (_input) =>
           observeRpcStream(WS_METHODS.subscribeServerStatus, Stream.never, {
             "rpc.aggregate": "servers",

@@ -13,6 +13,7 @@ import {
 } from "~/sidebarProjectGrouping";
 import { useProjects, useThreadShells } from "~/state/entities";
 import { useEnvironments, usePrimaryEnvironmentId } from "~/state/environments";
+import { FEATURES } from "../../fork/features";
 import { sortLogicalProjectsForSidebar } from "../Sidebar.logic";
 import {
   Menu,
@@ -127,11 +128,15 @@ export function DraftHeroHeadline({
             );
           })}
         </MenuRadioGroup>
-        <MenuSeparator />
-        <MenuItem onClick={openAddProject}>
-          <FolderPlusIcon />
-          New project
-        </MenuItem>
+        {FEATURES.projectManagement ? (
+          <>
+            <MenuSeparator />
+            <MenuItem onClick={openAddProject}>
+              <FolderPlusIcon />
+              New project
+            </MenuItem>
+          </>
+        ) : null}
       </MenuPopup>
     </Menu>
   ) : (

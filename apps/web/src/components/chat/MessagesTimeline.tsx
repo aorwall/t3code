@@ -107,6 +107,7 @@ import {
 } from "./userMessageTerminalContexts";
 import { SkillInlineText } from "./SkillInlineText";
 import { formatWorkspaceRelativePath } from "../../filePathDisplay";
+import { FEATURES } from "../../fork/features";
 import {
   buildReviewCommentRenderablePatch,
   formatReviewCommentFence,
@@ -1246,6 +1247,7 @@ const AssistantChangedFilesSection = memo(function AssistantChangedFilesSection(
   resolvedTheme: "light" | "dark";
   onOpenTurnDiff: (turnId: TurnId, filePath?: string) => void;
 }) {
+  if (!FEATURES.turnDiffs) return null;
   if (!turnSummary) return null;
   const checkpointFiles = turnSummary.files;
   if (checkpointFiles.length === 0) return null;
