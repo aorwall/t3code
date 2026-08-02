@@ -18,6 +18,29 @@ few bullets, move the durable rule into
 
 ## Log
 
+### 2026-08-02 — merged the upstream service launcher
+
+- Upstream: `5192f777` from base `0ad91b6e` (`4` commits).
+- Conflicts: none. `packages/contracts/src/environment.ts` (comment),
+  `packages/contracts/src/server.ts` (optional `updateId` and `updateOutcome`),
+  and `apps/web/src/components/SidebarV2.tsx` (`focus-visible` instead of
+  `focus-within`) all took upstream; none of them touches a fork gate.
+- Sweep: five `apps/server/src/cloud/service*.ts` additions matched the `cloud`
+  filter. Accepted as upstream because they are the systemd self-update launcher,
+  not Clerk or T3 Connect. Clerk and session-bootstrap tripwire counts held at 4
+  and 9; pairing fell from 74 to 72 files, and the two added `pairing` lines are
+  the existing startup message moved into `apps/server/src/serverActivation.ts`.
+- Convergence: none. `rpc.ts`, `auth.ts`, `ws.ts`, `servers.ts`, and
+  `vite.config.ts` are untouched, so the unsupported-method unions and the three
+  `servers.*` stubs stand unchanged, and no new WebSocket method appeared.
+- Verification: `pnpm typecheck` and `pnpm lint` clean. `pnpm test` fails 20
+  tests across `apps/web/src/promptStashStore.test.ts` and
+  `apps/web/src/authBootstrap.test.ts`, identically on the pre-merge commit; the
+  machine runs Node 25.6.0 against the pinned `^24.13.1`, and the failures are
+  `localStorage` and unstubbed-`fetch` engine differences. `pnpm fmt:check`
+  reported `docs/fork/upstream-merge-inventory.md` and the merge skill, both
+  unrelated to this merge and fixed here.
+
 ### 2026-08-01 — the contract can say a method is unsupported
 
 - Decision: `UnsupportedMethodError` in `packages/contracts/src/auth.ts`, declared
