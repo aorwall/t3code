@@ -103,6 +103,10 @@
       "types": "./src/state/server.ts",
       "default": "./src/state/server.ts"
     },
+    "./state/sandbox": {
+      "types": "./src/state/sandbox.ts",
+      "default": "./src/state/sandbox.ts"
+    },
     "./state/servers": {
       "types": "./src/state/servers.ts",
       "default": "./src/state/servers.ts"

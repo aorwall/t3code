@@ -1,13 +1,12 @@
 "use client";
 
-import type { ScopedThreadRef, ServersListResult, ThreadServer } from "@t3tools/contracts";
+import type { ScopedThreadRef, ThreadServer } from "@t3tools/contracts";
 
 import { useEnvironmentQuery } from "~/state/query";
 import { serversEnvironment } from "~/state/servers";
 
 export interface ThreadPreviewServersView {
   readonly servers: ReadonlyArray<ThreadServer>;
-  readonly sandboxStatus: ServersListResult["sandboxStatus"] | null;
   readonly isPending: boolean;
   readonly error: string | null;
   readonly refresh: () => void;
@@ -35,7 +34,6 @@ export function useThreadPreviewServers(
 
   return {
     servers: live.data?.servers ?? seed.data?.servers ?? [],
-    sandboxStatus: seed.data?.sandboxStatus ?? null,
     isPending: seed.isPending && seed.data === null,
     error: seed.error ?? live.error,
     refresh: seed.refresh,

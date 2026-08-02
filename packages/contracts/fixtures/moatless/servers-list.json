@@ -30,6 +30,5 @@
       "detail": "bash: line 1: vp: command not found",
       "default": false
     }
-  ],
-  "sandboxStatus": "ready"
+  ]
 }

@@ -8,7 +8,7 @@ import { useCallback, useState } from "react";
 
 import { cn } from "~/lib/utils";
 import type { EnvironmentQueryView } from "~/state/query";
-import { serversEnvironment } from "~/state/servers";
+import { sandboxEnvironment } from "~/state/sandbox";
 import { useAtomCommand } from "~/state/use-atom-command";
 
 import { Button } from "./ui/button";
@@ -54,8 +54,8 @@ function failureMessage(error: unknown): string {
 }
 
 export function SandboxStatusControl({ threadRef, status, className }: SandboxStatusControlProps) {
-  const startSandbox = useAtomCommand(serversEnvironment.startSandbox, { reportFailure: false });
-  const stopSandbox = useAtomCommand(serversEnvironment.stopSandbox, { reportFailure: false });
+  const startSandbox = useAtomCommand(sandboxEnvironment.start, { reportFailure: false });
+  const stopSandbox = useAtomCommand(sandboxEnvironment.stop, { reportFailure: false });
   const [pendingAction, setPendingAction] = useState<"start" | "stop" | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const { refresh } = status;

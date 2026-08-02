@@ -24,7 +24,6 @@ describe("Moatless servers.list", () => {
   it("decodes a running environment, including a starting and a failed server", () => {
     const result = decodeServersList(serversList);
 
-    expect(result.sandboxStatus).toBe("ready");
     expect(result.servers.map((server) => server.status)).toEqual([
       "started",
       "starting",
@@ -46,7 +45,6 @@ describe("Moatless servers.list", () => {
   it("decodes the config-first list of an environment that was never provisioned", () => {
     const result = decodeServersList(serversListNeverProvisioned);
 
-    expect(result.sandboxStatus).toBe("not_created");
     expect(result.servers).toHaveLength(1);
     expect(result.servers[0]?.status).toBe("starting");
     expect(result.servers[0]?.url).not.toBeNull();

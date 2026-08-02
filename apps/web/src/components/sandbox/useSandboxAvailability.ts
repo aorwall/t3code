@@ -1,9 +1,8 @@
 import type { SandboxStatusResult, ScopedThreadRef } from "@t3tools/contracts";
 import { useEffect, useMemo } from "react";
 
-import type { EnvironmentQueryView } from "~/state/query";
-
-import { useThreadPreviewServers } from "../preview/useThreadPreviewServers";
+import { useEnvironmentQuery, type EnvironmentQueryView } from "~/state/query";
+import { sandboxEnvironment } from "~/state/sandbox";
 
 type SandboxStatus = SandboxStatusResult["sandboxStatus"];
 
@@ -36,23 +35,31 @@ function disabledReason(
 }
 
 export function useSandboxAvailability(threadRef: ScopedThreadRef | null): SandboxAvailability {
-  const previewServers = useThreadPreviewServers(threadRef);
-  const sandboxStatus = previewServers.sandboxStatus;
-  const isPending = previewServers.isPending && sandboxStatus === null;
+  const query = useEnvironmentQuery(
+    threadRef === null
+      ? null
+      : sandboxEnvironment.status({
+          environmentId: threadRef.environmentId,
+          input: { threadId: threadRef.threadId },
+        }),
+  );
+  const { data, error, isPending: queryIsPending, refresh } = query;
+  const sandboxStatus = data?.sandboxStatus ?? null;
+  const isPending = queryIsPending && sandboxStatus === null;
 
   useEffect(() => {
     if (threadRef === null) return;
-    previewServers.refresh();
-  }, [threadRef?.environmentId, threadRef?.threadId]);
+    refresh();
+  }, [refresh, threadRef?.environmentId, threadRef?.threadId]);
 
   const status = useMemo<EnvironmentQueryView<SandboxStatusResult>>(
     () => ({
-      data: sandboxStatus === null ? null : { sandboxStatus },
-      error: previewServers.error,
+      data,
+      error,
       isPending,
-      refresh: previewServers.refresh,
+      refresh,
     }),
-    [isPending, previewServers.error, previewServers.refresh, sandboxStatus],
+    [data, error, isPending, refresh],
   );
 
   const ready = sandboxStatus === "ready";
@@ -60,7 +67,7 @@ export function useSandboxAvailability(threadRef: ScopedThreadRef | null): Sandb
   return {
     ready,
     surfaceDisabled: !ready,
-    surfaceDisabledReason: disabledReason(sandboxStatus, isPending, previewServers.error),
+    surfaceDisabledReason: disabledReason(sandboxStatus, isPending, error),
     status,
   };
 }

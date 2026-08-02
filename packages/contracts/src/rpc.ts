@@ -151,14 +151,16 @@ import {
   ResourceTelemetrySnapshot,
 } from "./resourceTelemetry.ts";
 import {
-  ServerLogLine,
-  ServerLogsSubscribeInput,
   SandboxStartInput,
   SandboxStartResult,
   SandboxStatusInput,
   SandboxStatusResult,
   SandboxStopInput,
   SandboxStopResult,
+} from "./sandbox.ts";
+import {
+  ServerLogLine,
+  ServerLogsSubscribeInput,
   ServersListInput,
   ServersListResult,
   ServerStatusSnapshot,

@@ -4,7 +4,6 @@ import { Atom } from "effect/unstable/reactivity";
 
 import type { EnvironmentRegistry } from "../connection/registry.ts";
 import {
-  createEnvironmentRpcCommand,
   createEnvironmentRpcQueryAtomFamily,
   createEnvironmentRpcSubscriptionAtomFamily,
 } from "./runtime.ts";
@@ -54,19 +53,6 @@ export function createServersEnvironmentAtoms<R, E>(
       label: "environment-data:servers:list",
       tag: WS_METHODS.serversList,
       staleTimeMs: 5_000,
-    }),
-    sandboxStatus: createEnvironmentRpcQueryAtomFamily(runtime, {
-      label: "environment-data:sandbox:status",
-      tag: WS_METHODS.sandboxStatus,
-      staleTimeMs: 5_000,
-    }),
-    startSandbox: createEnvironmentRpcCommand(runtime, {
-      label: "environment-data:sandbox:start",
-      tag: WS_METHODS.sandboxStart,
-    }),
-    stopSandbox: createEnvironmentRpcCommand(runtime, {
-      label: "environment-data:sandbox:stop",
-      tag: WS_METHODS.sandboxStop,
     }),
     status: createEnvironmentRpcSubscriptionAtomFamily(runtime, {
       label: "environment-data:servers:status",

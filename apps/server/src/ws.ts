@@ -1989,11 +1989,9 @@ const makeWsRpcLayer = (
         // unsupported method, and the subscriptions have nothing to report.
         // A hosted environment answers these methods with real data.
         [WS_METHODS.serversList]: (_input) =>
-          observeRpcEffect(
-            WS_METHODS.serversList,
-            Effect.succeed({ servers: [], sandboxStatus: "not_created" as const }),
-            { "rpc.aggregate": "servers" },
-          ),
+          observeRpcEffect(WS_METHODS.serversList, Effect.succeed({ servers: [] }), {
+            "rpc.aggregate": "servers",
+          }),
         [WS_METHODS.sandboxStatus]: (_input) =>
           observeRpcEffect(
             WS_METHODS.sandboxStatus,

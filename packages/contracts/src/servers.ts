@@ -30,18 +30,6 @@ export const ServerRuntimeStatus = Schema.Literals([
 ]);
 export type ServerRuntimeStatus = typeof ServerRuntimeStatus.Type;
 
-/** The state of the environment the servers run in. */
-export const ServerSandboxStatus = Schema.Literals([
-  "not_created",
-  "initializing",
-  "ready",
-  "stopped",
-  "removing",
-  "removed",
-  "error",
-]);
-export type ServerSandboxStatus = typeof ServerSandboxStatus.Type;
-
 /**
  * One declared server.
  *
@@ -76,26 +64,8 @@ export type ServersListInput = typeof ServersListInput.Type;
  */
 export const ServersListResult = Schema.Struct({
   servers: Schema.Array(ThreadServer),
-  sandboxStatus: ServerSandboxStatus,
 });
 export type ServersListResult = typeof ServersListResult.Type;
-
-export const SandboxStatusInput = ServersListInput;
-export type SandboxStatusInput = typeof SandboxStatusInput.Type;
-export const SandboxStatusResult = Schema.Struct({
-  sandboxStatus: ServerSandboxStatus,
-});
-export type SandboxStatusResult = typeof SandboxStatusResult.Type;
-
-export const SandboxStartInput = SandboxStatusInput;
-export type SandboxStartInput = typeof SandboxStartInput.Type;
-export const SandboxStartResult = SandboxStatusResult;
-export type SandboxStartResult = typeof SandboxStartResult.Type;
-
-export const SandboxStopInput = SandboxStatusInput;
-export type SandboxStopInput = typeof SandboxStopInput.Type;
-export const SandboxStopResult = SandboxStatusResult;
-export type SandboxStopResult = typeof SandboxStopResult.Type;
 
 export const ServerStatusSubscribeInput = Schema.Struct({
   threadId: ThreadId,

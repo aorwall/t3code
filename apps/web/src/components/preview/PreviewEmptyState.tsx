@@ -11,21 +11,8 @@ interface Props {
   onOpenUrl: (url: string) => void;
 }
 
-const SANDBOX_EXPLANATION: Record<string, string> = {
-  not_created: "This environment has not been created yet.",
-  initializing: "This environment is starting up.",
-  stopped: "This environment is stopped.",
-  removing: "This environment is being removed.",
-  removed: "This environment has been removed.",
-  error: "This environment is in an error state.",
-};
-
 export function PreviewEmptyState({ threadRef, onOpenUrl }: Props) {
-  const { servers, sandboxStatus, isPending, error } = useThreadPreviewServers(threadRef);
-  const sandboxNote =
-    sandboxStatus === null || sandboxStatus === "ready"
-      ? null
-      : (SANDBOX_EXPLANATION[sandboxStatus] ?? null);
+  const { servers, isPending, error } = useThreadPreviewServers(threadRef);
 
   if (servers.length === 0) {
     return (
@@ -37,7 +24,7 @@ export function PreviewEmptyState({ threadRef, onOpenUrl }: Props) {
         <EmptyDescription>
           {isPending
             ? "Loading preview servers..."
-            : (error ?? sandboxNote ?? "Type a URL above, or wait for preview servers to appear.")}
+            : (error ?? "Type a URL above, or wait for preview servers to appear.")}
         </EmptyDescription>
       </Empty>
     );
@@ -50,9 +37,7 @@ export function PreviewEmptyState({ threadRef, onOpenUrl }: Props) {
           <RadioTower className="size-4 shrink-0" />
           <h2 className="font-medium">Preview Servers</h2>
         </div>
-        {error === null && sandboxNote === null ? null : (
-          <p className="px-1 text-xs text-muted-foreground">{error ?? sandboxNote}</p>
-        )}
+        {error === null ? null : <p className="px-1 text-xs text-muted-foreground">{error}</p>}
         <div className="flex flex-col divide-y divide-border/60 overflow-hidden rounded-xl border border-border/70 bg-background">
           {servers.map((server) => (
             <PreviewServerCard
