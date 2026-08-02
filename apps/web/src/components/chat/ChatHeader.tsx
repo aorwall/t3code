@@ -6,7 +6,7 @@ import {
   type ThreadId,
 } from "@t3tools/contracts";
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
-import { memo, type ReactNode } from "react";
+import { memo } from "react";
 import { type DraftId } from "~/composerDraftStore";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import GitActionsControl from "../GitActionsControl";
@@ -35,8 +35,6 @@ interface ChatHeaderProps {
   availableEditors: ReadonlyArray<EditorId>;
   rightPanelOpen: boolean;
   gitCwd: string | null;
-  actionsPrefix?: ReactNode;
-  actionsOverride?: ReactNode;
   onNewThreadInProject: () => void;
   onRunProjectScript: (script: ProjectScript) => void;
   onAddProjectScript: (input: NewProjectScriptInput) => Promise<ProjectScriptActionResult>;
@@ -73,8 +71,6 @@ export const ChatHeader = memo(function ChatHeader({
   availableEditors,
   rightPanelOpen,
   gitCwd,
-  actionsPrefix,
-  actionsOverride,
   onNewThreadInProject,
   onRunProjectScript,
   onAddProjectScript,
@@ -145,9 +141,7 @@ export const ChatHeader = memo(function ChatHeader({
           rightPanelOpen ? "pr-0" : "pr-16",
         )}
       >
-        {actionsPrefix}
-        {actionsOverride}
-        {!actionsOverride && activeProjectScripts && FEATURES.projectScripts && (
+        {activeProjectScripts && FEATURES.projectScripts && (
           <ProjectScriptsControl
             scripts={activeProjectScripts}
             fileScripts={fileScripts}
@@ -159,7 +153,7 @@ export const ChatHeader = memo(function ChatHeader({
             onDeleteScript={onDeleteProjectScript}
           />
         )}
-        {!actionsOverride && showOpenInPicker && FEATURES.workspaceOpenIn && (
+        {showOpenInPicker && FEATURES.workspaceOpenIn && (
           <OpenInPicker
             environmentId={activeThreadEnvironmentId}
             keybindings={keybindings}
@@ -167,7 +161,7 @@ export const ChatHeader = memo(function ChatHeader({
             openInCwd={openInCwd}
           />
         )}
-        {!actionsOverride && activeProjectName && FEATURES.versionControl && (
+        {activeProjectName && FEATURES.versionControl && (
           <GitActionsControl
             gitCwd={gitCwd}
             activeThreadRef={scopeThreadRef(activeThreadEnvironmentId, activeThreadId)}

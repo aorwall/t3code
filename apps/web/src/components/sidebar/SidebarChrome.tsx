@@ -11,6 +11,7 @@ import {
   SidebarStageBackdrop,
   useEnvironmentStageLabel,
 } from "../SidebarStageBackdrop";
+import { SidebarSandboxStatus } from "../sandbox/SidebarSandboxStatus";
 import { Badge } from "../ui/badge";
 import {
   SidebarFooter,
@@ -97,6 +98,7 @@ export const SidebarChromeFooter = memo(function SidebarChromeFooter() {
 
   return (
     <SidebarFooter className="p-[var(--sidebar-content-inset)]">
+      <SidebarSandboxStatus />
       <SidebarProviderUpdatePill />
       <SidebarUpdatePill />
       <SidebarMenu>
