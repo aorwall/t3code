@@ -50,8 +50,6 @@
  * the surface is already empty and a flag would gate nothing.
  */
 export const FEATURES = {
-  /** Terminal panels, the terminal drawer, and their keybindings. */
-  terminal: false,
   /** Git and VCS controls: the header's git menu and the composer's context strip. */
   versionControl: false,
   /** Adding and removing projects, and the source-control settings behind them. */
