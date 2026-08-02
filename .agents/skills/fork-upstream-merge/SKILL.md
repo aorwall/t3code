@@ -18,6 +18,7 @@ append-only merge decision tracker.
 Completion for an upstream merge: conflicts are resolved by
 `docs/fork/upstream-merge-inventory.md`, deleted-surface tripwires are checked,
 newly added upstream files in owned concerns are swept, convergence is checked,
+the merge diff is read against both parents and its file counts recorded,
 new upstream features are classified in the PR report, unsupported Moatless
 methods declare `UnsupportedMethodError`, backend behavior worth reproducing in
 Moatless is called out, verification is run or caveated, and
@@ -32,12 +33,21 @@ policy, tripwire, or convergence rule needed for future merges.
 
 ## Policy Meanings
 
-- `ours`: take the fork side wholesale.
+- `ours`: take the fork side wholesale. Legitimate only when the path does not
+  exist in `upstream/main`. On a path upstream still owns, a blanket `ours`
+  discards every upstream change to it, merge after merge, and reports nothing.
 - `theirs`: take upstream wholesale.
 - `theirs, verbatim`: take upstream exactly and investigate why a fork delta
   reappeared.
 - `converged`: take upstream wholesale, then re-apply only the listed fork
-  deltas.
+  deltas. The listed delta describes what must survive; it is not a patch to
+  replay. If upstream restructured the file so the delta no longer has an
+  anchor, the row is stale: resolve as `decide` and rewrite the row in the same
+  merge.
+- `decide`: the fork changed a file upstream still owns, and upstream changes to
+  it are still wanted. There is no cached verdict. Read upstream's side of the
+  conflict every merge and decide it there. The Fork Inventory row names the
+  behavior that must survive; it does not name a winner.
 - `decide, then add a row`: make the merge decision now and update
   `docs/fork/upstream-merge-inventory.md` so the next merge does not rediscover
   it.
@@ -76,7 +86,24 @@ Then:
    fork delta.
 5. Check the inventory doc's Convergence Watch List. When upstream now provides a
    fork-built surface, prefer upstream and shrink the fork delta.
-6. Classify new upstream additions for the PR report. Include paths, methods, and
+6. Read what the merge actually took, against both parents:
+
+   ```bash
+   git diff --stat HEAD^1 HEAD   # upstream content that landed on the fork
+   git diff --stat HEAD^2 HEAD   # the whole fork delta, restated against upstream
+   ```
+
+   Compare the first against `git diff --stat "$UPSTREAM_BASE..upstream/main"`.
+   A merge that touched far fewer files than upstream changed is the failure this
+   step exists to catch: `ours` resolutions on live upstream paths produce a
+   clean, green, quiet merge that threw upstream's work away. Record both file
+   counts in the tracker entry. If the gap is not accounted for by the conflicts
+   you resolved, find the missing files before continuing.
+
+   The second number is the fork delta. If it grows every merge, the Convergence
+   Watch List is not being worked.
+
+7. Classify new upstream additions for the PR report. Include paths, methods, and
    short implementation notes for unsupported and reproducible-backend items. For
    example, a new upstream auto-settle rule such as keeping threads with open PRs
    unsettled belongs in the reproducible-backend bucket if Moatless owns
@@ -92,16 +119,17 @@ Then:
      background-task behavior that would improve Moatless even when the fork
      cannot use the upstream implementation directly.
 
-7. For each newly unsupported WebSocket method, add `UnsupportedMethodError` to
+8. For each newly unsupported WebSocket method, add `UnsupportedMethodError` to
    that method's error union in `packages/contracts/src/rpc.ts`. If the shared
    error type changes or is missing, update `packages/contracts/src/auth.ts`.
    Derive the unsupported set from contract WebSocket methods minus the Moatless
    backend dispatch arms instead of editing by intuition.
-8. Run `pnpm typecheck && pnpm test && pnpm lint && pnpm fmt:check`, or record
+9. Run `pnpm typecheck && pnpm test && pnpm lint && pnpm fmt:check`, or record
    the exact skipped or failing checks in the tracker.
-9. Append a compact dated tracker entry with upstream head/base, conflict
-   decisions, owned-surface sweep decisions, and verification.
-10. Put the feature classification in the PR body or PR summary. Include
+10. Append a compact dated tracker entry with upstream head/base, the two file
+    counts from step 6, conflict decisions, owned-surface sweep decisions, and
+    verification.
+11. Put the feature classification in the PR body or PR summary. Include
     `Usable as-is`, `Unsupported in Moatless / needs implementation`, and
     `Backend behavior to consider reproducing in Moatless`, even when a list is
     empty.

@@ -11,6 +11,9 @@ few bullets, move the durable rule into
 ### YYYY-MM-DD — short title
 
 - Upstream: `<head>` from base `<base>` (`N` commits).
+- Landed: `<A>` files from `git diff --stat HEAD^1 HEAD` against `<B>` files in
+  the upstream range; fork delta `<C>` files from `git diff --stat HEAD^2 HEAD`.
+  Explain any gap between `A` and `B`.
 - Conflicts: paths and resolution rule used.
 - Sweep: owned-concern hits and decision.
 - Verification: commands run, failures or caveats.
