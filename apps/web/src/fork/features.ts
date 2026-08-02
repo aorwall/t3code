@@ -97,6 +97,12 @@ export const FEATURES = {
    * there is nothing to group across.
    */
   projectGrouping: false,
+  /**
+   * The composer's Access picker, which chooses how much an agent may do
+   * without asking. Every Moatless task runs in its own throwaway sandbox, so a
+   * thread is always `full-access` and there is no tier to pick between.
+   */
+  accessMode: false,
 } satisfies Record<string, boolean>;
 
 export type FeatureName = keyof typeof FEATURES;

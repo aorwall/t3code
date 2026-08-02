@@ -105,6 +105,7 @@ import {
 import { ContextWindowMeter } from "./ContextWindowMeter";
 import { buildExpandedImagePreview, type ExpandedImagePreview } from "./ExpandedImagePreview";
 import { basenameOfPath } from "../../pierre-icons";
+import { FEATURES } from "../../fork/features";
 import { cn, randomUUID } from "~/lib/utils";
 import { Separator } from "../ui/separator";
 
@@ -327,7 +328,7 @@ const ComposerFooterModeControls = memo(function ComposerFooterModeControls(prop
     </>
   ) : null;
 
-  return (
+  const runtimeModePicker = FEATURES.accessMode ? (
     <>
       <Separator orientation="vertical" className="mx-0.5 hidden h-4 sm:block" />
 
@@ -366,6 +367,12 @@ const ComposerFooterModeControls = memo(function ComposerFooterModeControls(prop
         </Select>
         <TooltipPopup side="top">{runtimeModeOption.description}</TooltipPopup>
       </Tooltip>
+    </>
+  ) : null;
+
+  return (
+    <>
+      {runtimeModePicker}
 
       {interactionModeToggle}
 
