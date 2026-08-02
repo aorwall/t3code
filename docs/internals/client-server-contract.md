@@ -49,7 +49,8 @@ deliberately: the list is a statement about the surface, so adding a method to i
 nobody answers it and removing one says somebody now does. Without a declared error an
 absent method can only answer with a defect, and a defect does not decode into anything
 the client can read a message off — the person gets "unexpected server error", which is
-also what a genuine crash looks like. See §8 and `docs/fork/upstream-merge-policy.md` §3.
+also what a genuine crash looks like. See §8 and
+`docs/fork/upstream-merge-inventory.md`.
 
 Every method also carries a required authorization scope, enforced server-side by
 `RPC_REQUIRED_SCOPE` ([`ws.ts:288`][scopemap]) — a `Map` the server throws on if a method

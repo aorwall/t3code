@@ -39,7 +39,7 @@ policy in [CONTRIBUTING.md](../CONTRIBUTING.md); agent rules in [AGENTS.md](../A
 
 ### Fork
 
-- [Upstream merge policy](./fork/upstream-merge-policy.md)
+- [Upstream merge inventory](./fork/upstream-merge-inventory.md)
 - [Upstream merge tracker](./fork/upstream-merge-log.md)
 
 ### Runbooks

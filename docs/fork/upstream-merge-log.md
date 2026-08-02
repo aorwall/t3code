@@ -3,7 +3,7 @@
 Append-only, newest first. Keep entries compact: context, conflicts, sweep
 decisions, and verification. If an entry needs more than a short paragraph or a
 few bullets, move the durable rule into
-[the merge policy](./upstream-merge-policy.md) or the fork inventory instead.
+[the merge inventory](./upstream-merge-inventory.md) instead.
 
 ## Entry template
 
