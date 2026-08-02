@@ -1,6 +1,46 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vite-plus/test";
 
-import { formatPendingPrimaryActionLabel } from "./ComposerPrimaryActions";
+import { ComposerPrimaryActions, formatPendingPrimaryActionLabel } from "./ComposerPrimaryActions";
+
+function renderPrimaryAction(input: { isRunning: boolean; hasSendableContent: boolean }) {
+  return renderToStaticMarkup(
+    createElement(ComposerPrimaryActions, {
+      compact: false,
+      pendingAction: null,
+      isRunning: input.isRunning,
+      showPlanFollowUpPrompt: false,
+      promptHasText: input.hasSendableContent,
+      isSendBusy: false,
+      sendDisabledReason: null,
+      isConnecting: false,
+      isEnvironmentUnavailable: false,
+      isPreparingWorktree: false,
+      hasSendableContent: input.hasSendableContent,
+      onPreviousPendingQuestion: () => {},
+      onInterrupt: () => {},
+      onImplementPlanInNewThread: () => {},
+    }),
+  );
+}
+
+describe("ComposerPrimaryActions", () => {
+  it("shows Stop while a turn is running and the composer is empty", () => {
+    const markup = renderPrimaryAction({ isRunning: true, hasSendableContent: false });
+
+    expect(markup).toContain('aria-label="Stop generation"');
+    expect(markup).not.toContain('aria-label="Send message"');
+  });
+
+  it("switches to Send when the running turn has sendable composer content", () => {
+    const markup = renderPrimaryAction({ isRunning: true, hasSendableContent: true });
+
+    expect(markup).toContain('type="submit"');
+    expect(markup).toContain('aria-label="Send message"');
+    expect(markup).not.toContain('aria-label="Stop generation"');
+  });
+});
 
 describe("formatPendingPrimaryActionLabel", () => {
   it("returns 'Submitting...' while responding", () => {

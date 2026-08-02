@@ -132,7 +132,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
     );
   }
 
-  if (isRunning) {
+  if (isRunning && !hasSendableContent) {
     return (
       <button
         type="button"
