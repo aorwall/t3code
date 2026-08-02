@@ -21,6 +21,18 @@ few bullets, move the durable rule into
 
 ## Log
 
+### 2026-08-02 — upstream workflows are switched off in GitHub, not renamed
+
+- Decision: the nine inherited workflows take their upstream filenames back and
+  are disabled in GitHub instead. Fork inventory row: _Upstream workflows
+  switched off_. Checks in §_Off-repository state_.
+- The rename worked but held a fork delta on nine paths upstream edits
+  constantly. Byte-identical files have nothing for a merge to follow.
+- Neither shape covers a workflow upstream adds later — it arrives active. That
+  is what the new check catches, after a merge rather than before.
+- Verification: `deploy.test.ts` reads `release.yml` again; the nine files match
+  `upstream/main` at `5192f777`.
+
 ### 2026-08-02 — merged the upstream service launcher
 
 - Upstream: `5192f777` from base `0ad91b6e` (`4` commits).

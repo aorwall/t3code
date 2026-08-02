@@ -1,8 +1,19 @@
 # Workflows in this fork
 
-One workflow runs here. Every workflow inherited from upstream is suffixed
-`.disabled`. GitHub only reads `.yml`/`.yaml` in this directory, so the suffix is
-all it takes — the files are otherwise untouched.
+One workflow runs here. Every workflow inherited from upstream sits on disk
+exactly as upstream wrote it and is switched off in GitHub's Actions settings
+instead — `state: disabled_manually` on the workflow, not a change to the file.
+
+That state lives in GitHub, not in this repository, so it does not survive a
+re-fork and a clone cannot show it to you. Read it back with:
+
+```bash
+gh api repos/soaplabs/t3code/actions/workflows \
+  --jq '.workflows[] | [.state, .path] | @tsv'
+```
+
+Everything except `build-moatless-t3-image.yml` must report
+`disabled_manually`.
 
 ## The one that runs
 
@@ -96,26 +107,36 @@ never have passed, and no signal from the one that mattered.
 
 ## Re-enabling
 
-Drop the suffix:
+Flip the switch, no commit involved:
 
 ```bash
-git mv .github/workflows/ci.yml.disabled .github/workflows/ci.yml
+gh workflow enable ci.yml --repo soaplabs/t3code
 ```
 
 `ci.yml` also needs a runner it can actually reach. Either install Blacksmith on
 the fork, or change `runs-on: blacksmith-8vcpu-ubuntu-2404` to
 `runs-on: staging-runners-large` — not to `ubuntu-24.04`, which does not start
-here. The macOS job has no self-hosted equivalent and stays disabled either way.
+here. The macOS job has no self-hosted equivalent and stays off either way.
 Note that the second option is a fork delta on a file upstream edits often, so
 it will want a row in
-[the merge policy](../../docs/fork/upstream-merge-policy.md).
+[the merge inventory](../../docs/fork/upstream-merge-inventory.md).
 
-## Why renamed rather than deleted
+## Why switched off in GitHub rather than renamed or deleted
 
-Renaming keeps the content byte-identical, so when upstream edits one of these
-files the merge follows the rename and applies the change to the `.disabled` path
-instead of conflicting. Deleting them would raise a delete/modify conflict on
-every upstream edit — and upstream edits `ci.yml` and `release.yml` regularly.
+Deleting raises a delete/modify conflict on every upstream edit, and upstream
+touched this directory 26 times in the last 60 days.
+
+Renaming to `*.yml.disabled` avoided that — content stayed byte-identical, so
+git read it as a pure rename. It also put a fork delta on all nine paths and
+depended on nobody editing one enough for rename detection to stop firing.
+
+Switching them off in GitHub costs nothing at merge time. The price is that the
+state is invisible here, which is what the check at the top is for.
+
+**A workflow upstream adds later arrives switched on.** Neither this nor the
+rename covers a file that did not exist when the decision was made, and upstream
+has added four in five months. The check in
+[the merge inventory](../../docs/fork/upstream-merge-inventory.md) catches it.
 
 Until CI is restored, verification is local and manual:
 `pnpm typecheck && pnpm test && pnpm lint && pnpm fmt:check`. The image workflow

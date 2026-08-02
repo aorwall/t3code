@@ -67,7 +67,9 @@ Then:
 1. Resolve every conflict with the inventory doc's Path Policy.
 2. Run every Deleted Surface tripwire from the inventory doc. A `removed` surface
    must return no matches. A `decided, not yet removed` surface may have known
-   existing matches; reject or explicitly accept new upstream additions.
+   existing matches; reject or explicitly accept new upstream additions. Run the
+   inventory doc's Off-repository state checks in the same pass — a merge cannot
+   see state that lives in GitHub, so nothing else will catch it.
 3. Sweep newly added upstream files in fork-owned concerns:
 
    ```bash
