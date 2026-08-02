@@ -2,10 +2,16 @@
  * Which product surfaces this fork's build shows.
  *
  * Fork-only, and the one place any of it is decided. The Moatless backend
- * implements part of the T3 client contract; calling a method it does not
- * implement comes back as a defect rather than a typed error, so the person
- * sees "unexpected server error" where they should have seen nothing at all.
- * A surface we cannot serve therefore has to be absent, not merely broken.
+ * implements part of the T3 client contract, and now refuses the rest with a
+ * typed `UnsupportedMethodError` the client can render. That fixed the worst of
+ * it — a person no longer sees "unexpected server error" where they should have
+ * seen an explanation — and it does not make this table redundant.
+ *
+ * A typed refusal is the right answer to a *call*. It is the wrong answer to a
+ * Terminal tab that should never have been on the screen: nothing renders a
+ * refusal until someone reaches for the feature, and by then they have already
+ * been told the feature exists. A surface we cannot serve is still absent here,
+ * and what the refusal buys is that being wrong about one is now survivable.
  *
  * # Turning one on
  *
@@ -50,8 +56,15 @@ export const FEATURES = {
   versionControl: false,
   /** Adding and removing projects, and the source-control settings behind them. */
   projectManagement: false,
-  /** Searching workspace files by path or content. Reading and listing are served. */
-  workspaceSearch: false,
+  /**
+   * Searching workspace files by *content*. Path search, reading and listing
+   * are served.
+   *
+   * Split from a single `workspaceSearch` flag once the backend grew path
+   * search: the Sandbox has a file-name search RPC and no content-search one,
+   * so the two halves stopped sharing a fate.
+   */
+  workspaceSearchContents: false,
   /** Opening a workspace path in an external editor. */
   workspaceOpenIn: false,
   /** Editing server-side settings: keybindings and provider instances. */
@@ -100,8 +113,7 @@ export function settingsPathEnabled(pathname: string): boolean {
  */
 export const FEATURE_BY_PALETTE_ACTION: Readonly<Record<string, FeatureName>> = {
   "action:add-project": "projectManagement",
-  "action:open-file-picker": "workspaceSearch",
-  "action:search-project-contents": "workspaceSearch",
+  "action:search-project-contents": "workspaceSearchContents",
 };
 
 /** Whether a palette item is offered in this build. Unlisted values are. */

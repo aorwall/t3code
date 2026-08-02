@@ -138,6 +138,7 @@ never hand-merge a converged file, or the fork delta grows every time.
 | `docs/user/moatless-*.md`, `docs/internals/client-server-contract.md`, `docs/internals/moatless-concept-map.md`, `.plans/**`                                                                                                     | ours                       | Fork-authored docs.                                                                                                                                                |
 | `scripts/dev-runner.ts`, `scripts/dev-runner.test.ts`                                                                                                                                                                            | **theirs, verbatim**       | We had a delta here and gave it up (log 2026-07-30). If a conflict appears, we have re-grown one by accident — check why before resolving.                         |
 | `apps/web/src/components/servers/**`, `apps/web/src/browser/**`, `apps/web/src/state/servers.ts`, `packages/contracts/src/servers.ts`, `packages/contracts/fixtures/moatless/**`, `packages/client-runtime/src/state/servers.ts` | ours                       | Fork-only files. Upstream has no thread-servers concept and no hosted preview frame — see [§3](#3-fork-inventory--what-we-changed).                                |
+| `packages/contracts/src/rpc.ts`, `packages/contracts/src/auth.ts`                                                                                                                                                                | converged                  | Upstream's, plus `UnsupportedMethodError` and its 47 error-union entries, and the `servers.*` wiring. Take theirs, re-apply both — see [§3](#unsupported-methods). |
 | `apps/server/src/ws.ts`, `apps/server/src/auth/RpcAuthorization.ts`                                                                                                                                                              | converged                  | Upstream's, plus exactly three `servers.*` method entries in each. Take theirs, re-add the three. Never take ours wholesale — these are high-churn upstream files. |
 | `apps/web/src/fork/**`                                                                                                                                                                                                           | ours                       | Fork-only by construction; upstream will never add files here. Today: the surface-gating registry.                                                                 |
 | The feature-gated files listed in [§3](#surface-gating)                                                                                                                                                                          | converged                  | Upstream's, plus the gates named there. Every gate is additive and none re-indents — take theirs, re-apply, never hand-merge.                                      |
@@ -233,13 +234,49 @@ group is therefore fork-added, and it is the largest single delta in the tree.
 | Preview pages hosted in a frame on the web       | `apps/web/src/browser/**`, `apps/web/src/components/preview/**`, `apps/web/src/previewStateStore.ts`, `apps/web/src/previewRuntimeCapability.test.ts`                                                                      | Desktop drives a real browser; the web build cannot, so a preview target becomes an iframe with its own chrome and its own not-started state.                                                                                                   |
 | Three `servers.*` stubs in upstream's own server | `apps/server/src/ws.ts`, `apps/server/src/auth/RpcAuthorization.ts`                                                                                                                                                        | **The one fork change inside upstream's server.** A method in `WS_METHODS` that no server answers is a runtime hole, so this one answers with an empty list and two silent streams. If upstream ships anything server-shaped, drop these first. |
 
+### Unsupported methods
+
+Added 2026-08-01. Moatless answers 35 of the contract's 82 WebSocket methods.
+The other 47 had no way to say so: the wire has a typed `Fail` and an untyped
+`Die`, an error a method does not declare can only go out as a `Die`, and a `Die`
+does not decode into anything a client can read a message off — so "this server
+has no terminals" reached the person as _"unexpected server error"_, exactly like
+a crash.
+
+`UnsupportedMethodError` is that missing declaration. It is **not** on all 82, and
+that is the whole design: the 47 are a statement about the surface, so adding a
+method to the list says nobody answers it and removing one says somebody now does.
+A blanket allowance on every method would say nothing and would never need editing
+again.
+
+| Change                     | Paths                            | Why it exists                                                                                                                                                                                                                       |
+| -------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The error class            | `packages/contracts/src/auth.ts` | Lives beside `EnvironmentAuthorizationError` because both are answers about the environment rather than about the method. Carries `method` as well as `message`, so a client fanning out calls can tell which one came back absent. |
+| Its 47 error-union entries | `packages/contracts/src/rpc.ts`  | One per method Moatless does not serve. The set is `WS_METHODS` ∪ `ORCHESTRATION_WS_METHODS` minus the dispatch arms in the backend's `ui_rpc/mod.rs`; recompute it that way rather than editing by hand.                           |
+
+**Upstream's server is unaffected.** It implements everything, so the added union
+member is one it never constructs; nothing in `apps/server` changed and nothing
+needed to. That is also why this is cheap to carry — the delta is one class and 48
+lines of union entries.
+
+**Keep the list honest.** A method that gains a Moatless implementation should lose
+its entry in the same change, or the contract keeps advertising a failure that can
+no longer happen. The reverse — a method dropped from the backend without gaining
+an entry — is the one that hurts, and it comes back as an undecodable defect.
+
 ### Surface gating
 
-Added 2026-08-01. Moatless implements part of the client contract, and calling a
-method it does not implement comes back as a defect rather than an error the UI
-can render — so a surface it cannot serve has to be absent, not merely broken.
-Upstream's server answers everything, so upstream has no such notion; the whole
-group is fork-added.
+Added 2026-08-01. Moatless implements part of the client contract, so a surface it
+cannot serve has to be absent rather than merely broken. Upstream's server answers
+everything, so upstream has no such notion; the whole group is fork-added.
+
+The original reason was that an unimplemented method came back as a defect the UI
+could not render. [Unsupported methods](#unsupported-methods), added the same day,
+fixed that — and does not make this group redundant. A typed refusal is the right
+answer to a _call_; it is the wrong answer to a Terminal tab that should never have
+been on screen, because nothing renders a refusal until someone reaches for the
+feature, by which point they have been told it exists. What the refusal buys is
+that being wrong about one gate is now survivable rather than looking like a crash.
 
 `apps/web/src/fork/features.ts` is the only place any of it is decided. It is a
 constant, not a server capability, and that choice is what keeps this group
@@ -259,7 +296,7 @@ into a conflict, so keep any new gate to the same shape.
 | The registry           | `apps/web/src/fork/features.ts` (+ test)                                                                     | Nine flags, plus the two maps that key off strings living in upstream code — a settings route path and a palette action's `value`. Both lookups treat an unknown key as _enabled_, so an upstream rename would silently un-gate; the test reads the keys back out of the upstream sources.                                                 |
 | Gates on chat surfaces | `apps/web/src/components/ChatView.tsx`, `.../RightPanelTabs.tsx`, `.../chat/ChatHeader.tsx`                  | Terminal and diff surfaces, the terminal keybindings, the composer context strip, and the header's git and open-in controls.                                                                                                                                                                                                               |
 | Persisted panel state  | `apps/web/src/rightPanelStore.ts`                                                                            | Two lines inside the migrate that already drops surface kinds a build does not know. A layout saved while a surface was shown restores without it, same disposal as an unknown kind.                                                                                                                                                       |
-| Gates on navigation    | `apps/web/src/components/CommandPalette.tsx`, `.../SidebarV2.tsx`                                            | One filter over the palette's finished action list, covering "Add project", "Go to file" and "Search project contents"; thread delete, single and bulk, in the sidebar.                                                                                                                                                                    |
+| Gates on navigation    | `apps/web/src/components/CommandPalette.tsx`, `.../SidebarV2.tsx`                                            | One filter over the palette's finished action list, covering "Add project" and "Search project contents"; thread delete, single and bulk, in the sidebar. "Go to file" was gated too until the backend grew path search — see `workspaceSearchContents`.                                                                                   |
 | Gates on settings      | `apps/web/src/routes/settings.tsx`, `.../settings/SettingsSidebarNav.tsx`, `.../settings/SettingsPanels.tsx` | One condition in the `/settings` `beforeLoad` refuses a typed URL for every gated section at once; the sidebar filters the nav list and search alike. General, Appearance and Providers stay — `splitPatch` routes much of them to localStorage and they keep working — so only the server-backed "add provider instance" is gated inside. |
 
 ## 4. Convergence watch list
@@ -267,11 +304,12 @@ into a conflict, so keep any new gate to the same shape.
 Places where we built something because upstream had not. If upstream ships its
 own version, theirs wins and our delta should shrink or disappear.
 
-| Area                      | Ours                                            | Watch for                                                                                                                                                                      |
-| ------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Auth                      | Moatless cookie session, `/login` route         | Nothing — auth is fork-owned by decision, not by accident. Take ours even if upstream reworks it.                                                                              |
-| Dev proxy / single-origin | `proxyTargetOverride` chain in `vite.config.ts` | Already converged once (2026-07-30). Any further upstream work on `DEV_PROXIED_PATH_PREFIXES`, `T3CODE_SINGLE_ORIGIN_DEV` or `resolveDevProxyTarget` should be taken as-is.    |
-| Allowed hosts             | `T3CODE_ALLOWED_HOSTS` alias                    | Upstream consolidating on `T3CODE_DEV_ALLOWED_HOSTS`. If deployments can be changed to inject that name, drop our alias.                                                       |
-| Thread servers            | The `servers.*` contract group and its UI       | Any upstream concept of a server a thread owns — theirs wins and the whole group goes, stubs first. Watch `WS_METHODS` for names in that shape.                                |
-| Hosted preview            | `apps/web/src/browser/**` iframe host           | Upstream giving the web build a preview surface of its own. Today only desktop has one, which is why this exists.                                                              |
-| Surface gating            | `apps/web/src/fork/features.ts` and its gates   | Any upstream way to say a build or server does not serve a surface. Theirs wins — the flags collapse into it and the gates re-point. Watch `ExecutionEnvironmentCapabilities`. |
+| Area                      | Ours                                            | Watch for                                                                                                                                                                                                                                  |
+| ------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Auth                      | Moatless cookie session, `/login` route         | Nothing — auth is fork-owned by decision, not by accident. Take ours even if upstream reworks it.                                                                                                                                          |
+| Dev proxy / single-origin | `proxyTargetOverride` chain in `vite.config.ts` | Already converged once (2026-07-30). Any further upstream work on `DEV_PROXIED_PATH_PREFIXES`, `T3CODE_SINGLE_ORIGIN_DEV` or `resolveDevProxyTarget` should be taken as-is.                                                                |
+| Allowed hosts             | `T3CODE_ALLOWED_HOSTS` alias                    | Upstream consolidating on `T3CODE_DEV_ALLOWED_HOSTS`. If deployments can be changed to inject that name, drop our alias.                                                                                                                   |
+| Thread servers            | The `servers.*` contract group and its UI       | Any upstream concept of a server a thread owns — theirs wins and the whole group goes, stubs first. Watch `WS_METHODS` for names in that shape.                                                                                            |
+| Hosted preview            | `apps/web/src/browser/**` iframe host           | Upstream giving the web build a preview surface of its own. Today only desktop has one, which is why this exists.                                                                                                                          |
+| Unsupported methods       | `UnsupportedMethodError` on 47 error unions     | Any upstream notion of a method an environment may omit — a capability list, an optional-method marker, anything on the handshake. Theirs wins and the 47 entries collapse into it. Watch `ServerConfig` and the HTTP `metadata` endpoint. |
+| Surface gating            | `apps/web/src/fork/features.ts` and its gates   | Any upstream way to say a build or server does not serve a surface. Theirs wins — the flags collapse into it and the gates re-point. Watch `ExecutionEnvironmentCapabilities`.                                                             |

@@ -18,6 +18,32 @@ few bullets, move the durable rule into
 
 ## Log
 
+### 2026-08-01 — the contract can say a method is unsupported
+
+- Decision: `UnsupportedMethodError` in `packages/contracts/src/auth.ts`, declared
+  on the 47 WebSocket methods Moatless does not serve. Fork inventory row: §3
+  _Unsupported methods_. Backend half is soaplabs/moatless#236.
+- **Not on all 82, deliberately.** A blanket allowance says nothing and never
+  needs editing; a list of 47 is a claim about the surface that has to be kept
+  true. It is derived — contract methods minus the backend's dispatch arms — so
+  recompute it rather than editing it by hand.
+- Why an error and not a capability list: the wire already has a place for this.
+  An undeclared failure can only leave as a `Die`, and a `Die` carries no message
+  the client can decode, so an absent method and a panic looked identical to the
+  person. Nothing about the handshake or the transport had to change.
+- Upstream's server implements everything, so it never constructs the new member
+  and `apps/server` is untouched. The whole delta is one class and 48 lines of
+  union entries in `rpc.ts`.
+- Kept out on purpose: the `mapSessionRpcError` arm an earlier pass added in
+  `packages/client-runtime`. `server.probe` and `server.getConfig` are both
+  served, so their unions do not gain the error and that switch stays upstream's.
+- Also: `workspaceSearch` splits into `workspaceSearchContents` in
+  `apps/web/src/fork/features.ts`. The backend grew path search (`SearchFilesByName`)
+  and has no content-search RPC, so the two halves stopped sharing a fate and
+  "Go to file" is no longer gated.
+- Verification: `vp run --filter @t3tools/contracts|client-runtime|web|t3 typecheck`,
+  all clean.
+
 ### 2026-08-01 — the fork hides surfaces it cannot serve
 
 - Decision: Moatless answers 32 of the contract's 82 methods and 6 of its 20

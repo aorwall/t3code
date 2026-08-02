@@ -43,6 +43,14 @@ are part of the contract: every method can fail with
 [`EnvironmentAuthorizationError`][autherr] on top of its domain errors. Streaming methods
 return an Effect `Stream`; unary methods return an `Effect`.
 
+**Fork addition.** Methods no environment in this deployment serves also declare
+[`UnsupportedMethodError`][unsupportederr] — 47 of them today. It is not on every method,
+deliberately: the list is a statement about the surface, so adding a method to it says
+nobody answers it and removing one says somebody now does. Without a declared error an
+absent method can only answer with a defect, and a defect does not decode into anything
+the client can read a message off — the person gets "unexpected server error", which is
+also what a genuine crash looks like. See §8 and `docs/fork/upstream-merge-policy.md` §3.
+
 Every method also carries a required authorization scope, enforced server-side by
 `RPC_REQUIRED_SCOPE` ([`ws.ts:288`][scopemap]) — a `Map` the server throws on if a method
 is missing, so a new RPC cannot ship unscoped. Scopes are defined in
@@ -433,7 +441,9 @@ disposition, and its handler categories are a good template:
 - **implemented** — handshake, shell/thread reads, config/lifecycle
 - **quiet** — idle streams for subsystems with no analogue (never failing streams)
 - **unsupported** — explicit named errors, so gaps are visible rather than silently
-  successful
+  successful. In this fork that is one shared error, [`UnsupportedMethodError`][unsupportederr],
+  declared on the methods nobody here serves; a per-method error would say the same thing
+  47 times.
 
 ### Known wart
 
@@ -445,6 +455,7 @@ index of the group.
 <!-- contracts -->
 
 [contracts]: ../../packages/contracts/
+[unsupportederr]: ../../packages/contracts/src/auth.ts
 [rpc]: ../../packages/contracts/src/rpc.ts
 [ws_methods]: ../../packages/contracts/src/rpc.ts
 [http]: ../../packages/contracts/src/environmentHttp.ts

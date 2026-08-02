@@ -291,6 +291,32 @@ export class EnvironmentAuthorizationError extends Schema.TaggedErrorClass<Envir
   },
 ) {}
 
+/**
+ * The environment does not implement this method.
+ *
+ * An environment that omits a surface has to be able to say so as a typed
+ * failure: a `Die` never decodes into an `Error` the client can read a message
+ * off, so it reaches the person as "unexpected server error" — the same thing a
+ * genuine defect looks like. "I am not that kind of server" is not a defect, and
+ * declaring this keeps `Die` meaning what it should.
+ *
+ * Declared only on the methods an environment in this fork's deployment does not
+ * serve, not on every RPC. The list is a real statement about the surface rather
+ * than a blanket allowance, so it stays reviewable: adding a method here says
+ * nobody answers it, and removing one says somebody now does. `docs/fork` records
+ * which methods those are and why.
+ *
+ * `method` is carried alongside the message so a caller can tell which of
+ * several fanned-out calls came back absent without reading the message text.
+ */
+export class UnsupportedMethodError extends Schema.TaggedErrorClass<UnsupportedMethodError>()(
+  "UnsupportedMethodError",
+  {
+    method: Schema.String,
+    message: Schema.String,
+  },
+) {}
+
 export const AuthAccessStreamClientUpsertedEvent = Schema.Struct({
   version: Schema.Literal(1),
   revision: Schema.Number,
