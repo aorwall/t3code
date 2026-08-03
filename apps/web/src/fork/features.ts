@@ -50,8 +50,6 @@
  * the surface is already empty and a flag would gate nothing.
  */
 export const FEATURES = {
-  /** Git and VCS controls: the header's git menu and the composer's context strip. */
-  versionControl: false,
   /** Project scripts: the header's actions dropdown for running project commands. */
   projectScripts: false,
   /**
