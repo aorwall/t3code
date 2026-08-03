@@ -1,6 +1,7 @@
 import {
   type EnvironmentId,
   type MessageId,
+  type OrchestrationMessageOrigin,
   type ScopedThreadRef,
   type ServerProviderSkill,
   type TurnId,
@@ -38,6 +39,8 @@ import {
   resolveFileDiffPath,
 } from "../../lib/diffRendering";
 import ChatMarkdown from "../ChatMarkdown";
+import { GitHubIcon } from "../Icons";
+import { resolveMessageOriginChip, type MessageOriginIconKey } from "./messageOrigin";
 import {
   BotIcon,
   CheckIcon,
@@ -47,12 +50,16 @@ import {
   EyeIcon,
   GlobeIcon,
   HammerIcon,
+  HashIcon,
   MessageCircleIcon,
   MousePointerClickIcon,
   PaintbrushIcon,
   MinusIcon,
+  SendIcon,
+  Share2Icon,
   SquarePenIcon,
   TerminalIcon,
+  TicketIcon,
   Undo2Icon,
   WrenchIcon,
   XIcon,
@@ -891,6 +898,11 @@ function UserTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "message" 
 
   return (
     <div className="group flex flex-col items-end gap-1">
+      {row.message.origin ? (
+        <div className="flex max-w-[80%] justify-end pe-1">
+          <MessageOriginChip origin={row.message.origin} />
+        </div>
+      ) : null}
       <div className="relative max-w-[80%] rounded-2xl bg-accent p-3">
         {regularImages.length > 0 && (
           <div className="mb-2 grid max-w-[420px] grid-cols-2 gap-2">
@@ -968,6 +980,60 @@ function UserTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "message" 
         </div>
       </div>
     </div>
+  );
+}
+
+function MessageOriginIcon({ iconKey }: { iconKey: MessageOriginIconKey }) {
+  const className = "size-3 shrink-0";
+  switch (iconKey) {
+    case "slack":
+      return <HashIcon className={className} />;
+    case "github":
+      return <GitHubIcon className={className} />;
+    case "linear":
+      return <TicketIcon className={className} />;
+    case "telegram":
+      return <SendIcon className={className} />;
+    case "task":
+      return <Share2Icon className={className} />;
+    case "generic":
+      return <GlobeIcon className={className} />;
+  }
+}
+
+/**
+ * The chip above an externally-authored message that says where it came from.
+ * A link when the source can be opened, a plain label otherwise.
+ */
+function MessageOriginChip({ origin }: { origin: OrchestrationMessageOrigin }) {
+  const model = resolveMessageOriginChip(origin);
+  const className =
+    "inline-flex max-w-full items-center gap-1 rounded-md border border-border/60 bg-background/60 px-1.5 py-0.5 text-[11px] text-muted-foreground";
+  const content = (
+    <>
+      <MessageOriginIcon iconKey={model.iconKey} />
+      <span className="truncate">{model.segments.join(" · ")}</span>
+    </>
+  );
+
+  if (model.url !== null) {
+    return (
+      <a
+        href={model.url}
+        target="_blank"
+        rel="noreferrer noopener"
+        aria-label={model.ariaLabel}
+        className={cn(className, "transition-colors hover:border-border hover:text-foreground")}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <span className={className} aria-label={model.ariaLabel}>
+      {content}
+    </span>
   );
 }
 

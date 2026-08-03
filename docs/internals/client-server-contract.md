@@ -97,6 +97,15 @@ writes go through one method**, `orchestration.dispatchCommand`.
 Input/output pairs are also grouped in one place for convenience:
 [`OrchestrationRpcSchemas`][rpcschemas] (`orchestration.ts:1374`).
 
+**Fork addition.** `OrchestrationMessage` and `ThreadMessageSentPayload` each carry an
+optional `origin` — where a message came from when it did not come from the composer, as
+`OrchestrationMessageOrigin` (`kind`, `label`, `url`, `user`). A Moatless Task takes
+messages from Slack, GitHub PRs, Linear, Telegram and other Tasks; a T3 thread has one
+source, so upstream has no such field. It is optional rather than nullable, which is what
+makes it free for a second implementation: a server that never sets it emits exactly the
+payload upstream emits, and a client that does not read it is unaffected. See
+`docs/fork/upstream-merge-inventory.md`.
+
 ### Terminal — 9 methods
 
 | Method                        | Payload → Success                                                 | Scope            | Line                                            |

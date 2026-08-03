@@ -11,6 +11,7 @@ import {
   OrchestrationGetFullThreadDiffInput,
   OrchestrationGetTurnDiffInput,
   OrchestrationLatestTurn,
+  OrchestrationMessage,
   ProjectCreatedPayload,
   ProjectMetaUpdatedPayload,
   OrchestrationProposedPlan,
@@ -36,6 +37,7 @@ const decodeThreadTurnStartCommand = Schema.decodeUnknownEffect(ThreadTurnStartC
 const decodeThreadTurnStartRequestedPayload = Schema.decodeUnknownEffect(
   ThreadTurnStartRequestedPayload,
 );
+const decodeOrchestrationMessage = Schema.decodeUnknownEffect(OrchestrationMessage);
 const decodeOrchestrationLatestTurn = Schema.decodeUnknownEffect(OrchestrationLatestTurn);
 const decodeOrchestrationProposedPlan = Schema.decodeUnknownEffect(OrchestrationProposedPlan);
 const decodeOrchestrationSession = Schema.decodeUnknownEffect(OrchestrationSession);
@@ -155,6 +157,44 @@ it.effect("decodes project.create with createWorkspaceRootIfMissing enabled", ()
     });
 
     assert.strictEqual(parsed.createWorkspaceRootIfMissing, true);
+  }),
+);
+
+it.effect("decodes a message that carries an origin", () =>
+  Effect.gen(function* () {
+    const parsed = yield* decodeOrchestrationMessage({
+      id: "msg-1",
+      role: "user",
+      text: "Please rebase",
+      origin: {
+        kind: "github_pr",
+        label: "octo/repo#42",
+        url: "https://github.com/octo/repo/pull/42",
+        user: "octocat",
+      },
+      turnId: null,
+      streaming: false,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+    assert.strictEqual(parsed.origin?.kind, "github_pr");
+    assert.strictEqual(parsed.origin?.label, "octo/repo#42");
+    assert.strictEqual(parsed.origin?.user, "octocat");
+  }),
+);
+
+it.effect("decodes a composer message that carries no origin", () =>
+  Effect.gen(function* () {
+    const parsed = yield* decodeOrchestrationMessage({
+      id: "msg-2",
+      role: "user",
+      text: "Typed here",
+      turnId: null,
+      streaming: false,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+    assert.strictEqual(parsed.origin, undefined);
   }),
 );
 

@@ -283,6 +283,44 @@ describe("applyThreadDetailEvent", () => {
       if (result.kind === "updated") {
         expect(result.thread.messages).toHaveLength(1);
         expect(result.thread.messages[0]?.text).toBe("Hello, world!");
+        expect(result.thread.messages[0]?.origin).toBeUndefined();
+      }
+    });
+
+    it("carries a message's origin onto the appended message", () => {
+      const result = applyThreadDetailEvent(baseThread, {
+        ...baseEventFields,
+        sequence: 6,
+        occurredAt: "2026-04-01T06:00:00.000Z",
+        aggregateKind: "thread",
+        aggregateId: ThreadId.make("thread-1"),
+        type: "thread.message-sent",
+        payload: {
+          threadId: ThreadId.make("thread-1"),
+          messageId: MessageId.make("msg-1"),
+          role: "user",
+          text: "Please rebase",
+          origin: {
+            kind: "slack",
+            label: "#eng",
+            url: "https://acme.slack.com/archives/C1",
+            user: "ada",
+          },
+          turnId: null,
+          streaming: false,
+          createdAt: "2026-04-01T06:00:00.000Z",
+          updatedAt: "2026-04-01T06:00:00.000Z",
+        },
+      });
+
+      expect(result.kind).toBe("updated");
+      if (result.kind === "updated") {
+        expect(result.thread.messages[0]?.origin).toEqual({
+          kind: "slack",
+          label: "#eng",
+          url: "https://acme.slack.com/archives/C1",
+          user: "ada",
+        });
       }
     });
 

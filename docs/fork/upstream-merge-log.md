@@ -21,6 +21,33 @@ few bullets, move the durable rule into
 
 ## Log
 
+### 2026-08-03 — a message says where it came from
+
+- Not a merge; a fork change that adds a delta to four upstream files. Fork
+  inventory row: _Message origin_, with Message Origin Delta beside the Web Vite
+  and Mobile Touch deltas.
+- Decision: the origin is an optional field on `OrchestrationMessage`, not a
+  nullable one. A Moatless Task takes messages from Slack, GitHub PRs, Linear,
+  Telegram and other Tasks; upstream's thread has only the composer, so upstream
+  has no field to converge on and the fork adds one. Optional keeps the common
+  case — a message someone typed here — byte-identical to upstream's payload, so
+  the delta is invisible to every message upstream can produce.
+- The same field goes on `ThreadMessageSentPayload` as well as the message
+  itself. They are one shape spelled twice, and a live delta that dropped the
+  origin would render a message differently from a reload of it.
+- An adapter kind the client does not recognize renders under a generic icon
+  with a humanized name rather than being dropped, so backend
+  (`soaplabs/moatless#269`) and client (`#40`) can land in either order.
+- `ours` on `messageOrigin.ts` is unverified: this sandbox has no `upstream`
+  remote, so `git ls-tree -r --name-only upstream/main -- <path>` could not be
+  run. The file is fork-authored for a concept upstream does not have, but
+  re-verify the row the first time upstream conflicts on that directory.
+- Verification: `vp run typecheck`, `vp lint --report-unused-disable-directives`
+  (exit 0), and `vp fmt --check` clean. Tests: contracts 227, client-runtime
+  514, web 1815, all passing on Node 22.23.2 — including the
+  `promptStashStore`/`authBootstrap` suites the entry below saw fail, which that
+  entry attributes to Node 25.6.0 rather than to the code.
+
 ### 2026-08-02 — archiving a thread reaches the backend, and gets a way in
 
 - Decision: the fork's `threadArchival` flag becomes `threadDeletion`. The two

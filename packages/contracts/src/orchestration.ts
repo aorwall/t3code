@@ -226,11 +226,41 @@ export type OrchestrationProject = typeof OrchestrationProject.Type;
 export const OrchestrationMessageRole = Schema.Literals(["user", "assistant", "system"]);
 export type OrchestrationMessageRole = typeof OrchestrationMessageRole.Type;
 
+/**
+ * Where a message came from, when it did not come from this app's composer.
+ *
+ * Present only on messages authored outside the thread — through an adapter
+ * (Slack, a GitHub PR, Linear, Telegram) or by another Task. A message typed
+ * into the composer carries no origin at all, so the field is absent rather
+ * than a null.
+ */
+export const OrchestrationMessageOrigin = Schema.Struct({
+  /**
+   * What kind of source this is: `task` for another Task, otherwise the
+   * adapter's own name (`slack`, `github_pr`, `linear`, `telegram`, …). The UI
+   * keys its icon and phrasing off this and falls back gracefully on a value
+   * it does not recognize.
+   */
+  kind: TrimmedNonEmptyString,
+  /**
+   * A short human label for the source — a channel name, a repository and PR
+   * number, an issue identifier, the source Task's name. Null when the backend
+   * has none to show (for a Task, when the viewer cannot see it).
+   */
+  label: Schema.NullOr(Schema.String),
+  /** A link to the source, or null when there is none to link to. */
+  url: Schema.NullOr(Schema.String),
+  /** The handle of whoever wrote it on the far side, or null when unknown. */
+  user: Schema.NullOr(Schema.String),
+});
+export type OrchestrationMessageOrigin = typeof OrchestrationMessageOrigin.Type;
+
 export const OrchestrationMessage = Schema.Struct({
   id: MessageId,
   role: OrchestrationMessageRole,
   text: Schema.String,
   attachments: Schema.optional(Schema.Array(ChatAttachment)),
+  origin: Schema.optional(Schema.NullOr(OrchestrationMessageOrigin)),
   turnId: Schema.NullOr(TurnId),
   streaming: Schema.Boolean,
   createdAt: IsoDateTime,
@@ -1059,6 +1089,7 @@ export const ThreadMessageSentPayload = Schema.Struct({
   role: OrchestrationMessageRole,
   text: Schema.String,
   attachments: Schema.optional(Schema.Array(ChatAttachment)),
+  origin: Schema.optional(Schema.NullOr(OrchestrationMessageOrigin)),
   turnId: Schema.NullOr(TurnId),
   streaming: Schema.Boolean,
   createdAt: IsoDateTime,
