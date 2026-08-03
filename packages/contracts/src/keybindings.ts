@@ -55,6 +55,8 @@ const STATIC_KEYBINDING_COMMANDS = [
   "terminal.new",
   "terminal.close",
   "rightPanel.toggle",
+  // Fork: splits the screen horizontally, putting the panel under the chat.
+  "rightPanel.toggleHorizontalSplit",
   "diff.toggle",
   "preview.toggle",
   "preview.refresh",

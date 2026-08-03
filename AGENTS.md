@@ -16,9 +16,9 @@ So most of what upstream's product is built around is not this fork's product. T
 
 Upstream owns most files here and works in them steadily, and every line of ours inside one of their files is a conflict we pay for at each merge. So make fork changes surgically:
 
-- **Put the code somewhere upstream does not have.** `apps/web/src/fork/`, `docs/fork/`, a new module beside the upstream one. A fork-only path merges for free.
-- **Reach it from upstream files through the smallest hook you can find.** A call, a gate read from `apps/web/src/fork/features.ts`, one element in a list — additive, and never re-indenting an upstream block, because a re-indented block turns a nearby upstream edit into a conflict.
-- **Prefer a toggle to a rewrite.** Something the fork must not show gets hidden by a flag, not deleted. Something it must do differently gets a branch above upstream's, leaving upstream's path intact.
+- **Say in the file that it is ours.** A line in a fork-only module's doc comment, a short `// Fork:` above a hunk inside an upstream file. A merge should be able to see what it is holding without diffing against upstream first.
+- **Reach it from upstream files through the smallest hook you can find.** A call, a gate read from `apps/web/src/fork/features.ts`, one element in a list, one optional prop — additive, and never re-indenting an upstream block, because a re-indented block turns a nearby upstream edit into a conflict.
+- **Prefer a toggle to a rewrite.** Something the fork must not show gets hidden by a flag, not deleted. Something it must do differently gets a branch above upstream's, and their file keeps its name, its exports and its shape.
 - **Write the delta down so it can be re-stated, not re-merged.** The inventory records behavior that must survive; the point is to reapply it on top of an upstream rewrite, not to defend our version of their file.
 - **Shrink the delta when upstream catches up.** The convergence watch list says what to drop when upstream ships an equivalent.
 

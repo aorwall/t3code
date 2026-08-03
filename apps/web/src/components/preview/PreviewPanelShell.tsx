@@ -1,8 +1,10 @@
 import { type ReactNode, useEffect, useState } from "react";
 
 import { isElectron } from "~/env";
+import { useResizablePanelHeight } from "~/hooks/useResizablePanelHeight";
 import { useResizableWidth } from "~/hooks/useResizableWidth";
 import { cn } from "~/lib/utils";
+import type { RightPanelOrientation } from "~/rightPanelOrientation";
 
 import { RightPanelResizeHandle } from "./RightPanelResizeHandle";
 
@@ -25,6 +27,8 @@ export function getPreviewPanelMaxWidth(viewportWidth: number): number {
  */
 export function PreviewPanelShell(props: {
   mode: PreviewPanelMode;
+  /** Fork: inline only — whether the panel sits beside the chat or under it. */
+  orientation?: RightPanelOrientation;
   maximized?: boolean;
   children: ReactNode;
 }) {
@@ -38,6 +42,10 @@ export function PreviewPanelShell(props: {
     maxWidth,
     edge: "left",
   });
+  // Fork: the other placement. Maximized takes the whole area, so it has no
+  // edge left to drag and no orientation left to honour.
+  const { height, handlers: heightHandlers } = useResizablePanelHeight();
+  const stacked = isInline && !props.maximized && props.orientation === "bottom";
 
   return (
     <div
@@ -48,12 +56,28 @@ export function PreviewPanelShell(props: {
             ? "flex-1 border-l border-border"
             : "shrink-0 border-l border-border"
           : "w-full",
+        // Fork: under the chat the panel spans the width, and its border and
+        // its size run the other way.
+        stacked && "h-auto w-full border-t border-l-0 border-border",
       )}
-      style={isInline && !props.maximized ? { width: `${width}px` } : undefined}
+      style={
+        isInline && !props.maximized
+          ? stacked
+            ? { height: `${height}px` }
+            : { width: `${width}px` }
+          : undefined
+      }
       data-preview-panel-mode={props.mode}
+      data-preview-panel-orientation={stacked ? "bottom" : "right"}
       data-preview-panel-maximized={props.maximized ? "true" : "false"}
     >
-      {isInline && !props.maximized ? <RightPanelResizeHandle handlers={handlers} /> : null}
+      {isInline && !props.maximized ? (
+        stacked ? (
+          <RightPanelResizeHandle edge="top" handlers={heightHandlers} />
+        ) : (
+          <RightPanelResizeHandle handlers={handlers} />
+        )
+      ) : null}
       {useDragRegion ? <div className="electron-drag-region h-0 w-full" aria-hidden /> : null}
       {props.children}
     </div>

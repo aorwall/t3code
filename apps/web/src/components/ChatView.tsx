@@ -117,6 +117,7 @@ import { isCommandPaletteOpen } from "../commandPaletteBus";
 import { buildTemporaryWorktreeBranchName } from "@t3tools/shared/git";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { RIGHT_PANEL_INLINE_LAYOUT_MEDIA_QUERY } from "../rightPanelLayout";
+import { useRightPanelOrientation } from "../rightPanelOrientation";
 import {
   selectActiveRightPanel,
   selectActiveRightPanelSurface,
@@ -1303,6 +1304,7 @@ function ChatViewContent(props: ChatViewProps) {
   const [pendingUserInputQuestionIndexByRequestId, setPendingUserInputQuestionIndexByRequestId] =
     useState<Record<string, number>>({});
   const shouldUsePlanSidebarSheet = useMediaQuery(RIGHT_PANEL_INLINE_LAYOUT_MEDIA_QUERY);
+  const [rightPanelOrientation, setRightPanelOrientation] = useRightPanelOrientation();
   // Tracks whether the user explicitly dismissed the sidebar for the active turn.
   const planSidebarDismissedForTurnRef = useRef<string | null>(null);
   // When set, the thread-change reset effect will open the sidebar instead of closing it.
@@ -1556,7 +1558,15 @@ function ChatViewContent(props: ChatViewProps) {
   const canMaximizeRightPanel = rightPanelOpen && !shouldUsePlanSidebarSheet;
   const rightPanelMaximized =
     canMaximizeRightPanel && maximizedRightPanelThreadKey === routeThreadKey;
-  const inlineRightPanelOwnsTitleBar = rightPanelOpen && !shouldUsePlanSidebarSheet;
+  // Fork: a maximized panel covers the whole area, so it has no orientation left
+  // to honour — only an open, un-maximized inline panel can sit under the chat.
+  const screenSplitHorizontally =
+    rightPanelOpen &&
+    !shouldUsePlanSidebarSheet &&
+    !rightPanelMaximized &&
+    rightPanelOrientation === "bottom";
+  const inlineRightPanelOwnsTitleBar =
+    rightPanelOpen && !shouldUsePlanSidebarSheet && !screenSplitHorizontally;
 
   useEffect(() => {
     if (!activeThreadRef) return;
@@ -3304,6 +3314,25 @@ function ChatViewContent(props: ChatViewProps) {
     }
     useRightPanelStore.getState().toggleVisibility(activeThreadRef);
   }, [activeThreadRef, closePlanSidebar, closePreviewPanel, planSidebarOpen, rightPanelOpen]);
+  // Splitting is a placement change, not an open/close one: every press has to
+  // leave a panel on screen, so a press from a closed panel opens it in the
+  // requested spot the way the terminal button opens the drawer at the bottom.
+  const toggleHorizontalSplit = useCallback(() => {
+    if (!activeThreadRef || shouldUsePlanSidebarSheet) return;
+    if (screenSplitHorizontally) {
+      setRightPanelOrientation("right");
+    } else {
+      setRightPanelOrientation("bottom");
+      // Maximized hides the chat entirely, which is the opposite of a split.
+      setMaximizedRightPanelThreadKey(null);
+    }
+    useRightPanelStore.getState().show(activeThreadRef);
+  }, [
+    activeThreadRef,
+    screenSplitHorizontally,
+    setRightPanelOrientation,
+    shouldUsePlanSidebarSheet,
+  ]);
   const toggleRightPanelMaximized = useCallback(() => {
     if (!canMaximizeRightPanel) return;
     setMaximizedRightPanelThreadKey((threadKey) =>
@@ -4413,6 +4442,13 @@ function ChatViewContent(props: ChatViewProps) {
         return;
       }
 
+      if (command === "rightPanel.toggleHorizontalSplit") {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleHorizontalSplit();
+        return;
+      }
+
       if (command === "terminal.split") {
         event.preventDefault();
         event.stopPropagation();
@@ -4508,6 +4544,7 @@ function ChatViewContent(props: ChatViewProps) {
     keybindings,
     onToggleDiff,
     toggleRightPanel,
+    toggleHorizontalSplit,
     toggleTerminalVisibility,
     composerRef,
   ]);
@@ -5653,8 +5690,15 @@ function ChatViewContent(props: ChatViewProps) {
       rightPanelAvailable={activeProject !== null}
       rightPanelOpen={rightPanelOpen}
       rightPanelShortcutLabel={shortcutLabelForCommand(keybindings, "rightPanel.toggle")}
+      horizontalSplitAvailable={activeProject !== null && !shouldUsePlanSidebarSheet}
+      horizontalSplit={screenSplitHorizontally}
+      horizontalSplitShortcutLabel={shortcutLabelForCommand(
+        keybindings,
+        "rightPanel.toggleHorizontalSplit",
+      )}
       onToggleTerminal={toggleTerminalVisibility}
       onToggleRightPanel={toggleRightPanel}
+      onToggleHorizontalSplit={toggleHorizontalSplit}
     />
   );
   const panelLayoutControls = (
@@ -5668,6 +5712,11 @@ function ChatViewContent(props: ChatViewProps) {
       {panelToggleControls}
     </div>
   );
+  // Fork: the controls float over whichever surface owns the top of the window —
+  // the right panel's tab bar when it sits beside the chat, the chat header when
+  // the panel is closed or split off the bottom. In the sheet layout they ride
+  // along inside the sheet instead.
+  const chatHeaderHostsLayoutControls = !rightPanelOpen || screenSplitHorizontally;
   const rightPanelContent = activeThreadRef ? (
     activeRightPanelSurface?.kind === "preview" ? (
       <Suspense fallback={null}>
@@ -5744,8 +5793,14 @@ function ChatViewContent(props: ChatViewProps) {
   ) : null;
 
   return (
-    <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background">
-      {rightPanelOpen && !shouldUsePlanSidebarSheet ? panelLayoutControls : null}
+    <div
+      className={cn(
+        "relative flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background",
+        screenSplitHorizontally && "flex-col",
+      )}
+      data-chat-split={screenSplitHorizontally ? "horizontal" : "vertical"}
+    >
+      {inlineRightPanelOwnsTitleBar ? panelLayoutControls : null}
       <div
         className={cn(
           "flex min-h-0 min-w-0 flex-col overflow-x-hidden",
@@ -5769,7 +5824,7 @@ function ChatViewContent(props: ChatViewProps) {
             COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS,
           )}
         >
-          {!rightPanelOpen ? panelLayoutControls : null}
+          {chatHeaderHostsLayoutControls ? panelLayoutControls : null}
           <ChatHeader
             activeThreadEnvironmentId={activeThread.environmentId}
             activeThreadId={activeThread.id}
@@ -5785,6 +5840,7 @@ function ChatViewContent(props: ChatViewProps) {
             keybindings={keybindings}
             availableEditors={availableEditors}
             rightPanelOpen={rightPanelOpen}
+            layoutControlsOverHeader={screenSplitHorizontally}
             gitCwd={gitCwd}
             onNewThreadInProject={handleNewThreadInActiveProject}
             onRunProjectScript={runProjectScript}
@@ -6134,6 +6190,7 @@ function ChatViewContent(props: ChatViewProps) {
         <RightPanelTabs
           threadRef={activeThreadRef}
           mode="inline"
+          orientation={screenSplitHorizontally ? "bottom" : "right"}
           maximized={rightPanelMaximized}
           surfaces={rightPanelState.surfaces}
           activeSurfaceId={activeRightPanelSurface?.id ?? null}
