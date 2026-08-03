@@ -34,12 +34,6 @@ interface ChatHeaderProps {
   keybindings: ResolvedKeybindingsConfig;
   availableEditors: ReadonlyArray<EditorId>;
   rightPanelOpen: boolean;
-  /**
-   * Fork: with the screen split horizontally the right panel is open but sits
-   * under the chat, so the floating layout controls stay over this header and
-   * the actions still have to stop short of them.
-   */
-  layoutControlsOverHeader?: boolean;
   gitCwd: string | null;
   onNewThreadInProject: () => void;
   onRunProjectScript: (script: ProjectScript) => void;
@@ -76,7 +70,6 @@ export const ChatHeader = memo(function ChatHeader({
   keybindings,
   availableEditors,
   rightPanelOpen,
-  layoutControlsOverHeader,
   gitCwd,
   onNewThreadInProject,
   onRunProjectScript,
@@ -145,7 +138,7 @@ export const ChatHeader = memo(function ChatHeader({
         data-chat-header-actions
         className={cn(
           "flex shrink-0 items-center justify-end gap-2 @3xl/header-actions:gap-3",
-          rightPanelOpen && !layoutControlsOverHeader ? "pr-0" : "pr-16",
+          rightPanelOpen ? "pr-0" : "pr-16",
         )}
       >
         {activeProjectScripts && FEATURES.projectScripts && (

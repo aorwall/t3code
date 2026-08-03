@@ -26,35 +26,34 @@ If an entry runs past a few bullets, the rest belongs in the inventory.
 
 ## Log
 
-### 2026-08-03 — the screen splits horizontally, and the inventory gets an upstream to check against
+### 2026-08-03 — the chat drops the terminal-drawer toggle
 
-- Fork delta on eight upstream files plus three fork-only files. Inventory row:
-  _Horizontal split of the screen_, with Split Screen Delta beside the Web Vite,
-  Mobile Touch and Message Origin deltas.
-- No upstream path is renamed or deleted for it: `rightPanelOrientation.ts` sits
-  next to `rightPanelLayout.ts`, `useResizablePanelHeight.ts` next to
-  `useResizableWidth.ts`, and the upstream files carry additive hooks into them.
-  An earlier draft renamed `useResizableWidth.ts`, which would have made every
-  later upstream edit to that hook a modify/delete conflict.
-- AGENTS.md changed with it, on request: fork code says so in a comment where it
-  sits, and the rule sending every fork-only file to `apps/web/src/fork/` is
-  gone — these three sit beside the modules they work with instead.
-- Six of the eight upstream files were byte-identical to upstream beforehand, so
-  any other difference found in them during a merge is upstream's.
+- Fork delta on one upstream file. Inventory row: _Chat surface gates_, which now
+  covers `apps/web/src/components/chat/PanelLayoutControls.tsx`.
+- The button splits the chat horizontally by opening a terminal across the
+  bottom, and the fork keeps one way to a terminal: the right panel's surface.
+  New flag `terminalDrawerToggle` in `apps/web/src/fork/features.ts`, one gate
+  expression, upstream's props and the drawer itself untouched — `terminal.toggle`
+  still opens it.
+- Not a backend gap, so this flag is not waiting on Moatless. Delete it if the
+  fork wants the button back.
+- Verification: web typecheck, lint on both files and `vp fmt --check` clean;
+  `vp test run apps/web/src/fork` 22 passing. Not verified in a browser.
+
+### 2026-08-03 — the inventory gets an upstream to check against
+
 - A sandbox can check ownership now: `git remote add upstream ...` plus
-  `git fetch --depth=1 upstream main`, both in Path policy. That check split
-  `.plans/**`, which was `ours` while upstream owns 32 of its 35 files, and
-  cleared the `messageOrigin.ts` caveat below.
-- Merged fork `main` after #43; both fork docs conflicted. Took main's _Agent
-  instructions_ row and `AGENTS.md` path policy, kept this branch's rows
-  elsewhere, and cut this entry to the new template.
-- Verification: repo-wide `pnpm typecheck`, `pnpm lint` and `pnpm fmt:check`
-  clean before the merge, contracts 227, shared 318, server 1812, web 1824;
-  after it, scoped to what changed per AGENTS.md — web typecheck, lint and the
-  touched suites. Not verified in a browser: the task's preview server was in
-  `CrashLoopBackOff` (its start command resolves `$WORKSPACE_PATH/t3code`, which
-  is not where the checkout is) and the preview gateway still answered 504 after
-  a live override fixed that.
+  `git fetch --depth=1 upstream main`, both in Path policy. The fork's own clone
+  is shallow, so nothing else answers the question.
+- That check split `.plans/**`, which was `ours` while upstream owns 32 of its
+  35 files — a blanket `ours` that would have discarded every upstream plan
+  edit. It also cleared the `messageOrigin.ts` caveat below; the other twelve
+  `ours` paths verified clean.
+- AGENTS.md gained one rule: fork code says so in a comment where it sits — a
+  line in a fork-only module's doc comment, a short `// Fork:` above a hunk in an
+  upstream file — so a merge can see what it is holding without diffing against
+  upstream.
+- Docs only; no checks run.
 
 ### 2026-08-03 — AGENTS.md says it is a fork, and gets shorter
 

@@ -22,8 +22,6 @@ export const DEFAULT_KEYBINDINGS: ReadonlyArray<KeybindingRule> = [
   { key: "mod+b", command: "sidebar.toggle" },
   { key: "mod+j", command: "terminal.toggle" },
   { key: "mod+alt+b", command: "rightPanel.toggle" },
-  // Fork: VS Code's toggle-editor-group-layout binding, for the same gesture.
-  { key: "mod+alt+0", command: "rightPanel.toggleHorizontalSplit" },
   { key: "mod+d", command: "terminal.split", when: "terminalFocus" },
   { key: "mod+shift+d", command: "terminal.splitVertical", when: "terminalFocus" },
   { key: "mod+n", command: "terminal.new", when: "terminalFocus" },

@@ -105,6 +105,16 @@ export const FEATURES = {
    * thread is always `full-access` and there is no tier to pick between.
    */
   accessMode: false,
+  /**
+   * The chat's terminal-drawer button, which splits the screen horizontally by
+   * opening a terminal across the bottom.
+   *
+   * Not a backend gap — the drawer works. The fork shows one way to reach a
+   * terminal, the right panel's terminal surface, and drops the button that
+   * splits the chat horizontally beside it. `terminal.toggle` still opens the
+   * drawer for anyone who wants it.
+   */
+  terminalDrawerToggle: false,
 } satisfies Record<string, boolean>;
 
 export type FeatureName = keyof typeof FEATURES;

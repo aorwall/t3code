@@ -1,12 +1,7 @@
-import {
-  Maximize2Icon,
-  Minimize2Icon,
-  PanelBottomIcon,
-  PanelRightIcon,
-  Rows2Icon,
-} from "lucide-react";
+import { Maximize2Icon, Minimize2Icon, PanelBottomIcon, PanelRightIcon } from "lucide-react";
 import { memo } from "react";
 
+import { FEATURES } from "../../fork/features";
 import { Toggle } from "../ui/toggle";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 
@@ -17,13 +12,8 @@ interface PanelLayoutControlsProps {
   rightPanelAvailable: boolean;
   rightPanelOpen: boolean;
   rightPanelShortcutLabel: string | null;
-  // Fork: the third toggle, for the panel placement upstream does not have.
-  horizontalSplitAvailable: boolean;
-  horizontalSplit: boolean;
-  horizontalSplitShortcutLabel: string | null;
   onToggleTerminal: () => void;
   onToggleRightPanel: () => void;
-  onToggleHorizontalSplit: () => void;
 }
 
 export const PanelLayoutControls = memo(function PanelLayoutControls({
@@ -33,43 +23,38 @@ export const PanelLayoutControls = memo(function PanelLayoutControls({
   rightPanelAvailable,
   rightPanelOpen,
   rightPanelShortcutLabel,
-  horizontalSplitAvailable,
-  horizontalSplit,
-  horizontalSplitShortcutLabel,
   onToggleTerminal,
   onToggleRightPanel,
-  onToggleHorizontalSplit,
 }: PanelLayoutControlsProps) {
-  const horizontalSplitLabel = horizontalSplit
-    ? "Split screen vertically"
-    : "Split screen horizontally";
   return (
     <div
       className="flex h-full shrink-0 items-center gap-1 [-webkit-app-region:no-drag]"
       data-panel-layout-controls
     >
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Toggle
-              className="shrink-0 [-webkit-app-region:no-drag]"
-              pressed={terminalOpen}
-              onPressedChange={onToggleTerminal}
-              aria-label="Toggle terminal drawer"
-              variant="ghost"
-              size="sm"
-              disabled={!terminalAvailable}
-            >
-              <PanelBottomIcon className="size-3.5" />
-            </Toggle>
-          }
-        />
-        <TooltipPopup side="bottom">
-          {terminalAvailable
-            ? `Toggle terminal drawer${terminalShortcutLabel ? ` (${terminalShortcutLabel})` : ""}`
-            : "Terminal drawer is unavailable"}
-        </TooltipPopup>
-      </Tooltip>
+      {FEATURES.terminalDrawerToggle && (
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Toggle
+                className="shrink-0 [-webkit-app-region:no-drag]"
+                pressed={terminalOpen}
+                onPressedChange={onToggleTerminal}
+                aria-label="Toggle terminal drawer"
+                variant="ghost"
+                size="sm"
+                disabled={!terminalAvailable}
+              >
+                <PanelBottomIcon className="size-3.5" />
+              </Toggle>
+            }
+          />
+          <TooltipPopup side="bottom">
+            {terminalAvailable
+              ? `Toggle terminal drawer${terminalShortcutLabel ? ` (${terminalShortcutLabel})` : ""}`
+              : "Terminal drawer is unavailable"}
+          </TooltipPopup>
+        </Tooltip>
+      )}
       <Tooltip>
         <TooltipTrigger
           render={
@@ -90,28 +75,6 @@ export const PanelLayoutControls = memo(function PanelLayoutControls({
           {rightPanelAvailable
             ? `Toggle right panel${rightPanelShortcutLabel ? ` (${rightPanelShortcutLabel})` : ""}`
             : "Right panel is unavailable"}
-        </TooltipPopup>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Toggle
-              className="shrink-0 [-webkit-app-region:no-drag]"
-              pressed={horizontalSplit}
-              onPressedChange={onToggleHorizontalSplit}
-              aria-label={horizontalSplitLabel}
-              variant="ghost"
-              size="sm"
-              disabled={!horizontalSplitAvailable}
-            >
-              <Rows2Icon className="size-3.5" />
-            </Toggle>
-          }
-        />
-        <TooltipPopup side="bottom">
-          {horizontalSplitAvailable
-            ? `${horizontalSplitLabel}${horizontalSplitShortcutLabel ? ` (${horizontalSplitShortcutLabel})` : ""}`
-            : "Splitting the screen is unavailable"}
         </TooltipPopup>
       </Tooltip>
     </div>

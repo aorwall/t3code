@@ -12,7 +12,6 @@ import {
 } from "react";
 
 import { isElectron } from "~/env";
-import type { RightPanelOrientation } from "~/rightPanelOrientation";
 import type { RightPanelSurface } from "~/rightPanelStore";
 import { cn } from "~/lib/utils";
 import { readLocalApi } from "~/localApi";
@@ -29,14 +28,6 @@ import { RightPanelDisabledState } from "./sandbox/RightPanelDisabledState";
 
 interface RightPanelTabsProps {
   mode: PreviewPanelMode;
-  /**
-   * Fork: inline only — whether the panel sits beside the chat column or under
-   * it.
-   * When it sits beside, its tab bar doubles as the window title bar and has to
-   * leave room for the floating layout controls; stacked under the chat, the
-   * chat header keeps them.
-   */
-  orientation?: RightPanelOrientation;
   maximized?: boolean;
   layoutControls?: ReactNode;
   surfaces: readonly RightPanelSurface[];
@@ -148,7 +139,9 @@ function RightPanelEmptyState(props: {
       <div className="w-full max-w-xl">
         <div className="mb-5 text-center">
           <h3 className="text-sm font-medium text-foreground">Open a surface</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Choose what to show in the panel.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Choose what to show in the right panel.
+          </p>
         </div>
         <div className="grid grid-cols-2 gap-2">
           {actions.map((action) => {
@@ -288,8 +281,7 @@ function SurfaceIcon({
 }
 
 export function RightPanelTabs(props: RightPanelTabsProps) {
-  const ownsTitleBar = props.mode === "inline" && props.orientation !== "bottom";
-  const ownsDesktopTitleBar = isElectron && ownsTitleBar;
+  const ownsDesktopTitleBar = isElectron && props.mode === "inline";
   const { resolvedTheme } = useTheme();
   const tabListRef = useRef<HTMLDivElement>(null);
   const surfaceDisabledReason =
@@ -377,16 +369,15 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
   return (
     <PreviewPanelShell
       mode={props.mode}
-      {...(props.orientation !== undefined ? { orientation: props.orientation } : {})}
       {...(props.maximized !== undefined ? { maximized: props.maximized } : {})}
     >
       <div
         className={cn(
           "workspace-topbar gap-1 pl-2",
           !ownsDesktopTitleBar && "[--workspace-topbar-height:--spacing(11)]",
-          ownsTitleBar ? "pr-28" : "pr-3",
+          props.mode === "inline" ? "pr-28" : "pr-3",
           ownsDesktopTitleBar && "wco:pr-[calc(var(--workspace-native-controls-inset)+6rem)]",
-          ownsTitleBar && props.maximized && COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS,
+          props.mode === "inline" && props.maximized && COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS,
         )}
         data-right-panel-tabbar
       >
