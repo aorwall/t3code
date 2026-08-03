@@ -1,9 +1,14 @@
 # Fork upstream merge tracker
 
-Append-only, newest first. Keep entries compact: context, conflicts, sweep
-decisions, and verification. If an entry needs more than a short paragraph or a
-few bullets, move the durable rule into
-[the merge inventory](./upstream-merge-inventory.md) instead.
+Append-only, newest first.
+
+An entry is written for whoever does the _next_ merge or fork change, and holds
+only what that person needs: where upstream was, what conflicted and how it was
+resolved, what a sweep or tripwire found, what is unverified, and which
+verification failures are the machine rather than the code. Why a fork decision
+was made is not that — put the durable form in
+[the merge inventory](./upstream-merge-inventory.md) and link the row from here.
+If an entry runs past a few bullets, the rest belongs in the inventory.
 
 ## Entry template
 
@@ -21,205 +26,145 @@ few bullets, move the durable rule into
 
 ## Log
 
+### 2026-08-03 — AGENTS.md says it is a fork, and gets shorter
+
+- Fork delta on an upstream-owned file. Inventory row: _Agent instructions_,
+  path policy `decide` for `AGENTS.md` and its `CLAUDE.md` symlink.
+- The file now describes the fork's target — the web client against Moatless —
+  rather than upstream's product. Upstream's bundled server, pairing, T3
+  Connect, Electron and native mobile are named as in-tree but not fork targets,
+  and the dev-server section leads with the proxy-at-Moatless flow.
+- Expect a conflict here in every merge from now on. Resolve by fact rather than
+  by hunk: take what upstream added, restate it in the fork's shape.
+- Docs only; no checks run.
+
 ### 2026-08-03 — a message says where it came from
 
-- Not a merge; a fork change that adds a delta to four upstream files. Fork
-  inventory row: _Message origin_, with Message Origin Delta beside the Web Vite
-  and Mobile Touch deltas.
-- Decision: the origin is an optional field on `OrchestrationMessage`, not a
-  nullable one. A Moatless Task takes messages from Slack, GitHub PRs, Linear,
-  Telegram and other Tasks; upstream's thread has only the composer, so upstream
-  has no field to converge on and the fork adds one. Optional keeps the common
-  case — a message someone typed here — byte-identical to upstream's payload, so
-  the delta is invisible to every message upstream can produce.
-- The same field goes on `ThreadMessageSentPayload` as well as the message
-  itself. They are one shape spelled twice, and a live delta that dropped the
-  origin would render a message differently from a reload of it.
-- An adapter kind the client does not recognize renders under a generic icon
-  with a humanized name rather than being dropped, so backend
-  (`soaplabs/moatless#269`) and client (`#40`) can land in either order.
-- `ours` on `messageOrigin.ts` is unverified: this sandbox has no `upstream`
-  remote, so `git ls-tree -r --name-only upstream/main -- <path>` could not be
-  run. The file is fork-authored for a concept upstream does not have, but
-  re-verify the row the first time upstream conflicts on that directory.
+- Fork delta on four upstream files. Inventory row: _Message origin_, with
+  Message Origin Delta beside the Web Vite and Mobile Touch deltas.
+- `ours` on `messageOrigin.ts` is unverified — that sandbox had no `upstream`
+  remote, so the `git ls-tree` check never ran. Re-verify the first time
+  upstream conflicts under `apps/web/src/components/chat/`.
+- Backend `soaplabs/moatless#269`, client `#40`; they may land in either order.
 - Verification: `vp run typecheck`, `vp lint --report-unused-disable-directives`
-  (exit 0), and `vp fmt --check` clean. Tests: contracts 227, client-runtime
-  514, web 1815, all passing on Node 22.23.2 — including the
-  `promptStashStore`/`authBootstrap` suites the entry below saw fail, which that
-  entry attributes to Node 25.6.0 rather than to the code.
+  and `vp fmt --check` clean. Tests pass on Node 22.23.2 — contracts 227,
+  client-runtime 514, web 1815 — including the `promptStashStore` and
+  `authBootstrap` suites that fail below. Those failures are the engine.
 
 ### 2026-08-02 — archiving a thread reaches the backend, and gets a way in
 
-- Decision: the fork's `threadArchival` flag becomes `threadDeletion`. The two
-  rode one name because both were refused; the backend now serves
-  `thread.archive` and `thread.unarchive` by closing and reopening the Task, so
-  only deletion is still hidden. Fork inventory row: _Archive in the sidebar v2
-  row menu_.
-- Upstream keeps archive out of v2 row menus — `thread-list-v2-items.tsx` says
-  archive "keeps its own surface (thread screen / settings)", and
-  `threadListV2.ts` offers it only when the server has no settlement. That
-  reasoning does not carry: settling in Moatless is inbox triage a later message
-  undoes, and archiving ends the Task and removes the Sandbox. A person needs
-  both, so the row menu gets one `archive` item. No bulk item — that is surface
-  upstream's v2 never had.
-- Settings keeps the rest: the archived list and its unarchive were already
-  built and only gated, and are now reachable, so the way out exists.
-- Verification: `pnpm typecheck`, `pnpm lint`, `pnpm fmt:check` clean.
-  `pnpm test` fails the same 20 `promptStashStore`/`authBootstrap` tests noted
-  in the entry below, on Node 25.6.0 against the pinned `^24.13.1`.
+- Inventory row: _Archive in the sidebar v2 row menu_. The fork's
+  `threadArchival` flag became `threadDeletion`: the backend now serves
+  `thread.archive` and `thread.unarchive`, so only deletion is still hidden.
+- Additive only — one `archive` item and its `case`, no bulk item, no gate.
+  Convergence row watches for upstream adding its own archive entry point to
+  `SidebarV2.tsx` or `thread-list-v2-items.tsx`.
+- Verification: `pnpm typecheck`, `pnpm lint`, `pnpm fmt:check` clean; the same
+  20 Node 25.6.0 failures noted below.
 
 ### 2026-08-02 — upstream workflows are switched off in GitHub, not renamed
 
-- Decision: the nine inherited workflows take their upstream filenames back and
-  are disabled in GitHub instead. Fork inventory row: _Upstream workflows
-  switched off_. Checks in §_Off-repository state_.
-- The rename worked but held a fork delta on nine paths upstream edits
-  constantly. Byte-identical files have nothing for a merge to follow.
-- Neither shape covers a workflow upstream adds later — it arrives active. That
-  is what the new check catches, after a merge rather than before.
-- Verification: `deploy.test.ts` reads `release.yml` again; the nine files match
-  `upstream/main` at `5192f777`.
+- Supersedes the 2026-07-30 rename. The nine inherited workflows carry their
+  upstream filenames again and are disabled in GitHub, so they are byte-identical
+  to upstream and a merge has nothing to follow. Inventory row: _Upstream
+  workflows switched off_; checks in §_Off-repository state_.
+- A workflow upstream adds later arrives active, so this is checked after a
+  merge, not before.
+- `deploy.test.ts` reads `release.yml` again.
 
 ### 2026-08-02 — merged the upstream service launcher
 
-- Upstream: `5192f777` from base `0ad91b6e` (`4` commits).
-- Conflicts: none. `packages/contracts/src/environment.ts` (comment),
-  `packages/contracts/src/server.ts` (optional `updateId` and `updateOutcome`),
-  and `apps/web/src/components/SidebarV2.tsx` (`focus-visible` instead of
-  `focus-within`) all took upstream; none of them touches a fork gate.
+- Upstream: `5192f777` from base `0ad91b6e` (`4` commits). No conflicts.
 - Sweep: five `apps/server/src/cloud/service*.ts` additions matched the `cloud`
-  filter. Accepted as upstream because they are the systemd self-update launcher,
-  not Clerk or T3 Connect. Clerk and session-bootstrap tripwire counts held at 4
-  and 9; pairing fell from 74 to 72 files, and the two added `pairing` lines are
-  the existing startup message moved into `apps/server/src/serverActivation.ts`.
-- Convergence: none. `rpc.ts`, `auth.ts`, `ws.ts`, `servers.ts`, and
-  `vite.config.ts` are untouched, so the unsupported-method unions and the three
-  `servers.*` stubs stand unchanged, and no new WebSocket method appeared.
+  filter and were accepted — systemd self-update launcher, not Clerk or T3
+  Connect. Tripwire baseline after this merge: Clerk 4, session bootstrap 9,
+  pairing 72 files.
+- Convergence: none. `rpc.ts`, `auth.ts`, `ws.ts`, `servers.ts` and
+  `vite.config.ts` untouched; no new WebSocket method.
 - Verification: `pnpm typecheck` and `pnpm lint` clean. `pnpm test` fails 20
-  tests across `apps/web/src/promptStashStore.test.ts` and
-  `apps/web/src/authBootstrap.test.ts`, identically on the pre-merge commit; the
-  machine runs Node 25.6.0 against the pinned `^24.13.1`, and the failures are
-  `localStorage` and unstubbed-`fetch` engine differences. `pnpm fmt:check`
-  reported `docs/fork/upstream-merge-inventory.md` and the merge skill, both
-  unrelated to this merge and fixed here.
+  tests in `apps/web/src/promptStashStore.test.ts` and
+  `apps/web/src/authBootstrap.test.ts`, identically on the pre-merge commit —
+  Node 25.6.0 against the pinned `^24.13.1`, `localStorage` and unstubbed-`fetch`
+  engine differences. Do not chase these.
 
 ### 2026-08-01 — the contract can say a method is unsupported
 
-- Decision: `UnsupportedMethodError` in `packages/contracts/src/auth.ts`, declared
-  on the 47 WebSocket methods Moatless does not serve. Fork inventory row: §3
-  _Unsupported methods_. Backend half is soaplabs/moatless#236.
-- **Not on all 82, deliberately.** A blanket allowance says nothing and never
-  needs editing; a list of 47 is a claim about the surface that has to be kept
-  true. It is derived — contract methods minus the backend's dispatch arms — so
-  recompute it rather than editing it by hand.
-- Why an error and not a capability list: the wire already has a place for this.
-  An undeclared failure can only leave as a `Die`, and a `Die` carries no message
-  the client can decode, so an absent method and a panic looked identical to the
-  person. Nothing about the handshake or the transport had to change.
-- Upstream's server implements everything, so it never constructs the new member
-  and `apps/server` is untouched. The whole delta is one class and 48 lines of
+- Inventory rows: _`UnsupportedMethodError`_ and _Unsupported-method error
+  unions_. Backend half is soaplabs/moatless#236.
+- The 47 entries are derived — contract WebSocket methods minus the backend's
+  dispatch arms. Recompute them; never hand-edit the list.
+- `apps/server` is untouched, so the whole delta is one class in `auth.ts` plus
   union entries in `rpc.ts`.
-- Kept out on purpose: the `mapSessionRpcError` arm an earlier pass added in
-  `packages/client-runtime`. `server.probe` and `server.getConfig` are both
-  served, so their unions do not gain the error and that switch stays upstream's.
-- Also: `workspaceSearch` splits into `workspaceSearchContents` in
-  `apps/web/src/fork/features.ts`. The backend grew path search (`SearchFilesByName`)
-  and has no content-search RPC, so the two halves stopped sharing a fate and
-  "Go to file" is no longer gated.
-- Verification: `vp run --filter @t3tools/contracts|client-runtime|web|t3 typecheck`,
-  all clean.
+- Deliberately not extended: the `mapSessionRpcError` arm in
+  `packages/client-runtime`. `server.probe` and `server.getConfig` are served.
+- Also landed: `workspaceSearch` split into `workspaceSearchContents` in
+  `apps/web/src/fork/features.ts`, so "Go to file" is no longer gated.
 
 ### 2026-08-01 — the fork hides surfaces it cannot serve
 
-- Decision: Moatless answers 32 of the contract's 82 methods and 6 of its 20
-  dispatch commands, and the gap reached people as defects — an unimplemented
-  method returns a `Die` cause, so the button showed a server error. Surfaces
-  we cannot serve are now absent. Fork inventory row: §3 _Surface gating_.
-- **A build constant, not a server capability.** A capability on the wire was
-  built first and thrown away: it cost a contract field, a decode path, a
-  default that had to point the opposite way to every flag beside it, and a
-  subscription at every call site — all to express something that does not vary
-  at runtime. `apps/web/src/fork/features.ts` is one table, and flipping a
-  surface on is one edit in it. Nothing in `packages/contracts` changed, and the
-  backend declares nothing.
-- **Hide, not disable.** Upstream's `available` / `disabledReason` means "not
-  usable yet, and here is why"; a surface this build does not show has nothing
-  worth explaining. The two stay separate — `SurfaceMenuItem` now takes both.
-- **Gates are additive and never re-indent.** No gate adds a prop, an effect or
-  state, and where a conditional would have wrapped existing JSX the gate moved
-  somewhere that filters instead. A re-indented block is what turns a nearby
-  upstream edit into a conflict, so a new gate has to keep this shape.
-- Cheapest hooks found, each replacing several edits: `/settings`'s existing
-  `beforeLoad` covers every gated section at once, and `rightPanelStore`'s
-  migrate already drops surface kinds a build does not know, which is exactly
-  what a saved layout holding a now-hidden surface needs.
+- Inventory rows: _Surface-gating registry_ and the gate rows beside it. It is a
+  build constant in `apps/web/src/fork/features.ts` — nothing in
+  `packages/contracts`, nothing declared by the backend.
+- Gates are additive and never re-indent. A re-indented block is what turns a
+  nearby upstream edit into a conflict, so a new gate has to keep that shape.
 - Hazard: both lookup maps key off strings that live in upstream code — a route
-  path and a palette action's `value` — and both treat an unknown key as
-  _enabled_, so an upstream rename un-gates silently. `features.test.ts` reads
-  the keys back out of the upstream sources rather than restating them.
-- Not gated: Settings General, Appearance and Providers. `splitPatch` routes
-  much of them to localStorage and they keep working; only the server-backed
-  "add provider instance" is gated inside.
+  path and a palette action's `value` — and an unknown key defaults to _enabled_,
+  so an upstream rename un-gates silently. `features.test.ts` reads the keys back
+  out of the upstream sources rather than restating them.
+- Cheapest hooks, each replacing several edits: `/settings`'s `beforeLoad` covers
+  every gated section at once, and `rightPanelStore`'s migrate already drops
+  surface kinds a build does not know.
+- Not gated: Settings General, Appearance and Providers, except the
+  server-backed "add provider instance" inside.
 
 ### 2026-08-01 — merged upstream to 0ad91b6e
 
 - Upstream: `0ad91b6e` from base `6efcf3e1` (`56` commits).
-- Conflicts: docs layout only. Kept fork Moatless docs while accepting upstream's
-  move to `docs/user/**` and `docs/internals/**`; updated policy-owned paths.
-- Sweep: accepted mobile wakeups, Ghostty terminal files, and
-  `docs/internals/connection-runtime.md` as false positives. Rejected new
-  `apps/server/src/cli/pair.ts` and test because device pairing is fork-owned
-  and replaced by Moatless.
-- Verification adaptations: relay deploy test now reads
-  `.github/workflows/release.yml.disabled`; image-compression tests use smaller
-  synthetic blobs to avoid full-suite timeout while covering the same branches.
+- Conflicts: docs layout only. Accepted upstream's move to `docs/user/**` and
+  `docs/internals/**`, kept the fork's Moatless docs, updated policy-owned paths.
+- Sweep: rejected the new `apps/server/src/cli/pair.ts` and its test — pairing is
+  fork-owned. Mobile wakeups, Ghostty terminal files and
+  `docs/internals/connection-runtime.md` accepted as false positives.
+- Verification adaptation that still stands: image-compression tests use smaller
+  synthetic blobs to avoid a full-suite timeout while covering the same branches.
 
 ### 2026-07-31 — fork publishes a container image
 
-- Decision: `docker/**` and `.github/workflows/build-moatless-t3-image.yml` are
-  fork-only because Moatless deploys the web UI from its Helm chart; upstream
-  ships `apps/web` to Vercel.
-- Runner rule: re-enabled workflows must use `staging-runners-large`; GitHub
-  hosted labels did not start in this fork.
-- Boundaries: no nginx proxy in the image, and no runtime backend URL. The
-  single-origin client derives HTTP and WebSocket origins from
-  `window.location.origin`; the image only builds with a non-empty
-  `MOATLESS_BASE_URL`.
+- `docker/**` and `.github/workflows/build-moatless-t3-image.yml` are fork-only:
+  Moatless deploys the web UI from its Helm chart, upstream ships `apps/web` to
+  Vercel.
+- Runner rule: re-enabled workflows must use `staging-runners-large`. GitHub
+  hosted labels do not start in this fork.
+- Image boundaries: no nginx proxy, no runtime backend URL. The single-origin
+  client derives HTTP and WebSocket origins from `window.location.origin`, and
+  the image only builds with a non-empty `MOATLESS_BASE_URL`.
 
 ### 2026-07-31 — started tracking fork inventory
 
-- Decision: the policy needed §3 because conflict ownership is not enough to
-  remember every deliberate fork delta.
-- Added inventory rows for auth/session, dev hosting, repo hygiene, thread
-  servers, hosted preview, and the three upstream-server `servers.*` stubs.
-- Rule: any future change that grows the fork delta updates the inventory in the
-  same commit.
+- Conflict ownership alone did not remember every deliberate fork delta, so the
+  inventory exists. Rule: any change that grows the fork delta updates the
+  inventory in the same commit.
 
 ### 2026-07-30 — auth is fork-owned
 
-- Decision: Moatless cookie session and `/login` own auth; the T3 backend path is
-  unsupported.
-- Device pairing, Clerk, and T3 Connect are decided out but not fully removed.
-- Electron stays in tree but is not a compliance target.
-- Known consequence: `.agents/skills/test-t3-app/SKILL.md` still assumes the
-  bundled T3 server and one-time pairing URLs.
+- Moatless cookie session and `/login` own auth; the T3 backend path is
+  unsupported. Device pairing, Clerk and T3 Connect are decided out but not yet
+  removed. Electron stays in tree and is not a compliance target.
+- Still stale: `.agents/skills/test-t3-app/SKILL.md` assumes the bundled T3
+  server and one-time pairing URLs.
 
 ### 2026-07-30 — disabled upstream workflows
 
-- Decision: upstream workflows were renamed to `*.yml.disabled` because this fork
-  cannot run upstream's Blacksmith/public-OSS automation.
-- The rename preserves upstream workflow content so future upstream edits land on
-  the disabled paths instead of creating delete/modify conflicts.
-- Consequence: merge verification is local until CI is deliberately restored.
+- Superseded by 2026-08-02. The `*.yml.disabled` rename is gone; the files carry
+  upstream names and are switched off in GitHub instead.
 
 ### 2026-07-30 — merged upstream to v0.0.31
 
 - Upstream: `6efcf3e1` from base `5719e8ac` (`81` commits).
 - Conflict: `apps/web/vite.config.ts`. Took upstream single-origin dev and
-  re-applied only the fork proxy-target, allowed-hosts, Moatless auth define,
-  and serve-mode `NODE_ENV` pin.
-- Dropped: `T3CODE_HMR_HOST` / `dev-runner` plumbing and the separate
-  `/attachments` proxy, both superseded upstream.
-- Late sweep found new auth/relay-owned surfaces including
+  re-applied only Web Vite Delta.
+- Dropped as superseded upstream: `T3CODE_HMR_HOST` / `dev-runner` plumbing and
+  the separate `/attachments` proxy.
+- Late sweep found auth/relay-owned surfaces including
   `apps/web/src/components/clerk/authRedirect.ts`; accepted temporarily because
-  those surfaces were already decided out and will be removed as a group.
+  those surfaces are already decided out and will be removed as a group.
