@@ -76,6 +76,7 @@ interface FilePreviewPanelProps {
   revealLine: number | null;
   revealRequestId: number;
   onOpenFile: (relativePath: string) => void;
+  onRetargetFile: (fromRelativePath: string, toRelativePath: string) => void;
   onPendingChange: (relativePath: string, pending: boolean) => void;
 }
 
@@ -756,6 +757,7 @@ export default function FilePreviewPanel({
   revealLine,
   revealRequestId,
   onOpenFile,
+  onRetargetFile,
   onPendingChange,
 }: FilePreviewPanelProps) {
   const { resolvedTheme } = useTheme();
@@ -770,6 +772,16 @@ export default function FilePreviewPanel({
   });
   const isImage = relativePath !== null && isWorkspaceImagePreviewPath(relativePath);
   const file = useProjectFileQuery(environmentId, cwd, relativePath, !isImage);
+  // A path taken from a mention is the path someone wrote, and a workspace that
+  // keeps its repositories in subdirectories has no file at it. The read
+  // answers with the path it resolved to, so following that answer is what puts
+  // the tab — and every save made from it — on the file actually being shown.
+  const readRelativePath = file.data?.relativePath ?? null;
+  useEffect(() => {
+    if (relativePath === null || readRelativePath === null) return;
+    if (readRelativePath === relativePath) return;
+    onRetargetFile(relativePath, readRelativePath);
+  }, [onRetargetFile, readRelativePath, relativePath]);
   const [explorerOpen, setExplorerOpen] = useState(initialExplorerOpen);
   // Reading markdown rendered is a preference, not a property of one file. Keeping
   // it on the panel meant a thread switch dropped it and forced source back.

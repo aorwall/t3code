@@ -205,6 +205,61 @@ describe("rightPanelStore", () => {
     });
   });
 
+  it("moves an open file surface onto the path the read resolved to", () => {
+    useRightPanelStore.getState().open(refA, "plan");
+    useRightPanelStore.getState().openFile(refA, "backend/migrations/0125.sql", 12);
+
+    useRightPanelStore
+      .getState()
+      .retargetFile(refA, "backend/migrations/0125.sql", "moatless/backend/migrations/0125.sql");
+
+    expect(selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refA)).toEqual({
+      isOpen: true,
+      activeSurfaceId: "file:moatless/backend/migrations/0125.sql",
+      surfaces: [
+        { id: "plan", kind: "plan" },
+        {
+          id: "file:moatless/backend/migrations/0125.sql",
+          kind: "file",
+          relativePath: "moatless/backend/migrations/0125.sql",
+          revealLine: 12,
+          revealRequestId: 2,
+        },
+      ],
+    });
+  });
+
+  it("closes a retargeted file surface when its destination is already open", () => {
+    useRightPanelStore.getState().openFile(refA, "moatless/README.md");
+    useRightPanelStore.getState().openFile(refA, "README.md");
+
+    useRightPanelStore.getState().retargetFile(refA, "README.md", "moatless/README.md");
+
+    expect(selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refA)).toEqual({
+      isOpen: true,
+      activeSurfaceId: "file:moatless/README.md",
+      surfaces: [
+        {
+          id: "file:moatless/README.md",
+          kind: "file",
+          relativePath: "moatless/README.md",
+          revealLine: null,
+          revealRequestId: 1,
+        },
+      ],
+    });
+  });
+
+  it("leaves the panel alone when nothing is open at the retargeted path", () => {
+    useRightPanelStore.getState().openFile(refA, "src/index.ts");
+    const before = useRightPanelStore.getState().byThreadKey;
+
+    useRightPanelStore.getState().retargetFile(refA, "README.md", "moatless/README.md");
+    useRightPanelStore.getState().retargetFile(refA, "src/index.ts", "src/index.ts");
+
+    expect(useRightPanelStore.getState().byThreadKey).toBe(before);
+  });
+
   it("removes persisted file surfaces when their workspace no longer exists", () => {
     useRightPanelStore.getState().openFile(refA, "src/index.ts");
     useRightPanelStore.getState().open(refA, "plan");

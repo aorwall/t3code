@@ -3148,6 +3148,13 @@ function ChatViewContent(props: ChatViewProps) {
     },
     [activeProject, activeThreadRef],
   );
+  const retargetFileSurface = useCallback(
+    (fromRelativePath: string, toRelativePath: string) => {
+      if (!activeThreadRef || !activeProject) return;
+      useRightPanelStore.getState().retargetFile(activeThreadRef, fromRelativePath, toRelativePath);
+    },
+    [activeProject, activeThreadRef],
+  );
   const togglePreviewPanel = useCallback(() => {
     if (!activeThreadRef || !isPreviewSupportedInRuntime()) return;
     if (previewPanelOpen) {
@@ -5730,6 +5737,7 @@ function ChatViewContent(props: ChatViewProps) {
           revealLine={activeFileSurface?.revealLine ?? null}
           revealRequestId={activeFileSurface?.revealRequestId ?? 0}
           onOpenFile={openFileSurface}
+          onRetargetFile={retargetFileSurface}
           onPendingChange={handleFilePendingChange}
         />
       </Suspense>

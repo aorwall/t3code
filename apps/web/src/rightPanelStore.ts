@@ -53,6 +53,7 @@ interface RightPanelStoreState {
   open: (ref: ScopedThreadRef, kind: Exclude<RightPanelKind, "file" | "terminal">) => void;
   openBrowser: (ref: ScopedThreadRef, tabId: string | null) => void;
   openFile: (ref: ScopedThreadRef, relativePath: string, line?: number) => void;
+  retargetFile: (ref: ScopedThreadRef, fromRelativePath: string, toRelativePath: string) => void;
   openTerminal: (ref: ScopedThreadRef, terminalId: string) => void;
   splitTerminal: (
     ref: ScopedThreadRef,
@@ -289,6 +290,41 @@ export const useRightPanelStore = create<RightPanelStoreState>()(
                     entry.id === surface.id ? surface : entry,
                   )
                 : [...withoutStandaloneExplorer, surface],
+            };
+          }),
+        })),
+      // A path opened from a mention is the path someone wrote, and the server
+      // answers with the path it actually read — the two differ when a
+      // workspace keeps its repositories in subdirectories. Moving the open
+      // surface onto the answer, rather than opening a second one, is what
+      // keeps the tab, its reveal and its saves on the file being shown.
+      retargetFile: (ref, fromRelativePath, toRelativePath) =>
+        set((state) => ({
+          byThreadKey: updateThread(state.byThreadKey, scopedThreadKey(ref), (current) => {
+            if (fromRelativePath === toRelativePath) return current;
+            const fromId = `file:${fromRelativePath}` as const;
+            const open = current.surfaces.find(
+              (surface): surface is Extract<RightPanelSurface, { kind: "file" }> =>
+                surface.id === fromId && surface.kind === "file",
+            );
+            if (!open) return current;
+            const retargeted = fileSurface(
+              toRelativePath,
+              open.revealLine,
+              open.revealRequestId + 1,
+            );
+            // The destination can already be open — the same file reached once
+            // by its true path and once by a mention. Then this is a close.
+            const alreadyOpen = current.surfaces.some(
+              (surface) => surface.id === retargeted.id && surface.kind === "file",
+            );
+            return {
+              isOpen: current.isOpen,
+              activeSurfaceId:
+                current.activeSurfaceId === fromId ? retargeted.id : current.activeSurfaceId,
+              surfaces: alreadyOpen
+                ? current.surfaces.filter((surface) => surface.id !== fromId)
+                : current.surfaces.map((surface) => (surface.id === fromId ? retargeted : surface)),
             };
           }),
         })),
