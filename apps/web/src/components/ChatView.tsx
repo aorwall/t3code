@@ -67,6 +67,7 @@ import {
 import * as Cause from "effect/Cause";
 import { AsyncResult } from "effect/unstable/reactivity";
 import { isElectron } from "../env";
+import { FEATURES } from "../fork/features";
 import { readLocalApi } from "../localApi";
 import { useDiffPanelStore } from "../diffPanelStore";
 import {
@@ -4005,7 +4006,8 @@ function ChatViewContent(props: ChatViewProps) {
     return effectiveSettled(activeThreadShell, {
       now: `${nowMinute}:00.000Z`,
       autoSettleAfterDays,
-      changeRequestState: activeThreadPr?.state ?? null,
+      // Fork: see SidebarV2's twin gate — the banner and the row must agree.
+      changeRequestState: FEATURES.prThreadSettling ? (activeThreadPr?.state ?? null) : null,
     });
   }, [
     activeThreadPr?.state,

@@ -1600,7 +1600,12 @@ export default function SidebarV2() {
       const supportsSnooze =
         serverConfigs.get(thread.environmentId)?.environment.capabilities.threadSnooze === true;
       const threadKey = scopedThreadKey(scopeThreadRef(thread.environmentId, thread.id));
-      const changeRequestState = changeRequestStateByKey.get(threadKey) ?? null;
+      // Fork: a PR does not decide whether a thread is settled here — the one
+      // Moatless reports for a checkout is the oldest PR the Task was ever
+      // connected to, not one this thread produced.
+      const changeRequestState = FEATURES.prThreadSettling
+        ? (changeRequestStateByKey.get(threadKey) ?? null)
+        : null;
       // Snooze outranks settled classification: an explicitly snoozed thread
       // belongs to the shelf even if it would also auto-settle (the shelf's
       // wake time is a stronger statement about when it matters again).

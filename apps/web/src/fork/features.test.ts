@@ -9,7 +9,9 @@
  */
 import { describe, expect, it } from "vite-plus/test";
 
+import chatViewSource from "../components/ChatView.tsx?raw";
 import commandPaletteSource from "../components/CommandPalette.tsx?raw";
+import sidebarV2Source from "../components/SidebarV2.tsx?raw";
 import connectionsRouteSource from "../routes/settings.connections.tsx?raw";
 import diagnosticsRouteSource from "../routes/settings.diagnostics.tsx?raw";
 import keybindingsRouteSource from "../routes/settings.keybindings.tsx?raw";
@@ -64,6 +66,21 @@ describe("the palette action map", () => {
   it("refuses a listed action whose feature is off", () => {
     for (const [value, feature] of Object.entries(FEATURE_BY_PALETTE_ACTION)) {
       expect(paletteActionEnabled(value)).toBe(FEATURES[feature]);
+    }
+  });
+});
+
+/**
+ * `prThreadSettling` is read inline rather than through a lookup map, and both
+ * of its gates sit on a line upstream owns and edits. A merge that takes
+ * upstream's side of either one drops the gate with no type error and no
+ * failing assertion anywhere else — threads quietly settle on a stranger's
+ * merged PR again. Same missing check as the maps above, in the same idiom.
+ */
+describe("the PR-settling gate", () => {
+  it("survives on both surfaces that resolve a settled state", () => {
+    for (const source of [sidebarV2Source, chatViewSource]) {
+      expect(source).toContain("FEATURES.prThreadSettling");
     }
   });
 });

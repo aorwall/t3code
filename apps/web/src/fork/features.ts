@@ -115,6 +115,30 @@ export const FEATURES = {
    * drawer for anyone who wants it.
    */
   terminalDrawerToggle: false,
+  /**
+   * A thread's pull request deciding whether it is settled: merged or closed
+   * settles it outright, open holds it out of the settled shelf.
+   *
+   * The one flag here that gates a *rule* rather than a screen, because the
+   * rule is only ever seen as a screen — a row moving to Settled on its own.
+   * `effectiveSettled` reads the PR that `resolveThreadPr` matched by branch
+   * name, and against Moatless a branch is not a strong enough key: the
+   * backend reports the oldest pull request the Task was ever connected to,
+   * not one the thread produced. A thread sitting on `main` therefore inherits
+   * a stranger's PR, and the day that PR merges the thread files itself under
+   * Settled every time the agent goes idle. Confirmed on a live thread whose
+   * newest message was minutes old.
+   *
+   * Off, this drops both directions of the rule — open PRs stop suppressing
+   * the inactivity path too. Settling is then inactivity plus the explicit
+   * user override, both of which are statements about the thread itself. PRs
+   * keep their row indicator, the branch toolbar and the settled-shelf hover
+   * colour; they only stop deciding.
+   *
+   * Turn this on when the backend reports the change request for the
+   * checkout's own ref — see the convergence watch list.
+   */
+  prThreadSettling: false,
 } satisfies Record<string, boolean>;
 
 export type FeatureName = keyof typeof FEATURES;
