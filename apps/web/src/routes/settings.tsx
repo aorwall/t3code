@@ -14,6 +14,8 @@ import { Button } from "../components/ui/button";
 import { SidebarInset } from "../components/ui/sidebar";
 import { rememberMoatlessAuthReturnTo } from "../environments/primary";
 import { settingsPathEnabled } from "../fork/features";
+import { isMoatlessAdminPath } from "../components/settings/settingsSearch";
+import { readIsMoatlessAdmin } from "../moatless/session";
 import { isElectron } from "../env";
 import { cn } from "~/lib/utils";
 import { COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS } from "~/workspaceTitlebar";
@@ -134,6 +136,13 @@ export const Route = createFileRoute("/settings")({
     }
 
     if (location.pathname === "/settings" || !settingsPathEnabled(location.pathname)) {
+      throw redirect({ to: "/settings/general", replace: true });
+    }
+
+    // Administration pages are hidden from the nav for a non-admin; this is the
+    // typed-URL half of the same gate. Cosmetic, like the nav: the Moatless
+    // backend refuses these reads in its DAOs whatever this decides.
+    if (isMoatlessAdminPath(location.pathname) && !(await readIsMoatlessAdmin())) {
       throw redirect({ to: "/settings/general", replace: true });
     }
   },

@@ -45,6 +45,19 @@ jobs:
       - name: Typecheck
         run: vpr typecheck
 
+      # Fork-only. The generated Moatless client is built from a checked-in copy
+      # of the backend's OpenAPI description, and a copy that has drifted
+      # type-checks perfectly while calling routes that no longer exist. This
+      # compares it against a running deployment and fails on the difference.
+      #
+      # Skipped until MOATLESS_API_URL is set as a repository variable: this
+      # fork's CI does not check out the Moatless repository, so there is
+      # nothing to compare against locally. Run it by hand against a checkout
+      # with `vp run --filter @t3tools/moatless-api spec:check`.
+      - name: Check the Moatless API description is current
+        if: vars.MOATLESS_API_URL != ''
+        run: node packages/moatless-api/scripts/checkSpecFreshness.mjs --url "${{ vars.MOATLESS_API_URL }}"
+
       - name: Check resource monitor formatting
         run: cargo fmt --manifest-path native/resource-monitor/Cargo.toml -- --check
 

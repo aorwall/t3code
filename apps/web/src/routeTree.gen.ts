@@ -15,9 +15,15 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ConnectRouteImport } from './routes/connect'
 import { Route as ChatRouteImport } from './routes/_chat'
 import { Route as ChatIndexRouteImport } from './routes/_chat.index'
+import { Route as SettingsWorkspacesRouteImport } from './routes/settings.workspaces'
+import { Route as SettingsUsersRouteImport } from './routes/settings.users'
 import { Route as SettingsSourceControlRouteImport } from './routes/settings.source-control'
+import { Route as SettingsSkillsRouteImport } from './routes/settings.skills'
+import { Route as SettingsSecretsRouteImport } from './routes/settings.secrets'
 import { Route as SettingsProvidersRouteImport } from './routes/settings.providers'
+import { Route as SettingsLoopsRouteImport } from './routes/settings.loops'
 import { Route as SettingsKeybindingsRouteImport } from './routes/settings.keybindings'
+import { Route as SettingsIntegrationsRouteImport } from './routes/settings.integrations'
 import { Route as SettingsGeneralRouteImport } from './routes/settings.general'
 import { Route as SettingsDiagnosticsRouteImport } from './routes/settings.diagnostics'
 import { Route as SettingsConnectionsRouteImport } from './routes/settings.connections'
@@ -25,6 +31,7 @@ import { Route as SettingsBetaRouteImport } from './routes/settings.beta'
 import { Route as SettingsArchivedRouteImport } from './routes/settings.archived'
 import { Route as SettingsAppearanceRouteImport } from './routes/settings.appearance'
 import { Route as ConnectCallbackRouteImport } from './routes/connect_.callback'
+import { Route as SettingsWorkspacesWorkspaceIdRouteImport } from './routes/settings.workspaces.$workspaceId'
 import { Route as ChatDraftDraftIdRouteImport } from './routes/_chat.draft.$draftId'
 import { Route as ChatEnvironmentIdThreadIdRouteImport } from './routes/_chat.$environmentId.$threadId'
 
@@ -57,9 +64,29 @@ const ChatIndexRoute = ChatIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ChatRoute,
 } as any)
+const SettingsWorkspacesRoute = SettingsWorkspacesRouteImport.update({
+  id: '/workspaces',
+  path: '/workspaces',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsUsersRoute = SettingsUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const SettingsSourceControlRoute = SettingsSourceControlRouteImport.update({
   id: '/source-control',
   path: '/source-control',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsSkillsRoute = SettingsSkillsRouteImport.update({
+  id: '/skills',
+  path: '/skills',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsSecretsRoute = SettingsSecretsRouteImport.update({
+  id: '/secrets',
+  path: '/secrets',
   getParentRoute: () => SettingsRoute,
 } as any)
 const SettingsProvidersRoute = SettingsProvidersRouteImport.update({
@@ -67,9 +94,19 @@ const SettingsProvidersRoute = SettingsProvidersRouteImport.update({
   path: '/providers',
   getParentRoute: () => SettingsRoute,
 } as any)
+const SettingsLoopsRoute = SettingsLoopsRouteImport.update({
+  id: '/loops',
+  path: '/loops',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const SettingsKeybindingsRoute = SettingsKeybindingsRouteImport.update({
   id: '/keybindings',
   path: '/keybindings',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsIntegrationsRoute = SettingsIntegrationsRouteImport.update({
+  id: '/integrations',
+  path: '/integrations',
   getParentRoute: () => SettingsRoute,
 } as any)
 const SettingsGeneralRoute = SettingsGeneralRouteImport.update({
@@ -107,6 +144,12 @@ const ConnectCallbackRoute = ConnectCallbackRouteImport.update({
   path: '/connect/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsWorkspacesWorkspaceIdRoute =
+  SettingsWorkspacesWorkspaceIdRouteImport.update({
+    id: '/$workspaceId',
+    path: '/$workspaceId',
+    getParentRoute: () => SettingsWorkspacesRoute,
+  } as any)
 const ChatDraftDraftIdRoute = ChatDraftDraftIdRouteImport.update({
   id: '/draft/$draftId',
   path: '/draft/$draftId',
@@ -132,11 +175,18 @@ export interface FileRoutesByFullPath {
   '/settings/connections': typeof SettingsConnectionsRoute
   '/settings/diagnostics': typeof SettingsDiagnosticsRoute
   '/settings/general': typeof SettingsGeneralRoute
+  '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/keybindings': typeof SettingsKeybindingsRoute
+  '/settings/loops': typeof SettingsLoopsRoute
   '/settings/providers': typeof SettingsProvidersRoute
+  '/settings/secrets': typeof SettingsSecretsRoute
+  '/settings/skills': typeof SettingsSkillsRoute
   '/settings/source-control': typeof SettingsSourceControlRoute
+  '/settings/users': typeof SettingsUsersRoute
+  '/settings/workspaces': typeof SettingsWorkspacesRouteWithChildren
   '/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
   '/draft/$draftId': typeof ChatDraftDraftIdRoute
+  '/settings/workspaces/$workspaceId': typeof SettingsWorkspacesWorkspaceIdRoute
 }
 export interface FileRoutesByTo {
   '/connect': typeof ConnectRoute
@@ -150,12 +200,19 @@ export interface FileRoutesByTo {
   '/settings/connections': typeof SettingsConnectionsRoute
   '/settings/diagnostics': typeof SettingsDiagnosticsRoute
   '/settings/general': typeof SettingsGeneralRoute
+  '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/keybindings': typeof SettingsKeybindingsRoute
+  '/settings/loops': typeof SettingsLoopsRoute
   '/settings/providers': typeof SettingsProvidersRoute
+  '/settings/secrets': typeof SettingsSecretsRoute
+  '/settings/skills': typeof SettingsSkillsRoute
   '/settings/source-control': typeof SettingsSourceControlRoute
+  '/settings/users': typeof SettingsUsersRoute
+  '/settings/workspaces': typeof SettingsWorkspacesRouteWithChildren
   '/': typeof ChatIndexRoute
   '/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
   '/draft/$draftId': typeof ChatDraftDraftIdRoute
+  '/settings/workspaces/$workspaceId': typeof SettingsWorkspacesWorkspaceIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -171,12 +228,19 @@ export interface FileRoutesById {
   '/settings/connections': typeof SettingsConnectionsRoute
   '/settings/diagnostics': typeof SettingsDiagnosticsRoute
   '/settings/general': typeof SettingsGeneralRoute
+  '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/keybindings': typeof SettingsKeybindingsRoute
+  '/settings/loops': typeof SettingsLoopsRoute
   '/settings/providers': typeof SettingsProvidersRoute
+  '/settings/secrets': typeof SettingsSecretsRoute
+  '/settings/skills': typeof SettingsSkillsRoute
   '/settings/source-control': typeof SettingsSourceControlRoute
+  '/settings/users': typeof SettingsUsersRoute
+  '/settings/workspaces': typeof SettingsWorkspacesRouteWithChildren
   '/_chat/': typeof ChatIndexRoute
   '/_chat/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
   '/_chat/draft/$draftId': typeof ChatDraftDraftIdRoute
+  '/settings/workspaces/$workspaceId': typeof SettingsWorkspacesWorkspaceIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -193,11 +257,18 @@ export interface FileRouteTypes {
     | '/settings/connections'
     | '/settings/diagnostics'
     | '/settings/general'
+    | '/settings/integrations'
     | '/settings/keybindings'
+    | '/settings/loops'
     | '/settings/providers'
+    | '/settings/secrets'
+    | '/settings/skills'
     | '/settings/source-control'
+    | '/settings/users'
+    | '/settings/workspaces'
     | '/$environmentId/$threadId'
     | '/draft/$draftId'
+    | '/settings/workspaces/$workspaceId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/connect'
@@ -211,12 +282,19 @@ export interface FileRouteTypes {
     | '/settings/connections'
     | '/settings/diagnostics'
     | '/settings/general'
+    | '/settings/integrations'
     | '/settings/keybindings'
+    | '/settings/loops'
     | '/settings/providers'
+    | '/settings/secrets'
+    | '/settings/skills'
     | '/settings/source-control'
+    | '/settings/users'
+    | '/settings/workspaces'
     | '/'
     | '/$environmentId/$threadId'
     | '/draft/$draftId'
+    | '/settings/workspaces/$workspaceId'
   id:
     | '__root__'
     | '/_chat'
@@ -231,12 +309,19 @@ export interface FileRouteTypes {
     | '/settings/connections'
     | '/settings/diagnostics'
     | '/settings/general'
+    | '/settings/integrations'
     | '/settings/keybindings'
+    | '/settings/loops'
     | '/settings/providers'
+    | '/settings/secrets'
+    | '/settings/skills'
     | '/settings/source-control'
+    | '/settings/users'
+    | '/settings/workspaces'
     | '/_chat/'
     | '/_chat/$environmentId/$threadId'
     | '/_chat/draft/$draftId'
+    | '/settings/workspaces/$workspaceId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -292,11 +377,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatIndexRouteImport
       parentRoute: typeof ChatRoute
     }
+    '/settings/workspaces': {
+      id: '/settings/workspaces'
+      path: '/workspaces'
+      fullPath: '/settings/workspaces'
+      preLoaderRoute: typeof SettingsWorkspacesRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/users': {
+      id: '/settings/users'
+      path: '/users'
+      fullPath: '/settings/users'
+      preLoaderRoute: typeof SettingsUsersRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/settings/source-control': {
       id: '/settings/source-control'
       path: '/source-control'
       fullPath: '/settings/source-control'
       preLoaderRoute: typeof SettingsSourceControlRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/skills': {
+      id: '/settings/skills'
+      path: '/skills'
+      fullPath: '/settings/skills'
+      preLoaderRoute: typeof SettingsSkillsRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/secrets': {
+      id: '/settings/secrets'
+      path: '/secrets'
+      fullPath: '/settings/secrets'
+      preLoaderRoute: typeof SettingsSecretsRouteImport
       parentRoute: typeof SettingsRoute
     }
     '/settings/providers': {
@@ -306,11 +419,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsProvidersRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/settings/loops': {
+      id: '/settings/loops'
+      path: '/loops'
+      fullPath: '/settings/loops'
+      preLoaderRoute: typeof SettingsLoopsRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/settings/keybindings': {
       id: '/settings/keybindings'
       path: '/keybindings'
       fullPath: '/settings/keybindings'
       preLoaderRoute: typeof SettingsKeybindingsRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/integrations': {
+      id: '/settings/integrations'
+      path: '/integrations'
+      fullPath: '/settings/integrations'
+      preLoaderRoute: typeof SettingsIntegrationsRouteImport
       parentRoute: typeof SettingsRoute
     }
     '/settings/general': {
@@ -362,6 +489,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConnectCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/workspaces/$workspaceId': {
+      id: '/settings/workspaces/$workspaceId'
+      path: '/$workspaceId'
+      fullPath: '/settings/workspaces/$workspaceId'
+      preLoaderRoute: typeof SettingsWorkspacesWorkspaceIdRouteImport
+      parentRoute: typeof SettingsWorkspacesRoute
+    }
     '/_chat/draft/$draftId': {
       id: '/_chat/draft/$draftId'
       path: '/draft/$draftId'
@@ -393,6 +527,17 @@ const ChatRouteChildren: ChatRouteChildren = {
 
 const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)
 
+interface SettingsWorkspacesRouteChildren {
+  SettingsWorkspacesWorkspaceIdRoute: typeof SettingsWorkspacesWorkspaceIdRoute
+}
+
+const SettingsWorkspacesRouteChildren: SettingsWorkspacesRouteChildren = {
+  SettingsWorkspacesWorkspaceIdRoute: SettingsWorkspacesWorkspaceIdRoute,
+}
+
+const SettingsWorkspacesRouteWithChildren =
+  SettingsWorkspacesRoute._addFileChildren(SettingsWorkspacesRouteChildren)
+
 interface SettingsRouteChildren {
   SettingsAppearanceRoute: typeof SettingsAppearanceRoute
   SettingsArchivedRoute: typeof SettingsArchivedRoute
@@ -400,9 +545,15 @@ interface SettingsRouteChildren {
   SettingsConnectionsRoute: typeof SettingsConnectionsRoute
   SettingsDiagnosticsRoute: typeof SettingsDiagnosticsRoute
   SettingsGeneralRoute: typeof SettingsGeneralRoute
+  SettingsIntegrationsRoute: typeof SettingsIntegrationsRoute
   SettingsKeybindingsRoute: typeof SettingsKeybindingsRoute
+  SettingsLoopsRoute: typeof SettingsLoopsRoute
   SettingsProvidersRoute: typeof SettingsProvidersRoute
+  SettingsSecretsRoute: typeof SettingsSecretsRoute
+  SettingsSkillsRoute: typeof SettingsSkillsRoute
   SettingsSourceControlRoute: typeof SettingsSourceControlRoute
+  SettingsUsersRoute: typeof SettingsUsersRoute
+  SettingsWorkspacesRoute: typeof SettingsWorkspacesRouteWithChildren
 }
 
 const SettingsRouteChildren: SettingsRouteChildren = {
@@ -412,9 +563,15 @@ const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsConnectionsRoute: SettingsConnectionsRoute,
   SettingsDiagnosticsRoute: SettingsDiagnosticsRoute,
   SettingsGeneralRoute: SettingsGeneralRoute,
+  SettingsIntegrationsRoute: SettingsIntegrationsRoute,
   SettingsKeybindingsRoute: SettingsKeybindingsRoute,
+  SettingsLoopsRoute: SettingsLoopsRoute,
   SettingsProvidersRoute: SettingsProvidersRoute,
+  SettingsSecretsRoute: SettingsSecretsRoute,
+  SettingsSkillsRoute: SettingsSkillsRoute,
   SettingsSourceControlRoute: SettingsSourceControlRoute,
+  SettingsUsersRoute: SettingsUsersRoute,
+  SettingsWorkspacesRoute: SettingsWorkspacesRouteWithChildren,
 }
 
 const SettingsRouteWithChildren = SettingsRoute._addFileChildren(

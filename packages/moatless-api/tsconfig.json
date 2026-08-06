@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Matches apps/web, the only consumer. This package is browser code that
+    // reaches a bundler, not Node code — `nodenext` would demand explicit
+    // extensions on the generated barrel imports orval emits, for a resolver
+    // that never runs against it.
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "verbatimModuleSyntax": false,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node"]
+  },
+  "include": ["src"]
+}

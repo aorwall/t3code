@@ -11,13 +11,19 @@ import {
   ArchiveIcon,
   ArrowLeftIcon,
   BotIcon,
+  BoxesIcon,
   FlaskConicalIcon,
   GitBranchIcon,
+  KeyRoundIcon,
   KeyboardIcon,
   Link2Icon,
   PaletteIcon,
+  PlugZapIcon,
+  RepeatIcon,
   SearchIcon,
   Settings2Icon,
+  SparklesIcon,
+  UsersIcon,
   XIcon,
 } from "lucide-react";
 import { useCanGoBack, useLocation, useNavigate } from "@tanstack/react-router";
@@ -29,6 +35,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -36,8 +43,10 @@ import {
 } from "../ui/sidebar";
 import { T3ConnectSidebarAvatar, T3ConnectSidebarSignIn } from "../clerk/T3ConnectSidebarSignIn";
 import { settingsPathEnabled } from "../../fork/features";
+import { useMoatlessSession } from "../../moatless/session";
 import { scrollToSettingsTarget } from "./settingsLayout";
 import {
+  isMoatlessAdminPath,
   searchSettings,
   SETTINGS_SECTION_LABELS,
   type SettingsPath,
@@ -55,6 +64,12 @@ const SETTINGS_SECTION_ICONS: Readonly<
   "/settings/connections": Link2Icon,
   "/settings/beta": FlaskConicalIcon,
   "/settings/archived": ArchiveIcon,
+  "/settings/workspaces": BoxesIcon,
+  "/settings/loops": RepeatIcon,
+  "/settings/integrations": PlugZapIcon,
+  "/settings/skills": SparklesIcon,
+  "/settings/secrets": KeyRoundIcon,
+  "/settings/users": UsersIcon,
 };
 
 export const SETTINGS_NAV_ITEMS: ReadonlyArray<{
@@ -66,6 +81,9 @@ export const SETTINGS_NAV_ITEMS: ReadonlyArray<{
   label: SETTINGS_SECTION_LABELS[to],
   icon: SETTINGS_SECTION_ICONS[to],
 }));
+
+const PERSONAL_NAV_ITEMS = SETTINGS_NAV_ITEMS.filter((item) => !isMoatlessAdminPath(item.to));
+const ADMINISTRATION_NAV_ITEMS = SETTINGS_NAV_ITEMS.filter((item) => isMoatlessAdminPath(item.to));
 
 function SettingsSectionIcon({ to }: { to: SettingsPath }) {
   const Icon = SETTINGS_SECTION_ICONS[to];
@@ -82,9 +100,13 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
   const [activeResultIndex, setActiveResultIndex] = useState(0);
   // Search is a second way into a section, so it filters alongside the nav
   // list — a result that jumps to a section the nav hides is the same hole.
+  const { isAdmin } = useMoatlessSession();
   const results = useMemo(
-    () => searchSettings(query).filter((item) => settingsPathEnabled(item.to)),
-    [query],
+    () =>
+      searchSettings(query).filter(
+        (item) => settingsPathEnabled(item.to) && (isAdmin || !isMoatlessAdminPath(item.to)),
+      ),
+    [query, isAdmin],
   );
   const isSearching = query.trim().length > 0;
   const hasResults = results.length > 0;
@@ -284,7 +306,7 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))
-              : SETTINGS_NAV_ITEMS.filter((item) => settingsPathEnabled(item.to)).map((item) => {
+              : PERSONAL_NAV_ITEMS.filter((item) => settingsPathEnabled(item.to)).map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname === item.to;
                   return (
@@ -300,6 +322,32 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                   );
                 })}
           </SidebarMenu>
+          {!isSearching && isAdmin ? (
+            <>
+              <SidebarGroupLabel>Administration</SidebarGroupLabel>
+              <SidebarMenu>
+                {ADMINISTRATION_NAV_ITEMS.filter((item) => settingsPathEnabled(item.to)).map(
+                  (item) => {
+                    const Icon = item.icon;
+                    // A detail route keeps its list entry highlighted, so
+                    // `/settings/workspaces/42` does not read as nowhere.
+                    const isActive = pathname === item.to || pathname.startsWith(`${item.to}/`);
+                    return (
+                      <SidebarMenuItem key={item.to}>
+                        <SidebarMenuButton
+                          isActive={isActive}
+                          onClick={() => handleSectionClick(item.to)}
+                        >
+                          <Icon />
+                          <span className="truncate">{item.label}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  },
+                )}
+              </SidebarMenu>
+            </>
+          ) : null}
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="p-[var(--sidebar-content-inset)]">

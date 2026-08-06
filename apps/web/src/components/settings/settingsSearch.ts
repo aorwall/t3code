@@ -6,7 +6,41 @@ export type SettingsPath =
   | "/settings/source-control"
   | "/settings/connections"
   | "/settings/beta"
-  | "/settings/archived";
+  | "/settings/archived"
+  | MoatlessAdminPath;
+
+/**
+ * Settings pages that administer the Moatless deployment rather than this
+ * client. Fork-only, and split out so the nav and the route guard can name the
+ * group without listing its members twice.
+ */
+export type MoatlessAdminPath =
+  | "/settings/workspaces"
+  | "/settings/loops"
+  | "/settings/integrations"
+  | "/settings/skills"
+  | "/settings/secrets"
+  | "/settings/users";
+
+export const MOATLESS_ADMIN_PATHS = [
+  "/settings/workspaces",
+  "/settings/loops",
+  "/settings/integrations",
+  "/settings/skills",
+  "/settings/secrets",
+  "/settings/users",
+] as const satisfies ReadonlyArray<MoatlessAdminPath>;
+
+const MOATLESS_ADMIN_PATH_SET: ReadonlySet<string> = new Set(MOATLESS_ADMIN_PATHS);
+
+/**
+ * Whether a path administers the deployment, including its detail routes —
+ * `/settings/workspaces/42` is as administrative as `/settings/workspaces`.
+ */
+export function isMoatlessAdminPath(pathname: string): boolean {
+  if (MOATLESS_ADMIN_PATH_SET.has(pathname)) return true;
+  return MOATLESS_ADMIN_PATHS.some((path) => pathname.startsWith(`${path}/`));
+}
 
 export interface SettingsSearchItem {
   readonly id: string;
@@ -28,6 +62,12 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/connections": "Connections",
   "/settings/beta": "Beta",
   "/settings/archived": "Archive",
+  "/settings/workspaces": "Workspaces",
+  "/settings/loops": "Loops",
+  "/settings/integrations": "Integrations",
+  "/settings/skills": "Skills",
+  "/settings/secrets": "Secrets",
+  "/settings/users": "Users",
 };
 
 /**
@@ -161,6 +201,54 @@ export const SETTINGS_SEARCH_ITEMS = [
     id: "archive",
     title: "Archived threads",
     to: "/settings/archived",
+  },
+  {
+    id: "workspaces",
+    title: "Workspaces",
+    to: "/settings/workspaces",
+  },
+  {
+    id: "workspace-repositories",
+    title: "Repositories",
+    to: "/settings/workspaces",
+    // Repositories are composed inside a workspace rather than listed on their
+    // own, so the list page is where somebody searching for one should land.
+    targetId: "workspaces",
+  },
+  {
+    id: "loops",
+    title: "Loops",
+    to: "/settings/loops",
+  },
+  {
+    id: "integrations-connections",
+    title: "Connections",
+    to: "/settings/integrations",
+  },
+  {
+    id: "integrations-apps",
+    title: "Apps",
+    to: "/settings/integrations",
+  },
+  {
+    id: "integrations-github",
+    title: "GitHub",
+    to: "/settings/integrations",
+  },
+  {
+    id: "skills",
+    title: "Skills",
+    to: "/settings/skills",
+  },
+  {
+    id: "secrets",
+    title: "Secrets",
+    to: "/settings/secrets",
+  },
+  {
+    id: "users",
+    title: "Users",
+    to: "/settings/users",
   },
 ] as const satisfies ReadonlyArray<SettingsSearchItem>;
 
