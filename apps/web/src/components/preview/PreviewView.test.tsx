@@ -17,6 +17,11 @@ const mocks = vi.hoisted(() => ({
   closeRightPanel: vi.fn(),
   openPictureInPicture: vi.fn(async (_tabId: string): Promise<void> => undefined),
   closePictureInPicture: vi.fn(async (_tabId: string): Promise<void> => undefined),
+  pickElement: vi.fn(),
+  previewAnnotationScreenshotFile: vi.fn(),
+  addPreviewAnnotation: vi.fn(),
+  addImage: vi.fn(),
+  toggleAnnotation: null as (() => void) | null,
   pictureInPicture: false,
   showEmptyState: false,
   capability: "webview" as "webview" | "frame" | "none",
@@ -45,11 +50,15 @@ vi.mock("~/state/session", () => ({
 vi.mock("~/composerDraftStore", () => ({
   useComposerDraftStore: (
     select: (store: { addPreviewAnnotation: () => void; addImage: () => void }) => unknown,
-  ) => select({ addPreviewAnnotation: vi.fn(), addImage: vi.fn() }),
+  ) =>
+    select({
+      addPreviewAnnotation: mocks.addPreviewAnnotation,
+      addImage: mocks.addImage,
+    }),
 }));
 
 vi.mock("~/lib/previewAnnotation", () => ({
-  previewAnnotationScreenshotFile: vi.fn(),
+  previewAnnotationScreenshotFile: mocks.previewAnnotationScreenshotFile,
 }));
 
 vi.mock("~/localApi", () => ({
@@ -185,6 +194,7 @@ vi.mock("./PreviewChromeRow", () => ({
     onBack?: (() => void) | undefined;
     onForward?: (() => void) | undefined;
     onRefresh: () => void;
+    onPickElement?: () => void;
     onPictureInPicture?: () => void;
     pictureInPicture?: boolean;
     trailingActions?: {
@@ -195,6 +205,7 @@ vi.mock("./PreviewChromeRow", () => ({
     mocks.chromeBack = props.onBack;
     mocks.chromeForward = props.onForward;
     mocks.chromeRefresh = props.onRefresh;
+    mocks.toggleAnnotation = props.onPickElement ?? null;
     mocks.togglePictureInPicture = props.onPictureInPicture ?? null;
     mocks.toggleNativePictureInPicture =
       props.trailingActions?.props.onNativePictureInPicture ?? null;
@@ -247,11 +258,17 @@ describe("PreviewView navigation", () => {
     mocks.closeRightPanel.mockClear();
     mocks.openPictureInPicture.mockClear();
     mocks.closePictureInPicture.mockClear();
+    mocks.pickElement.mockReset();
+    mocks.previewAnnotationScreenshotFile.mockReset();
+    mocks.addPreviewAnnotation.mockClear();
+    mocks.addImage.mockClear();
+    mocks.toggleAnnotation = null;
     mocks.pictureInPicture = false;
     mocks.showEmptyState = false;
     mocks.capability = "webview";
     mocks.previewBridge = {
       navigate: mocks.navigate,
+      pickElement: mocks.pickElement,
       pictureInPicture: {
         open: mocks.openPictureInPicture,
         close: mocks.closePictureInPicture,
@@ -373,6 +390,72 @@ describe("PreviewView navigation", () => {
     await vi.waitFor(() =>
       expect(mocks.closePictureInPicture).toHaveBeenCalledWith(TEST_RUNTIME_TAB_ID),
     );
+  });
+
+  it("forwards Cmd/Ctrl+Enter annotations to the composer send path", async () => {
+    const annotation = {
+      id: "annotation-1",
+      pageUrl: "https://example.com/dashboard",
+      pageTitle: "Dashboard",
+      comment: "Tighten this spacing",
+      elements: [],
+      regions: [],
+      strokes: [],
+      styleChanges: [],
+      screenshot: null,
+      createdAt: "2026-07-27T00:00:00.000Z",
+    };
+    const onSendAnnotation = vi.fn();
+    mocks.pickElement.mockResolvedValue({ annotation, submission: "send" });
+
+    renderToStaticMarkup(
+      <PreviewView
+        threadRef={TEST_THREAD_REF}
+        tabId="tab-1"
+        visible
+        onSendAnnotation={onSendAnnotation}
+      />,
+    );
+    mocks.toggleAnnotation?.();
+
+    await vi.waitFor(() => expect(onSendAnnotation).toHaveBeenCalledWith(annotation, null));
+    expect(mocks.addPreviewAnnotation).toHaveBeenCalledWith(TEST_THREAD_REF, annotation);
+  });
+
+  it("still sends when screenshot attachment conversion fails", async () => {
+    const annotation = {
+      id: "annotation-2",
+      pageUrl: "https://example.com/dashboard",
+      pageTitle: "Dashboard",
+      comment: "Tighten this spacing",
+      elements: [],
+      regions: [],
+      strokes: [],
+      styleChanges: [],
+      screenshot: {
+        dataUrl: "data:image/png;base64,c2NyZWVuc2hvdA==",
+        width: 10,
+        height: 10,
+        cropRect: { x: 0, y: 0, width: 10, height: 10 },
+      },
+      createdAt: "2026-07-27T00:00:00.000Z",
+    };
+    const onSendAnnotation = vi.fn();
+    mocks.pickElement.mockResolvedValue({ annotation, submission: "send" });
+    mocks.previewAnnotationScreenshotFile.mockRejectedValue(new Error("conversion failed"));
+
+    renderToStaticMarkup(
+      <PreviewView
+        threadRef={TEST_THREAD_REF}
+        tabId="tab-1"
+        visible
+        onSendAnnotation={onSendAnnotation}
+      />,
+    );
+    mocks.toggleAnnotation?.();
+
+    await vi.waitFor(() => expect(onSendAnnotation).toHaveBeenCalledWith(annotation, null));
+    expect(mocks.addImage).not.toHaveBeenCalled();
   });
 });
 

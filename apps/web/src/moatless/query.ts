@@ -62,6 +62,12 @@ const queryFamily = Atom.family((key: string) => {
     );
   }
   return Atom.make(
+    // The repo-wide Effect rule wants a tagged error here. The two failures
+    // this can produce are already distinct classes — `MoatlessRequestError`
+    // and `MoatlessTransportError` — and every reader of a Moatless query
+    // renders `.message` rather than branching on the tag, so the channel is
+    // deliberately the widest thing they have in common.
+    // @effect-diagnostics-next-line globalErrorInEffectCatch:off
     Effect.tryPromise({
       try: execute,
       catch: (cause) => toError(cause),

@@ -1,7 +1,8 @@
 "use client";
 
-import type { ScopedThreadRef } from "@t3tools/contracts";
+import type { PreviewAnnotationPayload, ScopedThreadRef } from "@t3tools/contracts";
 
+import type { ComposerImageAttachment } from "~/composerDraftStore";
 import { previewRuntimeCapability } from "~/previewStateStore";
 
 import { PreviewPanelShell, type PreviewPanelMode } from "./PreviewPanelShell";
@@ -12,10 +13,15 @@ interface Props {
   threadRef: ScopedThreadRef;
   tabId?: string | null;
   visible: boolean;
+  onSendAnnotation?: (
+    annotation: PreviewAnnotationPayload,
+    image: ComposerImageAttachment | null,
+  ) => void;
 }
 
-export function PreviewPanel({ mode, threadRef, tabId, visible }: Props) {
-  // Nothing to draw into: server rendering, where there is no DOM at all.
+export function PreviewPanel({ mode, threadRef, tabId, visible, onSendAnnotation }: Props) {
+  // Fork: an iframe is a page surface too, so the only runtime that cannot
+  // show a preview is server rendering, where there is no DOM at all.
   if (previewRuntimeCapability() === "none") {
     return (
       <PreviewPanelShell mode={mode}>
@@ -34,6 +40,7 @@ export function PreviewPanel({ mode, threadRef, tabId, visible }: Props) {
         threadRef={threadRef}
         {...(tabId !== undefined ? { tabId } : {})}
         visible={visible}
+        {...(onSendAnnotation ? { onSendAnnotation } : {})}
       />
     </PreviewPanelShell>
   );

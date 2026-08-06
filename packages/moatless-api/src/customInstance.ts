@@ -143,6 +143,12 @@ export const customInstance = async <T>(
   const href = target.toString();
   let response: Response;
   try {
+    // The repo-wide Effect rule wants `HttpClient` here. This package is the
+    // orval-generated Moatless REST client and is deliberately outside Effect:
+    // administration reads are plain HTTP with a cookie, and an `HttpClient`
+    // would put a runtime and a layer between orval's generated call and the
+    // request it is meant to make.
+    // @effect-diagnostics-next-line globalFetch:off
     response = await fetch(href, { ...options, credentials: "include" });
   } catch (cause) {
     throw new MoatlessTransportError(href, cause);
