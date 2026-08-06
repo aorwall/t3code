@@ -39,6 +39,7 @@ import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
 import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
 import { AddRepositoryDialog } from "./AddRepositoryDialog";
 import { SectionEmpty, SectionError, SectionPending } from "./MoatlessSectionState";
+import { RepositoryProviderIcon } from "./RepositoryProviderIcon";
 import { repositoriesQuery, workspaceQuery } from "./queries";
 import {
   formatSetupCommands,
@@ -278,6 +279,10 @@ function RepositoriesSection({
             <div className={ITEM_ROW_INNER_CLASSNAME}>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
+                  <RepositoryProviderIcon
+                    icon={row.icon}
+                    className="size-3.5 shrink-0 text-muted-foreground"
+                  />
                   <span className="truncate text-sm font-medium text-foreground">{row.name}</span>
                   {row.isPrimary ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-accent px-1.5 py-px text-[10.5px] font-medium text-muted-foreground">

@@ -296,6 +296,12 @@ the search is the second way into every section.
 |---|---|---|
 | `/settings/workspaces` | `WorkspacesPanel` | Workspaces (list, `headerAction` = add) |
 | `/settings/workspaces/$id` | `WorkspaceDetailPanel` | General · Repositories · Run configuration · Access · Danger |
+
+The detail route's file is `settings.workspaces_.$workspaceId.tsx`, with the trailing underscore
+TanStack Router reads as "do not nest under the segment before me" (the same convention as
+`connect_.callback.tsx`). Without it the file-based tree makes `settings.workspaces.tsx` the
+detail route's parent, and that file renders `WorkspacesPanel` with no `<Outlet />` — so the
+detail page never mounts and `/settings/workspaces/ws_…` silently renders the list.
 | `/settings/loops` | `LoopsPanel` | Loops (list, add) |
 | `/settings/loops/$id` | `LoopDetailPanel` | The loop form |
 | `/settings/integrations` | `IntegrationsPanel` | Connections · Apps · GitHub |

@@ -22,15 +22,29 @@ import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
 import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
 import { searchableSetting } from "../settingsSearch";
 import { SectionEmpty, SectionError, SectionPending } from "./MoatlessSectionState";
-import { workspacesQuery } from "./queries";
-import { compareWorkspaces, summarizeWorkspace } from "./workspaceSummary";
+import { repositoriesQuery, workspacesQuery } from "./queries";
+import { RepositoryProviderIcon } from "./RepositoryProviderIcon";
+import { compareWorkspaces, summarizeWorkspace, type WorkspaceSummary } from "./workspaceSummary";
 import { cn } from "~/lib/utils";
 
 export function WorkspacesPanel() {
-  const { data, error, isPending, refresh } = useMoatlessQuery(workspacesQuery);
+  const { data, error, refresh } = useMoatlessQuery(workspacesQuery);
+  const repositories = useMoatlessQuery(repositoriesQuery);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  const rows = useMemo(() => (data ?? []).map(summarizeWorkspace).sort(compareWorkspaces), [data]);
+  // Both reads, because a placement carries only a repository id: without the
+  // catalog every row would name its repositories by id. A catalog that failed
+  // is not worth blocking the page for, though — the ids still identify them,
+  // and the workspaces themselves are what someone came here for.
+  const isPending = data === null || (repositories.data === null && repositories.error === null);
+
+  const rows = useMemo(
+    () =>
+      (data ?? [])
+        .map((workspace) => summarizeWorkspace(workspace, repositories.data ?? []))
+        .sort(compareWorkspaces),
+    [data, repositories.data],
+  );
 
   return (
     <SettingsPageContainer>
@@ -49,7 +63,7 @@ export function WorkspacesPanel() {
       >
         {error ? (
           <SectionError error={error} label="workspaces" onRetry={refresh} />
-        ) : isPending && data === null ? (
+        ) : isPending ? (
           <SectionPending label="workspaces" />
         ) : rows.length === 0 ? (
           <SectionEmpty>
@@ -75,9 +89,7 @@ export function WorkspacesPanel() {
                     {row.isGitSourced ? <RowTag>git</RowTag> : null}
                     {row.isDeleted ? <RowTag>deleted</RowTag> : null}
                   </div>
-                  <p className="mt-0.5 truncate text-[13px] leading-[1.45] text-muted-foreground/80">
-                    {row.detail}
-                  </p>
+                  <RepositoryList row={row} />
                 </div>
                 <ChevronRightIcon
                   className="size-4 shrink-0 self-center text-muted-foreground/60"
@@ -91,6 +103,38 @@ export function WorkspacesPanel() {
 
       <CreateWorkspaceDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
     </SettingsPageContainer>
+  );
+}
+
+/**
+ * The repositories a workspace composes, named, under its own name.
+ *
+ * Wrapping rather than truncating to one line: a workspace with four
+ * repositories is exactly the one whose composition someone needs to read, and
+ * it is the one a single line would hide. Each name truncates on its own so one
+ * long name cannot push the others out.
+ */
+function RepositoryList({ row }: { readonly row: WorkspaceSummary }) {
+  if (row.emptyDetail !== null) {
+    return (
+      <p className="mt-0.5 text-[13px] leading-[1.45] text-muted-foreground/80">
+        {row.emptyDetail}
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+      {row.repositories.map((repository) => (
+        <span
+          key={repository.repositoryId}
+          className="flex min-w-0 items-center gap-1.5 text-[13px] leading-[1.45] text-muted-foreground/80"
+        >
+          <RepositoryProviderIcon icon={repository.icon} className="size-3.5 shrink-0" />
+          <span className="truncate">{repository.name}</span>
+        </span>
+      ))}
+    </div>
   );
 }
 

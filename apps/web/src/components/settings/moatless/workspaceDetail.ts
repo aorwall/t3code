@@ -4,6 +4,8 @@ import type {
   WorkspaceResponse,
 } from "@t3tools/moatless-api/generated/model";
 
+import { repositoryProviderIcon, type RepositoryProviderIcon } from "./repositoryProvider";
+
 /**
  * The reasoning behind the Workspace detail page, kept out of the component.
  *
@@ -56,6 +58,8 @@ export interface PlacementRow {
   readonly repositoryId: string;
   /** The repository's name, or the id when the catalog does not know it. */
   readonly name: string;
+  /** The host's mark; plain git for a placement the catalog cannot resolve. */
+  readonly icon: RepositoryProviderIcon;
   /** Remote, branch and mount, joined; empty when none of them is known. */
   readonly detail: string;
   readonly isPrimary: boolean;
@@ -111,6 +115,7 @@ function placementRow(
     id: placement.id,
     repositoryId: placement.repositoryId,
     name: repository?.name ?? placement.repositoryId,
+    icon: repository === undefined ? "git" : repositoryProviderIcon(repository),
     detail: parts.join(" · "),
     isPrimary: placement.isPrimary,
     isDangling: repository === undefined,

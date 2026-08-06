@@ -7,6 +7,6 @@ function SettingsWorkspaceDetailRoute() {
   return <WorkspaceDetailPanel workspaceId={workspaceId} />;
 }
 
-export const Route = createFileRoute("/settings/workspaces/$workspaceId")({
+export const Route = createFileRoute("/settings/workspaces_/$workspaceId")({
   component: SettingsWorkspaceDetailRoute,
 });

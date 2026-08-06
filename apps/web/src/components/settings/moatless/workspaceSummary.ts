@@ -1,4 +1,6 @@
-import type { WorkspaceResponse } from "@t3tools/moatless-api/generated/model";
+import type { RepositoryResponse, WorkspaceResponse } from "@t3tools/moatless-api/generated/model";
+
+import { repositoryProviderIcon, type RepositoryProviderIcon } from "./repositoryProvider";
 
 /**
  * What a Workspace row says about itself, worked out away from the component.
@@ -8,42 +10,78 @@ import type { WorkspaceResponse } from "@t3tools/moatless-api/generated/model";
  * reads "0 repositories · null" is the failure this exists to prevent.
  */
 
+/** One repository placed in a workspace, as its row names it. */
+export interface WorkspaceRepositorySummary {
+  readonly repositoryId: string;
+  /** The repository's name, or the id when the catalog does not know it. */
+  readonly name: string;
+  readonly icon: RepositoryProviderIcon;
+  readonly isPrimary: boolean;
+}
+
 export interface WorkspaceSummary {
   readonly id: string;
   readonly name: string;
-  /** "2 repositories · node:22 · 3 servers", already joined. */
-  readonly detail: string;
+  /**
+   * The repositories this workspace composes, primary first.
+   *
+   * Named rather than counted. "2 repositories" is true of most rows on the
+   * page and so distinguishes none of them; which two it is, is the whole
+   * reason someone is looking at the list.
+   */
+  readonly repositories: ReadonlyArray<WorkspaceRepositorySummary>;
+  /** Said only when there are none, since the names say it otherwise. */
+  readonly emptyDetail: string | null;
   /** Declared in a repository, so editing needs an explicit override first. */
   readonly isGitSourced: boolean;
   /** Soft-deleted, kept visible so it can be restored from git. */
   readonly isDeleted: boolean;
 }
 
-export function summarizeWorkspace(workspace: WorkspaceResponse): WorkspaceSummary {
-  const parts: string[] = [repositoryCount(workspace.repos?.length ?? 0)];
+/**
+ * `repositories` is the whole catalog, not this workspace's slice.
+ *
+ * A placement carries a `repositoryId` and nothing else — no name, no remote,
+ * no host — so every readable thing about it comes from this join. A workspace
+ * naming a repository the catalog does not have keeps the row and shows the id,
+ * because a repository can be deleted while a workspace still places it and the
+ * row is where someone would go to fix that.
+ */
+export function summarizeWorkspace(
+  workspace: WorkspaceResponse,
+  repositories: ReadonlyArray<RepositoryResponse>,
+): WorkspaceSummary {
+  const byId = new Map(repositories.map((repository) => [repository.id, repository]));
 
-  if (workspace.dockerImage) {
-    parts.push(workspace.dockerImage);
-  }
-
-  const servers = workspace.servers?.length ?? 0;
-  if (servers > 0) {
-    parts.push(servers === 1 ? "1 server" : `${servers} servers`);
-  }
+  const placed = workspace.repos
+    .map((placement) => {
+      const repository = byId.get(placement.repositoryId);
+      return {
+        position: placement.position,
+        summary: {
+          repositoryId: placement.repositoryId,
+          name: repository?.name ?? placement.repositoryId,
+          icon: repository === undefined ? ("git" as const) : repositoryProviderIcon(repository),
+          isPrimary: placement.isPrimary,
+        },
+      };
+    })
+    // Primary first, then mount order — the same order the detail page lists
+    // them in, so the two pages do not disagree about which one is first.
+    .sort((a, b) => {
+      if (a.summary.isPrimary !== b.summary.isPrimary) return a.summary.isPrimary ? -1 : 1;
+      return a.position - b.position;
+    })
+    .map((entry) => entry.summary);
 
   return {
     id: workspace.id,
     name: workspace.name,
-    detail: parts.join(" · "),
+    repositories: placed,
+    emptyDetail: placed.length === 0 ? "No repositories" : null,
     isGitSourced: workspace.syncedFromGit === true || workspace.source === "git",
     isDeleted: workspace.deleted === true,
   };
-}
-
-function repositoryCount(count: number): string {
-  if (count === 0) return "No repositories";
-  if (count === 1) return "1 repository";
-  return `${count} repositories`;
 }
 
 /**

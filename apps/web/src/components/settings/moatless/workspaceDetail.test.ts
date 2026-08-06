@@ -119,11 +119,22 @@ describe("placementRows", () => {
     expect(row?.detail).toBe("github.com/acme/api");
   });
 
+  it("carries the repository's host so the row can mark it", () => {
+    const [row] = placementRows(workspace({ repos: [placement()] }), [
+      repository({ remoteUrl: "https://github.com/acme/api.git" }),
+    ]);
+
+    expect(row?.icon).toBe("github");
+  });
+
   it("keeps a placement whose repository the catalog has never heard of", () => {
     const [row] = placementRows(workspace({ repos: [placement({ repositoryId: "r_gone" })] }), []);
 
     expect(row?.isDangling).toBe(true);
     expect(row?.name).toBe("r_gone");
+    // Plain git rather than nothing: the row still needs a mark, and there is
+    // no repository to read a host from.
+    expect(row?.icon).toBe("git");
   });
 });
 
