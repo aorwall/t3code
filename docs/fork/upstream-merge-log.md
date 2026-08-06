@@ -26,6 +26,68 @@ If an entry runs past a few bullets, the rest belongs in the inventory.
 
 ## Log
 
+### 2026-08-06 — merged upstream to e4abc31f
+
+- Upstream: `e4abc31f` from base `0ad91b6e` (`63` commits). The base is not
+  `5192f777` from the entry below: that merge was applied as four cherry-picks
+  rather than a merge commit, so `git merge-base` never advanced and this range
+  replays them. They merged clean — the fork's side of every file they touched
+  was byte-identical to upstream's.
+- Landed: `313` files from `git diff --stat HEAD^1 HEAD` against `337` in the
+  upstream range; fork delta `548` files from `git diff --stat HEAD^2 HEAD`.
+  The `26`-file gap is those cherry-picks: `25` of the files are byte-identical
+  to `upstream/main`, and the twenty-sixth is `apps/server/src/bin.ts`, which
+  differs only by the pairing CLI this fork removed. Two files move the other
+  way (the diagnostic suppressions below), so `337 − 26 + 2 = 313`.
+- Conflicts, twenty-five files. Thirteen under `apps/server/` plus
+  `docs/internals/server-updates.md`, `docs/user/updating.md` and
+  `packages/client-runtime/src/state/server.ts` and its test were the
+  cherry-pick artefact above: took upstream. `pnpm-lock.yaml` took upstream and
+  was regenerated. The seven fork conflicts:
+  - `ChatView.tsx` — kept the `SandboxedRightPanelTabs` alias beside upstream's
+    new `AgentsPanel` imports. Row: _Sandbox lifecycle controls_.
+  - `RightPanelTabs.tsx` — kept the sandbox disabled-state branch, took
+    upstream's `data-right-panel-surface-content`.
+  - `SidebarV2.tsx` — upstream added thread pinning and restructured the
+    partition memo. Took upstream whole and re-stated the
+    `FEATURES.prThreadSettling` gate inside it; kept the `archive` row item.
+    Rows: _PR-driven settling gate_, _Archive in the sidebar v2 row menu_.
+  - `PreviewPanel.tsx`, `PreviewView.tsx` and their tests — took upstream's
+    annotation send-through and full-URL chrome row, kept the hosted-frame
+    delta and the fork's removal of `configuredUrls`. Row: _Hosted web preview_.
+  - `PreviewChromeRow.test.tsx` — add/add. Upstream now owns this path; the
+    fork's two cases sit beside upstream's. Path policy updated.
+- Sweep: five `apps/server/src/cloud/service*.ts` hits, the same systemd
+  self-update files accepted on 2026-08-02 and still in range only because the
+  base is stale. No new owned-concern additions. Tripwires unchanged at Clerk 4,
+  session bootstrap 9, pairing 73 files. Off-repository check clean — upstream
+  added no workflow, and the nine inherited ones are still `disabled_manually`.
+- Unsupported methods: two new upstream WebSocket methods,
+  `review.getDiffFileContents` and `orchestration.getWorkflowScript`, are not in
+  the backend's dispatch and now declare `UnsupportedMethodError`. Deriving them
+  turned up thirteen entries stale the other way — see _Deriving the unsupported
+  set_, which also records that the backend's dispatch moved to
+  `crates/t3code/src/lib.rs`.
+- Convergence: nothing to drop. Upstream's preview is still desktop-webview
+  only, no upstream thread-server concept, no message-origin field, no archive
+  entry point in v2, no work on the dev proxy or allowed hosts. Upstream did add
+  `capabilities.threadPinning` — a third per-surface capability boolean, which
+  is where surface gating converges; the watch-list row now says so.
+- Verification: `pnpm typecheck`, `pnpm lint` and `pnpm fmt:check` clean; the
+  full test suite passes on Node 22.23.2 — web 1924, server 1874, mobile 615,
+  relay 209, client-runtime and contracts included. Two caveats:
+  - `pnpm test` and `pnpm typecheck` need `NODE_OPTIONS=--max-old-space-size`
+    raised on an 8-core sandbox. Exit code 137 from a package is the OOM killer,
+    not a failure; each one passed run on its own. One mobile test
+    (`nativeReviewDiffHighlighter`) also fails only under that pressure.
+  - Two fork-only modules failed a repo-wide typecheck before this merge and now
+    carry a narrow `@effect-diagnostics-next-line` with the reason:
+    `packages/moatless-api/src/customInstance.ts` (`globalFetch`) and
+    `apps/web/src/moatless/query.ts` (`globalErrorInEffectCatch`). Both landed
+    with CI disabled, so nothing had run the check. Recorded in their inventory
+    rows.
+- Not verified in a browser.
+
 ### 2026-08-03 — the chat drops the terminal-drawer toggle
 
 - Fork delta on one upstream file. Inventory row: _Chat surface gates_, which now
