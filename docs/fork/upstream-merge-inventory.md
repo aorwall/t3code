@@ -156,6 +156,13 @@ nothing means the file is byte-identical to upstream and belongs in no entry.
     `PreviewEmptyState.tsx` and `PreviewView.tsx` in the same directory were
     confirmed to be upstream's.
 
+- `apps/web/src/components/preview/**` (everything else) — **decide**
+  - Upstream owns the rest of this directory and works in it steadily. Take
+    upstream and re-state the hosted-preview behavior from the Fork inventory
+    entry on top. `PreviewChromeRow.test.tsx` was fork-only until 2026-08-06,
+    when upstream added a file of the same name — it is upstream's now, and the
+    fork's two cases sit beside upstream's.
+
 - `packages/contracts/src/rpc.ts`, `packages/contracts/src/auth.ts` — **converged**
   - Take upstream, then re-apply `UnsupportedMethodError`, its
     unsupported-method error unions, and `servers.*` wiring.
@@ -211,6 +218,19 @@ nothing means the file is byte-identical to upstream and belongs in no entry.
     They are switched off in GitHub, not in the tree, so there is no delta to
     preserve. Any fork delta here means someone edited a workflow — investigate
     before taking it.
+
+- Upstream paths this fork deletes — **decide**
+  - Paths:
+    - `apps/server/src/cli/pair.ts` and its test
+    - `apps/web/src/components/preview/PreviewLocalServerCard.tsx`
+    - `apps/web/src/components/preview/useDiscoveredLocalServers.ts` and its test
+  - Upstream owns these and the fork's side is deletion. `pair.ts` is the
+    pairing CLI, decided out with the surface; the two preview files are
+    upstream's local-server discovery, replaced by `useThreadPreviewServers`.
+    An upstream edit raises a delete/modify conflict, and taking upstream
+    silently restores the file — after every merge run
+    `git diff --diff-filter=D --name-only upstream/main HEAD` and confirm the
+    list is still exactly these five.
 
 - Unlisted and outside Fork-owned concerns — **theirs**
   - Take upstream.
@@ -303,6 +323,39 @@ An adapter kind the client does not recognize falls back to a humanized name
 under a generic icon rather than being dropped, so the backend can name a new
 source before the client learns about it. Keep that fallback: it is what lets
 the two repositories deploy in either order.
+
+## Deriving the unsupported set
+
+`UnsupportedMethodError` belongs on exactly the contract WebSocket methods the
+Moatless backend does not dispatch. Both halves are derived, never remembered:
+
+- **Contract side** — every `Rpc.make(WS_METHODS.x, …)` and
+  `Rpc.make(ORCHESTRATION_WS_METHODS.x, …)` in `packages/contracts/src/rpc.ts`,
+  resolved through the `WS_METHODS` and `ORCHESTRATION_WS_METHODS` maps to the
+  wire strings.
+- **Backend side** — the `"method.name" =>` arms of the frame dispatch in
+  `soaplabs/moatless`, which lives in `crates/t3code/src/lib.rs`. It was
+  `backend/src/api/ui_rpc/mod.rs` when this entry was first written; the crate
+  split moved it. A sandbox has no checkout of that repository, so read it over
+  the API:
+
+  ```bash
+  moat gh api repos/soaplabs/moatless/contents/crates/t3code/src/lib.rs \
+    --jq '.content' | base64 -d | grep -oE '"[a-zA-Z.]+" =>' | sort -u
+  ```
+
+Both directions matter. A method the backend has started serving keeps a union
+entry that can never fire; a method it has stopped serving loses the typed
+refusal the client renders.
+
+**Known drift, 2026-08-06.** Thirteen entries are stale in the "backend serves
+it now" direction: `terminal.open`, `attach`, `write`, `resize`, `clear`,
+`restart`, `close`, `subscribeTerminalEvents`, `subscribeTerminalMetadata`,
+`vcs.switchRef`, `git.runStackedAction`, `git.resolvePullRequest` and
+`git.preparePullRequestThread`. The backend gained all thirteen after the unions
+were first computed on 2026-08-01. Dropping them narrows the contract against a
+deployment rather than against `main`, so it is its own change, and it wants a
+check that the deployed backend serves them.
 
 ## Deleted surfaces
 
@@ -470,8 +523,8 @@ update this file.
 - **Unsupported-method error unions**
   - Paths:
     - `packages/contracts/src/rpc.ts`
-  - Keep one entry per Moatless-unserved method. Recompute as contract WebSocket
-    methods minus backend `ui_rpc/mod.rs` dispatch arms.
+  - Keep one entry per Moatless-unserved method. Recompute; never hand-edit —
+    see Deriving the unsupported set.
 
 - **Surface-gating registry**
   - Paths:
@@ -568,6 +621,9 @@ update this file.
     two have not drifted. Nothing upstream reaches this package. Regenerate with
     `vp run --filter @t3tools/moatless-api generate` after copying a newer
     `openapi-specs.json`; do not hand-edit `src/generated/**`.
+    `customInstance.ts` carries an `@effect-diagnostics-next-line
+globalFetch:off`: the package is deliberately outside Effect, and without it
+    a repo-wide typecheck fails.
 
 - **Moatless administration reads**
   - Paths:
@@ -576,7 +632,9 @@ update this file.
     Deliberately not `createEnvironmentQueryAtomFamily`: that helper waits on the
     environment socket, and administration data is plain HTTP that has no reason
     to blank on a reconnect. If upstream ships a socket-independent query helper,
-    prefer it and delete `query.ts`.
+    prefer it and delete `query.ts`. `query.ts` carries an
+    `@effect-diagnostics-next-line globalErrorInEffectCatch:off` for the same
+    reason `customInstance.ts` carries one — keep it.
 
 - **Moatless administration pages**
   - Paths:
@@ -641,15 +699,19 @@ When upstream ships one of these, prefer upstream and shrink the fork delta.
   - Action: prefer upstream web preview.
 
 - **Unsupported methods**
-  - Watch for: capability list, optional-method marker, handshake metadata,
-    `ServerConfig`, or HTTP `metadata` endpoint.
-  - Action: prefer upstream semantics and collapse 47 error-union entries into
+  - Watch for: an optional-method marker, handshake metadata, `ServerConfig`, or
+    an HTTP `metadata` endpoint — a general way for a server to say it does not
+    serve a method.
+  - Action: prefer upstream semantics and collapse the error-union entries into
     it.
 
 - **Surface gating**
-  - Watch for: `ExecutionEnvironmentCapabilities` or another upstream way to say
-    a build/server does not serve a surface.
-  - Action: prefer upstream and re-point or remove fork flags.
+  - Watch for: new booleans on `ExecutionEnvironmentCapabilities`. Upstream adds
+    one per thread-lifecycle surface — `threadSettlement`, `threadSnooze`, and
+    `threadPinning` as of 2026-08-06.
+  - Action: prefer upstream's capability where one exists and delete the
+    matching `FEATURES` flag. The server decides, so the surface then follows
+    the backend without a fork edit.
 
 - **Web on a phone**
   - Watch for: a swipeable mobile sidebar, a touch affordance for thread-row

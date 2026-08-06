@@ -15,6 +15,19 @@ const BASE = {
 } as const;
 
 describe("PreviewChromeRow", () => {
+  it("shows the complete URL while the address bar is not focused", () => {
+    const markup = renderToStaticMarkup(
+      <PreviewChromeRow
+        {...BASE}
+        url="https://example.com/dashboard?mode=edit&tab=1#notes"
+        onBack={vi.fn()}
+        onForward={vi.fn()}
+      />,
+    );
+
+    expect(markup).toContain('value="https://example.com/dashboard?mode=edit&amp;tab=1#notes"');
+  });
+
   it("renders back and forward where the surface has a history to walk", () => {
     const markup = renderToStaticMarkup(
       <PreviewChromeRow {...BASE} onBack={vi.fn()} onForward={vi.fn()} />,
