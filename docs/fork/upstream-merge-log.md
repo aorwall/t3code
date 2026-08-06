@@ -74,9 +74,14 @@ If an entry runs past a few bullets, the rest belongs in the inventory.
   entry point in v2, no work on the dev proxy or allowed hosts. Upstream did add
   `capabilities.threadPinning` — a third per-surface capability boolean, which
   is where surface gating converges; the watch-list entry now says so.
+- `origin/main` moved under this branch mid-merge (#58, the Moatless
+  administration surfaces) and was merged in. Its only conflict was this
+  directory: #58 converted the inventory from tables to lists so an edit stops
+  re-padding every row, and this branch's four inventory changes were re-stated
+  in that shape.
 - Verification: `pnpm typecheck`, `pnpm lint` and `pnpm fmt:check` clean; the
-  full test suite passes on Node 22.23.2 — web 1924, server 1874, mobile 615,
-  relay 209, client-runtime and contracts included. Two caveats:
+  full test suite passes on Node 22.23.2 — web 1962, server 1874, mobile 615,
+  client-runtime 570, contracts 232, relay 209. Two caveats:
   - `pnpm test` and `pnpm typecheck` need `NODE_OPTIONS=--max-old-space-size`
     raised on an 8-core sandbox. Exit code 137 from a package is the OOM killer,
     not a failure; each one passed run on its own. One mobile test
