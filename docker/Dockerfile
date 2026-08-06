@@ -101,36 +101,36 @@ ARG APK_SECURITY_REFRESH=2026-07-31
 RUN echo "OS security refresh: ${APK_SECURITY_REFRESH}" \
     && apk upgrade --no-cache
 
-# Copy nginx configuration as an envsubst template. The base image entrypoint
-# renders /etc/nginx/templates/*.template into /etc/nginx/conf.d/ at startup,
-# substituting ${CSP_FRAME_SRC} (nginx's own $vars are left untouched — the
-# entrypoint only substitutes names present in the environment).
-COPY docker/nginx.conf /etc/nginx/templates/default.conf.template
+# Staged outside /etc/nginx/templates on purpose: a file there would make the
+# base image entrypoint try to render it into /etc/nginx/conf.d at startup, and
+# under this image's deployment (non-root, readOnlyRootFilesystem, no emptyDir
+# over conf.d — see the moatless-vibe chart's t3-deployment.yaml) that directory
+# is not writable. The entrypoint only warns, so nginx would come up with no
+# server block at all and pass nothing but its own liveness probe. Substituting
+# at build time keeps the config baked and testable, which is the contract the
+# chart already documents for this image.
+COPY docker/nginx.conf /tmp/default.conf.template
 COPY docker/nginx-security-headers.conf /etc/nginx/security-headers.conf
 COPY --from=builder /src/apps/web/dist /usr/share/nginx/html
 
-# Remove the base image's stock server config. The rendered template is the only
-# config; if the entrypoint cannot write it, nginx must fail its probe loudly
-# rather than silently serve the stock block (which 200s `/` but 404s every SPA
-# deep link).
-RUN rm -f /etc/nginx/conf.d/default.conf
+# CSP frame-src value, substituted into the config below. The web build's
+# preview is a cross-origin iframe, so 'self' alone blocks it; `https:` is the
+# minimal allowance covering the external https preview URLs. Override for a
+# cluster whose previews are served over http (e.g. --build-arg
+# CSP_FRAME_SRC="https: http://*.preview.moatless.localhost"). This is a build
+# arg rather than a runtime env var because a runtime value would have to be
+# rendered into a writable conf.d, which this image's deployment does not have.
+ARG CSP_FRAME_SRC="https:"
 
-# CSP frame-src value. The preview panel embeds per-task sandbox servers in a
-# cross-origin iframe, so 'self' alone blocks them. Defaults to the external
-# https preview URLs; local http clusters override it (e.g. to also allow
-# http://*.preview.moatless.localhost).
-ENV CSP_FRAME_SRC="https:"
-
-# Fail the build, not the first request, on a malformed config. envsubst mirrors
-# what the base image entrypoint does at startup: render the template into
-# conf.d, test it, then drop the rendered copy so the entrypoint re-renders it
-# from the runtime environment on boot. The single-name filter keeps nginx's own
-# $vars ($uri, $request_method, …) literal.
-RUN envsubst '${CSP_FRAME_SRC}' \
-        < /etc/nginx/templates/default.conf.template \
+# Fail the build, not the first request, on a malformed config. This is the only
+# place the nginx config is executed before it reaches a cluster. The
+# single-name envsubst filter keeps nginx's own $vars ($uri, $request_method,
+# $csp, …) literal.
+RUN CSP_FRAME_SRC="${CSP_FRAME_SRC}" envsubst '${CSP_FRAME_SRC}' \
+        < /tmp/default.conf.template \
         > /etc/nginx/conf.d/default.conf \
-    && nginx -t \
-    && rm -f /etc/nginx/conf.d/default.conf
+    && rm -f /tmp/default.conf.template \
+    && nginx -t
 
 ARG SOURCE_COMMIT=unknown
 LABEL org.opencontainers.image.title="moatless-t3" \
