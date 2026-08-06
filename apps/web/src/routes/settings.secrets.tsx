@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { NotInT3Yet } from "../components/settings/moatless/NotInT3Yet";
+import { SecretsPanel } from "../components/settings/moatless/SecretsPanel";
 
 function SettingsSecretsRoute() {
-  return <NotInT3Yet title="Secrets" sectionId="secrets" describe="deployment secrets" />;
+  return <SecretsPanel />;
 }
 
 export const Route = createFileRoute("/settings/secrets")({

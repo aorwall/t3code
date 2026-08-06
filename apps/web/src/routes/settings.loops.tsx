@@ -1,15 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { NotInT3Yet } from "../components/settings/moatless/NotInT3Yet";
+import { LoopsPanel } from "../components/settings/moatless/LoopsPanel";
 
 function SettingsLoopsRoute() {
-  return (
-    <NotInT3Yet
-      title="Loops"
-      sectionId="loops"
-      describe="loops that start tasks on a schedule or an event"
-    />
-  );
+  return <LoopsPanel />;
 }
 
 export const Route = createFileRoute("/settings/loops")({
