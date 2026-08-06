@@ -13,7 +13,13 @@ Before taking merge or ownership actions, read
 `docs/fork/upstream-merge-inventory.md`. Treat it as the mutable source of truth
 for fork-owned concerns, path policy, deleted-surface tripwires, fork inventory,
 and convergence checks. Treat `docs/fork/upstream-merge-log.md` as the
-append-only merge decision tracker.
+append-only merge decision tracker, and `docs/fork/gaps.md` as the register of
+work that is not done — on the Moatless backend or in this repository.
+
+The three answer different questions and do not overlap. The inventory says what
+the fork decided and what a merge must carry through. The tracker says what one
+merge did, on one date. The gaps register says what is still missing, and it is
+the only one written for someone who is not currently merging.
 
 Completion for an upstream merge: conflicts are resolved by
 `docs/fork/upstream-merge-inventory.md`, deleted-surface tripwires are checked,
@@ -21,15 +27,17 @@ newly added upstream files in owned concerns are swept, convergence is checked,
 the merge diff is read against both parents and its file counts recorded,
 new upstream features are classified in the PR report, unsupported Moatless
 methods declare `UnsupportedMethodError`, backend behavior worth reproducing in
-Moatless is called out, verification is run or caveated, and
-`docs/fork/upstream-merge-log.md` has a compact dated entry.
+Moatless is called out, verification is run or caveated,
+`docs/fork/upstream-merge-log.md` has a compact dated entry, and anything the
+merge found and did not do is an entry in `docs/fork/gaps.md`.
 
 Completion for a file ownership question: answer with the path policy, the
 fork-owned concern if any, and whether the policy or inventory needs an update.
 
-Completion for a fork-delta change: the implementation is done, and
+Completion for a fork-delta change: the implementation is done,
 `docs/fork/upstream-merge-inventory.md` has any new or changed inventory, path
-policy, tripwire, or convergence rule needed for future merges.
+policy, tripwire, or convergence rule needed for future merges, and any gap the
+change opens or closes is written or struck in `docs/fork/gaps.md`.
 
 ## Policy Meanings
 
@@ -51,6 +59,50 @@ policy, tripwire, or convergence rule needed for future merges.
 - `decide, then add an entry`: make the merge decision now and update
   `docs/fork/upstream-merge-inventory.md` so the next merge does not rediscover
   it.
+
+## The Gaps Register
+
+`docs/fork/gaps.md` has two halves — what Moatless does not serve, and what this
+repository owes independently of it. Every entry is one thing that is not done,
+under whichever half owns the fix.
+
+A gap earns an entry when it is **standing**: something a future merge, or the
+next person to touch the surface, will hit again. A one-merge annoyance goes in
+the tracker entry and nowhere else.
+
+Each entry carries four things, in prose rather than fields:
+
+1. **What is missing**, named concretely — the RPC method, the capability, the
+   suppressed rule. Not "settings are incomplete".
+2. **What it costs**, in terms of what a person can and cannot do. A reader
+   deciding whether to pick the gap up is deciding against this line.
+3. **What holds it open here** — the `FEATURES` flag, the
+   `UnsupportedMethodError` union entry, the fork-only component. This is the
+   part that makes the gap actionable rather than a complaint.
+4. **The check that closes it**, and what to delete here when it passes.
+
+The fourth is the point of the file. The last commit of a backend feature is the
+one that removes its stand-in on this side: a flag left at `true` gates nothing
+and costs a conflict every time upstream edits the code around it, and a union
+entry for a method the backend now serves declares a refusal that can never
+fire. An entry that does not say what to delete will not be finished.
+
+Write a check that recomputes rather than one that compares against the file. A
+count or a list in the register is a snapshot for orientation, and the tripwire,
+`git grep`, or derivation beside it is what is authoritative.
+
+### Maintaining it
+
+- Every gap the merge classified as `Unsupported in Moatless` or
+  `Backend behavior to consider reproducing in Moatless` in step 7 is checked
+  against the register. New ones are added; ones that are now served are struck.
+- Strike an entry in the same change that closes it, together with the flag,
+  union entry, or component it named. Do not leave a "done" entry behind.
+- When a merge finds a gap that is one of several already listed under one
+  heading, extend that entry rather than adding a parallel one. The register is
+  a register, not a log — it has no dated sections and nothing appends to it.
+- An entry that has sat unchanged across several merges is worth a sentence on
+  why it has not moved, so the next reader does not re-derive the answer.
 
 ## Upstream Merge Procedure
 
@@ -121,17 +173,28 @@ Then:
      background-task behavior that would improve Moatless even when the fork
      cannot use the upstream implementation directly.
 
+   The second and third buckets are the input to the next step. The first is
+   not: a feature the fork can already expose has no gap to record.
+
 8. For each newly unsupported WebSocket method, add `UnsupportedMethodError` to
    that method's error union in `packages/contracts/src/rpc.ts`. If the shared
    error type changes or is missing, update `packages/contracts/src/auth.ts`.
    Derive the unsupported set from contract WebSocket methods minus the Moatless
-   backend dispatch arms instead of editing by intuition.
-9. Run `pnpm typecheck && pnpm test && pnpm lint && pnpm fmt:check`, or record
-   the exact skipped or failing checks in the tracker.
-10. Append a compact dated tracker entry with upstream head/base, the two file
+   backend dispatch arms instead of editing by intuition. The derivation runs in
+   both directions and both directions are findings: a method the backend has
+   started serving is a union entry to drop, not a no-op.
+9. Reconcile `docs/fork/gaps.md` against what steps 7 and 8 found. Add an entry
+   for anything standing that is not already there, extend the entry that
+   already covers it when one does, and strike anything the backend now serves —
+   along with the flag or union entry that stood in for it. See The Gaps Register
+   above for what an entry holds. A drift the merge deliberately did not act on
+   is an entry with its reason, not a bullet in the tracker.
+10. Run `pnpm typecheck && pnpm test && pnpm lint && pnpm fmt:check`, or record
+    the exact skipped or failing checks in the tracker.
+11. Append a compact dated tracker entry with upstream head/base, the two file
     counts from step 6, conflict decisions, owned-surface sweep decisions, and
-    verification.
-11. Put the feature classification in the PR body or PR summary. Include
+    verification. Link the gaps entry rather than restating it.
+12. Put the feature classification in the PR body or PR summary. Include
     `Usable as-is`, `Unsupported in Moatless / needs implementation`, and
     `Backend behavior to consider reproducing in Moatless`, even when a list is
     empty.
@@ -149,3 +212,14 @@ points when possible.
 Keep unsupported-method declarations honest in both directions: a method that
 gains a Moatless implementation loses its `UnsupportedMethodError` union entry
 in the same change, and a method dropped by the backend gains one.
+
+Nothing in this fork stands in for a backend feature silently. A surface the
+backend cannot serve is a `FEATURES` flag, a method it does not dispatch is a
+union entry, and both are named in `docs/fork/gaps.md` with the check that
+retires them. A stand-in with no entry is indistinguishable from a decision the
+fork made on purpose, and the next merge will treat it as one.
+
+Land upstream with a merge commit. A cherry-pick moves the code without moving
+the merge base, so the next merge replays commits that are already in,
+re-conflicts files already identical to upstream, and reports file counts that
+do not reconcile until someone works out why by hand.

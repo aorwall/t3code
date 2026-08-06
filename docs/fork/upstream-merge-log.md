@@ -8,7 +8,9 @@ resolved, what a sweep or tripwire found, what is unverified, and which
 verification failures are the machine rather than the code. Why a fork decision
 was made is not that — put the durable form in
 [the merge inventory](./upstream-merge-inventory.md) and link the row from here.
-If an entry runs past a few bullets, the rest belongs in the inventory.
+If an entry runs past a few bullets, the rest belongs in the inventory. Work a
+merge found and did not do belongs in [the fork gaps](./gaps.md), not in a
+bullet here that no one will read again.
 
 ## Entry template
 

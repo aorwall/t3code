@@ -4,7 +4,9 @@ This is the mutable fork policy and inventory used by the project-local
 [`fork-upstream-merge`](../../.agents/skills/fork-upstream-merge/SKILL.md)
 skill. Keep stable merge procedure and policy definitions in the skill. Keep
 durable ownership rules, tripwires, inventory, and convergence rules here. Keep
-dated merge decisions in [the upstream merge tracker](./upstream-merge-log.md).
+dated merge decisions in [the upstream merge tracker](./upstream-merge-log.md),
+and what is still missing — on the backend or here — in
+[the fork gaps](./gaps.md).
 
 Entries are lists, not tables. A Markdown table is re-padded across every one of
 its rows when a single cell changes width, so adding one path used to rewrite
@@ -355,7 +357,8 @@ it now" direction: `terminal.open`, `attach`, `write`, `resize`, `clear`,
 `git.preparePullRequestThread`. The backend gained all thirteen after the unions
 were first computed on 2026-08-01. Dropping them narrows the contract against a
 deployment rather than against `main`, so it is its own change, and it wants a
-check that the deployed backend serves them.
+check that the deployed backend serves them. Tracked in
+[the fork gaps](./gaps.md); recompute rather than trusting the list above.
 
 ## Deleted surfaces
 
