@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { NotInT3Yet } from "../components/settings/moatless/NotInT3Yet";
+import { UsersPanel } from "../components/settings/moatless/UsersPanel";
 
 function SettingsUsersRoute() {
-  return <NotInT3Yet title="Users" sectionId="users" describe="user accounts and roles" />;
+  return <UsersPanel />;
 }
 
 export const Route = createFileRoute("/settings/users")({

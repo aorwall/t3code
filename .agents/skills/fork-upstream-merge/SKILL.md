@@ -42,13 +42,13 @@ policy, tripwire, or convergence rule needed for future merges.
 - `converged`: take upstream wholesale, then re-apply only the listed fork
   deltas. The listed delta describes what must survive; it is not a patch to
   replay. If upstream restructured the file so the delta no longer has an
-  anchor, the row is stale: resolve as `decide` and rewrite the row in the same
-  merge.
+  anchor, the entry is stale: resolve as `decide` and rewrite the entry in the
+  same merge.
 - `decide`: the fork changed a file upstream still owns, and upstream changes to
   it are still wanted. There is no cached verdict. Read upstream's side of the
-  conflict every merge and decide it there. The Fork Inventory row names the
+  conflict every merge and decide it there. The Fork Inventory entry names the
   behavior that must survive; it does not name a winner.
-- `decide, then add a row`: make the merge decision now and update
+- `decide, then add an entry`: make the merge decision now and update
   `docs/fork/upstream-merge-inventory.md` so the next merge does not rediscover
   it.
 

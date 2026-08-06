@@ -45,16 +45,17 @@ If an entry runs past a few bullets, the rest belongs in the inventory.
   cherry-pick artefact above: took upstream. `pnpm-lock.yaml` took upstream and
   was regenerated. The seven fork conflicts:
   - `ChatView.tsx` — kept the `SandboxedRightPanelTabs` alias beside upstream's
-    new `AgentsPanel` imports. Row: _Sandbox lifecycle controls_.
+    new `AgentsPanel` imports. Entry: _Sandbox lifecycle controls_.
   - `RightPanelTabs.tsx` — kept the sandbox disabled-state branch, took
     upstream's `data-right-panel-surface-content`.
   - `SidebarV2.tsx` — upstream added thread pinning and restructured the
     partition memo. Took upstream whole and re-stated the
     `FEATURES.prThreadSettling` gate inside it; kept the `archive` row item.
-    Rows: _PR-driven settling gate_, _Archive in the sidebar v2 row menu_.
+    Entries: _PR-driven settling gate_, _Archive in the sidebar v2 row menu_.
   - `PreviewPanel.tsx`, `PreviewView.tsx` and their tests — took upstream's
     annotation send-through and full-URL chrome row, kept the hosted-frame
-    delta and the fork's removal of `configuredUrls`. Row: _Hosted web preview_.
+    delta and the fork's removal of `configuredUrls`. Entry: _Hosted web
+    preview_.
   - `PreviewChromeRow.test.tsx` — add/add. Upstream now owns this path; the
     fork's two cases sit beside upstream's. Path policy updated.
 - Sweep: five `apps/server/src/cloud/service*.ts` hits, the same systemd
@@ -72,7 +73,7 @@ If an entry runs past a few bullets, the rest belongs in the inventory.
   only, no upstream thread-server concept, no message-origin field, no archive
   entry point in v2, no work on the dev proxy or allowed hosts. Upstream did add
   `capabilities.threadPinning` — a third per-surface capability boolean, which
-  is where surface gating converges; the watch-list row now says so.
+  is where surface gating converges; the watch-list entry now says so.
 - Verification: `pnpm typecheck`, `pnpm lint` and `pnpm fmt:check` clean; the
   full test suite passes on Node 22.23.2 — web 1924, server 1874, mobile 615,
   relay 209, client-runtime and contracts included. Two caveats:
@@ -85,7 +86,7 @@ If an entry runs past a few bullets, the rest belongs in the inventory.
     `packages/moatless-api/src/customInstance.ts` (`globalFetch`) and
     `apps/web/src/moatless/query.ts` (`globalErrorInEffectCatch`). Both landed
     with CI disabled, so nothing had run the check. Recorded in their inventory
-    rows.
+    entries.
 - Not verified in a browser.
 
 ### 2026-08-03 — the chat drops the terminal-drawer toggle

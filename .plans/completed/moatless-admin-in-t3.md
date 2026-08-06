@@ -1,8 +1,25 @@
 # Moatless administration as T3 Code settings pages
 
-> **Status:** in progress
-> **Updated:** 2026-08-05
+> **Status:** shipped
+> **Updated:** 2026-08-06
 > **Vocabulary:** CONTEXT.md (moatless repo)
+
+**What shipped (2026-08-06).** Every surface in this spec is built. Workspaces and its Repositories
+catalog landed first (#49, #50); Secrets, Loops, Integrations, Skills and Users were built on their
+own branches and then combined into one change, each verified in the browser against staging and
+each write path exercised on throwaway records.
+
+Combining them was the right call rather than a convenience: all five extend the deliberately-shared
+`apps/web/src/components/settings/moatless/queries.ts`, so as separate branches they conflicted
+pairwise on its import block and export list — and a hand-resolved import block is where a query
+quietly goes missing. Merged as one change the resolution happens once, under one type check. Two
+real defects fell out of doing it that way and would have been easy to miss four times over: a
+duplicated `RepositoryResponse` type import, and a dropped `import {` opener on the plugins block.
+
+Combining also unblocked the two follow-ups this spec had been deferring, because both were blocked
+only by the surfaces being separate PRs: `NotInT3Yet.tsx` is deleted — no surface renders a
+placeholder any more, so the file its own comment said to remove with the last usage is gone — and
+this spec moves to `.plans/completed/`.
 
 ## Current solution
 
@@ -132,7 +149,7 @@ the surface is dropped rather than ported.
 - `t3code/apps/web/src/moatless/session.ts` — the viewer's Moatless role, read once.
 - `t3code/apps/web/src/components/settings/moatless/` — one panel component per administrative surface.
 - `t3code/apps/web/src/routes/settings.workspaces.tsx` and six siblings, plus four `$id` detail routes.
-- `t3code/apps/web/src/components/settings/moatless/NotInT3Yet.tsx` — the placeholder a surface shows until its real panel lands.
+- `t3code/apps/web/src/components/settings/moatless/NotInT3Yet.tsx` — the placeholder a surface showed until its real panel landed. Deleted once the last surface shipped; it exists nowhere in the final tree.
 
 **Changes materially**
 
@@ -296,12 +313,6 @@ the search is the second way into every section.
 |---|---|---|
 | `/settings/workspaces` | `WorkspacesPanel` | Workspaces (list, `headerAction` = add) |
 | `/settings/workspaces/$id` | `WorkspaceDetailPanel` | General · Repositories · Run configuration · Access · Danger |
-
-The detail route's file is `settings.workspaces_.$workspaceId.tsx`, with the trailing underscore
-TanStack Router reads as "do not nest under the segment before me" (the same convention as
-`connect_.callback.tsx`). Without it the file-based tree makes `settings.workspaces.tsx` the
-detail route's parent, and that file renders `WorkspacesPanel` with no `<Outlet />` — so the
-detail page never mounts and `/settings/workspaces/ws_…` silently renders the list.
 | `/settings/loops` | `LoopsPanel` | Loops (list, add) |
 | `/settings/loops/$id` | `LoopDetailPanel` | The loop form |
 | `/settings/integrations` | `IntegrationsPanel` | Connections · Apps · GitHub |
@@ -310,6 +321,12 @@ detail page never mounts and `/settings/workspaces/ws_…` silently renders the 
 | `/settings/secrets` | `SecretsPanel` | Secrets |
 | `/settings/users` | `UsersPanel` | Users |
 | `/settings/users/$login` | `UserDetailPanel` | One user |
+
+The detail route's file is `settings.workspaces_.$workspaceId.tsx`, with the trailing underscore
+TanStack Router reads as "do not nest under the segment before me" (the same convention as
+`connect_.callback.tsx`). Without it the file-based tree makes `settings.workspaces.tsx` the
+detail route's parent, and that file renders `WorkspacesPanel` with no `<Outlet />` — so the
+detail page never mounts and `/settings/workspaces/ws_…` silently renders the list.
 
 #### Key flow — reading an administration page
 
@@ -427,7 +444,7 @@ Loop `repository_id` debt is already recorded in the `Loop` entry.
 | Unsaved edits, navigating away | Dirty form | Unchanged | A warning | n/a | Port `moatless/apps/frontend/src/lib/hooks/use-dirty-form.ts` verbatim — 30 lines, no dependencies |
 | Editing a `git`-sourced Workspace | `source = git` | Unchanged until overridden | A banner saying it is declared in a repository, and that editing requires an override | n/a | `POST /api/v1/workspaces/{id}/override` is explicit and keeps provenance; never override implicitly on the first keystroke |
 | Checked-in `openapi-specs.json` older than the backend | Building | Build fails | CI failure with the diff | n/a | See "Testing and verification" |
-| A surface's route exists but the panel does not | n/a | Unchanged | A placeholder saying so | n/a | `NotInT3Yet`, parameterised by surface |
+| A surface's route exists but the panel does not | n/a | Unchanged | A placeholder saying so | n/a | `NotInT3Yet`, parameterised by surface — the transitional state during rollout; no surface is in it now |
 
 **The two repository operations with no Workspace to live on.** `convert-to-template`
 (`moatless/backend/src/repository/handlers.rs:497`) marks a Repository deliberately in no Workspace
@@ -461,8 +478,8 @@ sits below them, and each piece has a seam that does not need a browser.
 
 | Seam | Module | What is proven |
 |---|---|---|
-| Pure logic | `apps/web/src/moatless/skillRows.ts` | Given plugins, skills, activations and the effective set, the rows a Skills section renders — including source-off-with-skill-on, and Inherit versus off |
-| Pure logic | `apps/web/src/moatless/repoPlacement.ts` | Ordering, primary selection, and which invalidations a placement change implies |
+| Pure logic | `apps/web/src/components/settings/moatless/skillRows.ts` | Given plugins, skills, activations and the effective set, the rows a Skills section renders — including source-off-with-skill-on, and Inherit versus off |
+| Pure logic | `apps/web/src/components/settings/moatless/workspaceSummary.ts`, `workspaceDetail.ts` | Ordering, primary selection, and which invalidations a placement change implies |
 | Query helper | `apps/web/src/moatless/query.ts` | A query resolves without any socket state present; `Atom.swr` serves cached then revalidates; `invalidate` refetches the named keys |
 | HTTP mutator | `packages/moatless-api/customInstance.ts` | `errorMessage` extracts from `{error}`, `{error:{message}}`, `{message}`, `{detail}`; a 401 raises the signed-out path; an empty `statusText` never reaches the UI |
 | Nav and guard | `SettingsSidebarNav`, `routes/settings.tsx` | An admin sees the group; a non-admin does not and is redirected; search returns administration items only for an admin |
@@ -505,7 +522,7 @@ legible without explanation. Check each new page against `/settings/providers` s
 - **Given** the chat socket is disconnected, **when** an admin uses any administration page, **then** it loads and saves normally.
 - **Given** a Plugin source whose global default is off and one skill with a global record turning it on, **when** the Skills page renders, **then** the source reads default-off and that skill reads on.
 - **Given** a skill with no record, **when** the admin clears an adjacent skill's record, **then** that row returns to Inherit and not to off.
-- **Given** a surface that is not built, **when** an admin opens it, **then** the placeholder names the surface and links to the same page in the Moatless SPA.
+- **Given** a surface that is not built, **when** an admin opens it, **then** the placeholder names the surface and what it will hold, and does _not_ link out into the Moatless SPA — see the placeholder decision above, which deliberately changed this from the approved page so the sidebar stays one product.
 - **Given** the backend's API description has changed, **when** CI runs, **then** the staleness check fails with the diff.
 - **Given** the whole change, **when** the existing API-level specs in `moatless/tests/` run, **then** they pass unchanged.
 

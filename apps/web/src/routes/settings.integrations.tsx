@@ -1,15 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { NotInT3Yet } from "../components/settings/moatless/NotInT3Yet";
+import { IntegrationsPanel } from "../components/settings/moatless/IntegrationsPanel";
 
 function SettingsIntegrationsRoute() {
-  return (
-    <NotInT3Yet
-      title="Integrations"
-      sectionId="integrations-connections"
-      describe="adapter connections, apps and GitHub installations"
-    />
-  );
+  return <IntegrationsPanel />;
 }
 
 export const Route = createFileRoute("/settings/integrations")({
