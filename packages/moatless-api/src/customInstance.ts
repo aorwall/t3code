@@ -29,6 +29,23 @@ export interface MoatlessResponse<T = unknown> {
   readonly headers: Headers;
 }
 
+/**
+ * A failure that is neither of the two below.
+ *
+ * Nothing in this package raises it: the two classes beside it cover every way
+ * a generated call can fail. It exists so a caller's error channel can be a
+ * tagged union rather than `Error`, and still have somewhere to put a value
+ * that reached it from outside that contract.
+ */
+export class MoatlessUnexpectedError extends Error {
+  readonly _tag = "MoatlessUnexpectedError";
+
+  constructor(message: string, options?: { readonly cause?: unknown }) {
+    super(message, options);
+    this.name = "MoatlessUnexpectedError";
+  }
+}
+
 /** The request never reached a Moatless response. Not an HTTP status. */
 export class MoatlessTransportError extends Error {
   readonly _tag = "MoatlessTransportError";
@@ -143,12 +160,6 @@ export const customInstance = async <T>(
   const href = target.toString();
   let response: Response;
   try {
-    // The repo-wide Effect rule wants `HttpClient` here. This package is the
-    // orval-generated Moatless REST client and is deliberately outside Effect:
-    // administration reads are plain HTTP with a cookie, and an `HttpClient`
-    // would put a runtime and a layer between orval's generated call and the
-    // request it is meant to make.
-    // @effect-diagnostics-next-line globalFetch:off
     response = await fetch(href, { ...options, credentials: "include" });
   } catch (cause) {
     throw new MoatlessTransportError(href, cause);
@@ -185,4 +196,17 @@ export function ok<T>(response: MoatlessResponse<unknown>): T {
     response.status,
     response.data,
   );
+}
+
+/** Every way a call through this client fails, as one tagged union. */
+export type MoatlessError = MoatlessRequestError | MoatlessTransportError | MoatlessUnexpectedError;
+
+/** Any thrown value as the tagged union above. */
+export function asMoatlessError(cause: unknown): MoatlessError {
+  if (cause instanceof MoatlessRequestError) return cause;
+  if (cause instanceof MoatlessTransportError) return cause;
+  if (cause instanceof MoatlessUnexpectedError) return cause;
+  return new MoatlessUnexpectedError(cause instanceof Error ? cause.message : String(cause), {
+    cause,
+  });
 }

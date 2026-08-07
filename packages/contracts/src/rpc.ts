@@ -584,22 +584,14 @@ export const WsVcsRefreshStatusRpc = Rpc.make(WS_METHODS.vcsRefreshStatus, {
 export const WsGitRunStackedActionRpc = Rpc.make(WS_METHODS.gitRunStackedAction, {
   payload: GitRunStackedActionInput,
   success: GitActionProgressEvent,
-  error: Schema.Union([
-    GitManagerServiceError,
-    EnvironmentAuthorizationError,
-    UnsupportedMethodError,
-  ]),
+  error: Schema.Union([GitManagerServiceError, EnvironmentAuthorizationError]),
   stream: true,
 });
 
 export const WsGitResolvePullRequestRpc = Rpc.make(WS_METHODS.gitResolvePullRequest, {
   payload: GitPullRequestRefInput,
   success: GitResolvePullRequestResult,
-  error: Schema.Union([
-    GitManagerServiceError,
-    EnvironmentAuthorizationError,
-    UnsupportedMethodError,
-  ]),
+  error: Schema.Union([GitManagerServiceError, EnvironmentAuthorizationError]),
 });
 
 export const WsGitPreparePullRequestThreadRpc = Rpc.make(WS_METHODS.gitPreparePullRequestThread, {
@@ -670,40 +662,40 @@ export const WsReviewGetDiffFileContentsRpc = Rpc.make(WS_METHODS.reviewGetDiffF
 export const WsTerminalOpenRpc = Rpc.make(WS_METHODS.terminalOpen, {
   payload: TerminalOpenInput,
   success: TerminalSessionSnapshot,
-  error: Schema.Union([TerminalError, EnvironmentAuthorizationError, UnsupportedMethodError]),
+  error: Schema.Union([TerminalError, EnvironmentAuthorizationError]),
 });
 
 export const WsTerminalAttachRpc = Rpc.make(WS_METHODS.terminalAttach, {
   payload: TerminalAttachInput,
   success: TerminalAttachStreamEvent,
-  error: Schema.Union([TerminalError, EnvironmentAuthorizationError, UnsupportedMethodError]),
+  error: Schema.Union([TerminalError, EnvironmentAuthorizationError]),
   stream: true,
 });
 
 export const WsTerminalWriteRpc = Rpc.make(WS_METHODS.terminalWrite, {
   payload: TerminalWriteInput,
-  error: Schema.Union([TerminalError, EnvironmentAuthorizationError, UnsupportedMethodError]),
+  error: Schema.Union([TerminalError, EnvironmentAuthorizationError]),
 });
 
 export const WsTerminalResizeRpc = Rpc.make(WS_METHODS.terminalResize, {
   payload: TerminalResizeInput,
-  error: Schema.Union([TerminalError, EnvironmentAuthorizationError, UnsupportedMethodError]),
+  error: Schema.Union([TerminalError, EnvironmentAuthorizationError]),
 });
 
 export const WsTerminalClearRpc = Rpc.make(WS_METHODS.terminalClear, {
   payload: TerminalClearInput,
-  error: Schema.Union([TerminalError, EnvironmentAuthorizationError, UnsupportedMethodError]),
+  error: Schema.Union([TerminalError, EnvironmentAuthorizationError]),
 });
 
 export const WsTerminalRestartRpc = Rpc.make(WS_METHODS.terminalRestart, {
   payload: TerminalRestartInput,
   success: TerminalSessionSnapshot,
-  error: Schema.Union([TerminalError, EnvironmentAuthorizationError, UnsupportedMethodError]),
+  error: Schema.Union([TerminalError, EnvironmentAuthorizationError]),
 });
 
 export const WsTerminalCloseRpc = Rpc.make(WS_METHODS.terminalClose, {
   payload: TerminalCloseInput,
-  error: Schema.Union([TerminalError, EnvironmentAuthorizationError, UnsupportedMethodError]),
+  error: Schema.Union([TerminalError, EnvironmentAuthorizationError]),
 });
 
 export const WsPreviewOpenRpc = Rpc.make(WS_METHODS.previewOpen, {
@@ -909,14 +901,14 @@ export const WsOrchestrationSubscribeThreadRpc = Rpc.make(
 export const WsSubscribeTerminalEventsRpc = Rpc.make(WS_METHODS.subscribeTerminalEvents, {
   payload: Schema.Struct({}),
   success: TerminalEvent,
-  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
+  error: EnvironmentAuthorizationError,
   stream: true,
 });
 
 export const WsSubscribeTerminalMetadataRpc = Rpc.make(WS_METHODS.subscribeTerminalMetadata, {
   payload: Schema.Struct({}),
   success: TerminalMetadataStreamEvent,
-  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
+  error: EnvironmentAuthorizationError,
   stream: true,
 });
 

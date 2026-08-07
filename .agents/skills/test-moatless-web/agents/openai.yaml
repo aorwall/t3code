@@ -1,0 +1,4 @@
+interface:
+  display_name: "Moatless Web Testing"
+  short_description: "Run the web client against a Moatless Rust backend"
+  default_prompt: "Use $test-moatless-web to run this fork's web client against a Moatless backend and test it in the browser."

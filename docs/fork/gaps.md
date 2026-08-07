@@ -30,24 +30,42 @@ placeholder leave the tree in the same commit.
 
 ## Moatless
 
-### Capabilities are not reported
-
-The largest single gap, because it subsumes several below.
+### Capabilities are reported, but not the ones the newer surfaces need
 
 Upstream has a per-surface capability record on the wire —
-`ExecutionEnvironmentCapabilities`, with `threadSettlement`, `threadSnooze` and
-`threadPinning` as of 2026-08-06 — and it grows one boolean per thread-lifecycle
-surface. A server that answers it decides what the client shows, and this fork's
-entire `FEATURES` constant is a build-time stand-in for exactly that answer.
+`ExecutionEnvironmentCapabilities`, growing one boolean per thread-lifecycle
+surface as upstream adds them.
 
-Moatless reports none of them, so every gated surface here is decided by a
-constant compiled into the image rather than by the deployment it is talking to.
-That is why turning a surface on is currently a code change and a rebuild.
+Moatless does populate it: the descriptor reports `connectionProbe`,
+`threadSettlement`, `threadSnooze` and `repositoryIdentity: false`, so a client
+can tell it apart from a server that refuses settlement or snooze. What it does
+not report is every boolean added since that handshake was written —
+`threadPinning` (upstream, 2026-08-06), `threadTitleRegeneration`,
+`serverSelfUpdate` and `serverSelfUpdateProgress` — so each of those surfaces is
+decided by the record's decoding default (absent → unsupported) rather than by a
+statement from the deployment. That is correct for the ones the backend does not
+implement and stale the day it does.
 
-- **Closes when:** the backend populates `ExecutionEnvironmentCapabilities` in
-  its handshake.
-- **Then here:** delete the matching `FEATURES` flags and their gates. See
-  _Surface gating_ in the convergence watch list.
+Two keys it reports are not in the contract at all — `userInputResponse` and
+`sandboxDiagnostics`, both fork-invented in `crates/t3code/src/lib.rs`. They are
+not in `packages/contracts/src/environment.ts`, so Effect Schema drops them on
+decode and no client reads them: the backend is answering a question the wire
+never asks. Either add them to `ExecutionEnvironmentCapabilities` (a fork delta
+on an upstream contract file) or stop sending them; today they are dead weight
+on the handshake.
+
+The `FEATURES` constant is a separate mechanism, not a stand-in for this record.
+The record only ever grows booleans for thread-lifecycle surfaces; the surfaces
+`FEATURES` gates — `projectScripts`, `turnDiffs`, `diagnostics`,
+`workspaceSearchContents` and the rest — have no boolean in it and never will.
+Those stay a build-time constant because there is nothing on the wire that would
+carry them.
+
+- **Closes when:** the backend reports each new thread-lifecycle boolean it comes
+  to implement, and drops or contract-registers the two fork-invented keys.
+- **Then here:** for a boolean that gates a `FEATURES` flag (pinning is the near
+  one — see _Settlement rules Moatless owns_), delete the flag and its gates when
+  the backend reports it true.
 
 ### Methods the backend does not dispatch
 
@@ -141,6 +159,30 @@ code on four upstream files.
   field on `OrchestrationMessage` — in which case prefer upstream's shape.
 - **Then here:** Message Origin Delta in the inventory.
 
+### Subagents do not carry the identity the Agents surface folds on
+
+Upstream's 2026-08-06 merge added the Agents surface (`#5219`): a right panel,
+a chat spawn CTA, and a background-liveness banner, all folded from the thread's
+`task.*` activities by `foldSubagentActivities`. That fold keys its roster by
+`payload.taskId` and admits only rows stamped `payload.agentKind: "agent"` — an
+unstamped row is background work that stays in the work log. Moatless already
+reported a subagent call as a task rather than a tool, but carried neither
+field, so the panel rendered "No agents yet" on every thread and the chat showed
+no spawn row.
+
+A backend change stamps both on the subagent row — `taskId` from the call's
+`tool_use_id` (which the subagent's own Messages already carry as `parent_uuid`),
+`agentKind: "agent"`, plus `role`, `title`, and `typedUsage` summed over
+`task_message_usage`. It does not reach `backgroundLiveness` on the thread shell,
+so the composer's background banner stays absent until the backend computes that
+too.
+
+- **Closes when:** the stamping change is deployed. Then the panel folds a real
+  roster and the spawn CTA anchors in the chat.
+- **Then here:** nothing to delete — the Agents surface is unconditionally shown
+  (no `FEATURES` gate), so there is no placeholder, only an empty panel that
+  fills once the fields arrive.
+
 ### Settlement rules Moatless owns
 
 Upstream added thread pinning in the 2026-08-06 merge along with a rule worth
@@ -158,45 +200,39 @@ all three as one lifecycle and Moatless implements one of them.
 
 ## This fork
 
-### Thirteen union entries are stale
+### Two union entries refuse conditionally; the other eleven were dropped
 
-`terminal.open`, `attach`, `write`, `resize`, `clear`, `restart`, `close`,
-`subscribeTerminalEvents`, `subscribeTerminalMetadata`, `vcs.switchRef`,
-`git.runStackedAction`, `git.resolvePullRequest` and
-`git.preparePullRequestThread` all declare `UnsupportedMethodError` and are all
-dispatched by the backend. The backend gained them after the unions were first
-computed on 2026-08-01, and the 2026-08-06 merge deliberately did not drop them:
-removing them narrows the contract against a deployment rather than against
-`main`, which is its own change and wants a check that the deployed backend
-actually serves them.
+Eleven methods that declared `UnsupportedMethodError` and never refuse had it
+removed once the deployed backend was confirmed to serve them: the seven
+`terminal.*`, `subscribeTerminalEvents`, `subscribeTerminalMetadata`,
+`git.runStackedAction` and `git.resolvePullRequest`. The check was the one this
+entry used to ask for — deployed `serverVersion` is `0.0.31`, the same the
+checkout implements; `main` dispatches all eleven with no `unsupported_exit` in
+their arms; and terminals work in the deployed app, which is the live proof the
+`terminal.*` half is served.
 
-- **Check:** `moat gh api repos/soaplabs/moatless/contents/crates/t3code/src/lib.rs`
-  gives the dispatch on `main`. What is deployed is the question this needs
-  answered before the entries come out.
+Two of the original thirteen kept the union member, because _dispatched_ is not
+_never refuses_: their arm in `crates/t3code/src/lib.rs` still returns
+`unsupported_exit` on a real branch, and a client that dropped the member would
+fail to decode a refusal it will actually receive.
 
-### Two Effect rules are suppressed rather than satisfied
+- `vcs.switchRef` — refuses when the thread already has a checkout. A branch is
+  fixed at Task creation, so switching it on an existing thread is unsupported;
+  only a draft thread's switch is served (it echoes the ref).
+- `git.preparePullRequestThread` — refuses `WorktreeUnsupported`. This surface
+  prepares a branch, never a worktree on disk.
 
-Both landed in `#58` and both failed a repo-wide typecheck before the 2026-08-06
-merge, which is when anyone first ran one. They now carry a narrow
-`@effect-diagnostics-next-line` with the reason, which unblocks verification and
-is not a fix:
-
-- `packages/moatless-api/src/customInstance.ts` — `globalFetch`. The generated
-  orval client calls `fetch` directly. The rule wants `HttpClient`, which would
-  put an Effect runtime and a layer between orval's generated call and the
-  request.
-- `apps/web/src/moatless/query.ts` — `globalErrorInEffectCatch`. The error
-  channel is `Error`, not a tagged error. The two failures it can carry are
-  already distinct classes and every reader renders `.message`.
-
-Neither is hard to do properly; both are a refactor rather than a line.
+- **Check before dropping either:** grep `unsupported_exit` in the method's arm.
+  A method whose arm can still reach it keeps the union member; one whose arm
+  never can, and which the deployment dispatches, drops it.
 
 ### Nothing checks a pull request
 
 Every inherited workflow is `disabled_manually`, including `ci.yml`. The one
 active workflow, `build-moatless-t3-image.yml`, builds and pushes the image and
 runs no typecheck, lint or test. So a fork PR is green when nothing has been
-run, which is exactly how the two suppressions above reached `main`.
+run, which is how the two Effect-rule suppressions this fork carried reached
+`main` unnoticed before they were fixed.
 
 The disabling was deliberate — upstream's CI targets GitHub-hosted runners that
 do not start in this fork, and re-enabling `ci.yml` as-is would fail on the
@@ -220,15 +256,21 @@ path is worse than an unused one, so this wants to be one change per surface.
 Pairing is also the largest of the three and the one that leaks into docs — see
 below.
 
-### The `test-t3-app` skill describes the wrong product
+### Mobile testing against Moatless is undocumented because it is unverified
 
-`.agents/skills/test-t3-app/SKILL.md` still instructs an agent to start the
-bundled T3 server and authenticate through a one-time pairing URL. This fork's
-web client authenticates by Moatless cookie session against `/login`, and pairing
-is decided out. An agent following the skill sets up the stack the fork does not
-use. Flagged stale on 2026-07-30 and still stale.
+`.agents/skills/test-moatless-web/SKILL.md` is the fork-owned procedure for the
+web client: proxy target, single-origin mode, and Moatless cookie sign-in at
+`/login`, each verified against a running backend. `test-t3-app` and
+`test-t3-mobile` are upstream files kept byte-identical apart from a scope note
+at the top routing Moatless web work to the new skill — a rewrite of either
+would be a permanent conflict on a doc upstream still maintains, bought for
+nothing the note does not already buy.
 
-`test-t3-mobile` inherits the same assumption through its pairing steps.
+What stays open is mobile. `test-t3-mobile` pairs a device against the bundled
+server, and whether this fork's mobile client can reach a Moatless backend at
+all is unknown — so its scope note says the assumption is unverified rather
+than substituting a procedure nobody has run. Answering that question is the
+work; documenting it is the easy part that follows.
 
 ### Merges must be merge commits
 
@@ -249,9 +291,15 @@ concurrency. Exit code 137 from a package is the OOM killer and not a failure �
 each one passes run on its own, and `nativeReviewDiffHighlighter` in
 `apps/mobile` fails only under that pressure.
 
-`NODE_OPTIONS="--max-old-space-size=12288"` is the workaround. Lowering the task
-runner's concurrency in the repo rather than in each person's shell is the fix,
-and it is a prerequisite for the CI job above.
+`NODE_OPTIONS="--max-old-space-size=12288"` is the workaround, and it is a
+prerequisite for the CI job above.
+
+Lowering concurrency in the repo is the tempting fix and is not ours to make.
+Root `package.json` has no fork delta at all, and upstream already caps
+`typecheck` at `--concurrency-limit 2` while leaving `test` uncapped — so the
+asymmetry is a choice upstream made with the flag in hand, not an oversight.
+Capping `test` here would open a fresh delta on a hot upstream file to pay for
+one machine size. Raise it upstream, or keep it in the environment.
 
 ### `T3CODE_ALLOWED_HOSTS` is an alias to retire
 

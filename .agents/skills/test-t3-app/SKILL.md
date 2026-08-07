@@ -5,6 +5,12 @@ description: Launch, retain, and test the T3 Code web app in isolated developmen
 
 # Test T3 App
 
+This fork's web client runs against a Moatless Rust backend and signs in with a
+Moatless session cookie; it does not use the bundled T3 server or pairing. For
+web testing here, use [`test-moatless-web`](../test-moatless-web/SKILL.md)
+instead. The rest of this skill describes the bundled server, which the fork
+keeps for the surfaces that still run on it.
+
 Use this skill for the web client. For iOS Simulator, Android Emulator, or physical-device testing against an isolated T3 backend, use the sibling [`test-t3-mobile`](../test-t3-mobile/SKILL.md) skill.
 
 ## Start an isolated web environment

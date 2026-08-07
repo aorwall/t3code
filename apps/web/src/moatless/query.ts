@@ -6,8 +6,9 @@ import { AsyncResult, Atom } from "effect/unstable/reactivity";
 import { useCallback, useMemo, useState } from "react";
 
 import {
-  MoatlessRequestError,
-  MoatlessTransportError,
+  MoatlessUnexpectedError,
+  asMoatlessError,
+  type MoatlessError,
   type MoatlessResponse,
   ok,
 } from "@t3tools/moatless-api/customInstance";
@@ -47,7 +48,7 @@ const DEFAULT_IDLE_TTL_MS = 5 * 60_000;
  */
 export interface MoatlessQuery<A> {
   readonly key: string;
-  readonly atom: Atom.Atom<AsyncResult.AsyncResult<A, Error>>;
+  readonly atom: Atom.Atom<AsyncResult.AsyncResult<A, MoatlessError>>;
 }
 
 const queryFamily = Atom.family((key: string) => {
@@ -56,21 +57,15 @@ const queryFamily = Atom.family((key: string) => {
     // Unreachable through `moatlessQuery`, which registers before it reads.
     // Failing loudly beats an atom that resolves to nothing forever.
     return Atom.make(
-      AsyncResult.failure<never, Error>(
-        Cause.fail(new Error(`No Moatless query registered for "${key}"`)),
+      AsyncResult.failure<never, MoatlessError>(
+        Cause.fail(new MoatlessUnexpectedError(`No Moatless query registered for "${key}"`)),
       ),
     );
   }
   return Atom.make(
-    // The repo-wide Effect rule wants a tagged error here. The two failures
-    // this can produce are already distinct classes — `MoatlessRequestError`
-    // and `MoatlessTransportError` — and every reader of a Moatless query
-    // renders `.message` rather than branching on the tag, so the channel is
-    // deliberately the widest thing they have in common.
-    // @effect-diagnostics-next-line globalErrorInEffectCatch:off
     Effect.tryPromise({
       try: execute,
-      catch: (cause) => toError(cause),
+      catch: asMoatlessError,
     }),
   ).pipe(
     Atom.swr({ staleTime: DEFAULT_STALE_TIME_MS, revalidateOnMount: true }),
@@ -86,12 +81,6 @@ const queryFamily = Atom.family((key: string) => {
  */
 const executors = new Map<string, () => Promise<unknown>>();
 
-function toError(cause: unknown): Error {
-  if (cause instanceof MoatlessRequestError) return cause;
-  if (cause instanceof MoatlessTransportError) return cause;
-  return cause instanceof Error ? cause : new Error(String(cause));
-}
-
 /**
  * Declare a read. `request` returns a generated client call; its success body
  * is what the atom resolves to, and any non-2xx becomes a
@@ -102,7 +91,7 @@ export function moatlessQuery<A>(
   request: () => Promise<MoatlessResponse<unknown>>,
 ): MoatlessQuery<A> {
   executors.set(key, async () => ok<A>(await request()));
-  return { key, atom: queryFamily(key) as Atom.Atom<AsyncResult.AsyncResult<A, Error>> };
+  return { key, atom: queryFamily(key) as Atom.Atom<AsyncResult.AsyncResult<A, MoatlessError>> };
 }
 
 /**
@@ -194,7 +183,7 @@ export function useMoatlessCommand<Input, A>(
         }
         return value;
       } catch (cause) {
-        setError(toError(cause));
+        setError(asMoatlessError(cause));
         return null;
       } finally {
         setIsRunning(false);

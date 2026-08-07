@@ -98,9 +98,17 @@ nothing means the file is byte-identical to upstream and belongs in no entry.
   - Keep fork docs and tracker. Not present upstream.
 
 - `.agents/skills/fork-upstream-merge/**` — **ours**
-  - The fork's own merge skill. Upstream owns the other four skills in
-    `.agents/skills/` and adds more; this one is fork-authored and not present
-    upstream. Verified 2026-08-06.
+- `.agents/skills/test-moatless-web/**` — **ours**
+  - The fork's two skills: merging upstream, and testing the web client against
+    a Moatless backend. Upstream owns the other four in `.agents/skills/` and
+    adds more; neither of these is present upstream. Verified 2026-08-06.
+
+- `.agents/skills/test-t3-app/SKILL.md`, `.agents/skills/test-t3-mobile/SKILL.md`
+  — **converge**
+  - Take theirs, then re-apply the scope note at the top of each. Both describe
+    the bundled T3 server, which the fork's web client does not use; the note is
+    a few lines routing readers to `test-moatless-web` and is deliberately the
+    whole delta, so upstream's edits to these docs land unopposed.
 
 - Fork-authored user and internals docs — **ours**
   - Paths:
@@ -441,6 +449,7 @@ update this file.
   - Paths:
     - `docs/fork/**`
     - `.agents/skills/fork-upstream-merge/**`
+    - `.agents/skills/test-moatless-web/**`
     - `docs/user/moatless-*.md`
     - `docs/internals/client-server-contract.md`
     - `docs/internals/moatless-concept-map.md`
@@ -449,8 +458,8 @@ update this file.
     - `.plans/preview-servers-in-t3-web.md`
     - `.plans/completed/moatless-admin-in-t3.md`
   - Keep ours. Only those four plans are ours; upstream owns the rest of
-    `.plans/**`, and only `fork-upstream-merge` is ours under `.agents/skills/`
-    — see Path policy.
+    `.plans/**`, and only `fork-upstream-merge` and `test-moatless-web` are ours
+    under `.agents/skills/` — see Path policy.
 
 - **Hosted-environment contract group**
   - Paths:

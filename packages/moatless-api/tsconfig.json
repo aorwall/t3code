@@ -9,7 +9,20 @@
     "moduleResolution": "Bundler",
     "verbatimModuleSyntax": false,
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "types": ["node"]
+    "types": ["node"],
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        // Deep-merged with tsconfig.base.json; list only this package's
+        // overrides here. Same override apps/web carries, for the same reason:
+        // this is the orval-generated Moatless REST client, deliberately
+        // outside Effect. `HttpClient` would put a runtime and a layer between
+        // a generated call and the request it is meant to make.
+        "diagnosticSeverity": {
+          "globalFetch": "off"
+        }
+      }
+    ]
   },
   "include": ["src"]
 }

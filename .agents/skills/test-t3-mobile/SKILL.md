@@ -5,6 +5,11 @@ description: Launch and test T3 Code Mobile on an iOS Simulator or Android Emula
 
 # Test T3 Mobile
 
+The pairing steps below assume the bundled T3 server. This fork's web client
+does not use it — see [`test-moatless-web`](../test-moatless-web/SKILL.md) —
+and whether the mobile client reaches a Moatless backend is unverified here.
+Confirm which backend the change targets before following the pairing steps.
+
 Run one focused, end-to-end mobile verification pass against disposable T3 state. Use the sibling [`test-t3-app`](../test-t3-app/SKILL.md) skill as the detailed reference for pairing-token semantics and SQLite fixtures.
 
 Command examples use POSIX shell syntax. On Windows, use PowerShell equivalents: set variables with `$env:NAME = "value"`, use an explicit temporary directory from `[System.IO.Path]::GetTempPath()`, and run multiline examples on one line or with PowerShell backticks. Use `$env:ANDROID_HOME\platform-tools\adb.exe` when `adb` is not already on `PATH`.
