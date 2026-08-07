@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import type { UserListItem } from "@t3tools/moatless-api/generated/model";
 
-import { compareUsers, userDisplayName, userMonogram } from "./userRows";
+import { compareUsers, filterUsers, userDisplayName, userMonogram } from "./userRows";
 
 function user(overrides: Partial<UserListItem>): UserListItem {
   return {
@@ -46,5 +46,37 @@ describe("compareUsers", () => {
 
   it("orders same-kind users by login, case-insensitively", () => {
     expect(compareUsers(user({ login: "Alice" }), user({ login: "bob" }))).toBeLessThan(0);
+  });
+});
+
+describe("filterUsers", () => {
+  const rows = [
+    user({ id: "u1", login: "ada", name: "Ada Lovelace", email: "ada@example.com" }),
+    user({ id: "u2", login: "grace", name: null, email: null }),
+    user({ id: "u3", login: "release-bot", name: "Release Bot", isBot: true }),
+  ];
+
+  it("returns every user for a blank query", () => {
+    expect(filterUsers(rows, "")).toHaveLength(3);
+  });
+
+  it("matches a display name", () => {
+    expect(filterUsers(rows, "lovelace").map((row) => row.id)).toEqual(["u1"]);
+  });
+
+  it("matches a login even when a display name hides it on the row", () => {
+    expect(filterUsers(rows, "ada").map((row) => row.id)).toEqual(["u1"]);
+  });
+
+  it("matches an email", () => {
+    expect(filterUsers(rows, "@example.com").map((row) => row.id)).toEqual(["u1"]);
+  });
+
+  it("still finds a user with no name and no email", () => {
+    expect(filterUsers(rows, "grace").map((row) => row.id)).toEqual(["u2"]);
+  });
+
+  it("matches bots like anyone else — they sink in the sort, they are not hidden", () => {
+    expect(filterUsers(rows, "release").map((row) => row.id)).toEqual(["u3"]);
   });
 });

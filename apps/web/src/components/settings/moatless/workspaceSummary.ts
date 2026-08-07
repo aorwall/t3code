@@ -1,5 +1,6 @@
 import type { RepositoryResponse, WorkspaceResponse } from "@t3tools/moatless-api/generated/model";
 
+import { filterByText } from "./listSearch";
 import { repositoryProviderIcon, type RepositoryProviderIcon } from "./repositoryProvider";
 
 /**
@@ -95,4 +96,23 @@ export function summarizeWorkspace(
 export function compareWorkspaces(a: WorkspaceSummary, b: WorkspaceSummary): number {
   if (a.isDeleted !== b.isDeleted) return a.isDeleted ? 1 : -1;
   return a.name.localeCompare(b.name);
+}
+
+/**
+ * Workspaces matching a search, by name or by a repository they compose.
+ *
+ * The repository names are searchable because they are on the row and because
+ * they are the question this list is usually asked: someone knows which
+ * repository they need to change and not which workspace was named for it. The
+ * `git` and `deleted` tags are not searchable — they are status, and filtering
+ * a list by status is a different control from finding a row by what it is.
+ */
+export function filterWorkspaces(
+  rows: ReadonlyArray<WorkspaceSummary>,
+  query: string,
+): ReadonlyArray<WorkspaceSummary> {
+  return filterByText(rows, query, (row) => [
+    row.name,
+    ...row.repositories.map((repository) => repository.name),
+  ]);
 }

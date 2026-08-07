@@ -4,6 +4,7 @@ import type { Loop, LoopConfig, LoopSource } from "@t3tools/moatless-api/generat
 
 import {
   compareLoops,
+  filterLoops,
   isScheduleSource,
   isSubscriptionSource,
   loopKindLabel,
@@ -130,5 +131,35 @@ describe("compareLoops", () => {
     ];
     const names = [...rows].sort(compareLoops).map((row) => row.name);
     expect(names).toEqual(["Beacon", "Zephyr", "Apex"]);
+  });
+});
+
+describe("filterLoops", () => {
+  const rows = [
+    loop({ id: "a", name: "Nightly sweep" }),
+    loop({ id: "b", name: "Triage", source: subscriptionSource }),
+    loop({ id: "c", name: "Release", kind: "manual", source: {} as unknown as LoopSource }),
+  ];
+
+  it("returns every Loop for a blank query", () => {
+    expect(filterLoops(rows, "  ")).toHaveLength(3);
+  });
+
+  it("matches a name", () => {
+    expect(filterLoops(rows, "night").map((row) => row.id)).toEqual(["a"]);
+  });
+
+  it("matches where a Loop listens, not only what it is called", () => {
+    // "Triage" says nothing about Slack; the row's second line does.
+    expect(filterLoops(rows, "slack").map((row) => row.id)).toEqual(["b"]);
+  });
+
+  it("matches a schedule by its cron expression", () => {
+    expect(filterLoops(rows, "0 0 * * *").map((row) => row.id)).toEqual(["a"]);
+  });
+
+  it("does not match on the state badge, which is a status and not an identity", () => {
+    // Every fixture Loop is paused, so a state match would return all three.
+    expect(filterLoops(rows, "paused")).toEqual([]);
   });
 });

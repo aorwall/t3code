@@ -1,5 +1,7 @@
 import type { UserListItem } from "@t3tools/moatless-api/generated/model";
 
+import { filterByText } from "./listSearch";
+
 /**
  * What a user row says about itself, worked out away from the component.
  *
@@ -29,4 +31,20 @@ export function userMonogram(user: Pick<UserListItem, "name" | "login">): string
 export function compareUsers(a: UserListItem, b: UserListItem): number {
   if (a.isBot !== b.isBot) return a.isBot ? 1 : -1;
   return a.login.localeCompare(b.login, undefined, { sensitivity: "base" });
+}
+
+/**
+ * Users matching a search, by display name, login or email.
+ *
+ * All three, because an administrator arrives with whichever one they were
+ * given: a name from a conversation, a login from a commit, an address from a
+ * ticket. The login is searched even when a display name hides it on the row —
+ * it is the identifier the rest of the deployment uses, so a list that cannot
+ * be searched by it sends people to guess at spellings of a person's name.
+ */
+export function filterUsers(
+  users: ReadonlyArray<UserListItem>,
+  query: string,
+): ReadonlyArray<UserListItem> {
+  return filterByText(users, query, (user) => [userDisplayName(user), user.login, user.email]);
 }

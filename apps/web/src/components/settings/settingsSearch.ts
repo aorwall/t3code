@@ -296,7 +296,12 @@ export function searchableSetting(id: SettingsSearchItemId): {
   return { id: anchorId, title };
 }
 
-function normalizeSearchText(value: string): string {
+/**
+ * Exported for the Moatless administration list filters, which search the rows
+ * of a list rather than the settings catalog but should decide what "matches"
+ * the same way this page does. Upstream uses it only inside this module.
+ */
+export function normalizeSearchText(value: string): string {
   return value
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")

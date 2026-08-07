@@ -22,15 +22,22 @@ import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
 import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
 import { searchableSetting } from "../settingsSearch";
 import { SectionEmpty, SectionError, SectionPending } from "./MoatlessSectionState";
+import { SectionCount, SectionSearch } from "./SectionSearch";
 import { repositoriesQuery, workspacesQuery } from "./queries";
 import { RepositoryProviderIcon } from "./RepositoryProviderIcon";
-import { compareWorkspaces, summarizeWorkspace, type WorkspaceSummary } from "./workspaceSummary";
+import {
+  compareWorkspaces,
+  filterWorkspaces,
+  summarizeWorkspace,
+  type WorkspaceSummary,
+} from "./workspaceSummary";
 import { cn } from "~/lib/utils";
 
 export function WorkspacesPanel() {
   const { data, error, refresh } = useMoatlessQuery(workspacesQuery);
   const repositories = useMoatlessQuery(repositoriesQuery);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [query, setQuery] = useState("");
 
   // Both reads, because a placement carries only a repository id: without the
   // catalog every row would name its repositories by id. A catalog that failed
@@ -38,27 +45,36 @@ export function WorkspacesPanel() {
   // and the workspaces themselves are what someone came here for.
   const isPending = data === null || (repositories.data === null && repositories.error === null);
 
-  const rows = useMemo(
+  const all = useMemo(
     () =>
       (data ?? [])
         .map((workspace) => summarizeWorkspace(workspace, repositories.data ?? []))
         .sort(compareWorkspaces),
     [data, repositories.data],
   );
+  const rows = useMemo(() => filterWorkspaces(all, query), [all, query]);
 
   return (
     <SettingsPageContainer>
       <SettingsSection
         {...searchableSetting("workspaces")}
         headerAction={
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            aria-label="Add workspace"
-            onClick={() => setIsCreateOpen(true)}
-          >
-            <PlusIcon />
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <SectionSearch
+              query={query}
+              onChange={setQuery}
+              label="workspaces"
+              count={<SectionCount count={all.length} singular="workspace" plural="workspaces" />}
+            />
+            <Button
+              size="icon-xs"
+              variant="ghost"
+              aria-label="Add workspace"
+              onClick={() => setIsCreateOpen(true)}
+            >
+              <PlusIcon />
+            </Button>
+          </div>
         }
       >
         {error ? (
@@ -67,8 +83,14 @@ export function WorkspacesPanel() {
           <SectionPending label="workspaces" />
         ) : rows.length === 0 ? (
           <SectionEmpty>
-            No workspaces yet. A workspace composes one or more repositories with the configuration
-            a task runs against.
+            {all.length === 0 ? (
+              <>
+                No workspaces yet. A workspace composes one or more repositories with the
+                configuration a task runs against.
+              </>
+            ) : (
+              <>No workspace matches “{query}”, by name or by a repository it composes.</>
+            )}
           </SectionEmpty>
         ) : (
           rows.map((row) => (

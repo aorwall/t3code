@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import type { RepositoryResponse, WorkspaceResponse } from "@t3tools/moatless-api/generated/model";
 
-import { compareWorkspaces, summarizeWorkspace } from "./workspaceSummary";
+import { compareWorkspaces, filterWorkspaces, summarizeWorkspace } from "./workspaceSummary";
 
 function workspace(overrides: Partial<WorkspaceResponse> = {}): WorkspaceResponse {
   return {
@@ -119,5 +119,35 @@ describe("compareWorkspaces", () => {
     ].sort(compareWorkspaces);
 
     expect(rows.map((row) => row.name)).toEqual(["mmm", "zzz", "aaa"]);
+  });
+});
+
+describe("filterWorkspaces", () => {
+  const rows = [
+    summarizeWorkspace(workspace({ id: "ws_1", name: "billing" }), CATALOG),
+    summarizeWorkspace(
+      workspace({ id: "ws_2", name: "platform", repos: [placement("r2", 0)] }),
+      CATALOG,
+    ),
+  ];
+
+  it("returns every workspace for a blank query", () => {
+    expect(filterWorkspaces(rows, "   ")).toHaveLength(2);
+  });
+
+  it("matches a workspace name", () => {
+    expect(filterWorkspaces(rows, "bill").map((row) => row.id)).toEqual(["ws_1"]);
+  });
+
+  it("matches a repository the workspace composes, which is not in its name", () => {
+    // "platform" says nothing about `web`; the row's repository list does.
+    expect(filterWorkspaces(rows, "web").map((row) => row.id)).toEqual(["ws_2"]);
+  });
+
+  it("does not match on the git or deleted tags, which are status and not identity", () => {
+    const tagged = [
+      summarizeWorkspace(workspace({ id: "ws_3", name: "infra", deleted: true }), CATALOG),
+    ];
+    expect(filterWorkspaces(tagged, "deleted")).toEqual([]);
   });
 });

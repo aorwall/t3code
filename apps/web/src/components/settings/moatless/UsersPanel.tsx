@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { BotIcon, ChevronRightIcon } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { useMoatlessQuery } from "../../../moatless/query";
 import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
@@ -8,7 +8,8 @@ import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
 import { searchableSetting } from "../settingsSearch";
 import { SectionEmpty, SectionError, SectionPending } from "./MoatlessSectionState";
 import { usersQuery } from "./queries";
-import { compareUsers, userDisplayName, userMonogram } from "./userRows";
+import { SectionCount, SectionSearch } from "./SectionSearch";
+import { compareUsers, filterUsers, userDisplayName, userMonogram } from "./userRows";
 import { cn } from "~/lib/utils";
 
 /**
@@ -21,17 +22,36 @@ import { cn } from "~/lib/utils";
 export function UsersPanel() {
   const { data, error, isPending, refresh } = useMoatlessQuery(usersQuery);
 
-  const rows = useMemo(() => [...(data?.users ?? [])].sort(compareUsers), [data]);
+  const [query, setQuery] = useState("");
+
+  const all = useMemo(() => [...(data?.users ?? [])].sort(compareUsers), [data]);
+  const rows = useMemo(() => filterUsers(all, query), [all, query]);
 
   return (
     <SettingsPageContainer>
-      <SettingsSection {...searchableSetting("users")}>
+      <SettingsSection
+        {...searchableSetting("users")}
+        headerAction={
+          <SectionSearch
+            query={query}
+            onChange={setQuery}
+            label="users"
+            count={<SectionCount count={all.length} singular="user" plural="users" />}
+          />
+        }
+      >
         {error ? (
           <SectionError error={error} label="users" onRetry={refresh} />
         ) : isPending && data === null ? (
           <SectionPending label="users" />
         ) : rows.length === 0 ? (
-          <SectionEmpty>No users yet.</SectionEmpty>
+          <SectionEmpty>
+            {all.length === 0 ? (
+              "No users yet."
+            ) : (
+              <>No user matches “{query}”, by name, login or email.</>
+            )}
+          </SectionEmpty>
         ) : (
           rows.map((user) => (
             <Link

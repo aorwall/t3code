@@ -30,30 +30,41 @@ import { Textarea } from "../../ui/textarea";
 import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
 import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
 import { searchableSetting } from "../settingsSearch";
-import { compareLoops, loopSourceSummary, loopStateLabel } from "./loopRows";
+import { compareLoops, filterLoops, loopSourceSummary, loopStateLabel } from "./loopRows";
 import { SectionEmpty, SectionError, SectionPending } from "./MoatlessSectionState";
 import { loopsQuery, repositoriesQuery } from "./queries";
+import { SectionCount, SectionSearch } from "./SectionSearch";
 import { cn } from "~/lib/utils";
 
 export function LoopsPanel() {
   const { data, error, isPending, refresh } = useMoatlessQuery(loopsQuery);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [query, setQuery] = useState("");
 
-  const rows = useMemo(() => [...(data ?? [])].sort(compareLoops), [data]);
+  const all = useMemo(() => [...(data ?? [])].sort(compareLoops), [data]);
+  const rows = useMemo(() => filterLoops(all, query), [all, query]);
 
   return (
     <SettingsPageContainer>
       <SettingsSection
         {...searchableSetting("loops")}
         headerAction={
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            aria-label="Add loop"
-            onClick={() => setIsCreateOpen(true)}
-          >
-            <PlusIcon />
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <SectionSearch
+              query={query}
+              onChange={setQuery}
+              label="loops"
+              count={<SectionCount count={all.length} singular="loop" plural="loops" />}
+            />
+            <Button
+              size="icon-xs"
+              variant="ghost"
+              aria-label="Add loop"
+              onClick={() => setIsCreateOpen(true)}
+            >
+              <PlusIcon />
+            </Button>
+          </div>
         }
       >
         {error ? (
@@ -64,8 +75,14 @@ export function LoopsPanel() {
           ) : null
         ) : rows.length === 0 ? (
           <SectionEmpty>
-            No loops yet. A loop watches a source — a schedule or an integration event — and starts
-            a task when it fires.
+            {all.length === 0 ? (
+              <>
+                No loops yet. A loop watches a source — a schedule or an integration event — and
+                starts a task when it fires.
+              </>
+            ) : (
+              <>No loop matches “{query}”, by name or by where it listens.</>
+            )}
           </SectionEmpty>
         ) : (
           rows.map((loop) => <LoopRow key={loop.id} loop={loop} />)

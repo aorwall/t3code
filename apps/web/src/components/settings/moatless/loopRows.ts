@@ -9,6 +9,8 @@ import type {
   Subscription,
 } from "@t3tools/moatless-api/generated/model";
 
+import { filterByText } from "./listSearch";
+
 /**
  * Everything a Loops row or detail header shows, derived from a `Loop` alone.
  *
@@ -122,4 +124,16 @@ export function compareLoops(a: Loop, b: Loop): number {
     return a.deleted ? 1 : -1;
   }
   return a.name.localeCompare(b.name, undefined, { sensitivity: "accent" });
+}
+
+/**
+ * Loops matching a search, by name or by where they listen.
+ *
+ * The source summary is searchable as the row renders it, so `slack` finds
+ * every subscription on Slack and a cron expression finds the schedule that
+ * runs it. The state badge is not searchable: `paused` is a status filter, a
+ * different control from finding a Loop by what it is.
+ */
+export function filterLoops(loops: ReadonlyArray<Loop>, query: string): ReadonlyArray<Loop> {
+  return filterByText(loops, query, (loop) => [loop.name, loopSourceSummary(loop)]);
 }

@@ -678,10 +678,12 @@ globalFetch:off`: the package is deliberately outside Effect, and without it
     - `apps/web/src/routes/settings.tsx`
   - Converged with Settings gates above; the same three files carry both deltas
     and both must survive. Additive: the `Administration` nav group, the
-    `MOATLESS_ADMIN_PATHS` entries, and the `beforeLoad` redirect for a
-    non-administrator. The guard matches detail routes by path prefix — a new
-    administration route with children must be added to `MOATLESS_ADMIN_PATHS` or
-    it is reachable without an admin check.
+    `MOATLESS_ADMIN_PATHS` entries, the `beforeLoad` redirect for a
+    non-administrator, and an `export` on `normalizeSearchText` so the
+    administration list filters decide what matches the way this page does. The
+    guard matches detail routes by path prefix — a new administration route with
+    children must be added to `MOATLESS_ADMIN_PATHS` or it is reachable without
+    an admin check.
 
 ## Convergence watch list
 
@@ -747,3 +749,11 @@ When upstream ships one of these, prefer upstream and shrink the fork delta.
     not come from the composer — an origin, author, or source.
   - Action: prefer upstream's shape, re-point the chip at it, and drop the fork
     field.
+
+- **Searchable settings list**
+  - Watch for: upstream lifting the expandable header search out of
+    `KeybindingsSettings.tsx` into a shared settings component, or giving
+    `SettingsSection` a search affordance of its own.
+  - Action: delete `moatless/SectionSearch.tsx` and use upstream's. The fork's
+    copy exists only because upstream's is private to one file and hard-codes
+    its labels.
