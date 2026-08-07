@@ -16,8 +16,8 @@ import {
 } from "../../ui/alert-dialog";
 import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
-import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
-import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
+import { ITEM_ROW_CLASSNAME } from "../itemRows";
+import { SettingsPageContainer, SettingsRow, SettingsSection } from "../settingsLayout";
 import { adapterKindLabel } from "./integrationRows";
 import { SectionError, SectionPending } from "./MoatlessSectionState";
 import { connectionsQuery } from "./queries";
@@ -104,27 +104,20 @@ function DangerSection({ connection }: { readonly connection: AdapterConnectionR
 
   return (
     <SettingsSection id="connection-danger" title="Danger zone">
-      <div className={ITEM_ROW_CLASSNAME}>
-        <div className={ITEM_ROW_INNER_CLASSNAME}>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground">Remove this connection</p>
-            <p className="mt-0.5 text-[13px] leading-[1.45] text-muted-foreground/80">
-              Loops that subscribe through it stop receiving events.
-            </p>
-          </div>
-          <Button
-            size="sm"
-            variant="destructive-outline"
-            className="shrink-0"
-            onClick={() => setIsConfirmOpen(true)}
-          >
+      <SettingsRow
+        title="Remove this connection"
+        description="Loops that subscribe through it stop receiving events."
+        status={
+          remove.error ? (
+            <span className="text-destructive-foreground">{remove.error.message}</span>
+          ) : null
+        }
+        control={
+          <Button size="sm" variant="destructive-outline" onClick={() => setIsConfirmOpen(true)}>
             Remove
           </Button>
-        </div>
-        {remove.error ? (
-          <p className="mt-2 text-[13px] text-destructive-foreground">{remove.error.message}</p>
-        ) : null}
-      </div>
+        }
+      />
 
       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <AlertDialogPopup>

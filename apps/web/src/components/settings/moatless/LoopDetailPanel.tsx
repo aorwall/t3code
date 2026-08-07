@@ -35,11 +35,10 @@ import {
   DialogTitle,
 } from "../../ui/dialog";
 import { Input } from "../../ui/input";
-import { Label } from "../../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
 import { Textarea } from "../../ui/textarea";
 import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
-import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
+import { SettingsPageContainer, SettingsRow, SettingsSection } from "../settingsLayout";
 import { SectionError, SectionPending } from "./MoatlessSectionState";
 import {
   isScheduleSource,
@@ -278,9 +277,9 @@ function ActivateLoopDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogPanel className="px-6 pb-5">
-          <Label>Run as</Label>
+          <span className="mb-1.5 block text-xs font-medium text-foreground">Run as</span>
           <Select value={runAsUserId} onValueChange={(value) => setRunAsUserId(value ?? "")}>
-            <SelectTrigger className="mt-1.5">
+            <SelectTrigger>
               <SelectValue placeholder="Select a user" />
             </SelectTrigger>
             <SelectContent>
@@ -325,13 +324,14 @@ function GeneralSection({ loop, isLocked }: { readonly loop: Loop; readonly isLo
     <SettingsSection id="loop-general" title="General">
       <div className={cn(ITEM_ROW_CLASSNAME, "space-y-4")}>
         <div>
-          <Label htmlFor="loop-name">Name</Label>
+          <label htmlFor="loop-name" className="mb-1.5 block text-xs font-medium text-foreground">
+            Name
+          </label>
           <Input
             id="loop-name"
             value={form.values.name}
             disabled={isLocked}
             onChange={(event) => form.setField("name", event.currentTarget.value)}
-            className="mt-1.5"
           />
         </div>
         {save.error ? (
@@ -384,13 +384,13 @@ function ConfigurationSection({
     <SettingsSection id="loop-configuration" title="Configuration">
       <div className={cn(ITEM_ROW_CLASSNAME, "space-y-4")}>
         <div>
-          <Label>Repository</Label>
+          <span className="mb-1.5 block text-xs font-medium text-foreground">Repository</span>
           <Select
             value={form.values.repositoryId}
             onValueChange={(value) => form.setField("repositoryId", value ?? "")}
             disabled={isLocked}
           >
-            <SelectTrigger className="mt-1.5">
+            <SelectTrigger>
               <SelectValue placeholder="Select repository">
                 {form.values.repositoryId
                   ? (repositories.find((repository) => repository.id === form.values.repositoryId)
@@ -408,7 +408,7 @@ function ConfigurationSection({
           </Select>
         </div>
         <div>
-          <Label>Routing mode</Label>
+          <span className="mb-1.5 block text-xs font-medium text-foreground">Routing mode</span>
           <Select
             value={form.values.routingMode}
             onValueChange={(value) =>
@@ -416,7 +416,7 @@ function ConfigurationSection({
             }
             disabled={isLocked}
           >
-            <SelectTrigger className="mt-1.5">
+            <SelectTrigger>
               <SelectValue>{routingModeLabel(form.values.routingMode)}</SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -429,35 +429,44 @@ function ConfigurationSection({
           </Select>
         </div>
         <div>
-          <Label htmlFor="loop-task-name">Task name</Label>
+          <label
+            htmlFor="loop-task-name"
+            className="mb-1.5 block text-xs font-medium text-foreground"
+          >
+            Task name
+          </label>
           <Input
             id="loop-task-name"
             value={form.values.taskName}
             disabled={isLocked}
             placeholder="Optional task title"
             onChange={(event) => form.setField("taskName", event.currentTarget.value)}
-            className="mt-1.5"
           />
         </div>
         <div>
-          <Label htmlFor="loop-agent-type">Agent type</Label>
+          <label
+            htmlFor="loop-agent-type"
+            className="mb-1.5 block text-xs font-medium text-foreground"
+          >
+            Agent type
+          </label>
           <Input
             id="loop-agent-type"
             value={form.values.agentType}
             disabled={isLocked}
             onChange={(event) => form.setField("agentType", event.currentTarget.value)}
-            className="mt-1.5"
           />
         </div>
         <div>
-          <Label htmlFor="loop-prompt">Prompt</Label>
+          <label htmlFor="loop-prompt" className="mb-1.5 block text-xs font-medium text-foreground">
+            Prompt
+          </label>
           <Textarea
             id="loop-prompt"
             value={form.values.prompt}
             disabled={isLocked}
             placeholder="What each task this loop starts should do."
             onChange={(event) => form.setField("prompt", event.currentTarget.value)}
-            className="mt-1.5"
           />
         </div>
         {save.error ? (
@@ -537,33 +546,43 @@ function ScheduleSection({ loop, isLocked }: { readonly loop: Loop; readonly isL
     <SettingsSection id="loop-source" title="Schedule">
       <div className={cn(ITEM_ROW_CLASSNAME, "space-y-4")}>
         <div>
-          <Label htmlFor="loop-cron">Cron expression</Label>
+          <label htmlFor="loop-cron" className="mb-1.5 block text-xs font-medium text-foreground">
+            Cron expression
+          </label>
           <Input
             id="loop-cron"
             value={form.values.cronExpression}
             disabled={isLocked}
             onChange={(event) => form.setField("cronExpression", event.currentTarget.value)}
-            className="mt-1.5 font-mono text-[13px]"
+            className="font-mono text-[13px]"
           />
         </div>
         <div>
-          <Label htmlFor="loop-timezone">Timezone</Label>
+          <label
+            htmlFor="loop-timezone"
+            className="mb-1.5 block text-xs font-medium text-foreground"
+          >
+            Timezone
+          </label>
           <Input
             id="loop-timezone"
             value={form.values.timezone}
             disabled={isLocked}
             onChange={(event) => form.setField("timezone", event.currentTarget.value)}
-            className="mt-1.5"
           />
         </div>
         <div>
-          <Label htmlFor="loop-template">Message template</Label>
+          <label
+            htmlFor="loop-template"
+            className="mb-1.5 block text-xs font-medium text-foreground"
+          >
+            Message template
+          </label>
           <Textarea
             id="loop-template"
             value={form.values.messageTemplate}
             disabled={isLocked}
             onChange={(event) => form.setField("messageTemplate", event.currentTarget.value)}
-            className="mt-1.5"
           />
         </div>
         {save.error ? (
@@ -600,27 +619,20 @@ function DangerSection({ loop }: { readonly loop: Loop }) {
 
   return (
     <SettingsSection id="loop-danger" title="Danger zone">
-      <div className={ITEM_ROW_CLASSNAME}>
-        <div className={ITEM_ROW_INNER_CLASSNAME}>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground">Delete this loop</p>
-            <p className="mt-0.5 text-[13px] leading-[1.45] text-muted-foreground/80">
-              It stops firing. Tasks it already started are kept.
-            </p>
-          </div>
-          <Button
-            size="sm"
-            variant="destructive-outline"
-            className="shrink-0"
-            onClick={() => setIsConfirmOpen(true)}
-          >
+      <SettingsRow
+        title="Delete this loop"
+        description="It stops firing. Tasks it already started are kept."
+        status={
+          remove.error ? (
+            <span className="text-destructive-foreground">{remove.error.message}</span>
+          ) : null
+        }
+        control={
+          <Button size="sm" variant="destructive-outline" onClick={() => setIsConfirmOpen(true)}>
             Delete
           </Button>
-        </div>
-        {remove.error ? (
-          <p className="mt-2 text-[13px] text-destructive-foreground">{remove.error.message}</p>
-        ) : null}
-      </div>
+        }
+      />
 
       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <AlertDialogPopup>

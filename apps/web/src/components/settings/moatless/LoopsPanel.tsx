@@ -24,7 +24,6 @@ import {
   DialogTitle,
 } from "../../ui/dialog";
 import { Input } from "../../ui/input";
-import { Label } from "../../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
 import { Textarea } from "../../ui/textarea";
 import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
@@ -225,23 +224,27 @@ function CreateLoopDialog({
         </DialogHeader>
         <DialogPanel className="space-y-4 px-6 pb-5">
           <div>
-            <Label htmlFor="new-loop-name">Name</Label>
+            <label
+              htmlFor="new-loop-name"
+              className="mb-1.5 block text-xs font-medium text-foreground"
+            >
+              Name
+            </label>
             <Input
               id="new-loop-name"
               value={name}
               onChange={(event) => setName(event.currentTarget.value)}
               placeholder="What to call this loop"
-              className="mt-1.5"
             />
           </div>
 
           <div>
-            <Label>Kind</Label>
+            <span className="mb-1.5 block text-xs font-medium text-foreground">Kind</span>
             <Select
               value={kind}
               onValueChange={(value) => setKind(value as Extract<LoopKind, "schedule" | "manual">)}
             >
-              <SelectTrigger className="mt-1.5">
+              <SelectTrigger>
                 <SelectValue>
                   {CREATE_KINDS.find((option) => option.value === kind)?.label}
                 </SelectValue>
@@ -257,9 +260,9 @@ function CreateLoopDialog({
           </div>
 
           <div>
-            <Label>Repository</Label>
+            <span className="mb-1.5 block text-xs font-medium text-foreground">Repository</span>
             <Select value={repositoryId} onValueChange={(value) => setRepositoryId(value ?? "")}>
-              <SelectTrigger className="mt-1.5">
+              <SelectTrigger>
                 <SelectValue placeholder="Select repository">
                   {repositoryId
                     ? (catalog.find((repository) => repository.id === repositoryId)?.name ??
@@ -280,23 +283,32 @@ function CreateLoopDialog({
           {kind === "schedule" ? (
             <>
               <div>
-                <Label htmlFor="new-loop-cron">Cron expression</Label>
+                <label
+                  htmlFor="new-loop-cron"
+                  className="mb-1.5 block text-xs font-medium text-foreground"
+                >
+                  Cron expression
+                </label>
                 <Input
                   id="new-loop-cron"
                   value={cronExpression}
                   onChange={(event) => setCronExpression(event.currentTarget.value)}
                   placeholder="0 0 0 * * *"
-                  className="mt-1.5 font-mono text-[13px]"
+                  className="font-mono text-[13px]"
                 />
               </div>
               <div>
-                <Label htmlFor="new-loop-template">Message template</Label>
+                <label
+                  htmlFor="new-loop-template"
+                  className="mb-1.5 block text-xs font-medium text-foreground"
+                >
+                  Message template
+                </label>
                 <Textarea
                   id="new-loop-template"
                   value={messageTemplate}
                   onChange={(event) => setMessageTemplate(event.currentTarget.value)}
                   placeholder="The message each run starts its task with."
-                  className="mt-1.5"
                 />
               </div>
             </>

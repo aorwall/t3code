@@ -690,7 +690,11 @@ globalFetch:off`: the package is deliberately outside Effect, and without it
     gone; a new administration surface adds a real panel, not a placeholder.
     Built out of upstream's own settings primitives (`SettingsSection`,
     `SettingsRow`, `itemRows`), so upstream restyling reaches them for free —
-    keep it that way.
+    keep it that way. Where settings has no component, follow its markup rather
+    than a component from elsewhere in the app: a field label is a `<label>` or
+    `<span>` carrying `mb-1.5 block text-xs font-medium text-foreground`, and the
+    text under a field is `mt-1 text-[11px] text-muted-foreground`. `ui/label`'s
+    `Label` is a step larger than either and no settings page uses it.
 
 - **Moatless administration nav and guard**
   - Paths:

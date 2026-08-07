@@ -265,9 +265,17 @@ export const SETTINGS_SEARCH_ITEMS = [
     title: "Skills",
     to: "/settings/skills",
   },
+  // One item per section rather than one for the page, the way the Integrations
+  // sections above are listed: the page carries two, and a single "Secrets"
+  // result could only land on one of them.
   {
-    id: "secrets",
-    title: "Secrets",
+    id: "secrets-global",
+    title: "Global secrets",
+    to: "/settings/secrets",
+  },
+  {
+    id: "secrets-personal",
+    title: "Your secrets",
     to: "/settings/secrets",
   },
   {

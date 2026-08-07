@@ -8,7 +8,6 @@ import { useMoatlessCommand, useMoatlessQuery } from "../../../moatless/query";
 import { useDirtyForm } from "../../../moatless/useDirtyForm";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
-import { Label } from "../../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
 import { ITEM_ROW_CLASSNAME } from "../itemRows";
 import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
@@ -119,33 +118,37 @@ function ProfileSection({ user }: { readonly user: UserListItem }) {
     <SettingsSection id="user-profile" title="Profile">
       <div className={cn(ITEM_ROW_CLASSNAME, "space-y-4")}>
         <div>
-          <Label htmlFor="user-name">Name</Label>
+          <label htmlFor="user-name" className="mb-1.5 block text-xs font-medium text-foreground">
+            Name
+          </label>
           <Input
             id="user-name"
             value={form.values.name}
             placeholder="Display name"
             onChange={(event) => form.setField("name", event.currentTarget.value)}
-            className="mt-1.5"
           />
         </div>
         <div>
-          <Label htmlFor="user-email">Email</Label>
+          <label htmlFor="user-email" className="mb-1.5 block text-xs font-medium text-foreground">
+            Email
+          </label>
           <Input
             id="user-email"
             type="email"
             value={form.values.email}
             placeholder="user@example.com"
             onChange={(event) => form.setField("email", event.currentTarget.value)}
-            className="mt-1.5"
           />
         </div>
         <div>
-          <Label htmlFor="user-role">Global role</Label>
+          <label htmlFor="user-role" className="mb-1.5 block text-xs font-medium text-foreground">
+            Global role
+          </label>
           <Select
             value={form.values.role}
             onValueChange={(next) => next && form.setField("role", next as UserRole)}
           >
-            <SelectTrigger id="user-role" className="mt-1.5 w-48">
+            <SelectTrigger id="user-role" className="w-48">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -153,7 +156,7 @@ function ProfileSection({ user }: { readonly user: UserListItem }) {
               <SelectItem value="admin">Admin</SelectItem>
             </SelectContent>
           </Select>
-          <p className="mt-1.5 text-[13px] leading-[1.45] text-muted-foreground/80">
+          <p className="mt-1 text-[11px] text-muted-foreground">
             An admin reaches every administration page and can manage all users and settings.
           </p>
         </div>

@@ -23,7 +23,6 @@ import {
   DialogTitle,
 } from "../../ui/dialog";
 import { Input } from "../../ui/input";
-import { Label } from "../../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
 import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
 import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
@@ -199,9 +198,9 @@ function CreateConnectionDialog({
         </DialogHeader>
         <DialogPanel className="space-y-4 px-6 pb-5">
           <div>
-            <Label>Adapter</Label>
+            <span className="mb-1.5 block text-xs font-medium text-foreground">Adapter</span>
             <Select value={effectiveAdapter} onValueChange={(value) => chooseAdapter(value ?? "")}>
-              <SelectTrigger className="mt-1.5">
+              <SelectTrigger>
                 <SelectValue placeholder="Select adapter">
                   {effectiveAdapter ? adapterKindLabel(effectiveAdapter) : undefined}
                 </SelectValue>
@@ -216,33 +215,46 @@ function CreateConnectionDialog({
             </Select>
           </div>
           <div>
-            <Label htmlFor="new-connection-account">External account ID</Label>
+            <label
+              htmlFor="new-connection-account"
+              className="mb-1.5 block text-xs font-medium text-foreground"
+            >
+              External account ID
+            </label>
             <Input
               id="new-connection-account"
               value={externalAccountId}
               onChange={(event) => setExternalAccountId(event.currentTarget.value)}
               placeholder="Workspace, org or channel id"
-              className="mt-1.5"
             />
           </div>
           <div>
-            <Label htmlFor="new-connection-kind">Connection kind</Label>
+            <label
+              htmlFor="new-connection-kind"
+              className="mb-1.5 block text-xs font-medium text-foreground"
+            >
+              Connection kind
+            </label>
             <Input
               id="new-connection-kind"
               value={connectionKind || defaultConnectionKind(effectiveAdapter)}
               onChange={(event) => setConnectionKind(event.currentTarget.value)}
-              className="mt-1.5 font-mono text-[13px]"
+              className="font-mono text-[13px]"
             />
           </div>
           <div>
-            <Label htmlFor="new-connection-secret">Webhook secret</Label>
+            <label
+              htmlFor="new-connection-secret"
+              className="mb-1.5 block text-xs font-medium text-foreground"
+            >
+              Webhook secret
+            </label>
             <Input
               id="new-connection-secret"
               type="password"
               value={webhookSecret}
               onChange={(event) => setWebhookSecret(event.currentTarget.value)}
               placeholder="Optional"
-              className="mt-1.5"
             />
           </div>
           {create.error ? (

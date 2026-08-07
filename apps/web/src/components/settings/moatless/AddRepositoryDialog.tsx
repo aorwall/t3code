@@ -17,7 +17,6 @@ import {
   DialogTitle,
 } from "../../ui/dialog";
 import { Input } from "../../ui/input";
-import { Label } from "../../ui/label";
 import { ToggleGroup, ToggleGroupItem } from "../../ui/toggle-group";
 import { repositoriesQuery } from "./queries";
 import {
@@ -175,7 +174,12 @@ function AddRepositoryForm({
         ) : (
           <div className="space-y-3">
             <div>
-              <Label htmlFor="add-repository-remote">Remote URL</Label>
+              <label
+                htmlFor="add-repository-remote"
+                className="mb-1.5 block text-xs font-medium text-foreground"
+              >
+                Remote URL
+              </label>
               <Input
                 id="add-repository-remote"
                 value={remoteUrl}
@@ -187,11 +191,15 @@ function AddRepositoryForm({
                   // Follows the URL until it is edited by hand, then stops.
                   if (!isNameEdited) setName(repositoryNameFromRemote(next));
                 }}
-                className="mt-1.5"
               />
             </div>
             <div>
-              <Label htmlFor="add-repository-name">Name</Label>
+              <label
+                htmlFor="add-repository-name"
+                className="mb-1.5 block text-xs font-medium text-foreground"
+              >
+                Name
+              </label>
               <Input
                 id="add-repository-name"
                 value={name}
@@ -200,14 +208,10 @@ function AddRepositoryForm({
                   setIsNameEdited(true);
                   setName(event.currentTarget.value);
                 }}
-                className="mt-1.5"
               />
-              <p className="mt-1.5 text-[13px] leading-[1.45] text-muted-foreground/80">
+              <p className="mt-1 text-[11px] text-muted-foreground">
                 Registering a repository also picks up any workspaces it declares in{" "}
-                <code className="rounded bg-accent px-1 py-px text-[12px]">
-                  .moatless/workspaces.json
-                </code>
-                .
+                <code className="rounded bg-accent px-1 py-px">.moatless/workspaces.json</code>.
               </p>
             </div>
           </div>

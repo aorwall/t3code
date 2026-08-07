@@ -21,7 +21,6 @@ import {
   DialogTitle,
 } from "../../ui/dialog";
 import { Input } from "../../ui/input";
-import { Label } from "../../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
 import { Textarea } from "../../ui/textarea";
 import { SECRET_KIND_LABELS } from "./secretRows";
@@ -124,7 +123,12 @@ export function SecretEditorDialog({
           ) : null}
 
           <div>
-            <Label htmlFor="secret-key">Key</Label>
+            <label
+              htmlFor="secret-key"
+              className="mb-1.5 block text-xs font-medium text-foreground"
+            >
+              Key
+            </label>
             <Input
               id="secret-key"
               value={key}
@@ -134,17 +138,22 @@ export function SecretEditorDialog({
               autoComplete="off"
               spellCheck={false}
               onChange={(event) => setKey(event.currentTarget.value)}
-              className="mt-1.5 font-mono"
+              className="font-mono"
             />
-            <p className="mt-1 text-[12px] text-muted-foreground/80">
+            <p className="mt-1 text-[11px] text-muted-foreground">
               Environment variable name. Case-sensitive, fixed once created.
             </p>
           </div>
 
           <div>
-            <Label htmlFor="secret-kind">Kind</Label>
+            <label
+              htmlFor="secret-kind"
+              className="mb-1.5 block text-xs font-medium text-foreground"
+            >
+              Kind
+            </label>
             <Select value={kind} onValueChange={(next) => next && setKind(next as SecretKind)}>
-              <SelectTrigger id="secret-kind" className="mt-1.5 w-full">
+              <SelectTrigger id="secret-kind" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -158,14 +167,17 @@ export function SecretEditorDialog({
           </div>
 
           <div>
-            <Label htmlFor="secret-value">
+            <label
+              htmlFor="secret-value"
+              className="mb-1.5 block text-xs font-medium text-foreground"
+            >
               Value
               {isEditing ? (
                 <span className="ml-2 font-normal text-muted-foreground">
                   leave blank to keep current
                 </span>
               ) : null}
-            </Label>
+            </label>
             {kind === "ssh_key" ? (
               <Textarea
                 id="secret-value"
@@ -174,7 +186,7 @@ export function SecretEditorDialog({
                 autoComplete="off"
                 spellCheck={false}
                 onChange={(event) => setValue(event.currentTarget.value)}
-                className="mt-1.5 min-h-[140px] font-mono text-xs"
+                className="min-h-[140px] font-mono text-xs"
               />
             ) : (
               <Input
@@ -185,7 +197,6 @@ export function SecretEditorDialog({
                 autoComplete="new-password"
                 spellCheck={false}
                 onChange={(event) => setValue(event.currentTarget.value)}
-                className="mt-1.5"
               />
             )}
           </div>

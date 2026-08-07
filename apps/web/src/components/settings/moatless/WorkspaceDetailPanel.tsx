@@ -32,11 +32,10 @@ import {
   AlertDialogTitle,
 } from "../../ui/alert-dialog";
 import { Input } from "../../ui/input";
-import { Label } from "../../ui/label";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../../ui/menu";
 import { Textarea } from "../../ui/textarea";
 import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
-import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
+import { SettingsPageContainer, SettingsRow, SettingsSection } from "../settingsLayout";
 import { AddRepositoryDialog } from "./AddRepositoryDialog";
 import { SectionEmpty, SectionError, SectionPending } from "./MoatlessSectionState";
 import { RepositoryProviderIcon } from "./RepositoryProviderIcon";
@@ -189,24 +188,32 @@ function GeneralSection({
     <SettingsSection id="workspace-general" title="General">
       <div className={cn(ITEM_ROW_CLASSNAME, "space-y-4")}>
         <div>
-          <Label htmlFor="workspace-name">Name</Label>
+          <label
+            htmlFor="workspace-name"
+            className="mb-1.5 block text-xs font-medium text-foreground"
+          >
+            Name
+          </label>
           <Input
             id="workspace-name"
             value={form.values.name}
             disabled={isLocked}
             onChange={(event) => form.setField("name", event.currentTarget.value)}
-            className="mt-1.5"
           />
         </div>
         <div>
-          <Label htmlFor="workspace-description">Description</Label>
+          <label
+            htmlFor="workspace-description"
+            className="mb-1.5 block text-xs font-medium text-foreground"
+          >
+            Description
+          </label>
           <Textarea
             id="workspace-description"
             value={form.values.description}
             disabled={isLocked}
             placeholder="What this workspace is for."
             onChange={(event) => form.setField("description", event.currentTarget.value)}
-            className="mt-1.5"
           />
         </div>
         {save.error ? (
@@ -365,27 +372,36 @@ function RunConfigurationSection({
     <SettingsSection id="workspace-run-configuration" title="Run configuration">
       <div className={cn(ITEM_ROW_CLASSNAME, "space-y-4")}>
         <div>
-          <Label htmlFor="workspace-docker-image">Image</Label>
+          <label
+            htmlFor="workspace-docker-image"
+            className="mb-1.5 block text-xs font-medium text-foreground"
+          >
+            Image
+          </label>
           <Input
             id="workspace-docker-image"
             value={form.values.dockerImage}
             disabled={isLocked}
             placeholder="The deployment default"
             onChange={(event) => form.setField("dockerImage", event.currentTarget.value)}
-            className="mt-1.5"
           />
         </div>
         <div>
-          <Label htmlFor="workspace-setup-commands">Setup commands</Label>
+          <label
+            htmlFor="workspace-setup-commands"
+            className="mb-1.5 block text-xs font-medium text-foreground"
+          >
+            Setup commands
+          </label>
           <Textarea
             id="workspace-setup-commands"
             value={form.values.setupCommands}
             disabled={isLocked}
             placeholder={"pnpm install\npnpm build"}
             onChange={(event) => form.setField("setupCommands", event.currentTarget.value)}
-            className="mt-1.5 font-mono text-[13px]"
+            className="font-mono text-[13px]"
           />
-          <p className="mt-1.5 text-[13px] leading-[1.45] text-muted-foreground/80">
+          <p className="mt-1 text-[11px] text-muted-foreground">
             One per line, run in the primary repository after the sandbox starts.
           </p>
         </div>
@@ -412,27 +428,20 @@ function DangerSection({ workspace }: { readonly workspace: WorkspaceResponse })
 
   return (
     <SettingsSection id="workspace-danger" title="Danger zone">
-      <div className={ITEM_ROW_CLASSNAME}>
-        <div className={ITEM_ROW_INNER_CLASSNAME}>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground">Delete this workspace</p>
-            <p className="mt-0.5 text-[13px] leading-[1.45] text-muted-foreground/80">
-              Tasks that already ran in it are kept. The repositories it contains stay registered.
-            </p>
-          </div>
-          <Button
-            size="sm"
-            variant="destructive-outline"
-            className="shrink-0"
-            onClick={() => setIsConfirmOpen(true)}
-          >
+      <SettingsRow
+        title="Delete this workspace"
+        description="Tasks that already ran in it are kept. The repositories it contains stay registered."
+        status={
+          remove.error ? (
+            <span className="text-destructive-foreground">{remove.error.message}</span>
+          ) : null
+        }
+        control={
+          <Button size="sm" variant="destructive-outline" onClick={() => setIsConfirmOpen(true)}>
             Delete
           </Button>
-        </div>
-        {remove.error ? (
-          <p className="mt-2 text-[13px] text-destructive-foreground">{remove.error.message}</p>
-        ) : null}
-      </div>
+        }
+      />
 
       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <AlertDialogPopup>

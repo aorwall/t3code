@@ -22,6 +22,7 @@ import {
 import { Switch } from "../../ui/switch";
 import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
 import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
+import { searchableSetting, type SettingsSearchItemId } from "../settingsSearch";
 import { SectionEmpty, SectionError, SectionPending } from "./MoatlessSectionState";
 import { secretsQuery } from "./queries";
 import { compareSecrets, secretKindLabel } from "./secretRows";
@@ -41,14 +42,12 @@ export function SecretsPanel() {
     <SettingsPageContainer>
       <SecretsSection
         scope="global"
-        sectionId="secrets"
-        title="Global secrets"
+        item="secrets-global"
         emptyLabel="No global secrets yet. These reach every task in the deployment."
       />
       <SecretsSection
         scope="user"
-        sectionId="personal-secrets"
-        title="Your secrets"
+        item="secrets-personal"
         emptyLabel="No personal secrets yet. These reach only your own tasks."
       />
     </SettingsPageContainer>
@@ -57,13 +56,12 @@ export function SecretsPanel() {
 
 function SecretsSection({
   scope,
-  sectionId,
-  title,
+  item,
   emptyLabel,
 }: {
   readonly scope: Scope;
-  readonly sectionId: string;
-  readonly title: string;
+  /** The catalog entry this section anchors to; it carries the id and title. */
+  readonly item: SettingsSearchItemId;
   readonly emptyLabel: string;
 }) {
   const query = useMemo(() => secretsQuery(scope), [scope]);
@@ -86,8 +84,7 @@ function SecretsSection({
 
   return (
     <SettingsSection
-      id={sectionId}
-      title={title}
+      {...searchableSetting(item)}
       headerAction={
         <Button
           size="icon-xs"

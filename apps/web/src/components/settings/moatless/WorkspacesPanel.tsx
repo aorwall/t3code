@@ -17,7 +17,6 @@ import {
   DialogTitle,
 } from "../../ui/dialog";
 import { Input } from "../../ui/input";
-import { Label } from "../../ui/label";
 import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
 import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
 import { searchableSetting } from "../settingsSearch";
@@ -219,7 +218,12 @@ function CreateWorkspaceDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogPanel className="px-6 pb-5">
-          <Label htmlFor="new-workspace-name">Name</Label>
+          <label
+            htmlFor="new-workspace-name"
+            className="mb-1.5 block text-xs font-medium text-foreground"
+          >
+            Name
+          </label>
           <Input
             id="new-workspace-name"
             value={name}
@@ -232,7 +236,6 @@ function CreateWorkspaceDialog({
                 void submit();
               }
             }}
-            className="mt-1.5"
           />
           {create.error ? (
             <p className="mt-2 text-[13px] text-destructive-foreground">{create.error.message}</p>

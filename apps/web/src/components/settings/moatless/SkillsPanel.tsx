@@ -17,7 +17,6 @@ import {
   DialogTitle,
 } from "../../ui/dialog";
 import { Input } from "../../ui/input";
-import { Label } from "../../ui/label";
 import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
 import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
 import { searchableSetting } from "../settingsSearch";
@@ -157,18 +156,27 @@ function RegisterPluginDialog({
         </DialogHeader>
         <DialogPanel className="space-y-4 px-6 pb-5">
           <div>
-            <Label htmlFor="new-plugin-name">Name</Label>
+            <label
+              htmlFor="new-plugin-name"
+              className="mb-1.5 block text-xs font-medium text-foreground"
+            >
+              Name
+            </label>
             <Input
               id="new-plugin-name"
               value={name}
               autoFocus
               placeholder="my-skills"
               onChange={(event) => setName(event.currentTarget.value)}
-              className="mt-1.5"
             />
           </div>
           <div>
-            <Label htmlFor="new-plugin-git-url">Git URL</Label>
+            <label
+              htmlFor="new-plugin-git-url"
+              className="mb-1.5 block text-xs font-medium text-foreground"
+            >
+              Git URL
+            </label>
             <Input
               id="new-plugin-git-url"
               value={gitUrl}
@@ -180,7 +188,6 @@ function RegisterPluginDialog({
                   void submit();
                 }
               }}
-              className="mt-1.5"
             />
           </div>
           {create.error ? (
