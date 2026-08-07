@@ -8,9 +8,11 @@ import {
   isScheduleSource,
   isSubscriptionSource,
   loopKindLabel,
+  loopNeedsApproval,
   loopProvenance,
   loopSourceSummary,
   loopStateLabel,
+  partitionLoopsByApproval,
 } from "./loopRows";
 
 const CONFIG: LoopConfig = {
@@ -161,5 +163,36 @@ describe("filterLoops", () => {
   it("does not match on the state badge, which is a status and not an identity", () => {
     // Every fixture Loop is paused, so a state match would return all three.
     expect(filterLoops(rows, "paused")).toEqual([]);
+  });
+});
+
+describe("partitionLoopsByApproval", () => {
+  const awaiting = loop({ id: "a", name: "Awaiting", executionState: "awaiting_approval" });
+  const paused = loop({ id: "b", name: "Paused", executionState: "paused" });
+  const active = loop({ id: "c", name: "Active", executionState: "active", active: true });
+
+  it("lifts out the Loops that fire nothing until somebody approves them", () => {
+    const { awaiting: waiting, rest } = partitionLoopsByApproval([paused, awaiting, active]);
+    expect(waiting.map((row) => row.id)).toEqual(["a"]);
+    expect(rest.map((row) => row.id)).toEqual(["b", "c"]);
+  });
+
+  it("keeps the order it was given on both sides", () => {
+    const second = loop({ id: "d", name: "Also awaiting", executionState: "awaiting_approval" });
+    const { awaiting: waiting, rest } = partitionLoopsByApproval([
+      second,
+      active,
+      awaiting,
+      paused,
+    ]);
+    expect(waiting.map((row) => row.id)).toEqual(["d", "a"]);
+    expect(rest.map((row) => row.id)).toEqual(["c", "b"]);
+  });
+
+  it("never asks for a decision about a deleted Loop", () => {
+    // It is kept in the list for its history; nothing is waiting on anybody.
+    const gone = loop({ id: "e", executionState: "awaiting_approval", deleted: true });
+    expect(loopNeedsApproval(gone)).toBe(false);
+    expect(partitionLoopsByApproval([gone]).awaiting).toEqual([]);
   });
 });

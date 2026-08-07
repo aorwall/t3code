@@ -29,22 +29,55 @@ import { Textarea } from "../../ui/textarea";
 import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
 import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
 import { searchableSetting } from "../settingsSearch";
-import { compareLoops, filterLoops, loopSourceSummary, loopStateLabel } from "./loopRows";
+import {
+  compareLoops,
+  filterLoops,
+  loopSourceSummary,
+  loopStateLabel,
+  partitionLoopsByApproval,
+} from "./loopRows";
 import { SectionEmpty, SectionError, SectionPending } from "./MoatlessSectionState";
 import { loopsQuery, repositoriesQuery } from "./queries";
 import { SectionCount, SectionSearch } from "./SectionSearch";
 import { cn } from "~/lib/utils";
 
+/**
+ * Every Loop the deployment runs, with the ones waiting on a decision lifted
+ * into their own section above the rest.
+ *
+ * A Loop awaiting approval is not a status to notice in a long list — it is
+ * work: it fires nothing until somebody approves it and says whose identity it
+ * runs as. Sorting it to the top of one list would leave it looking like a
+ * quieter kind of Loop, so it gets a section with a heading that says what is
+ * being asked. The section disappears when nothing is waiting, because a
+ * permanently empty box is a heading people stop reading.
+ *
+ * Both sections read one filtered, sorted list, so the search box in the main
+ * header reaches the Loops above it too, and the two can never disagree about
+ * order or about what matched.
+ */
 export function LoopsPanel() {
   const { data, error, isPending, refresh } = useMoatlessQuery(loopsQuery);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [query, setQuery] = useState("");
 
   const all = useMemo(() => [...(data ?? [])].sort(compareLoops), [data]);
-  const rows = useMemo(() => filterLoops(all, query), [all, query]);
+  const matching = useMemo(() => filterLoops(all, query), [all, query]);
+  const { awaiting, rest } = useMemo(() => partitionLoopsByApproval(matching), [matching]);
 
   return (
     <SettingsPageContainer>
+      {awaiting.length > 0 ? (
+        <SettingsSection
+          {...searchableSetting("loops-awaiting-approval")}
+          headerAction={<SectionCount count={awaiting.length} singular="loop" plural="loops" />}
+        >
+          {awaiting.map((loop) => (
+            <LoopRow key={loop.id} loop={loop} />
+          ))}
+        </SettingsSection>
+      ) : null}
+
       <SettingsSection
         {...searchableSetting("loops")}
         headerAction={
@@ -72,19 +105,21 @@ export function LoopsPanel() {
           isPending ? (
             <SectionPending label="loops" />
           ) : null
-        ) : rows.length === 0 ? (
+        ) : rest.length === 0 ? (
           <SectionEmpty>
             {all.length === 0 ? (
               <>
                 No loops yet. A loop watches a source — a schedule or an integration event — and
                 starts a task when it fires.
               </>
-            ) : (
+            ) : matching.length === 0 ? (
               <>No loop matches “{query}”, by name or by where it listens.</>
+            ) : (
+              <>Every loop shown is waiting for approval.</>
             )}
           </SectionEmpty>
         ) : (
-          rows.map((loop) => <LoopRow key={loop.id} loop={loop} />)
+          rest.map((loop) => <LoopRow key={loop.id} loop={loop} />)
         )}
       </SettingsSection>
 

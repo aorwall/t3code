@@ -252,6 +252,15 @@ export const SETTINGS_SEARCH_ITEMS = [
     title: "Loops",
     to: "/settings/loops",
   },
+  // Its own item for the same reason the Secrets sections below have theirs:
+  // the page carries two sections and "Loops" could only land on one. This one
+  // is what somebody searching for work to do is looking for, and it lands on
+  // the page whether or not anything is waiting there today.
+  {
+    id: "loops-awaiting-approval",
+    title: "Loops awaiting approval",
+    to: "/settings/loops",
+  },
   {
     id: "integrations-connections",
     title: "Connections",
