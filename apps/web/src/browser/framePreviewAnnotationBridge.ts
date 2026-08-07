@@ -64,6 +64,13 @@ interface FrameAnnotationHost {
 }
 
 const hosts = new Map<string, FrameAnnotationHost>();
+/**
+ * The last host unregistered for a tab, kept so that a re-registration over the
+ * same window can pick up where it left off. React tears the old registration
+ * down before it builds the new one, so by the time `register` runs there is
+ * nothing left in `hosts` to read.
+ */
+const retired = new Map<string, FrameAnnotationHost>();
 const subscribers = new Map<string, Set<() => void>>();
 const FRAME_PREVIEW_INSPECTOR_NAVIGATION_UNAVAILABLE: FramePreviewInspectorNavigationState =
   Object.freeze({
@@ -318,15 +325,25 @@ export function registerFramePreviewAnnotationHost(input: {
   const previous = hosts.get(input.runtimeTabId);
   if (previous) finishPendingPick(previous, null);
 
+  // Registering over the same window is a re-render, not a new page. The guest
+  // announces itself once per document, so anything relearned here would have
+  // to wait on the ping round-trip below — and until it lands, the annotate
+  // button reads as unavailable and a pick resolves to null. A different window
+  // means a different frame element, hence a different document, so there is
+  // nothing to carry.
+  const before = previous ?? retired.get(input.runtimeTabId);
+  const carried = before?.frameWindow === input.frameWindow ? before : null;
+  retired.delete(input.runtimeTabId);
+
   const host: FrameAnnotationHost = {
     frameWindow: input.frameWindow,
     targetOrigin: input.targetOrigin,
-    currentUrl: input.url,
-    ready: false,
-    inspectorReady: false,
-    history: [previewPathFromUrl(input.url)],
-    historyIndex: 0,
-    navigationState: FRAME_PREVIEW_INSPECTOR_NAVIGATION_UNAVAILABLE,
+    currentUrl: carried?.currentUrl ?? input.url,
+    ready: carried?.ready ?? false,
+    inspectorReady: carried?.inspectorReady ?? false,
+    history: carried?.history ?? [previewPathFromUrl(input.url)],
+    historyIndex: carried?.historyIndex ?? 0,
+    navigationState: carried?.navigationState ?? FRAME_PREVIEW_INSPECTOR_NAVIGATION_UNAVAILABLE,
     pendingPick: null,
     onInspectorRouteChange: input.onInspectorRouteChange ?? null,
   };
@@ -338,6 +355,7 @@ export function registerFramePreviewAnnotationHost(input: {
     if (hosts.get(input.runtimeTabId) !== host) return;
     finishPendingPick(host, null);
     hosts.delete(input.runtimeTabId);
+    retired.set(input.runtimeTabId, host);
     notify(input.runtimeTabId);
   };
 }
@@ -443,6 +461,7 @@ export function useFramePreviewInspectorNavigationState(
 export function resetFramePreviewAnnotationBridgeForTest(): void {
   for (const host of hosts.values()) finishPendingPick(host, null);
   hosts.clear();
+  retired.clear();
   subscribers.clear();
   if (listening && typeof window !== "undefined") {
     window.removeEventListener("message", handleFrameMessage);

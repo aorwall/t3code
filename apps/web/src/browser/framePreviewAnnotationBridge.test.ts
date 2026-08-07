@@ -141,6 +141,56 @@ describe("framePreviewAnnotationBridge", () => {
     cleanup();
   });
 
+  it("stays ready when the same frame is registered again", () => {
+    const { frameWindow } = frameHarness();
+    const url = `${ORIGIN}/`;
+    const register = () =>
+      registerFramePreviewAnnotationHost({
+        runtimeTabId: RUNTIME_TAB_ID,
+        frameWindow,
+        targetOrigin: ORIGIN,
+        url,
+      });
+
+    let cleanup = register();
+    dispatchFromFrame(frameWindow, GUEST_READY_CHANNEL);
+    expect(isFramePreviewAnnotationReady(RUNTIME_TAB_ID)).toBe(true);
+
+    // React tears the old registration down before it builds the new one, so
+    // this is the order a re-render produces.
+    cleanup();
+    cleanup = register();
+
+    expect(isFramePreviewAnnotationReady(RUNTIME_TAB_ID)).toBe(true);
+    cleanup();
+  });
+
+  it("starts over when a different frame is registered for the same tab", () => {
+    const first = frameHarness();
+    const second = frameHarness();
+    const url = `${ORIGIN}/`;
+
+    const cleanup = registerFramePreviewAnnotationHost({
+      runtimeTabId: RUNTIME_TAB_ID,
+      frameWindow: first.frameWindow,
+      targetOrigin: ORIGIN,
+      url,
+    });
+    dispatchFromFrame(first.frameWindow, GUEST_READY_CHANNEL);
+    expect(isFramePreviewAnnotationReady(RUNTIME_TAB_ID)).toBe(true);
+
+    cleanup();
+    const next = registerFramePreviewAnnotationHost({
+      runtimeTabId: RUNTIME_TAB_ID,
+      frameWindow: second.frameWindow,
+      targetOrigin: ORIGIN,
+      url,
+    });
+
+    expect(isFramePreviewAnnotationReady(RUNTIME_TAB_ID)).toBe(false);
+    next();
+  });
+
   it("ignores annotation messages from another origin", () => {
     const { frameWindow } = frameHarness();
     const cleanup = registerFramePreviewAnnotationHost({

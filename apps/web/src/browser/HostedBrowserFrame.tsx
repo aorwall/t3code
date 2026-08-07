@@ -96,6 +96,16 @@ export function HostedBrowserFrame(props: {
     [tabId, threadRef],
   );
 
+  // Held in a ref so that registration below does not depend on this
+  // callback's identity. `threadRef` is minted fresh by `WebBrowserHost` every
+  // time any thread's preview state changes, so the callback is new on most
+  // renders — and re-registering starts over from "the guest has not announced
+  // itself", which is what disables the annotate button.
+  const routeChangeRef = useRef(handleInspectorRouteChange);
+  useEffect(() => {
+    routeChangeRef.current = handleInspectorRouteChange;
+  }, [handleInspectorRouteChange]);
+
   useEffect(() => {
     if (!url) return;
     const frameWindow = iframeRef.current?.contentWindow;
@@ -105,9 +115,9 @@ export function HostedBrowserFrame(props: {
       frameWindow,
       targetOrigin: resolveFramePreviewAnnotationOrigin(url),
       url,
-      onInspectorRouteChange: handleInspectorRouteChange,
+      onInspectorRouteChange: (change) => routeChangeRef.current(change),
     });
-  }, [handleInspectorRouteChange, runtimeTabId, reloadNonce, url]);
+  }, [runtimeTabId, reloadNonce, url]);
 
   return (
     <div
