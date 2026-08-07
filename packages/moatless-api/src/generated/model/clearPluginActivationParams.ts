@@ -16,4 +16,8 @@ export type ClearPluginActivationParams = {
    * Omit to clear the whole-plugin record
    */
   skillName?: string;
+  /**
+   * Whose personal record; omit for your own
+   */
+  userId?: string;
 };

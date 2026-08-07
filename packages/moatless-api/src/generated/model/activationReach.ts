@@ -7,7 +7,7 @@
  */
 
 /**
- * Who an activation applies to: everyone, or the calling user alone.
+ * Who an activation applies to: everyone, or one person.
  */
 export type ActivationReach = (typeof ActivationReach)[keyof typeof ActivationReach];
 

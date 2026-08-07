@@ -19,6 +19,12 @@ export interface GithubCreatePrResponse {
   htmlUrl: string;
   /** @minimum 0 */
   number: number;
+  /**
+   * `true` when the head branch already had an open pull request, so no new
+   * one was created and the existing one is returned instead. The stacked
+   * action reports this as `opened_existing`.
+   */
+  openedExisting?: boolean;
   state: string;
   title: string;
 }

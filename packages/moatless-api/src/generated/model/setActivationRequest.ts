@@ -18,4 +18,13 @@ export interface SetActivationRequest {
    * @nullable
    */
   skillName?: string | null;
+  /**
+   * Whose record, with `personal` reach: the caller's own when omitted, and
+   * somebody else's only for an administrator — which is how a bot user,
+   * who never signs in to set its own, gets one. Rejected with `everyone`,
+   * where naming a person would read as a record for them and write the
+   * deployment-wide default instead.
+   * @nullable
+   */
+  userId?: string | null;
 }

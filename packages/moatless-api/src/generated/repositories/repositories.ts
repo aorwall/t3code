@@ -330,10 +330,6 @@ export const getSyncConfigUrl = (repositoryId: string) => {
   return `/api/v1/repositories/${repositoryId}/sync-config`;
 };
 
-/**
- * @summary Sync `.moatless/config.json` and `.moatless/loops/` from the remote
-repository into the DB.
- */
 export const syncConfig = async (
   repositoryId: string,
   options?: Parameters<typeof customInstance>[1],

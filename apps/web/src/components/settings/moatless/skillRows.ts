@@ -4,7 +4,10 @@ import type {
   EffectivePluginResponse,
   PluginResponse,
   PluginSkillResponse,
+  UserListItem,
 } from "@t3tools/moatless-api/generated/model";
+
+import { compareUsers, userDisplayName } from "./userRows";
 
 /**
  * The precedence a skill plugin's controls read from, kept pure and beside a
@@ -100,4 +103,60 @@ export function pluginActivationRows(
 /** Plugins ordered by name, case-insensitively. */
 export function comparePlugins(a: PluginResponse, b: PluginResponse): number {
   return a.name.localeCompare(b.name, undefined, { sensitivity: "accent" });
+}
+
+/**
+ * Whose personal records the override column reads and writes.
+ *
+ * `userId` is `undefined` for the viewer, and the wire omits the field for
+ * them — so the ordinary case needs no id and does not wait on a session read.
+ */
+export interface ActivationIdentity {
+  readonly userId: string | undefined;
+  readonly label: string;
+}
+
+/** The select's value for the viewer, who has no user id here. */
+export const VIEWER_IDENTITY = "viewer";
+
+const VIEWER: ActivationIdentity = { userId: undefined, label: "You" };
+
+/**
+ * The identities whose overrides this page can set: the viewer, then every bot
+ * user.
+ *
+ * Bots and nobody else, because a bot is the one identity that cannot set its
+ * own. It never signs in, and its tasks — the ones an adapter or a Loop starts
+ * on its behalf — resolve their skills against its records, so those records
+ * can only be written for it. A human sets their own from their own account.
+ */
+export function activationIdentities(
+  users: ReadonlyArray<UserListItem>,
+): ReadonlyArray<ActivationIdentity> {
+  return [
+    VIEWER,
+    ...users
+      .filter((user) => user.isBot)
+      .sort(compareUsers)
+      .map((user) => ({ userId: user.id, label: userDisplayName(user) })),
+  ];
+}
+
+/** What one identity is called in the select. */
+export function identityValue(identity: ActivationIdentity): string {
+  return identity.userId ?? VIEWER_IDENTITY;
+}
+
+/**
+ * The identity a select value names, falling back to the viewer.
+ *
+ * Total rather than optional: a bot deleted while its page is open leaves a
+ * selection naming nobody, and the page then reads the viewer's own records —
+ * which is the one answer that is always safe to show.
+ */
+export function selectedIdentity(
+  identities: ReadonlyArray<ActivationIdentity>,
+  value: string,
+): ActivationIdentity {
+  return identities.find((identity) => identityValue(identity) === value) ?? VIEWER;
 }

@@ -162,18 +162,22 @@ export const globalGithubInstallationQuery = moatlessQuery<GitHubInstallationBin
 export const pluginsQuery = moatlessQuery<PluginResponse[]>("plugins", () => listPlugins());
 
 /**
- * What the viewer actually gets, once global defaults and their own records are
- * resolved against each other. Kept beside the plugin list rather than under it:
+ * What one person actually gets, once global defaults and their own records are
+ * resolved against each other. The viewer, or a bot user whose overrides an
+ * administrator is setting. Kept beside the plugin list rather than under it:
  * a single activation write can change what is delivered from more than one
  * plugin, and a caller that has to enumerate which is a caller that misses one.
  *
  * Not under `plugins`, so that re-syncing one plugin's skills does not discard
- * the resolved delivery for all of them.
+ * the resolved delivery for all of them. Keyed per person below the same name,
+ * so `invalidate("plugins-effective")` still refreshes every one of them.
  */
-export const effectivePluginsQuery = moatlessQuery<EffectivePluginResponse[]>(
-  "plugins-effective",
-  () => listEffectivePlugins(),
-);
+export function effectivePluginsQuery(userId?: string) {
+  return moatlessQuery<EffectivePluginResponse[]>(
+    userId === undefined ? "plugins-effective" : `plugins-effective/${userId}`,
+    () => listEffectivePlugins(userId === undefined ? undefined : { userId }),
+  );
+}
 
 /**
  * One plugin's skills, keyed below the plugin list so registering or removing a
@@ -187,13 +191,23 @@ export function pluginSkillsQuery(pluginId: string) {
 }
 
 /**
- * The activation records that bear on the viewer for one plugin: every global
- * record plus their own. This is the read that lets a control tell "off by
+ * The activation records that bear on one person for one plugin: every global
+ * record plus theirs. This is the read that lets a control tell "off by
  * default" apart from "I turned my copy off" — the difference between an absent
  * record and an explicit one.
+ *
+ * `userId` names a bot user whose overrides an administrator is setting; the
+ * viewer's own when it is omitted. Each person keys below the plugin's
+ * activations, so a write invalidating `plugins/{id}/activations` refreshes the
+ * viewer's and every bot's at once — one write can be the last record either
+ * side of the pair is reading.
  */
-export function pluginActivationsQuery(pluginId: string) {
-  return moatlessQuery<ActivationResponse[]>(`plugins/${pluginId}/activations`, () =>
-    listPluginActivations(pluginId),
+export function pluginActivationsQuery(pluginId: string, userId?: string) {
+  const key =
+    userId === undefined
+      ? `plugins/${pluginId}/activations`
+      : `plugins/${pluginId}/activations/${userId}`;
+  return moatlessQuery<ActivationResponse[]>(key, () =>
+    listPluginActivations(pluginId, userId === undefined ? undefined : { userId }),
   );
 }

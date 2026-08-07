@@ -16,4 +16,9 @@ export interface ActivationResponse {
   reach: ActivationReach;
   /** @nullable */
   skillName?: string | null;
+  /**
+   * Whose record this is. Absent for the deployment-wide default.
+   * @nullable
+   */
+  userId?: string | null;
 }

@@ -4002,11 +4002,24 @@
     "/api/v1/plugins/effective": {
       "get": {
         "tags": ["plugins"],
-        "summary": "What the calling user actually gets, once global defaults and their own\nrecords have been resolved against each other.",
+        "summary": "What one person actually gets, once global defaults and their own records\nhave been resolved against each other. The caller unless `userId` names\nanother, which is an administrator's call.",
+        "description": "The same read whoever it is asked about: an administrator setting a bot\nuser's records needs to see what those records add up to for the bot, not\nfor themselves, and resolution is the server's to do either way.",
         "operationId": "list_effective_plugins",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "Whose delivery; omit for your own",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Plugins and skills this user receives",
+            "description": "Plugins and skills that user receives",
             "content": {
               "application/json": {
                 "schema": {
@@ -4014,6 +4027,16 @@
                   "items": {
                     "$ref": "#/components/schemas/EffectivePluginResponse"
                   }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Admin required for somebody else's delivery",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }
@@ -4078,7 +4101,7 @@
       "put": {
         "tags": ["plugins"],
         "summary": "Turn a plugin, or one skill inside it, on or off.",
-        "description": "Setting the default for everyone is an administrator's call; setting one's\nown is anybody's. A personal record wins over the global one in both\ndirections, so this same endpoint is how somebody escapes a plugin that\narrived by default.",
+        "description": "Setting the default for everyone is an administrator's call; setting one's\nown is anybody's, and setting somebody else's — a bot user, which has no way\nto sign in and set its own — is an administrator's again. A personal record\nwins over the global one in both directions, so this same endpoint is how\nsomebody escapes a plugin that arrived by default.",
         "operationId": "set_plugin_activation",
         "parameters": [
           {
@@ -4112,8 +4135,18 @@
               }
             }
           },
+          "400": {
+            "description": "A user was named with the everyone reach",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
           "403": {
-            "description": "Admin required for the global default",
+            "description": "Admin required for the global default or somebody else's record",
             "content": {
               "application/json": {
                 "schema": {
@@ -4176,14 +4209,34 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "Whose personal record; omit for your own",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
           "204": {
             "description": "Cleared"
           },
+          "400": {
+            "description": "A user was named with the everyone reach",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
           "403": {
-            "description": "Admin required for the global default",
+            "description": "Admin required for the global default or somebody else's record",
             "content": {
               "application/json": {
                 "schema": {
@@ -4218,7 +4271,7 @@
     "/api/v1/plugins/{id}/activations": {
       "get": {
         "tags": ["plugins"],
-        "summary": "The activation records that bear on this caller for one plugin: every global\nrecord plus their own, and nobody else's.",
+        "summary": "The activation records that bear on one person for one plugin: every global\nrecord plus theirs, and nobody else's. The person is the caller unless\n`userId` names another, which is an administrator's call.",
         "description": "This is the read half of the two write endpoints below. Without it a control\ncan show what somebody *gets* but not which record put it there, so \"turn\noff my personal override\" and \"the default is already off\" look identical.",
         "operationId": "list_plugin_activations",
         "parameters": [
@@ -4230,11 +4283,21 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "Whose records; omit for your own",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "The records that apply to this caller",
+            "description": "The records that apply to that person",
             "content": {
               "application/json": {
                 "schema": {
@@ -4242,6 +4305,16 @@
                   "items": {
                     "$ref": "#/components/schemas/ActivationResponse"
                   }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Admin required for somebody else's records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }
@@ -4665,7 +4738,6 @@
     "/api/v1/repositories/{repository_id}/sync-config": {
       "post": {
         "tags": ["repositories"],
-        "summary": "Sync `.moatless/config.json` and `.moatless/loops/` from the remote\nrepository into the DB.",
         "operationId": "sync_config",
         "parameters": [
           {
@@ -5919,7 +5991,7 @@
       "get": {
         "tags": ["tasks"],
         "summary": "Get a single task's external connections, statuses, and message counts.",
-        "description": "Per-task counterpart to [`list_task_connections`]. Unlike the admin list,\nthis is scope-checked like [`super::handlers::get_task`] (not admin-gated),\nso any user who can see the task can see its connections.",
+        "description": "Per-task counterpart to [`list_task_connections`]. Unlike the admin list,\nthis is scope-checked like [`crate::task::handlers::get_task`] (not admin-gated),\nso any user who can see the task can see its connections.",
         "operationId": "get_task_connections",
         "parameters": [
           {
@@ -8264,7 +8336,7 @@
       },
       "ActivationReach": {
         "type": "string",
-        "description": "Who an activation applies to: everyone, or the calling user alone.",
+        "description": "Who an activation applies to: everyone, or one person.",
         "enum": ["everyone", "personal"]
       },
       "ActivationResponse": {
@@ -8283,6 +8355,11 @@
           },
           "skillName": {
             "type": ["string", "null"]
+          },
+          "userId": {
+            "type": ["string", "null"],
+            "format": "uuid",
+            "description": "Whose record this is. Absent for the deployment-wide default."
           }
         }
       },
@@ -10485,6 +10562,10 @@
             "type": "integer",
             "format": "int64",
             "minimum": 0
+          },
+          "openedExisting": {
+            "type": "boolean",
+            "description": "`true` when the head branch already had an open pull request, so no new\none was created and the existing one is returned instead. The stacked\naction reports this as `opened_existing`."
           },
           "state": {
             "type": "string"
@@ -12986,6 +13067,11 @@
           "skillName": {
             "type": ["string", "null"],
             "description": "Omit to mean the whole plugin."
+          },
+          "userId": {
+            "type": ["string", "null"],
+            "format": "uuid",
+            "description": "Whose record, with `personal` reach: the caller's own when omitted, and\nsomebody else's only for an administrator — which is how a bot user,\nwho never signs in to set its own, gets one. Rejected with `everyone`,\nwhere naming a person would read as a record for them and write the\ndeployment-wide default instead."
           }
         }
       },

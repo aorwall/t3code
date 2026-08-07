@@ -11,6 +11,8 @@ import type {
   CreatePluginRequest,
   EffectivePluginResponse,
   ErrorBody,
+  ListEffectivePluginsParams,
+  ListPluginActivationsParams,
   PluginResponse,
   PluginSkillResponse,
   SetActivationRequest,
@@ -101,6 +103,11 @@ export type listEffectivePluginsResponse200 = {
   status: 200;
 };
 
+export type listEffectivePluginsResponse403 = {
+  data: ErrorBody;
+  status: 403;
+};
+
 export type listEffectivePluginsResponse500 = {
   data: ErrorBody;
   status: 500;
@@ -109,7 +116,10 @@ export type listEffectivePluginsResponse500 = {
 export type listEffectivePluginsResponseSuccess = listEffectivePluginsResponse200 & {
   headers: Headers;
 };
-export type listEffectivePluginsResponseError = listEffectivePluginsResponse500 & {
+export type listEffectivePluginsResponseError = (
+  | listEffectivePluginsResponse403
+  | listEffectivePluginsResponse500
+) & {
   headers: Headers;
 };
 
@@ -117,18 +127,35 @@ export type listEffectivePluginsResponse =
   | listEffectivePluginsResponseSuccess
   | listEffectivePluginsResponseError;
 
-export const getListEffectivePluginsUrl = () => {
-  return `/api/v1/plugins/effective`;
+export const getListEffectivePluginsUrl = (params?: ListEffectivePluginsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/plugins/effective?${stringifiedParams}`
+    : `/api/v1/plugins/effective`;
 };
 
 /**
- * @summary What the calling user actually gets, once global defaults and their own
-records have been resolved against each other.
+ * The same read whoever it is asked about: an administrator setting a bot
+ * user's records needs to see what those records add up to for the bot, not
+ * for themselves, and resolution is the server's to do either way.
+ * @summary What one person actually gets, once global defaults and their own records
+have been resolved against each other. The caller unless `userId` names
+another, which is an administrator's call.
  */
 export const listEffectivePlugins = async (
+  params?: ListEffectivePluginsParams,
   options?: Parameters<typeof customInstance>[1],
 ): Promise<listEffectivePluginsResponse> => {
-  return customInstance<listEffectivePluginsResponse>(getListEffectivePluginsUrl(), {
+  return customInstance<listEffectivePluginsResponse>(getListEffectivePluginsUrl(params), {
     ...options,
     method: "GET",
   });
@@ -180,6 +207,11 @@ export type setPluginActivationResponse200 = {
   status: 200;
 };
 
+export type setPluginActivationResponse400 = {
+  data: ErrorBody;
+  status: 400;
+};
+
 export type setPluginActivationResponse403 = {
   data: ErrorBody;
   status: 403;
@@ -199,6 +231,7 @@ export type setPluginActivationResponseSuccess = setPluginActivationResponse200 
   headers: Headers;
 };
 export type setPluginActivationResponseError = (
+  | setPluginActivationResponse400
   | setPluginActivationResponse403
   | setPluginActivationResponse404
   | setPluginActivationResponse500
@@ -216,9 +249,10 @@ export const getSetPluginActivationUrl = (id: string) => {
 
 /**
  * Setting the default for everyone is an administrator's call; setting one's
- * own is anybody's. A personal record wins over the global one in both
- * directions, so this same endpoint is how somebody escapes a plugin that
- * arrived by default.
+ * own is anybody's, and setting somebody else's — a bot user, which has no way
+ * to sign in and set its own — is an administrator's again. A personal record
+ * wins over the global one in both directions, so this same endpoint is how
+ * somebody escapes a plugin that arrived by default.
  * @summary Turn a plugin, or one skill inside it, on or off.
  */
 export const setPluginActivation = async (
@@ -237,6 +271,11 @@ export const setPluginActivation = async (
 export type clearPluginActivationResponse204 = {
   data: void;
   status: 204;
+};
+
+export type clearPluginActivationResponse400 = {
+  data: ErrorBody;
+  status: 400;
 };
 
 export type clearPluginActivationResponse403 = {
@@ -258,6 +297,7 @@ export type clearPluginActivationResponseSuccess = clearPluginActivationResponse
   headers: Headers;
 };
 export type clearPluginActivationResponseError = (
+  | clearPluginActivationResponse400
   | clearPluginActivationResponse403
   | clearPluginActivationResponse404
   | clearPluginActivationResponse500
@@ -306,6 +346,11 @@ export type listPluginActivationsResponse200 = {
   status: 200;
 };
 
+export type listPluginActivationsResponse403 = {
+  data: ErrorBody;
+  status: 403;
+};
+
 export type listPluginActivationsResponse500 = {
   data: ErrorBody;
   status: 500;
@@ -314,7 +359,10 @@ export type listPluginActivationsResponse500 = {
 export type listPluginActivationsResponseSuccess = listPluginActivationsResponse200 & {
   headers: Headers;
 };
-export type listPluginActivationsResponseError = listPluginActivationsResponse500 & {
+export type listPluginActivationsResponseError = (
+  | listPluginActivationsResponse403
+  | listPluginActivationsResponse500
+) & {
   headers: Headers;
 };
 
@@ -322,22 +370,36 @@ export type listPluginActivationsResponse =
   | listPluginActivationsResponseSuccess
   | listPluginActivationsResponseError;
 
-export const getListPluginActivationsUrl = (id: string) => {
-  return `/api/v1/plugins/${id}/activations`;
+export const getListPluginActivationsUrl = (id: string, params?: ListPluginActivationsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/plugins/${id}/activations?${stringifiedParams}`
+    : `/api/v1/plugins/${id}/activations`;
 };
 
 /**
  * This is the read half of the two write endpoints below. Without it a control
  * can show what somebody *gets* but not which record put it there, so "turn
  * off my personal override" and "the default is already off" look identical.
- * @summary The activation records that bear on this caller for one plugin: every global
-record plus their own, and nobody else's.
+ * @summary The activation records that bear on one person for one plugin: every global
+record plus theirs, and nobody else's. The person is the caller unless
+`userId` names another, which is an administrator's call.
  */
 export const listPluginActivations = async (
   id: string,
+  params?: ListPluginActivationsParams,
   options?: Parameters<typeof customInstance>[1],
 ): Promise<listPluginActivationsResponse> => {
-  return customInstance<listPluginActivationsResponse>(getListPluginActivationsUrl(id), {
+  return customInstance<listPluginActivationsResponse>(getListPluginActivationsUrl(id, params), {
     ...options,
     method: "GET",
   });
