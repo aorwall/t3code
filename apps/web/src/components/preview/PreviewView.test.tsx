@@ -41,7 +41,41 @@ const mocks = vi.hoisted(() => ({
   chromeBack: undefined as (() => void) | undefined,
   chromeForward: undefined as (() => void) | undefined,
   chromeRefresh: null as (() => void) | null,
+  chromePick: null as (() => void) | null,
+  chromePickDisabled: undefined as boolean | undefined,
+  chromePickDisabledReason: undefined as string | undefined,
+  frameAnnotationReady: false,
+  frameNavigation: {
+    ready: false,
+    canGoBack: false,
+    canGoForward: false,
+  },
+  navigateFramePreviewInspectorHistory: vi.fn(),
+  pickFramePreviewAnnotationElement: vi.fn(async () => null),
+  cancelFramePreviewAnnotationPick: vi.fn(),
+  menuHardReload: null as (() => void) | null,
+  menuToggleDeviceToolbar: null as (() => void) | null,
 }));
+
+const annotationTheme = {
+  colorScheme: "light" as const,
+  radius: "0.5rem",
+  background: "white",
+  foreground: "black",
+  popover: "white",
+  popoverForeground: "black",
+  primary: "blue",
+  primaryForeground: "white",
+  muted: "gray",
+  mutedForeground: "darkgray",
+  accent: "lightgray",
+  accentForeground: "black",
+  border: "silver",
+  input: "silver",
+  ring: "blue",
+  fontSans: "system-ui",
+  fontMono: "monospace",
+};
 
 vi.mock("~/state/session", () => ({
   readPreparedConnection: mocks.readPreparedConnection,
@@ -121,6 +155,18 @@ vi.mock("~/browser/hostedFrameReload", () => ({
   reloadHostedFrame: mocks.reloadHostedFrame,
 }));
 
+vi.mock("~/browser/framePreviewAnnotationBridge", () => ({
+  useFramePreviewAnnotationReady: () => mocks.frameAnnotationReady,
+  useFramePreviewInspectorNavigationState: () => mocks.frameNavigation,
+  navigateFramePreviewInspectorHistory: mocks.navigateFramePreviewInspectorHistory,
+  pickFramePreviewAnnotationElement: mocks.pickFramePreviewAnnotationElement,
+  cancelFramePreviewAnnotationPick: mocks.cancelFramePreviewAnnotationPick,
+}));
+
+vi.mock("~/browser/annotationTheme", () => ({
+  readPreviewAnnotationTheme: () => annotationTheme,
+}));
+
 vi.mock("./useFramedServerStatus", () => ({ useFramedServerStatus: () => null }));
 vi.mock("./PreviewServerNotStarted", () => ({ PreviewServerNotStarted: () => null }));
 vi.mock("./PreviewFrameUnrendered", () => ({
@@ -197,8 +243,14 @@ vi.mock("./PreviewChromeRow", () => ({
     onPickElement?: () => void;
     onPictureInPicture?: () => void;
     pictureInPicture?: boolean;
+    pickDisabled?: boolean;
+    pickDisabledReason?: string;
     trailingActions?: {
-      props: { onNativePictureInPicture?: () => void };
+      props: {
+        onNativePictureInPicture?: () => void;
+        onHardReload?: () => void;
+        onToggleDeviceToolbar?: () => void;
+      };
     };
   }) => {
     mocks.submittedUrl = props.onSubmit;
@@ -209,7 +261,12 @@ vi.mock("./PreviewChromeRow", () => ({
     mocks.togglePictureInPicture = props.onPictureInPicture ?? null;
     mocks.toggleNativePictureInPicture =
       props.trailingActions?.props.onNativePictureInPicture ?? null;
+    mocks.menuHardReload = props.trailingActions?.props.onHardReload ?? null;
+    mocks.menuToggleDeviceToolbar = props.trailingActions?.props.onToggleDeviceToolbar ?? null;
     mocks.pictureInPicturePressed = props.pictureInPicture ?? false;
+    mocks.chromePick = props.onPickElement ?? null;
+    mocks.chromePickDisabled = props.pickDisabled;
+    mocks.chromePickDisabledReason = props.pickDisabledReason;
     return null;
   },
 }));
@@ -221,8 +278,22 @@ vi.mock("./PreviewEmptyState", () => ({
   },
 }));
 vi.mock("./PreviewMoreMenu", () => ({
-  PreviewMoreMenu: (props: { onNativePictureInPicture: () => void }) => {
-    mocks.toggleNativePictureInPicture = props.onNativePictureInPicture;
+  PreviewMoreMenu: (props: {
+    onNativePictureInPicture?: () => void;
+    onToggleDeviceToolbar: () => void;
+  }) => {
+    mocks.toggleNativePictureInPicture = props.onNativePictureInPicture ?? null;
+    mocks.menuToggleDeviceToolbar = props.onToggleDeviceToolbar;
+    return null;
+  },
+}));
+vi.mock("./PreviewFrameMoreMenu", () => ({
+  PreviewFrameMoreMenu: (props: {
+    onHardReload: () => void;
+    onToggleDeviceToolbar: () => void;
+  }) => {
+    mocks.menuHardReload = props.onHardReload;
+    mocks.menuToggleDeviceToolbar = props.onToggleDeviceToolbar;
     return null;
   },
 }));
@@ -279,6 +350,16 @@ describe("PreviewView navigation", () => {
     mocks.chromeBack = undefined;
     mocks.chromeForward = undefined;
     mocks.chromeRefresh = null;
+    mocks.chromePick = null;
+    mocks.chromePickDisabled = undefined;
+    mocks.chromePickDisabledReason = undefined;
+    mocks.frameAnnotationReady = false;
+    mocks.frameNavigation = { ready: false, canGoBack: false, canGoForward: false };
+    mocks.navigateFramePreviewInspectorHistory.mockClear();
+    mocks.pickFramePreviewAnnotationElement.mockClear();
+    mocks.cancelFramePreviewAnnotationPick.mockClear();
+    mocks.menuHardReload = null;
+    mocks.menuToggleDeviceToolbar = null;
   });
 
   it.each([
@@ -482,8 +563,18 @@ describe("PreviewView under the frame capability", () => {
     mocks.chromeBack = undefined;
     mocks.chromeForward = undefined;
     mocks.chromeRefresh = null;
+    mocks.chromePick = null;
+    mocks.chromePickDisabled = undefined;
+    mocks.chromePickDisabledReason = undefined;
     mocks.showEmptyState = false;
     mocks.miniPlayerTabId = null;
+    mocks.frameAnnotationReady = false;
+    mocks.frameNavigation = { ready: false, canGoBack: false, canGoForward: false };
+    mocks.navigateFramePreviewInspectorHistory.mockClear();
+    mocks.pickFramePreviewAnnotationElement.mockClear();
+    mocks.cancelFramePreviewAnnotationPick.mockClear();
+    mocks.menuHardReload = null;
+    mocks.menuToggleDeviceToolbar = null;
   });
 
   it("offers no back or forward, because a frame keeps no history to walk", () => {
@@ -499,6 +590,27 @@ describe("PreviewView under the frame capability", () => {
     expect(mocks.chromeRefresh).not.toBeNull();
     mocks.chromeRefresh?.();
     expect(mocks.reloadHostedFrame).toHaveBeenCalledWith(TEST_RUNTIME_TAB_ID);
+  });
+
+  it("wires inspector-backed frame history when the inspector is ready", () => {
+    mocks.frameNavigation = { ready: true, canGoBack: true, canGoForward: true };
+    renderToStaticMarkup(<PreviewView {...props} />);
+
+    expect(mocks.chromeBack).not.toBeUndefined();
+    expect(mocks.chromeForward).not.toBeUndefined();
+    mocks.chromeBack?.();
+    mocks.chromeForward?.();
+
+    expect(mocks.navigateFramePreviewInspectorHistory).toHaveBeenNthCalledWith(
+      1,
+      TEST_RUNTIME_TAB_ID,
+      "back",
+    );
+    expect(mocks.navigateFramePreviewInspectorHistory).toHaveBeenNthCalledWith(
+      2,
+      TEST_RUNTIME_TAB_ID,
+      "forward",
+    );
   });
 
   it("navigates by writing to the server rather than through the desktop bridge", async () => {
@@ -518,5 +630,50 @@ describe("PreviewView under the frame capability", () => {
       }),
     );
     expect(mocks.navigate).not.toHaveBeenCalled();
+  });
+
+  it("shows the annotation affordance disabled until the framed app announces the inspector", () => {
+    renderToStaticMarkup(<PreviewView {...props} />);
+
+    expect(mocks.chromePick).not.toBeNull();
+    expect(mocks.chromePickDisabled).toBe(true);
+    expect(mocks.chromePickDisabledReason).toContain("@moatless/inspector/preview-annotation");
+  });
+
+  it("starts browser-frame annotation picking once the inspector is ready", async () => {
+    mocks.frameAnnotationReady = true;
+    renderToStaticMarkup(<PreviewView {...props} />);
+
+    expect(mocks.chromePick).not.toBeNull();
+    expect(mocks.chromePickDisabled).toBe(false);
+    mocks.chromePick?.();
+
+    await vi.waitFor(() =>
+      expect(mocks.pickFramePreviewAnnotationElement).toHaveBeenCalledWith(
+        TEST_RUNTIME_TAB_ID,
+        annotationTheme,
+      ),
+    );
+  });
+
+  it("supports the in-app floating preview for frames", () => {
+    renderToStaticMarkup(<PreviewView {...props} />);
+
+    expect(mocks.togglePictureInPicture).not.toBeNull();
+    mocks.togglePictureInPicture?.();
+
+    expect(mocks.openMiniPlayer).toHaveBeenCalledWith(props.threadRef, "tab-1");
+    expect(mocks.closeRightPanel).toHaveBeenCalledWith(props.threadRef);
+  });
+
+  it("passes frame-safe actions to the preview menu", () => {
+    renderToStaticMarkup(<PreviewView {...props} />);
+
+    expect(mocks.menuHardReload).not.toBeNull();
+    expect(mocks.menuToggleDeviceToolbar).not.toBeNull();
+    expect(mocks.toggleNativePictureInPicture).toBeNull();
+
+    mocks.menuHardReload?.();
+    expect(mocks.reloadHostedFrame).toHaveBeenCalledWith(TEST_RUNTIME_TAB_ID);
   });
 });

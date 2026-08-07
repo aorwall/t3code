@@ -8,7 +8,7 @@ import { BrowserSurfaceSlot } from "~/browser/BrowserSurfaceSlot";
 import { previewRuntimeTabId } from "~/browser/previewRuntimeTabId";
 import { Button } from "~/components/ui/button";
 import { toastManager } from "~/components/ui/toast";
-import { useThreadPreviewState } from "~/previewStateStore";
+import { previewRuntimeCapability, useThreadPreviewState } from "~/previewStateStore";
 import { selectThreadPreviewMiniPlayer, usePreviewMiniPlayerStore } from "~/previewMiniPlayerStore";
 import { useRightPanelStore } from "~/rightPanelStore";
 
@@ -52,6 +52,11 @@ export function ThreadPreviewMiniPlayer({ threadRef, tabId, bottomInset }: Props
   const snapshot = previewState.sessions[tabId] ?? null;
   const runtimeTabId = previewRuntimeTabId(threadRef, previewState.serverEpoch, tabId);
   const desktopOverlay = previewState.desktopByTabId[tabId] ?? null;
+  // Fork: a frame is a page surface too. Upstream reads `hasWebContents` to mean
+  // "there is something to show", which no frame ever reports, so without this
+  // the mini player sits on "Reconnecting preview…" forever in a browser.
+  const framed = previewRuntimeCapability() === "frame";
+  const hasPreviewSurface = framed || Boolean(desktopOverlay?.hasWebContents);
   const position = miniPlayer?.tabId === tabId ? miniPlayer.position : null;
   const size =
     miniPlayer?.tabId === tabId && miniPlayer.size
@@ -251,25 +256,28 @@ export function ThreadPreviewMiniPlayer({ threadRef, tabId, bottomInset }: Props
           >
             <PanelRightIcon />
           </Button>
-          <Button
-            variant={desktopOverlay?.pictureInPicture ? "secondary" : "ghost"}
-            size="icon-xs"
-            aria-label={
-              desktopOverlay?.pictureInPicture
-                ? "Close popped-out preview"
-                : "Pop preview into separate window"
-            }
-            title={
-              desktopOverlay?.pictureInPicture
-                ? "Close separate window"
-                : "Pop into separate window"
-            }
-            disabled={!desktopOverlay?.hasWebContents}
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={toggleNativePictureInPicture}
-          >
-            <PictureInPicture2 />
-          </Button>
+          {/* Fork: the separate always-on-top window is an Electron window. */}
+          {previewBridge ? (
+            <Button
+              variant={desktopOverlay?.pictureInPicture ? "secondary" : "ghost"}
+              size="icon-xs"
+              aria-label={
+                desktopOverlay?.pictureInPicture
+                  ? "Close popped-out preview"
+                  : "Pop preview into separate window"
+              }
+              title={
+                desktopOverlay?.pictureInPicture
+                  ? "Close separate window"
+                  : "Pop into separate window"
+              }
+              disabled={!desktopOverlay?.hasWebContents}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={toggleNativePictureInPicture}
+            >
+              <PictureInPicture2 />
+            </Button>
+          ) : null}
           <Button
             variant="ghost"
             size="icon-xs"
@@ -287,14 +295,14 @@ export function ThreadPreviewMiniPlayer({ threadRef, tabId, bottomInset }: Props
         <div className="absolute inset-0 z-[29] rounded-xl bg-muted shadow-2xl/35" />
         <BrowserSurfaceSlot
           tabId={runtimeTabId}
-          visible={Boolean(desktopOverlay?.hasWebContents)}
+          visible={hasPreviewSurface}
           cornerRadius={12}
           fitSourceContent
           layoutVersion={position ? `${position.x}:${position.y}` : `initial:${bottomInset}`}
           className="absolute inset-0"
         />
         <div className="pointer-events-none absolute inset-0 z-[31] rounded-xl ring-1 ring-inset ring-border/80" />
-        {!desktopOverlay?.hasWebContents ? (
+        {!hasPreviewSurface ? (
           <div className="pointer-events-none absolute inset-0 z-[32] flex items-center justify-center rounded-xl bg-muted text-xs text-muted-foreground">
             Reconnecting preview…
           </div>

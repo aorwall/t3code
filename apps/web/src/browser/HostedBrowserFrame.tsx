@@ -9,10 +9,23 @@
 // order to work at all.
 
 import { useShallow } from "zustand/react/shallow";
+import type { ScopedThreadRef } from "@t3tools/contracts";
+import { useCallback, useEffect, useRef } from "react";
 
 import { resolveBrowserSurfacePanelRect, useBrowserSurfaceStore } from "./browserSurfaceStore";
+import {
+  type FramePreviewInspectorRouteChange,
+  pingFramePreviewAnnotationHost,
+  registerFramePreviewAnnotationHost,
+  resolveFramePreviewAnnotationOrigin,
+} from "./framePreviewAnnotationBridge";
 import { hostedFrameKey, useHostedFrameReloadStore } from "./hostedFrameReload";
 import { resolveHostedBrowserWebviewWrapperStyle } from "./hostedBrowserWebviewStyle";
+import {
+  readThreadPreviewState,
+  rememberPreviewUrl,
+  updatePreviewServerSnapshot,
+} from "~/previewStateStore";
 
 /**
  * The page surface in a browser: one cross-origin <iframe>, positioned into the
@@ -24,11 +37,13 @@ import { resolveHostedBrowserWebviewWrapperStyle } from "./hostedBrowserWebviewS
  * page and never reads it.
  */
 export function HostedBrowserFrame(props: {
+  readonly threadRef: ScopedThreadRef;
   readonly tabId: string;
   readonly runtimeTabId: string;
   readonly url: string | null;
 }) {
-  const { tabId, runtimeTabId, url } = props;
+  const { threadRef, tabId, runtimeTabId, url } = props;
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const presentation = useBrowserSurfaceStore(
     useShallow((state) => {
       const current = state.byTabId[runtimeTabId];
@@ -52,6 +67,48 @@ export function HostedBrowserFrame(props: {
     },
   });
 
+  const handleInspectorRouteChange = useCallback(
+    (change: FramePreviewInspectorRouteChange) => {
+      const snapshot = readThreadPreviewState(threadRef).sessions[tabId];
+      if (!snapshot || snapshot.navStatus._tag === "Idle") return;
+      const title = change.title ?? snapshot.navStatus.title;
+      if (
+        snapshot.navStatus.url === change.url &&
+        snapshot.navStatus.title === title &&
+        snapshot.canGoBack === change.canGoBack &&
+        snapshot.canGoForward === change.canGoForward
+      ) {
+        return;
+      }
+      updatePreviewServerSnapshot(threadRef, {
+        ...snapshot,
+        navStatus: {
+          _tag: "Success",
+          url: change.url,
+          title,
+        },
+        canGoBack: change.canGoBack,
+        canGoForward: change.canGoForward,
+        updatedAt: new Date().toISOString(),
+      });
+      rememberPreviewUrl(threadRef, change.url);
+    },
+    [tabId, threadRef],
+  );
+
+  useEffect(() => {
+    if (!url) return;
+    const frameWindow = iframeRef.current?.contentWindow;
+    if (!frameWindow) return;
+    return registerFramePreviewAnnotationHost({
+      runtimeTabId,
+      frameWindow,
+      targetOrigin: resolveFramePreviewAnnotationOrigin(url),
+      url,
+      onInspectorRouteChange: handleInspectorRouteChange,
+    });
+  }, [handleInspectorRouteChange, runtimeTabId, reloadNonce, url]);
+
   return (
     <div
       className="fixed overflow-hidden bg-muted/35"
@@ -64,10 +121,12 @@ export function HostedBrowserFrame(props: {
         // navigation and every reload replaces the element instead.
         <iframe
           key={hostedFrameKey(url, reloadNonce)}
+          ref={iframeRef}
           src={url}
           title="Preview"
           sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
           referrerPolicy="no-referrer"
+          onLoad={() => pingFramePreviewAnnotationHost(runtimeTabId)}
           data-preview-tab={runtimeTabId}
           data-preview-server-tab={tabId}
           aria-hidden={active ? undefined : true}

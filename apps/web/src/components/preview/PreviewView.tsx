@@ -32,13 +32,23 @@ import { openPreviewSession } from "./openPreviewSession";
 import { PreviewChromeRow } from "./PreviewChromeRow";
 import { PreviewEmptyState } from "./PreviewEmptyState";
 import { PreviewMoreMenu } from "./PreviewMoreMenu";
+// Fork: the framed surface's own three-dot menu.
+import { PreviewFrameMoreMenu } from "./PreviewFrameMoreMenu";
 import {
   commitBrowserViewportChange,
   subscribeBrowserViewportChange,
 } from "~/browser/browserViewportActions";
 import { resolveResponsiveBrowserViewportSize } from "~/browser/browserViewportLayout";
+import {
+  cancelFramePreviewAnnotationPick,
+  navigateFramePreviewInspectorHistory,
+  pickFramePreviewAnnotationElement,
+  useFramePreviewAnnotationReady,
+  useFramePreviewInspectorNavigationState,
+} from "~/browser/framePreviewAnnotationBridge";
 import { previewRuntimeTabId } from "~/browser/previewRuntimeTabId";
 import { reloadHostedFrame } from "~/browser/hostedFrameReload";
+import { readPreviewAnnotationTheme } from "~/browser/annotationTheme";
 import { PreviewUnreachable } from "./PreviewUnreachable";
 import { PreviewFrameUnrendered, useFrameUnrenderedHint } from "./PreviewFrameUnrendered";
 import { PreviewServerNotStarted } from "./PreviewServerNotStarted";
@@ -113,6 +123,10 @@ export function PreviewView({
   const runtimeTabId = tabId
     ? previewRuntimeTabId(threadRef, previewState.serverEpoch, tabId)
     : null;
+  // Fork: what the framed surface knows about its guest — whether the
+  // annotation runtime announced itself, and the history it reports back.
+  const frameAnnotationReady = useFramePreviewAnnotationReady(framed ? runtimeTabId : null);
+  const frameNavigation = useFramePreviewInspectorNavigationState(framed ? runtimeTabId : null);
   const recordingRuntimeTabId =
     tabId && runtimeTabId
       ? activeRecordingTabIds.has(runtimeTabId)
@@ -124,8 +138,14 @@ export function PreviewView({
   const navStatus = snapshot?.navStatus ?? { _tag: "Idle" as const };
   const url = navStatus._tag === "Idle" ? "" : navStatus.url;
   const loading = desktopOverlay?.loading ?? navStatus._tag === "Loading";
-  const canGoBack = desktopOverlay?.canGoBack ?? snapshot?.canGoBack ?? false;
-  const canGoForward = desktopOverlay?.canGoForward ?? snapshot?.canGoForward ?? false;
+  // Fork: a frame reports no history of its own, so in that surface the guest
+  // runtime is the only thing that can say whether back and forward go anywhere.
+  const canGoBack = framed
+    ? frameNavigation.canGoBack
+    : (desktopOverlay?.canGoBack ?? snapshot?.canGoBack ?? false);
+  const canGoForward = framed
+    ? frameNavigation.canGoForward
+    : (desktopOverlay?.canGoForward ?? snapshot?.canGoForward ?? false);
   const refreshDisabled = navStatus._tag === "Idle";
   const isUnreachable = navStatus._tag === "LoadFailed";
   const showEmptyState = shouldShowPreviewEmptyState(snapshot);
@@ -271,6 +291,16 @@ export function PreviewView({
 
   const handleForward = useCallback(() => {
     if (previewBridge && runtimeTabId) void previewBridge.goForward(runtimeTabId);
+  }, [runtimeTabId]);
+
+  // Fork: the framed twins of handleBack/handleForward above. History lives in
+  // the guest, so these ask it to walk rather than driving a webview.
+  const handleFrameBack = useCallback(() => {
+    if (runtimeTabId) navigateFramePreviewInspectorHistory(runtimeTabId, "back");
+  }, [runtimeTabId]);
+
+  const handleFrameForward = useCallback(() => {
+    if (runtimeTabId) navigateFramePreviewInspectorHistory(runtimeTabId, "forward");
   }, [runtimeTabId]);
 
   const handleOpenInBrowser = useCallback(() => {
@@ -618,6 +648,59 @@ export function PreviewView({
     })();
   }, [addImage, addPreviewAnnotation, onSendAnnotation, runtimeTabId, threadRef]);
 
+  // Fork: the framed twin of handlePickElement above. Same composer flow at the
+  // end of it; only the pipe to the guest differs — postMessage, not the bridge.
+  const handleFramePickElement = useCallback(() => {
+    if (!runtimeTabId) return;
+    if (pickActiveRef.current) {
+      cancelFramePreviewAnnotationPick(runtimeTabId);
+      return;
+    }
+    const previouslyFocused =
+      typeof document !== "undefined" ? (document.activeElement as HTMLElement | null) : null;
+    pickActiveRef.current = true;
+    setPickActive(true);
+    void (async () => {
+      try {
+        const annotation = await pickFramePreviewAnnotationElement(
+          runtimeTabId,
+          readPreviewAnnotationTheme(),
+        );
+        if (!annotation) return;
+        addPreviewAnnotation(threadRef, annotation);
+        const screenshotFile = await previewAnnotationScreenshotFile(annotation);
+        if (screenshotFile && annotation.screenshot) {
+          addImage(threadRef, {
+            type: "image",
+            id: annotation.id,
+            name: screenshotFile.name,
+            mimeType: screenshotFile.type,
+            sizeBytes: screenshotFile.size,
+            previewUrl: annotation.screenshot.dataUrl,
+            file: screenshotFile,
+          });
+        }
+      } catch {
+        // The hosted iframe picker is best-effort; a navigation or missing
+        // runtime should behave like a silent cancel.
+      } finally {
+        pickActiveRef.current = false;
+        if (isMountedRef.current) setPickActive(false);
+        if (
+          previouslyFocused &&
+          previouslyFocused.isConnected &&
+          typeof previouslyFocused.focus === "function"
+        ) {
+          try {
+            previouslyFocused.focus({ preventScroll: true });
+          } catch {
+            // Some elements throw on .focus() (detached iframes, etc.).
+          }
+        }
+      }
+    })();
+  }, [addImage, addPreviewAnnotation, runtimeTabId, threadRef]);
+
   // If the active tab changes mid-pick (close, thread switch, hot restart),
   // tell main to tear down the in-flight session AND reset our local toggle
   // state so the button doesn't get stuck pressed against a stale tab id.
@@ -627,10 +710,13 @@ export function PreviewView({
       pickActiveRef.current = false;
       if (previewBridge && runtimeTabId) {
         void previewBridge.cancelPickElement(runtimeTabId).catch(() => undefined);
+        // Fork: the framed surface tears its pick down over postMessage.
+      } else if (framed && runtimeTabId) {
+        cancelFramePreviewAnnotationPick(runtimeTabId);
       }
       if (isMountedRef.current) setPickActive(false);
     };
-  }, [runtimeTabId]);
+  }, [framed, runtimeTabId]);
 
   // Subscribe only while visible; `toggle-panel` is owned by ChatView's
   // URL-aware handler regardless of whether the panel is currently mounted.
@@ -672,30 +758,56 @@ export function PreviewView({
         canGoForward={canGoForward}
         refreshDisabled={refreshDisabled}
         focusUrlNonce={focusUrlNonce}
-        // A frame keeps no history the panel can walk, so the two controls
-        // are absent rather than present and permanently dead.
-        onBack={framed ? undefined : handleBack}
-        onForward={framed ? undefined : handleForward}
+        // Fork: in a frame these controls answer to the guest runtime, and stay
+        // absent rather than dead until it has announced itself.
+        onBack={framed ? (frameNavigation.ready ? handleFrameBack : undefined) : handleBack}
+        onForward={
+          framed ? (frameNavigation.ready ? handleFrameForward : undefined) : handleForward
+        }
         onRefresh={handleRefresh}
         onSubmit={(next) => void handleSubmitUrl(next)}
         onOpenInBrowser={tabId ? handleOpenInBrowser : undefined}
         onCapture={previewBridge && tabId ? handleCapture : undefined}
         captureDisabled={!desktopOverlay || isUnreachable}
         recording={recordingRuntimeTabId !== null}
-        onPictureInPicture={previewBridge && tabId ? handlePictureInPicture : undefined}
+        onPictureInPicture={tabId ? handlePictureInPicture : undefined}
         pictureInPicture={miniPlayer?.tabId === tabId}
-        pictureInPictureDisabled={!desktopOverlay?.hasWebContents || isUnreachable}
-        onPickElement={previewBridge && tabId ? handlePickElement : undefined}
+        pictureInPictureDisabled={
+          !tabId || isUnreachable || (!framed && !desktopOverlay?.hasWebContents)
+        }
+        // Fork: whichever surface is up answers pick; the frame's is gated on
+        // the guest carrying the annotation runtime at all.
+        onPickElement={
+          previewBridge && tabId
+            ? handlePickElement
+            : framed && tabId
+              ? handleFramePickElement
+              : undefined
+        }
         pickActive={pickActive}
         // Disable when there's no tab (nothing to pick on) OR the page
         // failed to load (a React overlay covers the webview, so the
         // user wouldn't be able to actually click anything underneath).
-        pickDisabled={!tabId || isUnreachable}
+        pickDisabled={!tabId || isUnreachable || (framed && !frameAnnotationReady)}
         pickDisabledReason={
-          isUnreachable ? "Page didn't load — pick unavailable until the page renders" : undefined
+          isUnreachable
+            ? "Page didn't load — pick unavailable until the page renders"
+            : framed && !frameAnnotationReady
+              ? "Preview inspector unavailable — add @moatless/inspector/preview-annotation to the app"
+              : undefined
         }
         trailingActions={
-          previewBridge ? (
+          // Fork: a frame has no preview bridge, so upstream's menu is all
+          // disabled items there. The framed surface gets its own two-item
+          // menu instead — see PreviewFrameMoreMenu for why it is a sibling.
+          framed ? (
+            <PreviewFrameMoreMenu
+              hardReloadDisabled={!(tabId && snapshot && !showEmptyState && !isUnreachable)}
+              onHardReload={handleRefresh}
+              deviceToolbarVisible={viewport._tag !== "fill"}
+              onToggleDeviceToolbar={handleToggleDeviceToolbar}
+            />
+          ) : (
             <PreviewMoreMenu
               tabId={runtimeTabId}
               hasWebContents={desktopOverlay?.hasWebContents ?? false}
@@ -706,7 +818,7 @@ export function PreviewView({
               nativePictureInPicture={desktopOverlay?.pictureInPicture ?? false}
               onNativePictureInPicture={handleNativePictureInPicture}
             />
-          ) : null
+          )
         }
       />
 

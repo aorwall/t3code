@@ -1,3 +1,4 @@
+import { EnvironmentId, ThreadId } from "@t3tools/contracts";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 
@@ -7,6 +8,10 @@ import { hostedFrameKey, reloadHostedFrame, useHostedFrameReloadStore } from "./
 
 const RUNTIME_TAB_ID = "runtime-tab";
 const URL = "https://task--5733.example.com/";
+const THREAD_REF = {
+  environmentId: EnvironmentId.make("environment-1"),
+  threadId: ThreadId.make("thread-1"),
+} as const;
 
 beforeEach(() => {
   useHostedFrameReloadStore.setState({ byTabId: {} });
@@ -16,7 +21,12 @@ beforeEach(() => {
 describe("HostedBrowserFrame", () => {
   it("frames the page with the attributes the security posture fixes", () => {
     const markup = renderToStaticMarkup(
-      <HostedBrowserFrame tabId="tab-1" runtimeTabId={RUNTIME_TAB_ID} url={URL} />,
+      <HostedBrowserFrame
+        threadRef={THREAD_REF}
+        tabId="tab-1"
+        runtimeTabId={RUNTIME_TAB_ID}
+        url={URL}
+      />,
     );
 
     expect(markup).toContain(`src="${URL}"`);
@@ -28,7 +38,12 @@ describe("HostedBrowserFrame", () => {
 
   it("draws nothing inside a tab that has not been navigated", () => {
     const markup = renderToStaticMarkup(
-      <HostedBrowserFrame tabId="tab-1" runtimeTabId={RUNTIME_TAB_ID} url={null} />,
+      <HostedBrowserFrame
+        threadRef={THREAD_REF}
+        tabId="tab-1"
+        runtimeTabId={RUNTIME_TAB_ID}
+        url={null}
+      />,
     );
 
     expect(markup).not.toContain("<iframe");
@@ -37,7 +52,12 @@ describe("HostedBrowserFrame", () => {
   it("keeps src exactly the tab's URL across a reload", () => {
     reloadHostedFrame(RUNTIME_TAB_ID);
     const markup = renderToStaticMarkup(
-      <HostedBrowserFrame tabId="tab-1" runtimeTabId={RUNTIME_TAB_ID} url={URL} />,
+      <HostedBrowserFrame
+        threadRef={THREAD_REF}
+        tabId="tab-1"
+        runtimeTabId={RUNTIME_TAB_ID}
+        url={URL}
+      />,
     );
 
     expect(markup).toContain(`src="${URL}"`);

@@ -240,6 +240,32 @@ runner label alone. A fork-owned check job on `staging-runners-large` running
 `pnpm typecheck`, `pnpm lint` and `pnpm test` is the missing piece, and it needs
 the raised heap noted below.
 
+### Annotating a framed preview depends on a package that is not on npm
+
+The host half shipped 2026-08-07 (`apps/web/src/browser/framePreviewAnnotationBridge.ts`).
+The guest half did not: the annotation runtime is injected into the previewed
+app by `@moatless/inspector`, whose published `latest` is **0.2.1** — a release
+from before the runtime existed. The version that has it, 0.3.0, exists only in
+the Moatless tree and in the sandbox base image, which bakes a build to
+`/opt/node_modules` (`docker/Dockerfile.sandbox-base`).
+
+What it costs: in any previewed app that declares `@moatless/inspector` as a
+dependency, npm's 0.2.1 shadows the baked copy on the module resolution walk, so
+the guest never announces itself and the annotate button stays disabled with
+"Preview inspector unavailable". `soap-frontend` hit exactly this and works
+around it in its workspace `setupCommands`, by symlinking the baked copy over
+the installed one after `bun install` — per-workspace, and invisible from here.
+
+What holds it open on this side: nothing to delete. The gate is
+`useFramePreviewAnnotationReady`, and it is honest — an app that has not loaded
+the runtime genuinely cannot be annotated, so the disabled state is correct
+behavior rather than a stand-in. This entry exists so the next person to find
+the button greyed out looks at the previewed app's inspector version first.
+
+The check that closes it: `npm view @moatless/inspector version` reports 0.3.0
+or later. Then the per-workspace symlink workarounds come out, and previewed
+apps pin the published version like any other dependency.
+
 ### Three surfaces are decided out and still in the tree
 
 Each has a tripwire in the inventory's _Deleted surfaces_ section, and each

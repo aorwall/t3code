@@ -143,15 +143,20 @@ nothing means the file is byte-identical to upstream and belongs in no entry.
     - `packages/client-runtime/src/state/servers.ts`
   - Keep them. None of these exist upstream.
 
-- The five fork-only files under `browser/` — **ours**
+- The fork-only files under `browser/` — **ours**
   - Paths:
     - `apps/web/src/browser/HostedBrowserFrame*.tsx`
     - `apps/web/src/browser/WebBrowserHost*.tsx`
     - `apps/web/src/browser/hostedFrameReload.ts`
-  - Not present upstream.
+    - `apps/web/src/browser/framePreviewAnnotationBridge*.ts`
+    - `apps/web/src/browser/previewAnnotationPayloadGuard.ts`
+  - Not present upstream. The last two are the host half of the preview
+    annotation protocol for a framed page — upstream annotates over
+    `ipcRenderer` into a `<webview>` preload and has no postMessage equivalent
+    to converge on.
 
 - `apps/web/src/browser/**` (everything else) — **decide**
-  - Upstream owns 34 of the 39 files here and works in them steadily. Decide per
+  - Upstream owns most of the files here and works in them steadily. Decide per
     file: take upstream and re-state the hosted-preview behavior from the Fork
     inventory entry on top of it.
 
@@ -161,10 +166,17 @@ nothing means the file is byte-identical to upstream and belongs in no entry.
     - `apps/web/src/components/preview/PreviewServerNotStarted.tsx`
     - `apps/web/src/components/preview/useFramedServerStatus.ts`
     - `apps/web/src/components/preview/framedServerReload*.ts`
-  - Each renders or reasons about `ThreadServer`, a Moatless concept upstream
-    does not have. Not present upstream — verified 2026-08-06, when
-    `PreviewEmptyState.tsx` and `PreviewView.tsx` in the same directory were
-    confirmed to be upstream's.
+    - `apps/web/src/components/preview/PreviewFrameMoreMenu.tsx`
+  - The first four each render or reason about `ThreadServer`, a Moatless
+    concept upstream does not have. Not present upstream — verified 2026-08-06,
+    when `PreviewEmptyState.tsx` and `PreviewView.tsx` in the same directory
+    were confirmed to be upstream's.
+  - `PreviewFrameMoreMenu.tsx` is a deliberate sibling of upstream's
+    `PreviewMoreMenu.tsx`, not a fork of it: everything that menu offers beyond
+    reload and the device toolbar is a call on the Electron preview bridge, and
+    branching upstream's component on its absence re-indented 81 of its lines.
+    Keep upstream's file at zero delta; if upstream ever grows a bridgeless
+    path, drop this one.
 
 - `apps/web/src/components/preview/**` (everything else) — **decide**
   - Upstream owns the rest of this directory and works in it steadily. Take
@@ -505,6 +517,15 @@ update this file.
     frame does not). Upstream owns most files in all four paths and works in
     them; take upstream and re-state the iframe behavior on top. Drop the fork
     delta entirely once upstream ships a web preview.
+  - Also surviving, added 2026-08-07: a framed page can be annotated. The guest
+    carries the runtime itself (`@moatless/inspector`, injected by the previewed
+    app's own build) and announces itself over `postMessage`; the host half is
+    `framePreviewAnnotationBridge.ts`. In `PreviewView.tsx` this is four gates on
+    the existing `framed` flag — pick, back, forward and the trailing menu — each
+    `// Fork:` marked and each additive. Back and forward were previously absent
+    in a frame and now answer to the guest's history. `ThreadPreviewMiniPlayer.tsx`
+    gained its first fork delta in the same change: it reads `hasWebContents` as
+    "there is something to show", which no frame reports.
 
 - **Upstream-server hosted-env stubs**
   - Paths:

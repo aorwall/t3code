@@ -24,6 +24,7 @@ export function WebBrowserHost() {
         const threadRef = parseScopedThreadKey(threadKey);
         return threadRef
           ? Object.values(previewState.sessions).map((snapshot) => ({
+              threadRef,
               snapshot,
               runtimeTabId: previewRuntimeTabId(
                 threadRef,
@@ -39,9 +40,10 @@ export function WebBrowserHost() {
   if (previewRuntimeCapability() !== "frame") return null;
   return (
     <div className="contents" data-web-browser-host>
-      {sessions.map(({ snapshot, runtimeTabId }) => (
+      {sessions.map(({ threadRef, snapshot, runtimeTabId }) => (
         <HostedBrowserFrame
           key={runtimeTabId}
+          threadRef={threadRef}
           tabId={snapshot.tabId}
           runtimeTabId={runtimeTabId}
           url={snapshot.navStatus._tag === "Idle" ? null : snapshot.navStatus.url}
