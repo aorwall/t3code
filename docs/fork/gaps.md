@@ -40,8 +40,9 @@ Moatless does populate it: the descriptor reports `connectionProbe`,
 `threadSettlement`, `threadSnooze` and `repositoryIdentity: false`, so a client
 can tell it apart from a server that refuses settlement or snooze. What it does
 not report is every boolean added since that handshake was written —
-`threadPinning` (upstream, 2026-08-06), `threadTitleRegeneration`,
-`serverSelfUpdate` and `serverSelfUpdateProgress` — so each of those surfaces is
+`threadPinning` (upstream, 2026-08-06), `threadPinReorder` (upstream,
+2026-08-08), `threadTitleRegeneration`, `serverSelfUpdate` and
+`serverSelfUpdateProgress` — so each of those surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
 statement from the deployment. That is correct for the ones the backend does not
 implement and stale the day it does.
@@ -69,7 +70,7 @@ carry them.
 
 ### Methods the backend does not dispatch
 
-49 of the contract's 87 WebSocket methods declare `UnsupportedMethodError`.
+38 of the contract's 87 WebSocket methods declare `UnsupportedMethodError`.
 Grouped by what a person loses:
 
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,

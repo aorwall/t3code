@@ -1,9 +1,19 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
+
+vi.mock("~/hooks/useSettings", () => ({
+  useEnvironmentIdentificationMode: () => "none",
+}));
+vi.mock("../SidebarStageBackdrop", () => ({
+  StageBackdropButtonArt: () => null,
+  useSidebarStageBackdropVariant: () => null,
+}));
 
 import { ComposerPrimaryActions, formatPendingPrimaryActionLabel } from "./ComposerPrimaryActions";
 
+// Fork: the standalone running state stays Stop only while the composer is
+// empty, and switches back to Send once there is sendable content.
 function renderPrimaryAction(input: { isRunning: boolean; hasSendableContent: boolean }) {
   return renderToStaticMarkup(
     createElement(ComposerPrimaryActions, {
@@ -25,22 +35,53 @@ function renderPrimaryAction(input: { isRunning: boolean; hasSendableContent: bo
   );
 }
 
-describe("ComposerPrimaryActions", () => {
-  it("shows Stop while a turn is running and the composer is empty", () => {
-    const markup = renderPrimaryAction({ isRunning: true, hasSendableContent: false });
+function renderPendingActions(isRunning: boolean) {
+  return renderToStaticMarkup(
+    createElement(ComposerPrimaryActions, {
+      compact: true,
+      pendingAction: {
+        questionIndex: 0,
+        isLastQuestion: true,
+        canAdvance: true,
+        isResponding: false,
+        isComplete: true,
+      },
+      isRunning,
+      showPlanFollowUpPrompt: false,
+      promptHasText: false,
+      isSendBusy: false,
+      sendDisabledReason: null,
+      isConnecting: false,
+      isEnvironmentUnavailable: false,
+      isPreparingWorktree: false,
+      hasSendableContent: false,
+      onPreviousPendingQuestion: () => {},
+      onInterrupt: () => {},
+      onImplementPlanInNewThread: () => {},
+    }),
+  );
+}
 
-    expect(markup).toContain('aria-label="Stop generation"');
-    expect(markup).not.toContain('aria-label="Send message"');
-  });
-
-  it("switches to Send when the running turn has sendable composer content", () => {
-    const markup = renderPrimaryAction({ isRunning: true, hasSendableContent: true });
-
-    expect(markup).toContain('type="submit"');
-    expect(markup).toContain('aria-label="Send message"');
-    expect(markup).not.toContain('aria-label="Stop generation"');
-  });
-});
+function renderStandaloneStop() {
+  return renderToStaticMarkup(
+    createElement(ComposerPrimaryActions, {
+      compact: true,
+      pendingAction: null,
+      isRunning: true,
+      showPlanFollowUpPrompt: false,
+      promptHasText: false,
+      isSendBusy: false,
+      sendDisabledReason: null,
+      isConnecting: false,
+      isEnvironmentUnavailable: false,
+      isPreparingWorktree: false,
+      hasSendableContent: false,
+      onPreviousPendingQuestion: () => {},
+      onInterrupt: () => {},
+      onImplementPlanInNewThread: () => {},
+    }),
+  );
+}
 
 describe("formatPendingPrimaryActionLabel", () => {
   it("returns 'Submitting...' while responding", () => {
@@ -129,5 +170,36 @@ describe("formatPendingPrimaryActionLabel", () => {
         questionIndex: 5,
       }),
     ).toBe("Submit answers");
+  });
+});
+
+describe("ComposerPrimaryActions", () => {
+  it("shows Stop while a turn is running and the composer is empty", () => {
+    const markup = renderPrimaryAction({ isRunning: true, hasSendableContent: false });
+
+    expect(markup).toContain('aria-label="Stop generation"');
+    expect(markup).not.toContain('aria-label="Send message"');
+  });
+
+  it("switches to Send when the running turn has sendable composer content", () => {
+    const markup = renderPrimaryAction({ isRunning: true, hasSendableContent: true });
+
+    expect(markup).toContain('type="submit"');
+    expect(markup).toContain('aria-label="Send message"');
+    expect(markup).not.toContain('aria-label="Stop generation"');
+  });
+
+  it("offers Stop generation while a running turn is waiting for user input", () => {
+    expect(renderPendingActions(true)).toContain('aria-label="Stop generation"');
+  });
+
+  it("does not offer Stop generation for a pending request without a running turn", () => {
+    expect(renderPendingActions(false)).not.toContain('aria-label="Stop generation"');
+  });
+
+  it("matches the small pending action size without changing the standalone size", () => {
+    expect(renderPendingActions(true)).toContain("size-8 sm:size-7");
+    expect(renderStandaloneStop()).toContain("size-8 sm:h-8 sm:w-8");
+    expect(renderStandaloneStop()).not.toContain("sm:size-7");
   });
 });
