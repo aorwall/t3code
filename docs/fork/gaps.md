@@ -4,7 +4,7 @@ What is not done, on both sides of the seam this fork sits on: what the Moatless
 backend does not serve yet, and what this repository owes independently of it.
 
 This is the third of the three fork documents and the only forward-looking one.
-[The inventory](./upstream-merge-inventory.md) records what the fork decided and
+[The inventory](./inventory.json) records what the fork decided and
 which deltas a merge must carry through; [the tracker](./upstream-merge-log.md)
 records what a particular merge did. Neither has a place for _this is wrong and
 nobody has fixed it_, so it kept ending up in commit messages and PR bodies
@@ -70,8 +70,17 @@ carry them.
 
 ### Methods the backend does not dispatch
 
-38 of the contract's 87 WebSocket methods declare `UnsupportedMethodError`.
-Grouped by what a person loses:
+A minority of the contract's WebSocket methods declare `UnsupportedMethodError`.
+Which ones, and whether that set still matches what Moatless dispatches, is
+derived rather than remembered:
+
+```bash
+node .agents/skills/fork-upstream-merge/scripts/unsupported-methods.mjs
+```
+
+It reads both sides and reports in both directions — a method the backend has
+started serving is a union entry to delete, not a no-op. The grouping below is
+what a person loses, which is the part the derivation cannot tell you:
 
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
@@ -108,8 +117,8 @@ Grouped by what a person loses:
   product and are **not** fork targets — they are listed for completeness, not as
   work.
 
-- **Check:** recompute both sides rather than reading this list. The procedure is
-  in _Deriving the unsupported set_ in the inventory.
+- **Check:** run `unsupported-methods.mjs` rather than reading this list. Where
+  the two sides come from is _Deriving the unsupported set_ in the inventory.
 - **Then here:** drop the union entry in `packages/contracts/src/rpc.ts` and, if
   the method was the last one behind a flag, the flag too.
 
@@ -269,12 +278,16 @@ apps pin the published version like any other dependency.
 
 ### Three surfaces are decided out and still in the tree
 
-Each has a tripwire in the inventory's _Deleted surfaces_ section, and each
-tripwire currently matches — they exist to hold a count steady, not at zero:
+The three are **Clerk / T3 Connect**, **device pairing**, and **T3 backend
+session bootstrap**. Each has a tripwire in `docs/fork/inventory.json`, and each
+tripwire currently matches — they exist to hold a count steady, not at zero.
 
-- **Clerk / T3 Connect** — 4 `package.json` files.
-- **Device pairing** — 73 files.
-- **T3 backend session bootstrap** — 9 matches.
+For the current sizes, which is the number that decides whether a surface is
+worth removing:
+
+```bash
+node .agents/skills/fork-upstream-merge/scripts/tripwires.mjs
+```
 
 Removing them shrinks the merge surface permanently, which is the argument for
 doing it. The argument against doing it piecemeal is that a half-removed auth

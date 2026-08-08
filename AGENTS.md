@@ -22,7 +22,7 @@ Upstream owns most files here and works in them steadily, and every line of ours
 - **Write the delta down so it can be re-stated, not re-merged.** The inventory records behavior that must survive; the point is to reapply it on top of an upstream rewrite, not to defend our version of their file.
 - **Shrink the delta when upstream catches up.** The convergence watch list says what to drop when upstream ships an equivalent.
 
-Before merging upstream, deciding whether a file is ours or theirs, or making a change that grows the fork delta, use the project-local `fork-upstream-merge` skill. Durable ownership rules live in [docs/fork/upstream-merge-inventory.md](./docs/fork/upstream-merge-inventory.md), dated decisions in [docs/fork/upstream-merge-log.md](./docs/fork/upstream-merge-log.md), and what is still missing on either side of the seam — backend methods Moatless does not serve, work this fork owes — in [docs/fork/gaps.md](./docs/fork/gaps.md).
+Before merging upstream, deciding whether a file is ours or theirs, or making a change that grows the fork delta, use the project-local `fork-upstream-merge` skill. Durable ownership rules live as data in [docs/fork/inventory.json](./docs/fork/inventory.json), applied by the scripts in `.agents/skills/fork-upstream-merge/scripts/` and explained in [docs/fork/upstream-merge-inventory.md](./docs/fork/upstream-merge-inventory.md); dated decisions in [docs/fork/upstream-merge-log.md](./docs/fork/upstream-merge-log.md), and what is still missing on either side of the seam — backend methods Moatless does not serve, work this fork owes — in [docs/fork/gaps.md](./docs/fork/gaps.md).
 
 ## Words we use precisely
 

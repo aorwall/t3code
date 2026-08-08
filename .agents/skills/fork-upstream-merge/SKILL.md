@@ -9,35 +9,67 @@ disable-model-invocation: true
 Use this skill in the T3 Code fork when merging upstream, answering whether a
 file is ours or theirs, or changing code in a way that grows the fork delta.
 
-Before taking merge or ownership actions, read
-`docs/fork/upstream-merge-inventory.md`. Treat it as the mutable source of truth
-for fork-owned concerns, path policy, deleted-surface tripwires, fork inventory,
-and convergence checks. Treat `docs/fork/upstream-merge-log.md` as the
-append-only merge decision tracker, and `docs/fork/gaps.md` as the register of
-work that is not done — on the Moatless backend or in this repository.
+## Where the policy lives
 
-The three answer different questions and do not overlap. The inventory says what
-the fork decided and what a merge must carry through. The tracker says what one
-merge did, on one date. The gaps register says what is still missing, and it is
-the only one written for someone who is not currently merging.
+- **`docs/fork/inventory.json`** — the mutable source of truth, as data:
+  fork-owned concerns, path policy, deleted-surface tripwires, fork inventory,
+  deliberately deleted upstream paths, off-repository state, and convergence
+  checks. Do not answer merge questions by reading it end to end; the scripts
+  below apply it for you and print the answer beside each affected path.
+- **`docs/fork/upstream-merge-inventory.md`** — the part that is not data: the
+  four re-application deltas, where the unsupported-method set comes from, and
+  the reasoning behind the path policy rule.
+- **`docs/fork/upstream-merge-log.md`** — the append-only merge decision tracker.
+- **`docs/fork/gaps.md`** — the register of work that is not done, on the
+  Moatless backend or in this repository.
 
-Completion for an upstream merge: conflicts are resolved by
-`docs/fork/upstream-merge-inventory.md`, deleted-surface tripwires are checked,
-newly added upstream files in owned concerns are swept, convergence is checked,
-the merge diff is read against both parents and its file counts recorded,
-new upstream features are classified in the PR report, unsupported Moatless
-methods declare `UnsupportedMethodError`, backend behavior worth reproducing in
-Moatless is called out, verification is run or caveated,
-`docs/fork/upstream-merge-log.md` has a compact dated entry, and anything the
-merge found and did not do is an entry in `docs/fork/gaps.md`.
+These answer different questions and do not overlap. The inventory says what the
+fork decided and what a merge must carry through. The tracker says what one merge
+did, on one date. The gaps register says what is still missing, and it is the
+only one written for someone who is not currently merging.
 
-Completion for a file ownership question: answer with the path policy, the
-fork-owned concern if any, and whether the policy or inventory needs an update.
+## The scripts
+
+Fork-owned, dependency-free, and runnable before `pnpm install`. They exist
+because every check they run was previously a paragraph of prose that a merge had
+to remember to perform, and the two merges that skipped one paid for it mid-merge.
+
+| Script                    | When            | What it answers                                                                                                                         |
+| ------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `preflight.mjs`           | before merging  | the range, which inventory entries have gone stale, and every file this merge will conflict on — each with its verdict already attached |
+| `verify.mjs`              | after resolving | tripwires, contract drift, format, lint, types and tests, in one pass that does not stop at the first failure                           |
+| `inventory-check.mjs`     | any time        | does every inventory path still exist on the side its verdict claims                                                                    |
+| `tripwires.mjs`           | after merging   | deleted surfaces, re-deletions, and workflow state in GitHub                                                                            |
+| `unsupported-methods.mjs` | after merging   | which contract methods should declare `UnsupportedMethodError`, derived from both sides                                                 |
+
+All live in `.agents/skills/fork-upstream-merge/scripts/`. `verify.mjs` runs
+`tripwires.mjs` and `unsupported-methods.mjs` itself, so the two are listed
+separately only for running one on its own.
+
+A failing check names the `id` of the `inventory.json` entry it came from. Fix
+the entry, in the same merge — a stale entry is not noise to route around, it is
+the merge telling you a fork delta has lost its anchor upstream.
+
+## Completion
+
+Completion for an upstream merge: `preflight.mjs` is clean before merging,
+conflicts are resolved by the verdicts it printed, the merge diff is read against
+both parents and its file counts recorded, `verify.mjs` passes or its failures
+are caveated, new upstream features are classified in the PR report, unsupported
+Moatless methods declare `UnsupportedMethodError`, backend behavior worth
+reproducing in Moatless is called out, `docs/fork/upstream-merge-log.md` has a
+compact dated entry, and anything the merge found and did not do is an entry in
+`docs/fork/gaps.md`.
+
+Completion for a file ownership question: answer with the path policy verdict,
+the fork-owned concern if any, and whether `docs/fork/inventory.json` needs an
+update.
 
 Completion for a fork-delta change: the implementation is done,
-`docs/fork/upstream-merge-inventory.md` has any new or changed inventory, path
-policy, tripwire, or convergence rule needed for future merges, and any gap the
-change opens or closes is written or struck in `docs/fork/gaps.md`.
+`docs/fork/inventory.json` has any new or changed inventory, path policy,
+tripwire, or convergence entry needed for future merges,
+`inventory-check.mjs` passes, and any gap the change opens or closes is written
+or struck in `docs/fork/gaps.md`.
 
 ## Policy Meanings
 
@@ -54,10 +86,10 @@ change opens or closes is written or struck in `docs/fork/gaps.md`.
   same merge.
 - `decide`: the fork changed a file upstream still owns, and upstream changes to
   it are still wanted. There is no cached verdict. Read upstream's side of the
-  conflict every merge and decide it there. The Fork Inventory entry names the
+  conflict every merge and decide it there. The `inventory` entry names the
   behavior that must survive; it does not name a winner.
 - `decide, then add an entry`: make the merge decision now and update
-  `docs/fork/upstream-merge-inventory.md` so the next merge does not rediscover
+  `docs/fork/inventory.json` so the next merge does not rediscover
   it.
 
 ## The Gaps Register
@@ -94,8 +126,8 @@ count or a list in the register is a snapshot for orientation, and the tripwire,
 ### Maintaining it
 
 - Every gap the merge classified as `Unsupported in Moatless` or
-  `Backend behavior to consider reproducing in Moatless` in step 7 is checked
-  against the register. New ones are added; ones that are now served are struck.
+  `Backend behavior to consider reproducing in Moatless` is checked against the
+  register. New ones are added; ones that are now served are struck.
 - Strike an entry in the same change that closes it, together with the flag,
   union entry, or component it named. Do not leave a "done" entry behind.
 - When a merge finds a gap that is one of several already listed under one
@@ -106,41 +138,44 @@ count or a list in the register is a snapshot for orientation, and the tripwire,
 
 ## Upstream Merge Procedure
 
-Run from the repository root:
+### 1. Before merging
 
 ```bash
-git fetch upstream
+node .agents/skills/fork-upstream-merge/scripts/preflight.mjs
+```
+
+It fetches upstream (un-shallowing the clone first, which a sandbox needs — a
+shallow clone reports an empty merge-base and silently turns the whole upstream
+range into "new"), then prints the range, every stale inventory entry, the
+owned-concern sweep over newly added upstream files, any new upstream workflow,
+and the conflict forecast: every file both sides touched, grouped by the verdict
+that resolves it, with `decide` and unlisted files first.
+
+**Fix the stale entries before merging.** They are what the merge resolves
+against, and an entry whose path upstream has renamed out from under it is a fork
+delta that this merge is about to drop with nothing to notice it. Re-point the
+entry in `docs/fork/inventory.json`, then re-run.
+
+Read the forecast before starting. It is the plan for the merge, and the
+`decide` and unlisted groups are the only files that need thought — everything
+else has a cached answer. Record the sweep decision in the tracker even when
+there were no relevant hits.
+
+### 2. Merge and resolve
+
+```bash
 UPSTREAM_BASE="$(git merge-base HEAD upstream/main)"
 git merge upstream/main
 ```
 
-Then:
-
-1. Resolve every conflict with the inventory doc's Path Policy.
-2. Run every Deleted Surface tripwire from the inventory doc. A `removed` surface
-   must return no matches. A `decided, not yet removed` surface may have known
-   existing matches; reject or explicitly accept new upstream additions. Run the
-   inventory doc's Off-repository state checks in the same pass — a merge cannot
-   see state that lives in GitHub, so nothing else will catch it.
-3. Sweep newly added upstream files in fork-owned concerns:
-
-   ```bash
-   git diff --diff-filter=A --name-only \
-     "$UPSTREAM_BASE..upstream/main" -- ':(exclude).repos' \
-     | grep -Ei 'auth|pair|session|clerk|cloud|relay|connect|proxy|origin|host'
-   ```
-
-   Decide each relevant hit against the inventory doc's Fork-Owned Concerns.
-   Record the decision in `docs/fork/upstream-merge-log.md`, including when the
-   sweep had no relevant hits. Widen the inventory doc's filter when a concern
-   grows vocabulary not covered by the pattern.
-
-4. Check every conflicting path against the inventory doc's Fork Inventory before
-   taking upstream. If a path is listed there, preserve or intentionally drop the
-   fork delta.
-5. Check the inventory doc's Convergence Watch List. When upstream now provides a
-   fork-built surface, prefer upstream and shrink the fork delta.
-6. Read what the merge actually took, against both parents:
+1. Resolve every conflict with the verdict the forecast printed for it. An
+   unlisted file falls back to the concern rules: inside a fork-owned concern it
+   is `decide, then add an entry`; outside one it is `theirs`.
+2. A `decide` file's `inventory.json` entry names the behavior that must
+   survive; it does not name a winner. Read upstream's side and decide it there.
+3. When upstream now provides a fork-built surface, prefer upstream and shrink
+   the fork delta. The `convergence` entries say what to watch for.
+4. Read what the merge actually took, against both parents:
 
    ```bash
    git diff --stat HEAD^1 HEAD   # upstream content that landed on the fork
@@ -154,10 +189,32 @@ Then:
    counts in the tracker entry. If the gap is not accounted for by the conflicts
    you resolved, find the missing files before continuing.
 
-   The second number is the fork delta. If it grows every merge, the Convergence
-   Watch List is not being worked.
+   The second number is the fork delta. If it grows every merge, the convergence
+   entries are not being worked.
 
-7. Classify new upstream additions for the PR report. Include paths, methods, and
+### 3. Verify, before writing anything down
+
+```bash
+node .agents/skills/fork-upstream-merge/scripts/verify.mjs
+```
+
+One command: tripwires and off-repository state, the unsupported-method
+derivation, format, lint, types, and every workspace test suite. It keeps going
+after a failure and reports them together, so a formatting nit does not hide the
+type errors behind it — and it raises the heap the web suite needs, whose failure
+mode is otherwise an exit 137 that reads like a real test failure.
+
+Run this **before** the classification and documentation steps, not after them.
+Its output is their input: the unsupported-method buckets are step 4's answer,
+and the tripwire counts are what the tracker entry quotes. Writing three
+documents and then discovering the merge dropped a delta means writing them
+twice.
+
+Re-run one check after a fix with `--only <name>`.
+
+### 4. Record what the merge found
+
+1. Classify new upstream additions for the PR report. Include paths, methods, and
    short implementation notes for unsupported and reproducible-backend items. For
    example, a new upstream auto-settle rule such as keeping threads with open PRs
    unsettled belongs in the reproducible-backend bucket if Moatless owns
@@ -176,32 +233,31 @@ Then:
    The second and third buckets are the input to the next step. The first is
    not: a feature the fork can already expose has no gap to record.
 
-8. For each newly unsupported WebSocket method, add `UnsupportedMethodError` to
-   that method's error union in `packages/contracts/src/rpc.ts`. If the shared
-   error type changes or is missing, update `packages/contracts/src/auth.ts`.
-   Derive the unsupported set from contract WebSocket methods minus the Moatless
-   backend dispatch arms instead of editing by intuition. The derivation runs in
-   both directions and both directions are findings: a method the backend has
-   started serving is a union entry to drop, not a no-op.
-9. Reconcile `docs/fork/gaps.md` against what steps 7 and 8 found. Add an entry
-   for anything standing that is not already there, extend the entry that
+2. Apply the ADD and DROP buckets `verify.mjs` printed to the error unions in
+   `packages/contracts/src/rpc.ts`. If the shared error type changes or is
+   missing, update `packages/contracts/src/auth.ts`. Never edit these by
+   intuition — both directions are findings, and a method the backend has started
+   serving is a union entry to drop, not a no-op. The KEEP bucket is not a
+   finding: those arms can still reach `unsupported_exit`, so they refuse
+   conditionally and their union members stay.
+3. Reconcile `docs/fork/gaps.md` against what the two steps above found. Add an
+   entry for anything standing that is not already there, extend the entry that
    already covers it when one does, and strike anything the backend now serves —
    along with the flag or union entry that stood in for it. See The Gaps Register
    above for what an entry holds. A drift the merge deliberately did not act on
    is an entry with its reason, not a bullet in the tracker.
-10. Run `pnpm typecheck && pnpm test && pnpm lint && pnpm fmt:check`, or record
-    the exact skipped or failing checks in the tracker.
-11. Append a compact dated tracker entry with upstream head/base, the two file
-    counts from step 6, conflict decisions, owned-surface sweep decisions, and
-    verification. Link the gaps entry rather than restating it.
-12. Put the feature classification in the PR body or PR summary. Include
-    `Usable as-is`, `Unsupported in Moatless / needs implementation`, and
-    `Backend behavior to consider reproducing in Moatless`, even when a list is
-    empty.
+4. Append a compact dated tracker entry with upstream head/base, the two file
+   counts from step 2, conflict decisions, owned-surface sweep decisions, and
+   verification. Link the gaps entry rather than restating it.
+5. Put the feature classification in the PR body or PR summary. Include
+   `Usable as-is`, `Unsupported in Moatless / needs implementation`, and
+   `Backend behavior to consider reproducing in Moatless`, even when a list is
+   empty.
 
-Outside a merge, update `docs/fork/upstream-merge-inventory.md` in the same
-change that grows the fork delta. The docs inventory is the merge-time source of
-truth for deliberate fork changes.
+Outside a merge, update `docs/fork/inventory.json` in the same change that grows
+the fork delta, and confirm with `inventory-check.mjs`. That file is the
+merge-time source of truth for deliberate fork changes; a delta with no entry is
+one the next merge has no reason to keep.
 
 ## Stable Fork Rules
 

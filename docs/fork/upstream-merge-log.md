@@ -7,7 +7,7 @@ only what that person needs: where upstream was, what conflicted and how it was
 resolved, what a sweep or tripwire found, what is unverified, and which
 verification failures are the machine rather than the code. Why a fork decision
 was made is not that — put the durable form in
-[the merge inventory](./upstream-merge-inventory.md) and link the row from here.
+[the merge inventory](./inventory.json) and link the row from here.
 If an entry runs past a few bullets, the rest belongs in the inventory. Work a
 merge found and did not do belongs in [the fork gaps](./gaps.md), not in a
 bullet here that no one will read again.
@@ -42,7 +42,7 @@ bullet here that no one will read again.
   `291 − 4 + 3 = 290`. Fork delta is dominated by the fork-only
   `packages/moatless-api` generated client; it did not grow from re-applied
   deltas this merge.
-- Conflicts, resolved by inventory Path Policy:
+- Conflicts, resolved by the inventory's path policy:
   - `apps/web/src/components/Sidebar.tsx` — upstream renamed SidebarV2 → the
     default `Sidebar.tsx` (`SidebarV2.tsx` `git rm`'d, `#5672`). Took upstream and
     re-stated the fork deltas: `FEATURES.prThreadSettling` gate on
