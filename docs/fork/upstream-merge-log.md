@@ -28,6 +28,97 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-08-08 — merged upstream to 2c7267ad
+
+- Upstream: `2c7267ad` from base `e4abc31f` (`58` commits). Landed as a merge
+  commit; the base advanced cleanly from the 2026-08-06 entry.
+- Landed: `290` files from `git diff --stat HEAD^1 HEAD` against `291` in the
+  upstream range; fork delta `589` files from `git diff --stat HEAD^2 HEAD`.
+  Four upstream-range files did not land — `AGENTS.md` (decided ours, below) and
+  the three local-server-preview files the fork drops
+  (`preview/PreviewEmptyState.tsx` kept fork-side, `useDiscoveredLocalServers.ts`
+  and its test re-`git rm`'d) — offset by three fork-only files this merge
+  touches (`docs/fork/gaps.md`, this tracker, `fork/features.test.ts`), so
+  `291 − 4 + 3 = 290`. Fork delta is dominated by the fork-only
+  `packages/moatless-api` generated client; it did not grow from re-applied
+  deltas this merge.
+- Conflicts, resolved by inventory Path Policy:
+  - `apps/web/src/components/Sidebar.tsx` — upstream renamed SidebarV2 → the
+    default `Sidebar.tsx` (`SidebarV2.tsx` `git rm`'d, `#5672`). Took upstream and
+    re-stated the fork deltas: `FEATURES.prThreadSettling` gate on
+    `changeRequestState` (atop upstream's reorderable-pins restructure), touch
+    context-menu props, inline bulk `threadDeletion` gate, `projectManagement`
+    gates, `archive` row action. Entries: _PR-driven settling gate_, _Archive in
+    the sidebar v2 row menu_, _Mobile Touch Delta_.
+  - `apps/web/src/components/LegacySidebar.tsx` — new upstream file (= old
+    Sidebar). Re-applied `FEATURES` import, `useTouchContextMenu`, and the
+    `projectManagement` gate on "Add project".
+  - `threadActionMenu.logic.ts` + `.test.ts` — shared menu now feeds the new
+    Sidebar and the chat-header title menu (`#5592`). Added `archive`, gated
+    `delete` behind `FEATURES.threadDeletion`; updated the two upstream tests
+    that asserted `delete` last/destructive.
+  - `useThreadActionMenu.ts` — re-applied the `archive` case.
+  - `settings/SettingsPanels.tsx` — took upstream (ProviderSettingsPanel
+    extracted out, assistant-streaming setting folded into a new Legacy features
+    section, `#5664`); re-applied the four `FEATURES` gates and gated the
+    relocated token-streaming toggle behind `FEATURES.assistantStreaming`.
+  - `settings/ProviderSettingsPanel.tsx` — new upstream file (`#4479`,
+    per-device provider settings). Ported the `FEATURES.serverAdministration`
+    gate onto the add-instance affordance.
+  - `settings/SettingsSidebarNav.tsx`, `settingsSearch.ts` — dropped
+    `/settings/beta` (removed upstream), kept the MoatlessAdminPath group.
+  - `chat/ChatHeader.tsx`, `CompactComposerControlsMenu.tsx`,
+    `ComposerPrimaryActions.tsx` + test, `MessagesTimeline.tsx` — re-applied
+    the `FEATURES` gates and the message-origin chip; converged the Stop/Send
+    condition on upstream's `#5554` helper.
+  - `preview/PreviewEmptyState.tsx` + test, `PreviewView.tsx` + test — kept the
+    hosted-`useThreadPreviewServers` delta, dropped upstream's local-server
+    discovery (`useDiscoveredLocalServers`, `PreviewLocalServerCard`,
+    `PreviewRecentUrlCard`). Entry: _Hosted web preview_.
+  - `rightPanelStore.ts` — kept the fork's generic unknown-kind drop (it now
+    subsumes upstream's v9 `plan`-kind removal) and took upstream's
+    active-surface fallback to the first survivor.
+  - `AGENTS.md` — `decide`. Kept the fork's slimmed "Hit every surface" list
+    (upstream's side there was byte-identical to base). Upstream's only other
+    change refined the bundled-server `--share`/pairing note; half of it
+    references `apps/server/src/bin.ts pair`, a CLI this fork removed, and the
+    rest is marginal mechanics on a non-target path the fork's terse note
+    already covers — so it was deliberately not absorbed.
+  - `pnpm-lock.yaml` — took upstream, regenerated for the fork's
+    `@t3tools/moatless-api` workspace package, verified with `--frozen-lockfile`.
+- Sweep: `git diff --diff-filter=A ... | grep -Ei 'auth|pair|...'` returned two
+  hits, both keyword false positives (`settings/ThemeEditorHost.tsx` — theme
+  editing; mobile `WorkspaceConnectionTitle.tsx`). No owned-concern additions.
+  Deleted-surface tripwires unchanged at Clerk 4 `package.json`, session
+  bootstrap 9, pairing 73 files; deletions vs upstream are exactly the five known
+  fork drops (two `cli/pair.*`, three local-server-preview files). Off-repository
+  check: only `build-moatless-t3-image.yml` and the two dependabot workflows are
+  active — but upstream adds `.github/workflows/thread-transfer-report.yml`,
+  which will arrive `active` once this lands: **disable it with
+  `gh workflow disable thread-transfer-report.yml --repo soaplabs/t3code` after
+  merge.**
+- Convergence: nothing to drop. Upstream added the wire capability
+  `threadPinReorder` (a fourth per-surface boolean); Moatless does not report it,
+  and it gates no `FEATURES` flag, so the surface already follows the backend —
+  recorded in [the gaps register](./gaps.md). No upstream archive action, no
+  message-provenance field, no thread-server concept, no `SettingsSection`
+  search, no dev-proxy/allowed-hosts consolidation.
+- Unsupported methods: recomputed both directions. No new upstream WebSocket
+  methods, so nothing to add; `38` of `87` contract methods declare
+  `UnsupportedMethodError` (was `49` before the eleven dropped since; the gaps
+  count is corrected). The two conditional refusals — `vcs.switchRef`,
+  `git.preparePullRequestThread` — keep their union member: their arms in
+  `crates/t3code/src/lib.rs` still reach `unsupported_exit`. See
+  [the gaps register](./gaps.md).
+- Verification: `pnpm typecheck`, `pnpm lint`, `pnpm fmt:check` clean; full
+  `pnpm test` passes per package on Node 22.23.2 — web 2163, server 1908 (+7
+  skipped), mobile 617, desktop 447, client-runtime 592, shared 320, contracts
+  231, relay 209, oxlint-plugin 35, effect-acp 31, ssh 25, moatless-api 15,
+  tailscale 13. Caveats: needs `NODE_OPTIONS=--max-old-space-size=12288` (exit
+  137 is the OOM killer, not a failure — see the gaps register); `pnpm lint`
+  emits one warning for an unused oxlint-disable directive in upstream's new
+  `settings/ThemeEditorPanel.tsx` (exit 0, upstream's own, not a fork change).
+
 ### 2026-08-06 — merged upstream to e4abc31f
 
 - Upstream: `e4abc31f` from base `0ad91b6e` (`63` commits). The base is not

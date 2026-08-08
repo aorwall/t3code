@@ -11,7 +11,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import chatViewSource from "../components/ChatView.tsx?raw";
 import commandPaletteSource from "../components/CommandPalette.tsx?raw";
-import sidebarV2Source from "../components/SidebarV2.tsx?raw";
+import sidebarSource from "../components/Sidebar.tsx?raw";
 import connectionsRouteSource from "../routes/settings.connections.tsx?raw";
 import diagnosticsRouteSource from "../routes/settings.diagnostics.tsx?raw";
 import keybindingsRouteSource from "../routes/settings.keybindings.tsx?raw";
@@ -79,7 +79,7 @@ describe("the palette action map", () => {
  */
 describe("the PR-settling gate", () => {
   it("survives on both surfaces that resolve a settled state", () => {
-    for (const source of [sidebarV2Source, chatViewSource]) {
+    for (const source of [sidebarSource, chatViewSource]) {
       expect(source).toContain("FEATURES.prThreadSettling");
     }
   });
