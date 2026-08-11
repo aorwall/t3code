@@ -2049,6 +2049,10 @@ function ChatViewContent(props: ChatViewProps) {
       }
     }
     if (
+      // Fork: the Moatless backend does not run T3's server self-update, so the
+      // "Server update available" banner and its `npx t3` command never apply
+      // here — see FEATURES.serverUpdateBanner.
+      FEATURES.serverUpdateBanner &&
       serverUpdateEnvironmentId &&
       !reconnectingThroughVersionSkew &&
       (serverUpdateState.status !== "idle" ||

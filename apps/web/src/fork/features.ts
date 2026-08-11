@@ -94,6 +94,15 @@ export const FEATURES = {
    */
   assistantStreaming: false,
   /**
+   * The composer's "Server update available" banner, raised on version skew
+   * between this web build and the connected server. It offers to run T3's
+   * server self-update — `npx t3@<version>` — which the Moatless backend, a
+   * separate Rust server, does not implement: skew against it is expected and
+   * the npx command does not apply. Gating it drops the idle offer along with
+   * the in-flight and failed update progress that offer drives.
+   */
+  serverUpdateBanner: false,
+  /**
    * The sidebar's project-grouping setting, which combines matching
    * repositories across environments. This build runs a single environment, so
    * there is nothing to group across.

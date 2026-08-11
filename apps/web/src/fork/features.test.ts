@@ -84,3 +84,16 @@ describe("the PR-settling gate", () => {
     }
   });
 });
+
+/**
+ * `serverUpdateBanner` is also read inline, on the composer-banner line
+ * upstream owns in `ChatView`. A merge taking upstream's side drops the gate
+ * with no type error, and the "Server update available" banner and its
+ * `npx t3` command return against a Moatless server that cannot run them.
+ * Same missing check as above, in the same idiom.
+ */
+describe("the server-update-banner gate", () => {
+  it("survives on the composer banner it guards", () => {
+    expect(chatViewSource).toContain("FEATURES.serverUpdateBanner");
+  });
+});
