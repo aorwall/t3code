@@ -28,6 +28,104 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-08-12 — merged upstream to 5a846148
+
+- Upstream: `5a846148` from base `2c7267ad` (`91` commits). Landed as a merge
+  commit; the base advanced cleanly from the 2026-08-08 entry.
+- Landed: `414` files from `git diff --stat HEAD^1 HEAD` against `414` in the
+  upstream range — exact match, nothing dropped. Fork delta `598` files from
+  `git diff --stat HEAD^2 HEAD`.
+- Conflicts, thirteen files, resolved by the inventory's path policy (none had
+  a cached `pathPolicy` verdict; all fell to the `decide-then-add-entry`
+  fallback inside an owned concern):
+  - `Sidebar.tsx`, `threadActionMenu.logic.ts` + `.test.ts`,
+    `useThreadActionMenu.ts` — upstream added `copy-thread-id` to the shared
+    menu beside the fork's `archive` case; concatenated both. Entry:
+    _Archive in the sidebar row menu_.
+  - `ChatView.tsx`, `RightPanelTabs.tsx`, `rightPanelStore.ts` — upstream
+    shipped the pull-request detail panel and an Agents-card live count
+    alongside the fork's `SandboxedRightPanelTabs` wrapper and
+    `retargetFile`/file-surface state; kept both independently. Also found and
+    fixed a gap the merge would otherwise have introduced: upstream's new
+    "Pull request" and "Agents" add-surface menu items in `RightPanelTabs.tsx`
+    did not route through the fork's `surfaceAvailable`/`disabledReason`
+    helpers the other four items use, so a stopped sandbox would not have
+    disabled them. Wrapped both. Entries: _Sandbox lifecycle controls_,
+    _Servers view in right panel_.
+  - `CommandPalette.tsx` — upstream added a contextual "Project settings"
+    action; re-applied the fork's `paletteActionEnabled` filter around the
+    full action list including the new item. Entry: _Navigation gates_.
+  - `DiffPanel.tsx` — import/add on the same line as upstream's new
+    `createGitDiffFileContentsLoader`; kept both.
+  - `chat/PanelLayoutControls.tsx` — upstream added its own
+    `showTerminalControl` prop (used by the new `/pull-requests` route, which
+    has no terminal). ANDed it with the fork's `FEATURES.terminalDrawerToggle`
+    rather than picking one. Entry: _Chat surface gates_.
+  - `settings/settingsSearch.test.ts` — add/add on adjacent assertions
+    (fork's whitespace-collapse case, upstream's new `glass`/`xyzzy` cases);
+    concatenated.
+  - `packages/contracts/src/rpc.ts` — import/add for the new `sandbox.ts` /
+    `servers.ts` fork imports beside upstream's new `usage.ts`; kept both.
+    Entry: _Hosted-environment contract group_.
+  - `routeTree.gen.ts` — hand-merged the three import/add hunks (new
+    `/pull-requests` and admin-detail routes both landing in the same gaps);
+    the router plugin re-sorted the import order on the next `tsgo`/`vp test`
+    run, confirming the merge was correct.
+  - `apps/web/src/routes/_chat.pull-requests.tsx` (new upstream, no conflict)
+    typechecked against `RightPanelTabsProps` and failed:
+    `previewServerLabelsByOrigin` is a fork-only required prop
+    (_Servers view in right panel_) that upstream's file never had reason to
+    pass, since it renders no preview sessions. Made the prop optional with an
+    empty-map default instead of touching the new file.
+  - Unrelated to the merge but caught by the same `vp test` run:
+    `apps/web/src/fork/features.test.ts`'s `serverUpdateBanner` guard
+    referenced an unimported `chatViewSource` left over from an earlier
+    refactor (introduced 2026-08-11, one commit before this merge started).
+    Fixed by routing it through the same `webSources` glob the rest of the
+    file's guards use, and gave the flag a proper `inventory.json` guard entry
+    instead of a bespoke test.
+- Sweep: three keyword hits, all false positives —
+  `apps/web/src/components/ConfirmDialogHost.tsx` and
+  `apps/web/src/components/pullRequest/PullRequestGhosts.tsx` both matched
+  `host` inside `Host`/`Ghosts`, and `patches/@clerk__expo@4.2.0.patch` is a
+  routine dependency patch (an iOS native-view navigation fix), not new Clerk
+  auth work. Deleted-surface tripwires unchanged at Clerk 4 `package.json`,
+  session bootstrap 9, pairing 74 files. Off-repository check: the two new
+  upstream workflows (`mobile-fingerprint-check.yml`, `web-preview.yml`) are
+  not yet registered on GitHub (unpushed at merge time) — **disable both after
+  this branch lands**:
+  `gh workflow disable mobile-fingerprint-check.yml --repo soaplabs/t3code` and
+  `gh workflow disable web-preview.yml --repo soaplabs/t3code`. Also found
+  `thread-transfer-report.yml` still `active` from the 2026-08-08 merge, whose
+  own tracker entry said to disable it and did not; disabled it now.
+- Convergence: nothing to drop. Upstream shipped a new
+  `capabilities.pullRequests` boolean (a fifth per-surface capability) — the
+  client already reads it directly (`supportsPullRequests`) with no `FEATURES`
+  flag involved, so the whole pull-request surface follows the backend with
+  zero fork code, by construction. No other convergence watch-list item fired:
+  no dev-proxy/allowed-hosts consolidation, no thread-server concept, no
+  upstream web preview, no archive entry point, no PR-driven-settling
+  strengthening, no message-provenance field, no searchable-settings
+  extraction.
+- Unsupported methods: recomputed both directions after teaching
+  `unsupported-methods.mjs` to resolve a shared `error: FooError` const the
+  same way it resolves an inline union (upstream's new `PullRequestRpcError`
+  is the first RPC error type factored out that way; the un-patched script
+  reported all thirteen `pullRequests.*` methods as missing a union entry when
+  they already had one through the shared const). `52` of `101` contract
+  methods now declare `UnsupportedMethodError` (was `38`): `+13` for
+  `pullRequests.*` and `+1` for `server.getUsageSummary`, both new upstream
+  and both genuinely undispatched. The two conditional refusals —
+  `vcs.switchRef`, `git.preparePullRequestThread` — keep their union member.
+  See [the gaps register](./gaps.md), which gained _Pull requests_ and
+  _Usage summary_ entries and extended _Desktop and host lifecycle_ with the
+  `serverUpdateBanner` flag.
+- Verification: `pnpm typecheck`, `pnpm lint`, `pnpm fmt:check` clean; full
+  `pnpm test` passes on Node 22.23.2 — `2369` passed, `7` skipped across `230`
+  test files repo-wide (`apps/web` alone: `2392` passed, `253` files). Needs
+  `NODE_OPTIONS=--max-old-space-size=12288` (exit 137 is the OOM killer, not a
+  failure). Not verified in a browser.
+
 ### 2026-08-08 — merged upstream to 2c7267ad
 
 - Upstream: `2c7267ad` from base `e4abc31f` (`58` commits). Landed as a merge
