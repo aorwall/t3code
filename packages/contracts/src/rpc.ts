@@ -469,7 +469,7 @@ export const WsServerRetryResourceTelemetryRpc = Rpc.make(WS_METHODS.serverRetry
 export const WsServerGetUsageSummaryRpc = Rpc.make(WS_METHODS.serverGetUsageSummary, {
   payload: UsageSummaryInput,
   success: UsageSummary,
-  error: Schema.Union([EnvironmentAuthorizationError, UsageReadError]),
+  error: Schema.Union([EnvironmentAuthorizationError, UsageReadError, UnsupportedMethodError]),
 });
 
 export const WsServerSignalProcessRpc = Rpc.make(WS_METHODS.serverSignalProcess, {
@@ -515,6 +515,7 @@ const PullRequestRpcError = Schema.Union([
   PullRequestUnavailableError,
   PullRequestOperationError,
   EnvironmentAuthorizationError,
+  UnsupportedMethodError,
 ]);
 
 export const WsPullRequestsListRpc = Rpc.make(WS_METHODS.pullRequestsList, {

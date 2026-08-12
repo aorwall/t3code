@@ -47,7 +47,8 @@ interface RightPanelTabsProps {
   activeSurfaceId: string | null;
   pendingSurfaceIds: ReadonlySet<string>;
   previewSessions: Readonly<Record<string, PreviewSessionSnapshot>>;
-  previewServerLabelsByOrigin: ReadonlyMap<string, string>;
+  /** Fork: labels a preview tab by the ThreadServer it belongs to. Absent where there are none. */
+  previewServerLabelsByOrigin?: ReadonlyMap<string, string>;
   terminalLabelsById: ReadonlyMap<string, string>;
   onActivate: (surface: RightPanelSurface) => void;
   onCloseSurface: (surface: RightPanelSurface) => void;
@@ -83,6 +84,8 @@ export interface PullRequestTabStatus {
   state: PullRequestState;
   isDraft: boolean;
 }
+
+const EMPTY_PREVIEW_SERVER_LABELS: ReadonlyMap<string, string> = new Map();
 
 const SURFACE_DISABLED_REASONS = {
   browser: "Browser previews are not available in this runtime.",
@@ -485,7 +488,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
               const title = surfaceTitle(
                 surface,
                 props.previewSessions,
-                props.previewServerLabelsByOrigin,
+                props.previewServerLabelsByOrigin ?? EMPTY_PREVIEW_SERVER_LABELS,
                 props.terminalLabelsById,
               );
               return (

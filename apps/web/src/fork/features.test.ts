@@ -144,6 +144,8 @@ describe("the inventory's delta guards", () => {
  */
 describe("the server-update-banner gate", () => {
   it("survives on the composer banner it guards", () => {
-    expect(chatViewSource).toContain("FEATURES.serverUpdateBanner");
+    expect(webSources["apps/web/src/components/ChatView.tsx"]).toContain(
+      "FEATURES.serverUpdateBanner",
+    );
   });
 });

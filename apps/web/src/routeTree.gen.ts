@@ -32,12 +32,12 @@ import { Route as SettingsArchivedRouteImport } from './routes/settings.archived
 import { Route as SettingsAppearanceRouteImport } from './routes/settings.appearance'
 import { Route as ProjectsProjectKeyRouteImport } from './routes/projects.$projectKey'
 import { Route as ConnectCallbackRouteImport } from './routes/connect_.callback'
+import { Route as ChatPullRequestsRouteImport } from './routes/_chat.pull-requests'
 import { Route as SettingsWorkspacesWorkspaceIdRouteImport } from './routes/settings.workspaces_.$workspaceId'
 import { Route as SettingsUsersLoginRouteImport } from './routes/settings.users_.$login'
 import { Route as SettingsSkillsPluginIdRouteImport } from './routes/settings.skills_.$pluginId'
 import { Route as SettingsLoopsLoopIdRouteImport } from './routes/settings.loops_.$loopId'
 import { Route as SettingsIntegrationsConnectionIdRouteImport } from './routes/settings.integrations_.$connectionId'
-import { Route as ChatPullRequestsRouteImport } from './routes/_chat.pull-requests'
 import { Route as ChatDraftDraftIdRouteImport } from './routes/_chat.draft.$draftId'
 import { Route as ChatEnvironmentIdThreadIdRouteImport } from './routes/_chat.$environmentId.$threadId'
 
@@ -155,6 +155,11 @@ const ConnectCallbackRoute = ConnectCallbackRouteImport.update({
   path: '/connect/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChatPullRequestsRoute = ChatPullRequestsRouteImport.update({
+  id: '/pull-requests',
+  path: '/pull-requests',
+  getParentRoute: () => ChatRoute,
+} as any)
 const SettingsWorkspacesWorkspaceIdRoute =
   SettingsWorkspacesWorkspaceIdRouteImport.update({
     id: '/workspaces_/$workspaceId',
@@ -182,11 +187,6 @@ const SettingsIntegrationsConnectionIdRoute =
     path: '/integrations/$connectionId',
     getParentRoute: () => SettingsRoute,
   } as any)
-const ChatPullRequestsRoute = ChatPullRequestsRouteImport.update({
-  id: '/pull-requests',
-  path: '/pull-requests',
-  getParentRoute: () => ChatRoute,
-} as any)
 const ChatDraftDraftIdRoute = ChatDraftDraftIdRouteImport.update({
   id: '/draft/$draftId',
   path: '/draft/$draftId',
@@ -571,6 +571,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConnectCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_chat/pull-requests': {
+      id: '/_chat/pull-requests'
+      path: '/pull-requests'
+      fullPath: '/pull-requests'
+      preLoaderRoute: typeof ChatPullRequestsRouteImport
+      parentRoute: typeof ChatRoute
+    }
     '/settings/workspaces_/$workspaceId': {
       id: '/settings/workspaces_/$workspaceId'
       path: '/workspaces/$workspaceId'
@@ -605,13 +612,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/integrations/$connectionId'
       preLoaderRoute: typeof SettingsIntegrationsConnectionIdRouteImport
       parentRoute: typeof SettingsRoute
-    }
-    '/_chat/pull-requests': {
-      id: '/_chat/pull-requests'
-      path: '/pull-requests'
-      fullPath: '/pull-requests'
-      preLoaderRoute: typeof ChatPullRequestsRouteImport
-      parentRoute: typeof ChatRoute
     }
     '/_chat/draft/$draftId': {
       id: '/_chat/draft/$draftId'
