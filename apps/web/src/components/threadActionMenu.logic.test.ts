@@ -28,7 +28,7 @@ describe("buildThreadActionMenuItems", () => {
         ...baseState,
         supports: { settlement: false, snooze: false, pinning: false, titleRegeneration: false },
       }),
-    ).toEqual(["rename", "mark-unread", "copy-path", "archive"]);
+    ).toEqual(["rename", "mark-unread", "copy-path", "copy-thread-id", "archive"]);
   });
 
   it("includes branch items only for threads with a branch", () => {

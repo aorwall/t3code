@@ -50,6 +50,8 @@ describe("searchSettings", () => {
     // Whitespace in the query is collapsed, not dropped, so a run-together
     // query does not match a two-word title.
     expect(searchSettings("wordwrap")).toEqual([]);
+    expect(searchSettings("glass").map((item) => item.id)).toEqual(["setting-glass-opacity"]);
+    expect(searchSettings("xyzzy")).toEqual([]);
   });
 
   it("keeps catalog order for multiple title matches", () => {

@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UsageRouteImport } from './routes/usage'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PairRouteImport } from './routes/pair'
 import { Route as LoginRouteImport } from './routes/login'
@@ -29,15 +30,22 @@ import { Route as SettingsDiagnosticsRouteImport } from './routes/settings.diagn
 import { Route as SettingsConnectionsRouteImport } from './routes/settings.connections'
 import { Route as SettingsArchivedRouteImport } from './routes/settings.archived'
 import { Route as SettingsAppearanceRouteImport } from './routes/settings.appearance'
+import { Route as ProjectsProjectKeyRouteImport } from './routes/projects.$projectKey'
 import { Route as ConnectCallbackRouteImport } from './routes/connect_.callback'
 import { Route as SettingsWorkspacesWorkspaceIdRouteImport } from './routes/settings.workspaces_.$workspaceId'
 import { Route as SettingsUsersLoginRouteImport } from './routes/settings.users_.$login'
 import { Route as SettingsSkillsPluginIdRouteImport } from './routes/settings.skills_.$pluginId'
 import { Route as SettingsLoopsLoopIdRouteImport } from './routes/settings.loops_.$loopId'
 import { Route as SettingsIntegrationsConnectionIdRouteImport } from './routes/settings.integrations_.$connectionId'
+import { Route as ChatPullRequestsRouteImport } from './routes/_chat.pull-requests'
 import { Route as ChatDraftDraftIdRouteImport } from './routes/_chat.draft.$draftId'
 import { Route as ChatEnvironmentIdThreadIdRouteImport } from './routes/_chat.$environmentId.$threadId'
 
+const UsageRoute = UsageRouteImport.update({
+  id: '/usage',
+  path: '/usage',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -137,6 +145,11 @@ const SettingsAppearanceRoute = SettingsAppearanceRouteImport.update({
   path: '/appearance',
   getParentRoute: () => SettingsRoute,
 } as any)
+const ProjectsProjectKeyRoute = ProjectsProjectKeyRouteImport.update({
+  id: '/projects/$projectKey',
+  path: '/projects/$projectKey',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConnectCallbackRoute = ConnectCallbackRouteImport.update({
   id: '/connect_/callback',
   path: '/connect/callback',
@@ -169,6 +182,11 @@ const SettingsIntegrationsConnectionIdRoute =
     path: '/integrations/$connectionId',
     getParentRoute: () => SettingsRoute,
   } as any)
+const ChatPullRequestsRoute = ChatPullRequestsRouteImport.update({
+  id: '/pull-requests',
+  path: '/pull-requests',
+  getParentRoute: () => ChatRoute,
+} as any)
 const ChatDraftDraftIdRoute = ChatDraftDraftIdRouteImport.update({
   id: '/draft/$draftId',
   path: '/draft/$draftId',
@@ -187,7 +205,10 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/pair': typeof PairRoute
   '/settings': typeof SettingsRouteWithChildren
+  '/usage': typeof UsageRoute
+  '/pull-requests': typeof ChatPullRequestsRoute
   '/connect/callback': typeof ConnectCallbackRoute
+  '/projects/$projectKey': typeof ProjectsProjectKeyRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/archived': typeof SettingsArchivedRoute
   '/settings/connections': typeof SettingsConnectionsRoute
@@ -215,7 +236,10 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/pair': typeof PairRoute
   '/settings': typeof SettingsRouteWithChildren
+  '/usage': typeof UsageRoute
+  '/pull-requests': typeof ChatPullRequestsRoute
   '/connect/callback': typeof ConnectCallbackRoute
+  '/projects/$projectKey': typeof ProjectsProjectKeyRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/archived': typeof SettingsArchivedRoute
   '/settings/connections': typeof SettingsConnectionsRoute
@@ -246,7 +270,10 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/pair': typeof PairRoute
   '/settings': typeof SettingsRouteWithChildren
+  '/usage': typeof UsageRoute
+  '/_chat/pull-requests': typeof ChatPullRequestsRoute
   '/connect_/callback': typeof ConnectCallbackRoute
+  '/projects/$projectKey': typeof ProjectsProjectKeyRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/archived': typeof SettingsArchivedRoute
   '/settings/connections': typeof SettingsConnectionsRoute
@@ -278,7 +305,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/pair'
     | '/settings'
+    | '/usage'
+    | '/pull-requests'
     | '/connect/callback'
+    | '/projects/$projectKey'
     | '/settings/appearance'
     | '/settings/archived'
     | '/settings/connections'
@@ -306,7 +336,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/pair'
     | '/settings'
+    | '/usage'
+    | '/pull-requests'
     | '/connect/callback'
+    | '/projects/$projectKey'
     | '/settings/appearance'
     | '/settings/archived'
     | '/settings/connections'
@@ -336,7 +369,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/pair'
     | '/settings'
+    | '/usage'
+    | '/_chat/pull-requests'
     | '/connect_/callback'
+    | '/projects/$projectKey'
     | '/settings/appearance'
     | '/settings/archived'
     | '/settings/connections'
@@ -367,11 +403,20 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PairRoute: typeof PairRoute
   SettingsRoute: typeof SettingsRouteWithChildren
+  UsageRoute: typeof UsageRoute
   ConnectCallbackRoute: typeof ConnectCallbackRoute
+  ProjectsProjectKeyRoute: typeof ProjectsProjectKeyRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/usage': {
+      id: '/usage'
+      path: '/usage'
+      fullPath: '/usage'
+      preLoaderRoute: typeof UsageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -512,6 +557,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsAppearanceRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/projects/$projectKey': {
+      id: '/projects/$projectKey'
+      path: '/projects/$projectKey'
+      fullPath: '/projects/$projectKey'
+      preLoaderRoute: typeof ProjectsProjectKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/connect_/callback': {
       id: '/connect_/callback'
       path: '/connect/callback'
@@ -554,6 +606,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsIntegrationsConnectionIdRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/_chat/pull-requests': {
+      id: '/_chat/pull-requests'
+      path: '/pull-requests'
+      fullPath: '/pull-requests'
+      preLoaderRoute: typeof ChatPullRequestsRouteImport
+      parentRoute: typeof ChatRoute
+    }
     '/_chat/draft/$draftId': {
       id: '/_chat/draft/$draftId'
       path: '/draft/$draftId'
@@ -572,12 +631,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface ChatRouteChildren {
+  ChatPullRequestsRoute: typeof ChatPullRequestsRoute
   ChatIndexRoute: typeof ChatIndexRoute
   ChatEnvironmentIdThreadIdRoute: typeof ChatEnvironmentIdThreadIdRoute
   ChatDraftDraftIdRoute: typeof ChatDraftDraftIdRoute
 }
 
 const ChatRouteChildren: ChatRouteChildren = {
+  ChatPullRequestsRoute: ChatPullRequestsRoute,
   ChatIndexRoute: ChatIndexRoute,
   ChatEnvironmentIdThreadIdRoute: ChatEnvironmentIdThreadIdRoute,
   ChatDraftDraftIdRoute: ChatDraftDraftIdRoute,
@@ -639,7 +700,9 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PairRoute: PairRoute,
   SettingsRoute: SettingsRouteWithChildren,
+  UsageRoute: UsageRoute,
   ConnectCallbackRoute: ConnectCallbackRoute,
+  ProjectsProjectKeyRoute: ProjectsProjectKeyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

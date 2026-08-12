@@ -24,6 +24,7 @@ export type ThreadActionMenuId =
   | "copy-branch"
   // Fork: archive closes the Moatless task; settling here is only triage.
   | "archive"
+  | "copy-thread-id"
   | "delete";
 
 export interface ThreadActionMenuState {
@@ -104,6 +105,7 @@ export function buildThreadActionMenuItems(
     { id: "mark-unread", label: "Mark unread" },
     { id: "copy-path", label: "Copy path", icon: "copy" },
     ...(state.branch ? [{ id: "copy-branch" as const, label: "Copy branch", icon: "copy" }] : []),
+    { id: "copy-thread-id", label: "Copy thread ID", icon: "copy" },
     // Fork: archive closes the Moatless task; settling here is only triage.
     { id: "archive", label: "Archive thread" },
     // Fork: the Moatless backend does not serve thread deletion — see
