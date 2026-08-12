@@ -105,6 +105,18 @@ what a person loses, which is the part the derivation cannot tell you:
   2026-08-06 merge. `review.getDiffPreview` is served, so a diff renders and the
   full file behind a hunk cannot be fetched.
 - **Workflow scripts** — `orchestration.getWorkflowScript`, also new upstream.
+- **Pull requests** — the whole `pullRequests.*` group (list, detail, activity,
+  diff, review, comment, reviewer requests), new upstream in the 2026-08-12
+  merge, plus GitHub/GitLab/Bitbucket/Azure DevOps provider backends in
+  `apps/server/src/pullRequest/`. Needs no fork gate: the client reads
+  `capabilities.pullRequests`, which decodes to unsupported when a deployment's
+  handshake omits it, so the whole surface (sidebar tab, right-panel surface,
+  `/pull-requests` route) already stays off on Moatless. Closes when the backend
+  reports `capabilities.pullRequests: true` and dispatches the group.
+- **Usage summary** — `server.getUsageSummary`, new upstream in the 2026-08-12
+  merge, reading local provider transcript directories in
+  `apps/server/src/usage/`. The `/usage` route and its charts render against
+  whatever the RPC returns and have no local fallback on Moatless.
 - **Opening in an external editor** — `shell.openInEditor`. Holds open
   `workspaceOpenIn`. Unlikely ever to close: the browser is not on the machine
   the workspace is on, so this one is a candidate for deleting the surface
@@ -115,7 +127,10 @@ what a person loses, which is the part the derivation cannot tell you:
   `reportHostPowerState`, `cloud.installRelayClient`,
   `subscribeDiscoveredLocalServers`. These are upstream's self-hosted desktop
   product and are **not** fork targets — they are listed for completeness, not as
-  work.
+  work. Holds open `FEATURES.serverUpdateBanner` (2026-08-11), which drops the
+  composer's "Server update available" banner and its `npx t3` command: the
+  Moatless server does not implement `server.updateServer`, so the offer would
+  point at a command that cannot run.
 
 - **Check:** run `unsupported-methods.mjs` rather than reading this list. Where
   the two sides come from is _Deriving the unsupported set_ in the inventory.

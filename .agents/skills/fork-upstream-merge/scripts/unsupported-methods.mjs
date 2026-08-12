@@ -52,12 +52,30 @@ function balancedSlice(source, start) {
   return source.slice(start, index);
 }
 
+/**
+ * `error:` fields that name a shared `const FooError = Schema.Union([…])` instead of
+ * inlining the union — several `Rpc.make` calls reuse one error type this way. Maps
+ * each such const's name to whether its own union includes `UnsupportedMethodError`,
+ * so a call site that only says `error: FooError` still resolves correctly.
+ */
+function parseErrorConsts(source) {
+  const consts = new Map();
+  const pattern = /const\s+(\w+)\s*=\s*Schema\.Union\(/g;
+  for (let match = pattern.exec(source); match; match = pattern.exec(source)) {
+    const body = balancedSlice(source, match.index + match[0].length);
+    consts.set(match[1], body.includes("UnsupportedMethodError"));
+  }
+  return consts;
+}
+
 function parseContract() {
   const rpc = read(RPC_PATH);
+  const orchestration = read(ORCHESTRATION_PATH);
   const maps = {
     WS_METHODS: parseMethodMap(rpc, "WS_METHODS"),
-    ORCHESTRATION_WS_METHODS: parseMethodMap(read(ORCHESTRATION_PATH), "ORCHESTRATION_WS_METHODS"),
+    ORCHESTRATION_WS_METHODS: parseMethodMap(orchestration, "ORCHESTRATION_WS_METHODS"),
   };
+  const errorConsts = new Map([...parseErrorConsts(rpc), ...parseErrorConsts(orchestration)]);
 
   const methods = new Map();
   const marker = "Rpc.make(";
@@ -67,7 +85,12 @@ function parseContract() {
     if (!ref) continue;
     const wire = maps[ref[1]][ref[2]];
     if (!wire) throw new Error(`${ref[1]}.${ref[2]} is not in its map`);
-    methods.set(wire, call.includes("UnsupportedMethodError"));
+    const errorRef = call.match(/error:\s*(\w+)/);
+    const hasUnsupported =
+      errorRef && errorConsts.has(errorRef[1])
+        ? errorConsts.get(errorRef[1])
+        : call.includes("UnsupportedMethodError");
+    methods.set(wire, hasUnsupported);
   }
   if (methods.size === 0) throw new Error(`no Rpc.make calls found in ${RPC_PATH}`);
   return methods;
