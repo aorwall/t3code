@@ -115,7 +115,10 @@ what a person loses, which is the part the derivation cannot tell you:
   `reportHostPowerState`, `cloud.installRelayClient`,
   `subscribeDiscoveredLocalServers`. These are upstream's self-hosted desktop
   product and are **not** fork targets — they are listed for completeness, not as
-  work.
+  work. Holds open `FEATURES.serverUpdateBanner` (2026-08-11), which drops the
+  composer's "Server update available" banner and its `npx t3` command: the
+  Moatless server does not implement `server.updateServer`, so the offer would
+  point at a command that cannot run.
 
 - **Check:** run `unsupported-methods.mjs` rather than reading this list. Where
   the two sides come from is _Deriving the unsupported set_ in the inventory.

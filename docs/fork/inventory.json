@@ -535,6 +535,16 @@
       "mustSurvive": "A message that reached the thread through an adapter or from another Task says so, and a message typed into the composer renders exactly as upstream renders it. The contract field is optional rather than nullable so the absent case stays byte-identical to upstream's payload."
     },
     {
+      "id": "server-update-banner-gate",
+      "name": "Server-update banner gate",
+      "paths": ["apps/web/src/components/ChatView.tsx", "apps/web/src/fork/features.ts"],
+      "mustSurvive": "The composer never offers to run T3's self-update: the Moatless server does not implement server.updateServer, so the offer and its npx t3 command would point at a command that cannot run. One additive FEATURES.serverUpdateBanner gate on upstream's composer-banner line. Holds open the Desktop and host lifecycle gap. Drop the flag and gate once the backend serves server.updateServer.",
+      "guard": {
+        "symbol": "FEATURES.serverUpdateBanner",
+        "files": ["apps/web/src/components/ChatView.tsx"]
+      }
+    },
+    {
       "id": "pr-settling-gate",
       "name": "PR-driven settling gate",
       "paths": [
