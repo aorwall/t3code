@@ -168,6 +168,33 @@ export function refExists(ref) {
   }
 }
 
+export const remoteExists = (name) => lines(git(["remote"], { allowFailure: true })).includes(name);
+
+/**
+ * Fetch upstream, having first checked the remote is configured.
+ *
+ * A fresh clone has only `origin`, which is the normal state in a sandbox, so
+ * this is the first thing a merge hits. Fetching blind gets `fatal: 'upstream'
+ * does not appear to be a git repository` — which does not say that the remote
+ * is simply missing, and does not say what URL to add, even though the answer
+ * is sitting in inventory.json two lines away.
+ */
+export function requireUpstreamRemote(inventory) {
+  const { remote, url } = inventory.upstream;
+  if (remoteExists(remote)) return remote;
+  throw new Error(
+    `this clone has no \`${remote}\` remote (a fresh clone only has origin). Run:\n` +
+      `  git remote add ${remote} ${url}\n` +
+      `  git fetch ${remote}`,
+  );
+}
+
+export function fetchUpstream(inventory) {
+  // Quiet, because the branch-and-tag listing is longer than this script's own
+  // report and pushes it off the top of the screen.
+  git(["fetch", "--quiet", requireUpstreamRemote(inventory)]);
+}
+
 /**
  * The fork's history has to be complete for a merge: a shallow clone reports an
  * empty merge-base, which silently turns the whole upstream range into "new".

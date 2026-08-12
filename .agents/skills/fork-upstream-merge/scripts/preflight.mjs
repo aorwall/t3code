@@ -20,10 +20,12 @@ import {
   cyan,
   dim,
   ensureFullHistory,
+  fetchUpstream,
   git,
   globToRegExp,
   lines,
   loadInventory,
+  requireUpstreamRemote,
   runMain,
 } from "./lib.mjs";
 import { requireUpstream, runInventoryChecks } from "./inventory-check.mjs";
@@ -161,10 +163,14 @@ function reportNewFiles(inventory, report, base, ref) {
 runMain(async () => {
   const inventory = loadInventory();
 
+  // Checked before the un-shallow below, which is a large fetch to spend on a
+  // clone that was never going to be able to reach upstream.
+  requireUpstreamRemote(inventory);
+
   if (ensureFullHistory()) {
     process.stdout.write(dim("un-shallowed the clone so merge-base is meaningful\n"));
   }
-  git(["fetch", inventory.upstream.remote]);
+  fetchUpstream(inventory);
   const ref = requireUpstream(inventory);
   const base = git(["merge-base", "HEAD", ref]);
 

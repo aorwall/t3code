@@ -12,8 +12,6 @@
     "Run it before every merge; it is step 0 of the skill."
   ],
 
-  "updated": "2026-08-08",
-
   "upstream": {
     "remote": "upstream",
     "url": "https://github.com/pingdotgg/t3code.git",
