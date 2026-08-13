@@ -9,20 +9,22 @@ import {
   buildProjectScript,
   commandForProjectScript,
   nextProjectScriptId,
+  portFromPreviewUrl,
   primaryProjectScript,
   projectScriptIdFromCommand,
 } from "./projectScripts";
 
 describe("projectScripts helpers", () => {
-  it("builds scripts with preview settings", () => {
+  // Fork: a port drives the preview, so it stands in for the free-text URL and
+  // implies auto-opening the published preview when the script runs.
+  it("builds scripts with a port and derives auto-open from it", () => {
     expect(
       buildProjectScript("dev", {
         name: "Dev server",
         command: "pnpm dev",
         icon: "debug",
         runOnWorktreeCreate: false,
-        previewUrl: "http://localhost:5733",
-        autoOpenPreview: true,
+        port: 5733,
       }),
     ).toEqual({
       id: "dev",
@@ -30,20 +32,19 @@ describe("projectScripts helpers", () => {
       command: "pnpm dev",
       icon: "debug",
       runOnWorktreeCreate: false,
-      previewUrl: "http://localhost:5733",
+      port: 5733,
       autoOpenPreview: true,
     });
   });
 
-  it("omits preview settings when no preview URL is configured", () => {
+  it("omits preview settings when no port is configured", () => {
     expect(
       buildProjectScript("test", {
         name: "Test",
         command: "pnpm test",
         icon: "test",
         runOnWorktreeCreate: false,
-        previewUrl: null,
-        autoOpenPreview: false,
+        port: null,
       }),
     ).toEqual({
       id: "test",
@@ -52,6 +53,15 @@ describe("projectScripts helpers", () => {
       icon: "test",
       runOnWorktreeCreate: false,
     });
+  });
+
+  // Fork: parses a port out of a t3.json preview URL on import, and imports the
+  // script console-only when the URL names none.
+  it("extracts a port from a preview URL", () => {
+    expect(portFromPreviewUrl("http://localhost:5733")).toBe(5733);
+    expect(portFromPreviewUrl("https://example.dev")).toBeNull();
+    expect(portFromPreviewUrl(undefined)).toBeNull();
+    expect(portFromPreviewUrl("not a url")).toBeNull();
   });
 
   it("builds and parses script run commands", () => {

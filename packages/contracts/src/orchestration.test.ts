@@ -378,6 +378,57 @@ it.effect("decodes thread.meta-updated payloads with explicit provider", () =>
   }),
 );
 
+// Fork addition (Moatless): a script carries a port, not a free-text preview
+// URL — a script in a remote sandbox has no localhost to point at.
+it.effect("decodes a project.meta.update carrying a script with a port", () =>
+  Effect.gen(function* () {
+    const command = yield* decodeOrchestrationCommand({
+      type: "project.meta.update",
+      commandId: "cmd-scripts-1",
+      projectId: "project-1",
+      scripts: [
+        {
+          id: "dev",
+          name: "Dev",
+          command: "vp dev",
+          icon: "play",
+          runOnWorktreeCreate: false,
+          port: 5173,
+        },
+      ],
+    });
+
+    assert.strictEqual(command.type, "project.meta.update");
+    if (command.type !== "project.meta.update") return;
+    assert.strictEqual(command.scripts?.[0]?.port, 5173);
+  }),
+);
+
+// Fork addition (Moatless): a port outside 1..65535 is refused at the wire.
+it.effect("rejects a script port outside the valid range", () =>
+  Effect.gen(function* () {
+    const result = yield* Effect.exit(
+      decodeOrchestrationCommand({
+        type: "project.meta.update",
+        commandId: "cmd-scripts-2",
+        projectId: "project-1",
+        scripts: [
+          {
+            id: "dev",
+            name: "Dev",
+            command: "vp dev",
+            icon: "play",
+            runOnWorktreeCreate: false,
+            port: 70000,
+          },
+        ],
+      }),
+    );
+
+    assert.isTrue(result._tag === "Failure");
+  }),
+);
+
 it.effect("decodes thread archive and unarchive commands", () =>
   Effect.gen(function* () {
     const archive = yield* decodeOrchestrationCommand({

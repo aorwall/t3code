@@ -13,6 +13,7 @@ import {
   IsoDateTime,
   MessageId,
   NonNegativeInt,
+  PortSchema,
   PositiveInt,
   ProjectId,
   ProviderItemId,
@@ -208,6 +209,14 @@ export const ProjectScript = Schema.Struct({
    * the moment this script starts. Ignored without `previewUrl` or on web.
    */
   autoOpenPreview: Schema.optional(Schema.Boolean),
+  /**
+   * Fork addition (Moatless). The port the script serves on. A hosted
+   * environment publishes it when the script runs and returns the real
+   * external URL, so this stands in for `previewUrl`, which a script running
+   * in a remote sandbox cannot know ahead of time — there is no localhost to
+   * point at. Absent for a console-only script.
+   */
+  port: Schema.optional(PortSchema),
 });
 export type ProjectScript = typeof ProjectScript.Type;
 
@@ -229,6 +238,11 @@ export const OrchestrationProject = Schema.Struct({
   // Optional on the wire so cached snapshots from older servers still decode.
   faviconPath: Schema.optional(Schema.NullOr(ProjectFaviconPath)),
   scripts: Schema.Array(ProjectScript),
+  // Fork addition (Moatless). Whether the viewer may add/edit/delete this
+  // project's scripts. False for a git-synced workspace, whose scripts live in
+  // .moatless/workspaces.json and are read-only over the wire. Optional so
+  // snapshots from older servers still decode; absent is treated as false.
+  scriptsEditable: Schema.optional(Schema.Boolean),
   createdAt: IsoDateTime,
   updatedAt: IsoDateTime,
   deletedAt: Schema.NullOr(IsoDateTime),
@@ -456,6 +470,8 @@ export const OrchestrationProjectShell = Schema.Struct({
   // Optional on the wire so cached snapshots from older servers still decode.
   faviconPath: Schema.optional(Schema.NullOr(ProjectFaviconPath)),
   scripts: Schema.Array(ProjectScript),
+  // Fork addition (Moatless). See OrchestrationProject.scriptsEditable.
+  scriptsEditable: Schema.optional(Schema.Boolean),
   createdAt: IsoDateTime,
   updatedAt: IsoDateTime,
 });

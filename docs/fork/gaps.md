@@ -57,18 +57,21 @@ on the handshake.
 
 The `FEATURES` constant is a separate mechanism, not a stand-in for this record.
 The record mostly grows booleans for thread-lifecycle surfaces; the surfaces
-`FEATURES` gates — `projectScriptEditing`, `turnDiffs`, `diagnostics`,
-`workspaceSearchContents` and the rest — have no boolean in it. Those stay a
-build-time constant because there is nothing on the wire that would carry them.
+`FEATURES` gates — `turnDiffs`, `diagnostics`, `workspaceSearchContents` and the
+rest — have no boolean in it. Those stay a build-time constant because there is
+nothing on the wire that would carry them.
 
-One has since crossed over. `workspaceScripts` is a capability on this record
+Two have since crossed over. `workspaceScripts` is a capability on this record
 that decides a surface, not a thread-lifecycle rule: it says the deployment can
 run a project's script itself, and the control that runs one follows it rather
-than a flag. That is the inventory's _prefer upstream's capability where one
-exists and delete the matching flag_ played out — the run half of
-`projectScripts` left `FEATURES` when the capability arrived. Reach for a
-capability over a flag whenever the answer varies by deployment; keep the flag
-when it cannot.
+than a flag. The edit half followed the same road: whether a project's scripts
+can be edited varies per workspace at runtime — a git-synced workspace owns them
+in `.moatless/workspaces.json` and is read-only, a manual one is writable — so it
+rides a per-project `scriptsEditable` field on the wire, not a build flag, and
+`projectScriptEditing` left `FEATURES` when that field arrived. That is the
+inventory's _prefer upstream's capability where one exists and delete the
+matching flag_ played out twice over. Reach for a capability over a flag whenever
+the answer varies by deployment; keep the flag when it cannot.
 
 - **Closes when:** the backend reports each new thread-lifecycle boolean it comes
   to implement, and drops or contract-registers the two fork-invented keys.
@@ -93,8 +96,9 @@ what a person loses, which is the part the derivation cannot tell you:
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
   `getConfig`), so Settings renders and nothing in it can be saved. Holds open
-  `serverAdministration`. The edit half of a project's scripts is held open by
-  `project.update` instead — see _A script runs on the backend_ below.
+  `serverAdministration`. A project's scripts are the exception: the backend
+  dispatches `project.meta.update` for them — see _A script runs on the backend_
+  below.
 - **Diagnostics** — `server.getTraceDiagnostics`, `getProcessDiagnostics`,
   `getProcessResourceHistory`, `getResourceTelemetryHistory`, `signalProcess`,
   `retryResourceTelemetry`, `subscribeResourceTelemetry`. Holds open
@@ -170,17 +174,30 @@ decode failure.
 - **Closes when:** upstream's server grows a way to run a project's script off
   the local machine, or the method leaves the contract. Neither is near.
 
-The **edit** half is an ordinary gap. A Moatless script is declared on the
-Workspace run-config and projected read-only, and adding, editing or deleting one
-from the header writes through `project.update`, which the backend does not
-dispatch. So `projectScripts` split the way `workspaceSearch` did — the run half
-is served and its flag is gone; `projectScriptEditing` holds the rest.
+The **edit** half is now served, but conditionally. The backend dispatches
+`project.meta.update` carrying a `scripts` array and writes it through to the
+Workspace run-config — but only for a workspace it owns. A git-synced workspace
+keeps its scripts in `.moatless/workspaces.json`, so the backend refuses the
+write and projects the scripts read-only. That "can this viewer edit these
+scripts" answer varies per workspace at runtime, so it rides the wire as a
+`scriptsEditable` field on the project (true for a manual workspace, false for a
+git-synced one) rather than a build flag. `ProjectScriptsControl` and the project
+settings page hide Add/Edit/Delete when it is false; `projectScriptEditing` is
+gone from `FEATURES`. Running a script stays ungated — a read-only workspace can
+still run what it declares.
 
-- **Closes when:** the backend dispatches `project.update` for a project's
-  scripts, writing through to the Workspace run-config.
-- **Then here:** delete `projectScriptEditing` and its gates in
-  `ProjectScriptsControl.tsx`, and restore upstream's two assertions in
-  `ProjectScriptsControl.test.tsx`.
+The editor drops upstream's free-text "Preview URL" for a numeric **Port**: a
+script in a remote sandbox has no localhost to point at, so the host publishes
+the port and returns the real external URL when the script runs (see
+`scripts.run` above). The port persists on the script's `port`; `previewUrl` /
+`autoOpenPreview` stay on the contract for wire-compatibility but the fork's UI
+no longer writes a URL.
+
+- **Closed by:** the backend dispatching `project.meta.update` for a project's
+  scripts and reporting `scriptsEditable` per project.
+- **Watch on merge:** if upstream's editor grows a field the fork's port-only
+  form dropped, decide per field whether to carry it; the port is the fork's, the
+  URL is upstream's.
 
 ### A command cannot be refused
 

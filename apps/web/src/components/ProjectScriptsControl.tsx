@@ -10,8 +10,11 @@ import {
 import { ChevronDownIcon, DownloadIcon, PlusIcon, SettingsIcon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
-import { FEATURES } from "../fork/features";
-import { commandForProjectScript, primaryProjectScript } from "~/projectScripts";
+import {
+  commandForProjectScript,
+  portFromPreviewUrl,
+  primaryProjectScript,
+} from "~/projectScripts";
 import { shortcutLabelForCommand } from "~/keybindings";
 import {
   EMPTY_PROJECT_SCRIPT_INPUT,
@@ -46,6 +49,13 @@ interface ProjectScriptsControlProps {
   fileScripts?: ReadonlyArray<T3ProjectFileScript>;
   keybindings: ResolvedKeybindingsConfig;
   preferredScriptId?: string | null;
+  /**
+   * Fork addition (Moatless). Whether the viewer may add/edit/delete scripts.
+   * False for a git-synced workspace, whose scripts are owned by
+   * .moatless/workspaces.json and read-only over the wire — the control then
+   * shows only run affordances, no Add/Edit/Delete/import.
+   */
+  editable: boolean;
   onRunScript: (script: ProjectScript) => void;
   onAddScript: (input: NewProjectScriptInput) => Promise<ProjectScriptActionResult>;
   onUpdateScript: (
@@ -60,6 +70,7 @@ export default function ProjectScriptsControl({
   fileScripts = NO_FILE_SCRIPTS,
   keybindings,
   preferredScriptId = null,
+  editable,
   onRunScript,
   onAddScript,
   onUpdateScript,
@@ -115,8 +126,9 @@ export default function ProjectScriptsControl({
       icon: fileScript.icon ?? "play",
       runOnWorktreeCreate: fileScript.runOnWorktreeCreate ?? false,
       keybinding: null,
-      previewUrl: fileScript.previewUrl ?? null,
-      autoOpenPreview: fileScript.previewUrl ? (fileScript.autoOpenPreview ?? false) : false,
+      // t3.json still carries a free-text preview URL; the fork drives previews
+      // off a port, so keep the port when the URL names one and drop the rest.
+      port: portFromPreviewUrl(fileScript.previewUrl),
     };
     const result = await onAddScript(payload);
     if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
@@ -212,7 +224,7 @@ export default function ProjectScriptsControl({
                           {shortcutLabel}
                         </MenuShortcut>
                       )}
-                      {FEATURES.projectScriptEditing && (
+                      {editable && (
                         <Button
                           type="button"
                           variant="ghost"
@@ -236,8 +248,8 @@ export default function ProjectScriptsControl({
                   </MenuItem>
                 );
               })}
-              {FEATURES.projectScriptEditing && importMenuItems}
-              {FEATURES.projectScriptEditing && (
+              {editable && importMenuItems}
+              {editable && (
                 <MenuItem className={dropdownItemClassName} onClick={openAddDialog}>
                   <PlusIcon className="size-4" />
                   Add action
@@ -246,7 +258,7 @@ export default function ProjectScriptsControl({
             </MenuPopup>
           </Menu>
         </Group>
-      ) : !FEATURES.projectScriptEditing ? null : importableScripts.length > 0 ? (
+      ) : !editable ? null : importableScripts.length > 0 ? (
         <Menu
           highlightItemOnHover={false}
           open={actionsMenuOpen.imports}

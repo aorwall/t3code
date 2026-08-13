@@ -553,18 +553,37 @@
       }
     },
     {
-      "id": "project-script-editing-gate",
-      "name": "Project-script editing gate",
+      "id": "project-script-editing-capability",
+      "name": "Project-script editing capability",
       "paths": [
         "apps/web/src/components/ProjectScriptsControl.tsx",
         "apps/web/src/components/ProjectScriptsControl.test.tsx",
         "apps/web/src/components/chat/ChatHeader.tsx",
-        "apps/web/src/fork/features.ts"
+        "apps/web/src/components/settings/ProjectSettingsPanel.tsx",
+        "apps/web/src/components/ChatView.tsx",
+        "packages/contracts/src/orchestration.ts"
       ],
-      "mustSurvive": "A project's scripts can be run but not edited: a Moatless script is declared on the Workspace run-config and projected read-only, and the edit controls write through project.update, which the backend does not dispatch. Three additive FEATURES.projectScriptEditing gates in ProjectScriptsControl.tsx drop the per-script Edit button, the t3.json import items and the Add action item; the no-primary-script branch returns null, so the control leaves the header when there is nothing to run and nothing can be added. ChatHeader's gate on the control itself is DELETED, not re-applied — running is served. A merge that finds an Add action against Moatless has taken upstream's side back.",
+      "mustSurvive": "A project's scripts can be edited only when the backend says so per workspace: a git-synced workspace owns its scripts in .moatless/workspaces.json and is projected read-only, a manual one is writable. That answer rides the wire as scriptsEditable on OrchestrationProject / OrchestrationProjectShell, threaded to ProjectScriptsControl and ProjectSettingsPanel as an `editable` prop that gates the per-script Edit button, the t3.json import items and the Add action. It is NOT a FEATURES flag — projectScriptEditing was deleted when the capability arrived, because the answer varies per deployment and per workspace. Running a script stays ungated: a read-only workspace still runs what it declares, and ProjectScriptsControl's no-primary-script branch returns null only when editing is also off. A merge that reintroduces FEATURES.projectScriptEditing or an always-on Add action has taken upstream's side back.",
       "guard": {
-        "symbol": "FEATURES.projectScriptEditing",
-        "files": ["apps/web/src/components/ProjectScriptsControl.tsx"]
+        "symbol": "scriptsEditable",
+        "files": [
+          "packages/contracts/src/orchestration.ts",
+          "apps/web/src/components/settings/ProjectSettingsPanel.tsx"
+        ]
+      }
+    },
+    {
+      "id": "project-script-port-field",
+      "name": "Project-script port field",
+      "paths": [
+        "apps/web/src/components/projectScriptEditor.tsx",
+        "apps/web/src/projectScripts.ts",
+        "packages/contracts/src/orchestration.ts"
+      ],
+      "mustSurvive": "The script editor sets a numeric Port, not upstream's free-text Preview URL: a script in a remote sandbox has no localhost to point at, so the host publishes the port and returns the real external URL when the script runs (scripts.run). ProjectScript carries port (1..65535); the editor's Port input replaces the Preview URL input and auto-open toggle, and buildProjectScript derives autoOpenPreview from the port's presence. previewUrl / autoOpenPreview stay on the contract for wire-compatibility but the fork's UI never writes a URL. A merge that restores the Preview URL input has dropped the port.",
+      "guard": {
+        "symbol": "port",
+        "files": ["apps/web/src/components/projectScriptEditor.tsx"]
       }
     },
     {

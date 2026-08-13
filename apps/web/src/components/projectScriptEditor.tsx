@@ -79,10 +79,13 @@ export interface NewProjectScriptInput {
   icon: ProjectScriptIcon;
   runOnWorktreeCreate: boolean;
   keybinding: string | null;
-  /** Optional URL to open in the in-app preview when this script runs. */
-  previewUrl: string | null;
-  /** When true, automatically open the preview panel pointed at `previewUrl`. */
-  autoOpenPreview: boolean;
+  /**
+   * Fork addition (Moatless). The port this script serves on, or null for a
+   * console-only script. Replaces the upstream free-text preview URL: a script
+   * in a remote sandbox has no localhost to point at, so the host publishes
+   * this port and opens the preview at the real external URL when it runs.
+   */
+  port: number | null;
 }
 
 export type ProjectScriptActionResult = AtomCommandResult<void, unknown>;
@@ -93,8 +96,7 @@ export const EMPTY_PROJECT_SCRIPT_INPUT: NewProjectScriptInput = {
   icon: "play",
   runOnWorktreeCreate: false,
   keybinding: null,
-  previewUrl: null,
-  autoOpenPreview: false,
+  port: null,
 };
 
 /** What the editor dialog should open with. `scriptId: null` means "add". */
@@ -117,8 +119,7 @@ export function editorRequestForScript(
       icon: script.icon,
       runOnWorktreeCreate: script.runOnWorktreeCreate,
       keybinding: keybindingValueForCommand(keybindings, commandForProjectScript(script.id)),
-      previewUrl: script.previewUrl ?? null,
-      autoOpenPreview: script.autoOpenPreview ?? false,
+      port: script.port ?? null,
     },
   };
 }
@@ -152,8 +153,7 @@ export function ProjectScriptEditorDialog({
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [runOnWorktreeCreate, setRunOnWorktreeCreate] = useState(false);
   const [keybinding, setKeybinding] = useState("");
-  const [previewUrl, setPreviewUrl] = useState("");
-  const [autoOpenPreview, setAutoOpenPreview] = useState(false);
+  const [port, setPort] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
@@ -169,8 +169,7 @@ export function ProjectScriptEditorDialog({
     setIconPickerOpen(false);
     setRunOnWorktreeCreate(request.initial.runOnWorktreeCreate);
     setKeybinding(request.initial.keybinding ?? "");
-    setPreviewUrl(request.initial.previewUrl ?? "");
-    setAutoOpenPreview(request.initial.autoOpenPreview);
+    setPort(request.initial.port === null ? "" : String(request.initial.port));
     setValidationError(request.error ?? null);
   }, [request]);
 
@@ -199,6 +198,16 @@ export function ProjectScriptEditorDialog({
       setValidationError("Command is required.");
       return;
     }
+    const trimmedPort = port.trim();
+    let portValue: number | null = null;
+    if (trimmedPort.length > 0) {
+      const parsed = Number(trimmedPort);
+      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) {
+        setValidationError("Port must be a whole number between 1 and 65535.");
+        return;
+      }
+      portValue = parsed;
+    }
 
     setValidationError(null);
     let payload: NewProjectScriptInput;
@@ -213,15 +222,13 @@ export function ProjectScriptEditorDialog({
         keybinding,
         command: commandForProjectScript(scriptIdForValidation),
       });
-      const trimmedPreviewUrl = previewUrl.trim();
       payload = {
         name: trimmedName,
         command: trimmedCommand,
         icon,
         runOnWorktreeCreate,
         keybinding: keybindingRule?.key ?? null,
-        previewUrl: trimmedPreviewUrl.length > 0 ? trimmedPreviewUrl : null,
-        autoOpenPreview: trimmedPreviewUrl.length > 0 ? autoOpenPreview : false,
+        port: portValue,
       } satisfies NewProjectScriptInput;
     } catch (error) {
       setValidationError(error instanceof Error ? error.message : "Failed to save action.");
@@ -334,15 +341,20 @@ export function ProjectScriptEditorDialog({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="script-preview-url">Preview URL (optional)</Label>
+                <Label htmlFor="script-port">Port (optional)</Label>
                 <Input
-                  id="script-preview-url"
-                  placeholder="http://localhost:5173"
-                  value={previewUrl}
-                  onChange={(event) => setPreviewUrl(event.target.value)}
+                  id="script-port"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={65535}
+                  placeholder="5173"
+                  value={port}
+                  onChange={(event) => setPort(event.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Open this URL in the in-app preview when this action runs.
+                  The port this action serves on. The preview opens automatically at the published
+                  URL when it runs.
                 </p>
               </div>
               <label className="flex items-center justify-between gap-3 rounded-md border border-border/70 px-3 py-2 text-sm dark:border-transparent dark:bg-white/[0.035]">
@@ -350,18 +362,6 @@ export function ProjectScriptEditorDialog({
                 <Switch
                   checked={runOnWorktreeCreate}
                   onCheckedChange={(checked) => setRunOnWorktreeCreate(Boolean(checked))}
-                />
-              </label>
-              <label
-                className={`flex items-center justify-between gap-3 rounded-md border border-border/70 px-3 py-2 text-sm dark:border-transparent dark:bg-white/[0.035] ${
-                  previewUrl.trim().length === 0 ? "opacity-60" : ""
-                }`}
-              >
-                <span>Open preview automatically when this action runs</span>
-                <Switch
-                  checked={autoOpenPreview}
-                  disabled={previewUrl.trim().length === 0}
-                  onCheckedChange={(checked) => setAutoOpenPreview(Boolean(checked))}
                 />
               </label>
               {validationError && <p className="text-sm text-destructive">{validationError}</p>}

@@ -12,8 +12,11 @@ export interface ProjectScriptInput {
   readonly command: ProjectScript["command"];
   readonly icon: ProjectScript["icon"];
   readonly runOnWorktreeCreate: ProjectScript["runOnWorktreeCreate"];
-  readonly previewUrl: Exclude<ProjectScript["previewUrl"], undefined> | null;
-  readonly autoOpenPreview: boolean;
+  // Fork addition (Moatless). The port the script serves on, or null for a
+  // console-only script. Replaces the upstream free-text preview URL: a script
+  // running in a remote sandbox has no localhost to point at, so the host
+  // publishes this port and returns the real external URL when the script runs.
+  readonly port: Exclude<ProjectScript["port"], undefined> | null;
 }
 
 export function buildProjectScript(id: string, input: ProjectScriptInput): ProjectScript {
@@ -23,13 +26,29 @@ export function buildProjectScript(id: string, input: ProjectScriptInput): Proje
     command: input.command,
     icon: input.icon,
     runOnWorktreeCreate: input.runOnWorktreeCreate,
-    ...(input.previewUrl === null
+    ...(input.port === null
       ? {}
       : {
-          previewUrl: input.previewUrl,
-          autoOpenPreview: input.autoOpenPreview,
+          port: input.port,
+          // A port implies a preview, so the host opens it automatically.
+          autoOpenPreview: true,
         }),
   };
+}
+
+/**
+ * Best-effort port for an imported t3.json script. Upstream declares a preview
+ * as a free-text URL; the fork keys previews off a port, so pull the port out
+ * of the URL when it names one and otherwise import the script console-only.
+ */
+export function portFromPreviewUrl(previewUrl: string | undefined): number | null {
+  if (!previewUrl) return null;
+  try {
+    const parsed = Number(new URL(previewUrl).port);
+    return Number.isInteger(parsed) && parsed >= 1 && parsed <= 65535 ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 function normalizeScriptId(value: string): string {

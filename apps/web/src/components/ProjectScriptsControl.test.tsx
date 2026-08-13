@@ -13,11 +13,12 @@ const PRIMARY_SCRIPT: ProjectScript = {
   runOnWorktreeCreate: false,
 };
 
-function renderControl(scripts: ReadonlyArray<ProjectScript>) {
+function renderControl(scripts: ReadonlyArray<ProjectScript>, editable = false) {
   return renderToStaticMarkup(
     <ProjectScriptsControl
       scripts={scripts}
       keybindings={EMPTY_KEYBINDINGS}
+      editable={editable}
       onRunScript={() => {}}
       onAddScript={async () => undefined as never}
       onUpdateScript={async () => undefined as never}
@@ -54,19 +55,26 @@ describe("ProjectScriptsControl compact controls", () => {
     );
   });
 
-  // Fork: editing is gated off (FEATURES.projectScriptEditing), so upstream's
-  // standalone Add control is absent — and with no script to run either, the
-  // control leaves the header rather than rendering an empty shell.
-  it("renders nothing when there is no script to run and none can be added", () => {
-    expect(renderControl([])).toBe("");
+  // Fork: on a read-only (git-synced) workspace the viewer cannot add a script,
+  // so with none to run either the control leaves the header entirely rather
+  // than rendering an empty shell.
+  it("renders nothing when there is no script to run and editing is off", () => {
+    expect(renderControl([], false)).toBe("");
   });
 
-  // Fork: the per-script Edit affordance is gated off with the same flag, so a
-  // declared script offers running it and nothing else.
-  it("omits the gated per-script Edit control", () => {
-    const html = renderControl([PRIMARY_SCRIPT]);
+  // Fork: an editable (manual/overridden) workspace can add a script even when
+  // none is declared yet, so the standalone Add control takes the header.
+  it("offers a standalone Add control when editable with no script to run", () => {
+    const html = renderControl([], true);
 
-    expect(buttonTag(html, "Run Dev")).toBeDefined();
-    expect(buttonTag(html, "Edit Dev")).toBeUndefined();
+    expect(html).not.toBe("");
+    expect(buttonTag(html, "Add action")).toBeDefined();
+  });
+
+  // Fork: a read-only workspace still runs a declared script; the per-script
+  // Edit affordance lives inside the (closed) actions menu, gated on `editable`.
+  it("keeps the Run control for a declared script regardless of editability", () => {
+    expect(buttonTag(renderControl([PRIMARY_SCRIPT], false), "Run Dev")).toBeDefined();
+    expect(buttonTag(renderControl([PRIMARY_SCRIPT], true), "Run Dev")).toBeDefined();
   });
 });

@@ -51,6 +51,7 @@ import {
   buildProjectScript,
   commandForProjectScript,
   nextProjectScriptId,
+  portFromPreviewUrl,
 } from "../../projectScripts";
 import { decodeProjectScriptKeybindingRule } from "../../lib/projectScriptKeybindings";
 import {
@@ -471,6 +472,10 @@ function ProjectDetail({ group }: { group: SidebarProjectSnapshot }) {
   );
   const keybindings = selectedServerConfig?.keybindings ?? DEFAULT_RESOLVED_KEYBINDINGS;
   const scripts = selectedCheckout.scripts;
+  // Fork addition (Moatless). A git-synced workspace owns its scripts in
+  // .moatless/workspaces.json and reports them read-only, so hide every write
+  // affordance and leave running them.
+  const scriptsEditable = selectedCheckout.scriptsEditable ?? false;
   const [editorRequest, setEditorRequest] = useState<ProjectScriptEditorRequest | null>(null);
   // Script writes replace the whole array, so two overlapping writes computed
   // from the same snapshot would drop each other's changes. One at a time.
@@ -635,8 +640,9 @@ function ProjectDetail({ group }: { group: SidebarProjectSnapshot }) {
         icon: fileScript.icon ?? "play",
         runOnWorktreeCreate: fileScript.runOnWorktreeCreate ?? false,
         keybinding: null,
-        previewUrl: fileScript.previewUrl ?? null,
-        autoOpenPreview: fileScript.previewUrl ? (fileScript.autoOpenPreview ?? false) : false,
+        // t3.json still carries a free-text preview URL; the fork drives
+        // previews off a port, so keep the port when the URL names one.
+        port: portFromPreviewUrl(fileScript.previewUrl),
       };
       const result = await submitScript(null, payload);
       if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
@@ -1025,7 +1031,7 @@ function ProjectDetail({ group }: { group: SidebarProjectSnapshot }) {
               </p>
             </div>
             <div className="flex w-full flex-wrap gap-1.5 sm:w-auto sm:shrink-0 sm:justify-end">
-              {importableScripts.length > 0 ? (
+              {scriptsEditable && importableScripts.length > 0 ? (
                 <Menu>
                   <MenuTrigger
                     render={
@@ -1060,17 +1066,19 @@ function ProjectDetail({ group }: { group: SidebarProjectSnapshot }) {
                   </MenuPopup>
                 </Menu>
               ) : null}
-              <Button
-                size="xs"
-                variant="outline"
-                disabled={isSavingScripts}
-                onClick={() =>
-                  setEditorRequest({ scriptId: null, initial: EMPTY_PROJECT_SCRIPT_INPUT })
-                }
-              >
-                <PlusIcon className="size-3.5" />
-                Add action
-              </Button>
+              {scriptsEditable ? (
+                <Button
+                  size="xs"
+                  variant="outline"
+                  disabled={isSavingScripts}
+                  onClick={() =>
+                    setEditorRequest({ scriptId: null, initial: EMPTY_PROJECT_SCRIPT_INPUT })
+                  }
+                >
+                  <PlusIcon className="size-3.5" />
+                  Add action
+                </Button>
+              ) : null}
             </div>
           </div>
           {scripts.length === 0 ? (
@@ -1102,9 +1110,9 @@ function ProjectDetail({ group }: { group: SidebarProjectSnapshot }) {
                           setup
                         </span>
                       ) : null}
-                      {script.previewUrl ? (
+                      {script.port != null ? (
                         <span className="shrink-0 rounded-sm border border-border/60 px-1.5 py-px text-[11px] font-normal text-muted-foreground max-sm:hidden">
-                          preview · desktop only
+                          {`preview · :${script.port}`}
                         </span>
                       ) : null}
                     </span>
@@ -1114,18 +1122,20 @@ function ProjectDetail({ group }: { group: SidebarProjectSnapshot }) {
                       {shortcutLabel ? (
                         <span className="text-xs text-muted-foreground">{shortcutLabel}</span>
                       ) : null}
-                      <Button
-                        size="icon-xs"
-                        variant="ghost"
-                        className="shrink-0 text-muted-foreground opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
-                        aria-label={`Edit ${script.name}`}
-                        disabled={isSavingScripts}
-                        onClick={() =>
-                          setEditorRequest(editorRequestForScript(script, keybindings))
-                        }
-                      >
-                        <SettingsIcon className="size-3.5" />
-                      </Button>
+                      {scriptsEditable ? (
+                        <Button
+                          size="icon-xs"
+                          variant="ghost"
+                          className="shrink-0 text-muted-foreground opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
+                          aria-label={`Edit ${script.name}`}
+                          disabled={isSavingScripts}
+                          onClick={() =>
+                            setEditorRequest(editorRequestForScript(script, keybindings))
+                          }
+                        >
+                          <SettingsIcon className="size-3.5" />
+                        </Button>
+                      ) : null}
                     </>
                   }
                 />

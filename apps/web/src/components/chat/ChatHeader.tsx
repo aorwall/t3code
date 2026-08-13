@@ -58,6 +58,9 @@ interface ChatHeaderProps {
   activeProjectFaviconPath: string | null;
   openInCwd: string | null;
   activeProjectScripts: ReadonlyArray<ProjectScript> | undefined;
+  // Fork addition (Moatless). Whether the viewer may add/edit/delete this
+  // project's scripts; false for a read-only git-synced workspace.
+  activeProjectScriptsEditable: boolean;
   preferredScriptId: string | null;
   keybindings: ResolvedKeybindingsConfig;
   availableEditors: ReadonlyArray<EditorId>;
@@ -112,6 +115,7 @@ export const ChatHeader = memo(function ChatHeader({
   activeProjectFaviconPath,
   openInCwd,
   activeProjectScripts,
+  activeProjectScriptsEditable,
   preferredScriptId,
   keybindings,
   availableEditors,
@@ -314,6 +318,7 @@ export const ChatHeader = memo(function ChatHeader({
             fileScripts={fileScripts}
             keybindings={keybindings}
             preferredScriptId={preferredScriptId}
+            editable={activeProjectScriptsEditable}
             onRunScript={onRunProjectScript}
             onAddScript={onAddProjectScript}
             onUpdateScript={onUpdateProjectScript}
