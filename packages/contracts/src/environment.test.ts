@@ -26,4 +26,17 @@ describe("ExecutionEnvironmentDescriptor", () => {
       }).capabilities.pullRequests,
     ).toBe(true);
   });
+
+  it("treats a missing scripts capability as unsupported under version skew", () => {
+    expect(decodeDescriptor(descriptor).capabilities.workspaceScripts).toBeUndefined();
+  });
+
+  it("preserves an advertised scripts capability", () => {
+    expect(
+      decodeDescriptor({
+        ...descriptor,
+        capabilities: { ...descriptor.capabilities, workspaceScripts: true },
+      }).capabilities.workspaceScripts,
+    ).toBe(true);
+  });
 });

@@ -190,6 +190,7 @@ import {
   ServerStatusSnapshot,
   ServerStatusSubscribeInput,
 } from "./servers.ts";
+import { ScriptsRunInput, ScriptsRunResult } from "./scripts.ts";
 import { UsageReadError, UsageSummary, UsageSummaryInput } from "./usage.ts";
 import { ServerSettings, ServerSettingsError, ServerSettingsPatch } from "./settings.ts";
 import {
@@ -265,6 +266,9 @@ export const WS_METHODS = {
   // Thread server methods
   serversList: "servers.list",
   serversSubscribeLogs: "servers.subscribeLogs",
+
+  // Thread script methods
+  scriptsRun: "scripts.run",
 
   // Sandbox methods
   sandboxStatus: "sandbox.status",
@@ -920,6 +924,18 @@ export const WsServersListRpc = Rpc.make(WS_METHODS.serversList, {
   error: EnvironmentAuthorizationError,
 });
 
+/**
+ * Runs a project's script in the environment. Declared with
+ * `UnsupportedMethodError` because an environment without the `workspaceScripts`
+ * capability — every T3-hosted one today — answers with it, and the client must
+ * decode that rather than see an unexpected server error.
+ */
+export const WsScriptsRunRpc = Rpc.make(WS_METHODS.scriptsRun, {
+  payload: ScriptsRunInput,
+  success: ScriptsRunResult,
+  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
+});
+
 export const WsSandboxStatusRpc = Rpc.make(WS_METHODS.sandboxStatus, {
   payload: SandboxStatusInput,
   success: SandboxStatusResult,
@@ -1175,6 +1191,7 @@ export const WsRpcGroup = RpcGroup.make(
   WsPreviewAutomationFocusHostRpc,
   WsSubscribePreviewEventsRpc,
   WsServersListRpc,
+  WsScriptsRunRpc,
   WsSandboxStatusRpc,
   WsSandboxStartRpc,
   WsSandboxStopRpc,

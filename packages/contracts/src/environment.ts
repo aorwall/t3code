@@ -74,6 +74,12 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
   /** Server can stream self-update progress before acknowledging the
       restart. Clients fall back to server.updateServer when absent. */
   serverSelfUpdateProgress: Schema.optionalKey(Schema.Boolean),
+  /** Server understands scripts.run — it can run a project's scripts itself,
+      hosting each in a terminal and publishing a port when one is served.
+      Absent on servers that only *list* a project's scripts (every T3-hosted
+      one today), so clients show the scripts but not the control that runs
+      them, and never send scripts.run under version skew. */
+  workspaceScripts: Schema.optionalKey(Schema.Boolean),
 });
 export type ExecutionEnvironmentCapabilities = typeof ExecutionEnvironmentCapabilities.Type;
 

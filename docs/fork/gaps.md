@@ -56,11 +56,19 @@ on an upstream contract file) or stop sending them; today they are dead weight
 on the handshake.
 
 The `FEATURES` constant is a separate mechanism, not a stand-in for this record.
-The record only ever grows booleans for thread-lifecycle surfaces; the surfaces
-`FEATURES` gates — `projectScripts`, `turnDiffs`, `diagnostics`,
-`workspaceSearchContents` and the rest — have no boolean in it and never will.
-Those stay a build-time constant because there is nothing on the wire that would
-carry them.
+The record mostly grows booleans for thread-lifecycle surfaces; the surfaces
+`FEATURES` gates — `projectScriptEditing`, `turnDiffs`, `diagnostics`,
+`workspaceSearchContents` and the rest — have no boolean in it. Those stay a
+build-time constant because there is nothing on the wire that would carry them.
+
+One has since crossed over. `workspaceScripts` is a capability on this record
+that decides a surface, not a thread-lifecycle rule: it says the deployment can
+run a project's script itself, and the control that runs one follows it rather
+than a flag. That is the inventory's _prefer upstream's capability where one
+exists and delete the matching flag_ played out — the run half of
+`projectScripts` left `FEATURES` when the capability arrived. Reach for a
+capability over a flag whenever the answer varies by deployment; keep the flag
+when it cannot.
 
 - **Closes when:** the backend reports each new thread-lifecycle boolean it comes
   to implement, and drops or contract-registers the two fork-invented keys.
@@ -85,7 +93,8 @@ what a person loses, which is the part the derivation cannot tell you:
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
   `getConfig`), so Settings renders and nothing in it can be saved. Holds open
-  `serverAdministration`, and the edit half of `projectScripts`.
+  `serverAdministration`. The edit half of a project's scripts is held open by
+  `project.update` instead — see _A script runs on the backend_ below.
 - **Diagnostics** — `server.getTraceDiagnostics`, `getProcessDiagnostics`,
   `getProcessResourceHistory`, `getResourceTelemetryHistory`, `signalProcess`,
   `retryResourceTelemetry`, `subscribeResourceTelemetry`. Holds open
@@ -136,6 +145,42 @@ what a person loses, which is the part the derivation cannot tell you:
   the two sides come from is _Deriving the unsupported set_ in the inventory.
 - **Then here:** drop the union entry in `packages/contracts/src/rpc.ts` and, if
   the method was the last one behind a flag, the flag too.
+
+### A script runs on the backend, and only the backend can edit one
+
+`scripts.run` is the first method that runs the derivation _backwards_: the
+Moatless backend dispatches it and upstream's own server does not. Every other
+union entry in `rpc.ts` records something Moatless cannot serve; this one records
+something **T3's server** cannot, because running a project's script means
+hosting it in a sandbox terminal and publishing the port it serves, and a server
+running threads on the local machine owns no sandbox to do it in. It answers
+`UnsupportedMethodError` from `apps/server/src/ws.ts`, beside the
+`serversList` / `sandboxStatus` stubs.
+
+That inversion is a trap for the next merge. `unsupported-methods.mjs` reads the
+backend's dispatch and this contract, and knows nothing about which _server_
+refuses: once the backend half is published, it will report `scripts.run` under
+**DROP — the union entry can never fire**. Deleting it on that advice would strip
+the only typed answer T3's own server has, and turn a clean refusal there into a
+decode failure.
+
+- **Keep the union entry** for as long as `apps/server` answers the method with
+  `UnsupportedMethodError`, whatever the script says. This is the one documented
+  exception to _drop what DROP lists_.
+- **Closes when:** upstream's server grows a way to run a project's script off
+  the local machine, or the method leaves the contract. Neither is near.
+
+The **edit** half is an ordinary gap. A Moatless script is declared on the
+Workspace run-config and projected read-only, and adding, editing or deleting one
+from the header writes through `project.update`, which the backend does not
+dispatch. So `projectScripts` split the way `workspaceSearch` did — the run half
+is served and its flag is gone; `projectScriptEditing` holds the rest.
+
+- **Closes when:** the backend dispatches `project.update` for a project's
+  scripts, writing through to the Workspace run-config.
+- **Then here:** delete `projectScriptEditing` and its gates in
+  `ProjectScriptsControl.tsx`, and restore upstream's two assertions in
+  `ProjectScriptsControl.test.tsx`.
 
 ### A command cannot be refused
 

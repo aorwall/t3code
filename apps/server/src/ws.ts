@@ -50,6 +50,7 @@ import {
   AssetWorkspaceContextResolutionError,
   RpcClientId,
   EnvironmentAuthorizationError,
+  UnsupportedMethodError,
   ThreadId,
   type TerminalAttachStreamEvent,
   type TerminalError,
@@ -2163,6 +2164,23 @@ const makeWsRpcLayer = (
             WS_METHODS.sandboxStop,
             Effect.succeed({ sandboxStatus: "not_created" as const }),
             { "rpc.aggregate": "sandbox" },
+          ),
+        // Scripts are read from the project either way, but *running* one is a
+        // hosted-environment capability: it needs a sandbox to host the terminal
+        // and publish the served port. This server runs threads on the local
+        // machine and declares no `workspaceScripts` capability, so it answers
+        // honestly with UnsupportedMethodError and clients keep to the
+        // client-driven terminal path. A hosted environment answers this for real.
+        [WS_METHODS.scriptsRun]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.scriptsRun,
+            Effect.fail(
+              new UnsupportedMethodError({
+                method: WS_METHODS.scriptsRun,
+                message: "This environment does not run project scripts.",
+              }),
+            ),
+            { "rpc.aggregate": "scripts" },
           ),
         [WS_METHODS.subscribeServerStatus]: (_input) =>
           observeRpcStream(WS_METHODS.subscribeServerStatus, Stream.never, {

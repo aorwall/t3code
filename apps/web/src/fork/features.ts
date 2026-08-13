@@ -50,8 +50,20 @@
  * the surface is already empty and a flag would gate nothing.
  */
 export const FEATURES = {
-  /** Project scripts: the header's actions dropdown for running project commands. */
-  projectScripts: false,
+  /**
+   * Adding, editing and deleting a project's scripts from the header's actions
+   * dropdown. Running them is served and ungated.
+   *
+   * Split from a single `projectScripts` flag once the backend grew
+   * `scripts.run`: a Moatless script is declared on the Workspace run-config and
+   * projected read-only, and the edit controls write through `project.update`,
+   * which the backend does not dispatch. So the two halves stopped sharing a
+   * fate — the same split `workspaceSearch` took.
+   *
+   * With no scripts declared and nothing able to add one, the control has
+   * nothing to show and leaves the header entirely.
+   */
+  projectScriptEditing: false,
   /**
    * Per-turn git diffs: the diff panel's "Latest turn" / "Turn" scopes and the
    * inline changed-files cards under each assistant turn. Backed by the

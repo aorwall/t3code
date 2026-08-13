@@ -111,6 +111,10 @@
       "types": "./src/state/sandbox.ts",
       "default": "./src/state/sandbox.ts"
     },
+    "./state/scripts": {
+      "types": "./src/state/scripts.ts",
+      "default": "./src/state/scripts.ts"
+    },
     "./state/servers": {
       "types": "./src/state/servers.ts",
       "default": "./src/state/servers.ts"

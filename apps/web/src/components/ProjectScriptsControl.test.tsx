@@ -54,12 +54,19 @@ describe("ProjectScriptsControl compact controls", () => {
     );
   });
 
-  it("keeps the standalone Add control compact and expands it with its label", () => {
-    const html = renderControl([]);
+  // Fork: editing is gated off (FEATURES.projectScriptEditing), so upstream's
+  // standalone Add control is absent — and with no script to run either, the
+  // control leaves the header rather than rendering an empty shell.
+  it("renders nothing when there is no script to run and none can be added", () => {
+    expect(renderControl([])).toBe("");
+  });
 
-    expectResponsiveXsControl(buttonTag(html, "Add action"));
-    expect(html).toContain(
-      'class="sr-only @3xl/header-actions:not-sr-only @3xl/header-actions:ml-0.5"',
-    );
+  // Fork: the per-script Edit affordance is gated off with the same flag, so a
+  // declared script offers running it and nothing else.
+  it("omits the gated per-script Edit control", () => {
+    const html = renderControl([PRIMARY_SCRIPT]);
+
+    expect(buttonTag(html, "Run Dev")).toBeDefined();
+    expect(buttonTag(html, "Edit Dev")).toBeUndefined();
   });
 });

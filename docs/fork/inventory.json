@@ -533,6 +533,41 @@
       "mustSurvive": "A message that reached the thread through an adapter or from another Task says so, and a message typed into the composer renders exactly as upstream renders it. The contract field is optional rather than nullable so the absent case stays byte-identical to upstream's payload."
     },
     {
+      "id": "host-run-scripts",
+      "name": "Host-run project scripts",
+      "paths": [
+        "packages/contracts/src/scripts.ts",
+        "packages/contracts/src/scripts.test.ts",
+        "packages/client-runtime/src/state/scripts.ts",
+        "apps/web/src/state/scripts.ts",
+        "packages/contracts/src/environment.ts",
+        "packages/contracts/src/rpc.ts",
+        "apps/server/src/ws.ts",
+        "apps/server/src/auth/RpcAuthorization.ts",
+        "apps/web/src/components/ChatView.tsx"
+      ],
+      "mustSurvive": "scripts.run asks the environment to run a project's script in its own sandbox, hosted in a named terminal, returning that terminal and the URL of any port it publishes. Gated on the workspaceScripts capability: absent, runProjectScript keeps upstream's client-driven terminal.open + terminal.write path byte-for-byte, so a T3 server behaves exactly as upstream. The rpc.ts union entry is the one documented exception to unsupported-methods.mjs's DROP advice — it is upstream's OWN server that refuses this method, not Moatless, so the derivation reports it backwards once the backend half publishes. Keep it while apps/server answers with UnsupportedMethodError; see 'A script runs on the backend' in gaps.md.",
+      "guard": {
+        "symbol": "capabilities.workspaceScripts",
+        "files": ["apps/web/src/components/ChatView.tsx"]
+      }
+    },
+    {
+      "id": "project-script-editing-gate",
+      "name": "Project-script editing gate",
+      "paths": [
+        "apps/web/src/components/ProjectScriptsControl.tsx",
+        "apps/web/src/components/ProjectScriptsControl.test.tsx",
+        "apps/web/src/components/chat/ChatHeader.tsx",
+        "apps/web/src/fork/features.ts"
+      ],
+      "mustSurvive": "A project's scripts can be run but not edited: a Moatless script is declared on the Workspace run-config and projected read-only, and the edit controls write through project.update, which the backend does not dispatch. Three additive FEATURES.projectScriptEditing gates in ProjectScriptsControl.tsx drop the per-script Edit button, the t3.json import items and the Add action item; the no-primary-script branch returns null, so the control leaves the header when there is nothing to run and nothing can be added. ChatHeader's gate on the control itself is DELETED, not re-applied — running is served. A merge that finds an Add action against Moatless has taken upstream's side back.",
+      "guard": {
+        "symbol": "FEATURES.projectScriptEditing",
+        "files": ["apps/web/src/components/ProjectScriptsControl.tsx"]
+      }
+    },
+    {
       "id": "server-update-banner-gate",
       "name": "Server-update banner gate",
       "paths": ["apps/web/src/components/ChatView.tsx", "apps/web/src/fork/features.ts"],

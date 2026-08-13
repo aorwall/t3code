@@ -30,6 +30,7 @@ export * from "./preview.ts";
 export * from "./previewAutomation.ts";
 export * from "./sandbox.ts";
 export * from "./servers.ts";
+export * from "./scripts.ts";
 export * from "./resourceTelemetry.ts";
 export * from "./usage.ts";
 export * from "./rpc.ts";

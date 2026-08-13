@@ -230,6 +230,7 @@ import {
   primaryServerSettingsAtom,
   serverEnvironment,
 } from "../state/server";
+import { scriptsEnvironment } from "../state/scripts";
 import { terminalEnvironment } from "../state/terminal";
 import { threadEnvironment, useEnvironmentThread } from "../state/threads";
 import {
@@ -1204,6 +1205,7 @@ function ChatViewContent(props: ChatViewProps) {
   const openTerminal = useAtomCommand(terminalEnvironment.open, "terminal open");
   const writeTerminal = useAtomCommand(terminalEnvironment.write, "terminal write");
   const closeTerminalMutation = useAtomCommand(terminalEnvironment.close, "terminal close");
+  const runScript = useAtomCommand(scriptsEnvironment.run, { reportFailure: false });
   const createThread = useAtomCommand(threadEnvironment.create, { reportFailure: false });
   const deleteThread = useAtomCommand(threadEnvironment.delete, { reportFailure: false });
   const updateThreadMetadata = useAtomCommand(threadEnvironment.updateMetadata, {
@@ -1995,6 +1997,10 @@ function ChatViewContent(props: ChatViewProps) {
     : (primaryEnvironment?.serverConfig ?? null);
   const pullRequestsCapabilityKnown = serverConfig !== null;
   const supportsPullRequests = serverConfig?.environment.capabilities.pullRequests === true;
+  // Only a hosted environment runs scripts itself (it owns the sandbox that
+  // hosts the terminal and publishes the served port). Absent the capability,
+  // the client stays on its own terminal.open + terminal.write path below.
+  const supportsWorkspaceScripts = serverConfig?.environment.capabilities.workspaceScripts === true;
   const versionMismatch = resolveServerConfigVersionMismatch(serverConfig);
   const versionMismatchDismissKey =
     versionMismatch && activeThread
@@ -2994,6 +3000,36 @@ function ChatViewContent(props: ChatViewProps) {
       }
       setTerminalFocusRequestId((value) => value + 1);
 
+      // Host-driven path: a hosted environment runs the script in its sandbox,
+      // hosts it in a named terminal, and (when the script serves a port)
+      // publishes it and returns its URL. We only register the returned terminal
+      // and open the preview — the environment already opened the PTY, so we must
+      // not open one ourselves.
+      if (supportsWorkspaceScripts) {
+        const runResult = await runScript({
+          environmentId,
+          input: { threadId: activeThreadId, scriptId: script.id },
+        });
+        if (runResult._tag === "Failure") {
+          if (!isAtomCommandInterrupted(runResult)) {
+            const error = squashAtomCommandFailure(runResult);
+            setThreadError(
+              activeThreadId,
+              error instanceof Error ? error.message : `Failed to run script "${script.name}".`,
+            );
+          }
+          return;
+        }
+        const { terminalId, url } = runResult.value;
+        storeNewTerminal(activeThreadRef, terminalId);
+        storeSetActiveTerminal(activeThreadRef, terminalId);
+        setTerminalFocusRequestId((value) => value + 1);
+        if (url) {
+          void addBrowserSurface({ threadRef: activeThreadRef, openPreview, url });
+        }
+        return;
+      }
+
       const runtimeEnv = projectScriptRuntimeEnv({
         project: {
           cwd: activeProject.workspaceRoot,
@@ -3074,6 +3110,10 @@ function ChatViewContent(props: ChatViewProps) {
       runningTerminalIds,
       terminalUiState.activeTerminalId,
       writeTerminal,
+      supportsWorkspaceScripts,
+      runScript,
+      addBrowserSurface,
+      openPreview,
     ],
   );
 
