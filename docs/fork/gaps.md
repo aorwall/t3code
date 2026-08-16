@@ -41,8 +41,9 @@ Moatless does populate it: the descriptor reports `connectionProbe`,
 can tell it apart from a server that refuses settlement or snooze. What it does
 not report is every boolean added since that handshake was written —
 `threadPinning` (upstream, 2026-08-06), `threadPinReorder` (upstream,
-2026-08-08), `threadTitleRegeneration`, `serverSelfUpdate` and
-`serverSelfUpdateProgress` — so each of those surfaces is
+2026-08-08), `threadTitleRegeneration`, `serverSelfUpdate`,
+`serverSelfUpdateProgress` and `agentActivityPublishing` (upstream,
+2026-08-16) — so each of those surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
 statement from the deployment. That is correct for the ones the backend does not
 implement and stale the day it does.
@@ -120,7 +121,10 @@ what a person loses, which is the part the derivation cannot tell you:
 - **Workflow scripts** — `orchestration.getWorkflowScript`, also new upstream.
 - **Pull requests** — the whole `pullRequests.*` group (list, detail, activity,
   diff, review, comment, reviewer requests), new upstream in the 2026-08-12
-  merge, plus GitHub/GitLab/Bitbucket/Azure DevOps provider backends in
+  merge and grown on 2026-08-16 by `pullRequests.update`, `updateComment` and
+  `setReaction` — plus filters and qualifiers, all-server listing, update-branch,
+  and sending a PR line request to the agent — with
+  GitHub/GitLab/Bitbucket/Azure DevOps provider backends in
   `apps/server/src/pullRequest/`. Needs no fork gate: the client reads
   `capabilities.pullRequests`, which decodes to unsupported when a deployment's
   handshake omits it, so the whole surface (sidebar tab, right-panel surface,
@@ -133,7 +137,12 @@ what a person loses, which is the part the derivation cannot tell you:
 - **Opening in an external editor** — `shell.openInEditor`. Holds open
   `workspaceOpenIn`. Unlikely ever to close: the browser is not on the machine
   the workspace is on, so this one is a candidate for deleting the surface
-  rather than serving the method.
+  rather than serving the method. Upstream answered the same problem on
+  2026-08-16 for its own remote environments, by having the server return an
+  SSH open target (`apps/server/src/environment/RemoteOpenTargets.ts`) that the
+  _desktop_ shell hands to a local editor. That path needs an Electron shell, so
+  it does not reach this fork's browser client — but the shape is the one to
+  copy if the surface is ever kept rather than deleted.
 - **Preview automation** — `previewAutomation.connect`, `focusHost`, `respond`.
 - **Desktop and host lifecycle** — `server.updateServer`,
   `updateServerWithProgress`, `getBackgroundPolicy`, `subscribeBackgroundPolicy`,
@@ -230,10 +239,17 @@ inherits a stranger's PR, and the day it merges the thread files itself under
 Settled every time the agent goes idle. Confirmed on a live thread whose newest
 message was minutes old.
 
+Upstream restated the rule on 2026-08-16: `changeRequestState` now comes from a
+`ThreadChangeRequestSnapshot` whose branch must match the thread's, which is a
+narrower rule than matching by name alone — but it narrows against the thread's
+branch, and the PR Moatless reports is still not the thread's own, so the gate
+stays. Upstream's new `sidebarAutoSettleOnMerge` setting has no effect here for
+the same reason: the gate feeds `effectiveSettled` a null state either way.
+
 - **Closes when:** the backend reports the change request for the checkout's own
   ref — `headRef` matching `refName`.
 - **Then here:** delete `prThreadSettling` and both its gates, in `ChatView.tsx`
-  and `SidebarV2.tsx`. Upstream's rule is correct once the PR is the thread's.
+  and `Sidebar.tsx`. Upstream's rule is correct once the PR is the thread's.
 
 ### A message does not say where it came from
 
@@ -281,7 +297,16 @@ Same shape as the two capabilities beside it: `threadSnooze` suppresses settling
 for a period, `threadSettlement` is the explicit user override. Upstream treats
 all three as one lifecycle and Moatless implements one of them.
 
-- **Closes when:** the backend's settlement decision reads pin and snooze state.
+Two more rules arrived on 2026-08-16, both in `apps/server/src/orchestration/decider.ts`:
+settling a snoozed thread takes effect at once rather than waiting for the wake
+time, and auto-settle-on-merge became a user setting
+(`sidebarAutoSettleOnMerge`) rather than a fixed rule. The first is a decider
+rule Moatless would have to reproduce; the second is client-side and already
+reaches this fork, but has no effect while _A pull request is not the thread's
+own_ holds the PR state at null.
+
+- **Closes when:** the backend's settlement decision reads pin and snooze state,
+  and settles a snoozed thread immediately.
 - **Then here:** nothing to delete — this one is behaviour to reproduce, not a
   placeholder to remove.
 
@@ -400,6 +425,67 @@ Nothing is broken now — the base is correct again as of the 2026-08-06 merge
 commit. This is a rule, not a repair: **land upstream with a merge commit.** A
 cherry-pick moves the code without moving the base, and every later merge pays
 for it.
+
+### `pnpm test` does not run the fork's product surface
+
+`vp run -r test` picks up six packages — `moatless-api`, `contracts`,
+`effect-codex-app-server`, `effect-acp`, `shared` and `oxlint-plugin-t3code`.
+`apps/web` is not one of them, though it has a `test` script. So the command
+`verify.mjs` runs, and the command a contributor runs before pushing, skips the
+2 700-odd tests covering the client this fork actually ships.
+
+What it costs: a merge or a change that breaks a web test is green until
+someone runs `apps/web`'s suite by hand. The 2026-08-16 merge landed four
+broken web tests that `verify.mjs` reported nothing about.
+
+What holds it open: nothing fork-owned — root `package.json` has no fork delta,
+so this is upstream's task graph, not a fork decision. Until it is fixed
+upstream, run it explicitly:
+
+```bash
+cd apps/web && vp test run --project unit
+```
+
+- **Closes when:** `pnpm test` includes `apps/web`, or `verify.mjs` runs the web
+  suite as a seventh check of its own.
+- **Then here:** delete this entry and the manual step from the merge procedure.
+
+### The auth bootstrap test suite does not run
+
+`apps/web/src/authBootstrap.test.ts` fails twelve of its twenty-three tests —
+the whole `resolveInitialServerAuthGateState` block — with
+`connect ECONNREFUSED`. The HTTP mock `installEnvironmentHttpTest` installs is
+not intercepting, so each test makes a real request and times out against
+nothing. It fails the same way on Node 24 and Node 25, and on the tree before
+the 2026-08-16 merge as well as after it, so it is neither a version nor a
+merge problem.
+
+What it costs: this is the fork's own test for its own most load-bearing
+surface — the Moatless cookie session, the requires-login state, the dev-proxy
+auth base. Eleven tests still pass, so the file is not obviously dead, and a
+regression in the twelve is currently invisible.
+
+What holds it open: nothing gates on it; the suite it lives in is not in
+`pnpm test` either (see above), so nothing has been reporting it.
+
+- **Check:** `cd apps/web && vp test run --project unit src/authBootstrap.test.ts`
+  reports 23 passed.
+- **Then here:** nothing to delete — this is a repair, not a stand-in.
+
+### Node 25 breaks the prompt-stash tests
+
+`apps/web/src/promptStashStore.test.ts` fails with
+`TypeError: baseStashStorage.setItem is not a function` — eight tests, on a
+file byte-identical to upstream and untouched by any merge. `resolveBaseStorage`
+takes the `localStorage` branch because `typeof localStorage !== "undefined"`,
+and on Node 25 that global exists as a stub until `--localstorage-file` is
+given a valid path, which the runner does not do. The repo pins
+`"node": "^24.13.1"`; the machine that hit this ran v25.6.0, and `pnpm` warns
+about it on every command.
+
+- **Check:** run the file on Node 24. It passes.
+- **Then here:** nothing to delete — this is a version mismatch, not fork code.
+  Listed so the next reader does not chase it as a merge regression.
 
 ### The full suite needs a raised heap
 

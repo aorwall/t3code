@@ -28,6 +28,112 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-08-16 — merged upstream to 27732293
+
+- Upstream: `27732293` from base `5a846148` (`159` commits). Landed as a merge
+  commit; the base advanced cleanly from the 2026-08-12 entry.
+- Landed: `595` files from `git diff --stat HEAD^1 HEAD` against `598` in the
+  upstream range. The gap of three is exactly the fork's deliberate deletions,
+  re-deleted on delete/modify conflicts: `PreviewLocalServerCard.tsx`,
+  `useDiscoveredLocalServers.ts` and its test. Fork delta `609` files from
+  `git diff --stat HEAD^2 HEAD` (was `598`).
+- Conflicts, twenty files. Nine had a cached verdict, eleven fell to the
+  `decide-then-add-entry` fallback inside an owned concern:
+  - `PreviewLocalServerCard.tsx`, `useDiscoveredLocalServers.ts` + `.test.ts` —
+    delete/modify; `git rm` per `deletedUpstreamPaths`.
+  - `PreviewEmptyState.tsx` + `.test.tsx`, `PreviewView.tsx` — upstream added a
+    "Recently used" group above the server list and renamed its own group to
+    "Local servers". Adopted the recents group (it reads the client-side
+    browser history store, so it works here) and kept the fork's Moatless
+    server list under "Preview servers"; dropped upstream's `environmentId` /
+    `configuredUrls` props, which only feed the deleted local-server scan.
+    Entry: _Hosted web preview_.
+  - `Sidebar.tsx` — upstream replaced `changeRequestStateByKey` with a
+    `ThreadChangeRequestSnapshot` matched on branch. Re-stated the fork gate as
+    one leading `FEATURES.prThreadSettling &&` on upstream's new condition.
+    Entry: _PR-driven settling gate_.
+  - `ChatView.tsx` (4 hunks) — upstream's `autoSettleOnMerge`,
+    `desktopByTabId` and two new imports beside the fork's gate,
+    `previewServerLabelsByOrigin` and `useThreadPreviewServers`; kept both
+    each time.
+  - `LegacySidebar.tsx`, `ProviderSettingsPanel.tsx` — upstream restyled the
+    button inside a fork gate; took upstream's markup, kept the gate.
+  - `SidebarChrome.tsx` — upstream restyled the wordmark row the fork replaced
+    with `APP_BASE_NAME`. Kept the fork's span. This delta had **no inventory
+    entry**; added _Moatless branding_.
+  - `RightPanelTabs.tsx` — one hunk was a fork-side stray blank-line deletion
+    against upstream's new launcher-shortcut block; took upstream. The other
+    kept both `previewServerLabelsByOrigin` and `desktopByTabId`.
+  - `AppRoot.tsx` + `.test.tsx` — both sides added a provider child; kept both
+    and moved the test to five children.
+  - `packages/contracts/src/environment.ts` — both sides added a capability
+    key; kept both.
+  - `AGENTS.md` — upstream's only change in range was deleting the
+    rebase-before-PR bullet; took the fork's rewritten file and deleted the
+    fork's paraphrase of that bullet.
+  - `threadActionMenu.logic.ts` + `.test.ts`, `useThreadActionMenu.ts` — see
+    convergence below.
+- Post-merge fixes the conflict resolution did not catch, all found by
+  `verify.mjs` rather than by reading: a stray `getConfiguredPreviewUrls`
+  import in `ChatView.tsx` (the fork removed the call site), a duplicate
+  `archiveThread` destructuring in `Sidebar.tsx`, and duplicate `case
+"archive"` arms in `Sidebar.tsx` and `useThreadActionMenu.ts` — all four the
+  same convergence landing twice.
+- Sweep: seven concern hits, all false positives. `clerk/*` (four new files) is
+  upstream's own Clerk work on a surface the fork has already decided out and
+  does not route to; `.agents/skills/test-t3-mobile/scripts/pair-client.sh` is
+  upstream's pairing helper under a `converged` SKILL.md whose scope note
+  already routes Moatless work elsewhere; `session-logic.command-output.test.ts`
+  is an upstream test. Deleted-surface tripwires unchanged at Clerk 4 files,
+  session bootstrap 9, pairing 76 files.
+- Off-repository: `web-preview.yml` — flagged for disabling by the 2026-08-12
+  entry, unregistered then, registered and `active` now — disabled with
+  `gh workflow disable web-preview.yml`. `mobile-fingerprint-check.yml`, from
+  the same entry, was already disabled. `publish-aur.yml` is new this merge
+  (`e25021af7`) and is not yet registered: **disable it after this branch
+  lands** — `gh workflow disable publish-aur.yml --repo soaplabs/t3code`.
+- Convergence, two fired:
+  - _Archive in the sidebar row menu_ — upstream shipped archive in
+    `buildThreadActionMenuItems`, `Sidebar.tsx` and `useThreadActionMenu.ts`
+    (`48cba7d93`), with a confirm dialog and navigation handling the fork's
+    version lacked. Dropped the fork item and both its cases; replaced the
+    inventory entry with _Thread deletion gate in the row menu_, which is the
+    only fork delta left on that file. Upstream's new
+    "archive sits right before delete" test cannot hold while delete is gated
+    off, so it was folded into the fork's existing tail assertion.
+  - Send while a turn is running — upstream shipped `showSendWhileRunning`
+    (`7afa184a9`, `184d8ef33`), gated on `isMobileViewport` and rendering stop
+    _and_ send rather than swapping one for the other. Dropped the fork's PR
+    #39 delta; a phone browser is a mobile viewport, so the fork's case is
+    served and upstream's is strictly better. New convergence row:
+    _Send while a turn is running_.
+- Unsupported methods: ADD 0, DROP 1, KEEP 2. The DROP is `scripts.run`, which
+  is the documented standing exception — `apps/server` still answers it with
+  `UnsupportedMethodError`, and the derivation reads only the Moatless side.
+  Union entry kept; see _A script runs on the backend_ in the gaps register.
+  Upstream added three contract methods this range (`pullRequests.update`,
+  `updateComment`, `setReaction`), all inside the already-recorded
+  `pullRequests.*` group, and one capability (`agentActivityPublishing`).
+- Verification: `verify.mjs` — tripwires, unsupported-methods, `fmt:check`,
+  `lint` and `typecheck` all pass. `test` reports three package failures, all
+  machine pressure and all passing run alone: `effect-acp` and
+  `oxlint-plugin-t3code` exit 137, and upstream's byte-identical
+  `packages/shared/src/composerInlineTokens.test.ts` perf assertion missed its
+  1000 ms budget by 200 ms. See _The full suite needs a raised heap_.
+- Caveat worth carrying: `pnpm test` runs six packages and **`apps/web` is not
+  one of them**, so `verify.mjs` never exercised the web tests this merge
+  changed. Ran `apps/web`'s `unit` project directly instead, which is how the
+  four broken web tests above were found at all. Not new to this merge, and not
+  a fork delta — but a merge that only trusts `verify.mjs` is not testing the
+  fork's product surface. Now a gaps entry.
+- `apps/web` unit suite after the fixes: 2 711 pass, four files still red and
+  none of them this merge's doing —
+  `authBootstrap.test.ts` (12 tests, HTTP mock not intercepting; confirmed
+  identical on `HEAD^1` with the pre-merge lockfile installed) and
+  `promptStashStore.test.ts`, `useTheme.test.ts`, `imageCompression.test.ts`
+  (Node 25's `localStorage` stub; the last two pass run alone). Both are gaps
+  entries now.
+
 ### 2026-08-12 — merged upstream to 5a846148
 
 - Upstream: `5a846148` from base `2c7267ad` (`91` commits). Landed as a merge

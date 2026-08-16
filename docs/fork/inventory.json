@@ -587,6 +587,21 @@
       }
     },
     {
+      "id": "moatless-branding",
+      "name": "Moatless branding",
+      "paths": [
+        "apps/web/src/branding.ts",
+        "apps/web/src/branding.test.ts",
+        "apps/web/index.html",
+        "apps/web/src/components/sidebar/SidebarChrome.tsx"
+      ],
+      "mustSurvive": "The client names itself Moatless, not T3 Code. APP_BASE_NAME falls back to \"Moatless\" where upstream falls back to \"T3 Code\", index.html carries the Moatless title and splash labels, and SidebarBrand renders APP_BASE_NAME in place of upstream's T3Wordmark SVG plus its \"Code\" span — the T3Wordmark function is deleted with it. Everything downstream of APP_BASE_NAME (window title, version-skew copy, auth shells) follows from the one constant, so only these four files carry the delta. Upstream restyles the brand row regularly: take upstream's markup and keep the one APP_BASE_NAME span.",
+      "guard": {
+        "symbol": "APP_BASE_NAME",
+        "files": ["apps/web/src/components/sidebar/SidebarChrome.tsx"]
+      }
+    },
+    {
       "id": "server-update-banner-gate",
       "name": "Server-update banner gate",
       "paths": ["apps/web/src/components/ChatView.tsx", "apps/web/src/fork/features.ts"],
@@ -620,14 +635,18 @@
       "mustSurvive": "Re-apply list filtering gates."
     },
     {
-      "id": "archive-in-row-menu",
-      "name": "Archive in the sidebar row menu",
+      "id": "thread-deletion-gate",
+      "name": "Thread deletion gate in the row menu",
       "paths": [
-        "apps/web/src/components/Sidebar.tsx",
         "apps/web/src/components/threadActionMenu.logic.ts",
-        "apps/web/src/hooks/useThreadActionMenu.ts"
+        "apps/web/src/components/threadActionMenu.logic.test.ts",
+        "apps/web/src/fork/features.ts"
       ],
-      "mustSurvive": "Keep the single-thread archive item and its case. Upstream leaves archive out of the default sidebar's row menus because settling is the put-away action there; in Moatless settling is triage and archiving closes the Task, so both are needed. Additive only — no bulk item, no gate. Since 2026-08-08 the item lives in the shared buildThreadActionMenuItems, which also feeds the chat header title menu."
+      "mustSurvive": "The row menu never offers Delete: orchestration.dispatchCommand is dispatched as one method, so a thread.delete Moatless does not implement fails generically after the user has already asked for it. One additive FEATURES.threadDeletion spread around upstream's delete item in buildThreadActionMenuItems, which makes archive the tail of the menu — upstream's tests assume delete is. Archive itself is upstream's since 2026-08-16 and is no longer a fork delta.",
+      "guard": {
+        "symbol": "FEATURES.threadDeletion",
+        "files": ["apps/web/src/components/threadActionMenu.logic.ts"]
+      }
     },
     {
       "id": "settings-gates",
@@ -734,10 +753,10 @@
       "action": "Prefer upstream and drop the matching part of Mobile Touch Delta."
     },
     {
-      "id": "archive-entry-point",
-      "name": "Archive in the sidebar row menu",
-      "watchFor": "Any upstream archive entry point in buildThreadActionMenuItems, Sidebar.tsx, or the mobile port thread-list-v2-items.tsx.",
-      "action": "Prefer upstream's and drop the fork item."
+      "id": "mid-turn-send",
+      "name": "Send while a turn is running",
+      "watchFor": "Upstream widening showSendWhileRunning past isMobileViewport in ChatComposer.tsx, or dropping the prop and always rendering send beside stop.",
+      "action": "Take upstream. The fork's own rule was dropped on 2026-08-16 when upstream shipped the prop; a phone browser is a mobile viewport, so the fork's case is served."
     },
     {
       "id": "pr-settling",
