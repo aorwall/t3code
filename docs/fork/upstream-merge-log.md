@@ -90,8 +90,9 @@ bullet here that no one will read again.
   entry, unregistered then, registered and `active` now — disabled with
   `gh workflow disable web-preview.yml`. `mobile-fingerprint-check.yml`, from
   the same entry, was already disabled. `publish-aur.yml` is new this merge
-  (`e25021af7`) and is not yet registered: **disable it after this branch
-  lands** — `gh workflow disable publish-aur.yml --repo soaplabs/t3code`.
+  (`e25021af7`); it registered as `active` the moment the merge reached `main`,
+  and was disabled then. `tripwires.mjs` now reports three active workflows,
+  all allowed.
 - Convergence, two fired:
   - _Archive in the sidebar row menu_ — upstream shipped archive in
     `buildThreadActionMenuItems`, `Sidebar.tsx` and `useThreadActionMenu.ts`
