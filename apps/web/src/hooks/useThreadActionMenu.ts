@@ -72,8 +72,6 @@ export function useThreadActionMenu(input: {
     unsnoozeThread,
     pinThread,
     unpinThread,
-    // Fork: archive closes the Moatless task; the shared menu offers it beside
-    // settle, so the chat header dispatches it the same way the sidebar does.
     archiveThread,
     deleteThread,
   } = useThreadActions();
@@ -83,7 +81,9 @@ export function useThreadActionMenu(input: {
   const handleNewThread = useNewThreadHandler();
   const markThreadUnread = useUiStateStore((s) => s.markThreadUnread);
   const autoSettleAfterDays = useClientSettings((s) => s.sidebarAutoSettleAfterDays);
+  const autoSettleOnMerge = useClientSettings((s) => s.sidebarAutoSettleOnMerge);
   const confirmThreadDelete = useClientSettings((s) => s.confirmThreadDelete);
+  const confirmThreadArchive = useClientSettings((s) => s.confirmThreadArchive);
   const timestampFormat = useClientSettings((s) => s.timestampFormat);
   const { copyToClipboard: copyPathToClipboard } = useCopyToClipboard<{ path: string }>({
     onCopy: ({ path }) => {
@@ -135,11 +135,13 @@ export function useThreadActionMenu(input: {
               // parked-thread banner within the same minute.
               now: `${now.toISOString().slice(0, 16)}:00.000Z`,
               autoSettleAfterDays,
+              autoSettleOnMerge,
               changeRequestState,
             }),
           isSnoozed: supports.snooze && effectiveSnoozed(thread, { now: now.toISOString() }),
           canSnoozeNow: canSnooze(thread, { now: now.toISOString() }),
           isRegeneratingTitle,
+          isRunning: thread.session?.status === "running" && thread.session.activeTurnId != null,
           supports,
           snoozePresets,
         });
@@ -251,15 +253,30 @@ export function useThreadActionMenu(input: {
               copyBranchToClipboard(thread.branch, { branch: thread.branch });
             }
             return;
-          case "archive":
-            // Fork: archive closes the Moatless task and, unlike the sidebar,
-            // does not navigate away — the caller is acting on the thread they
-            // are reading, matching this hook's settle/snooze behavior.
-            await reportFailure("Failed to archive thread", () => archiveThread(threadRef));
-            return;
           case "copy-thread-id":
             copyThreadIdToClipboard(thread.id, { threadId: thread.id });
             return;
+          case "archive": {
+            if (confirmThreadArchive) {
+              const confirmed = await settlePromise(() =>
+                api.dialogs.confirm(`Archive thread "${thread.title}"?`),
+              );
+              if (confirmed._tag === "Failure" || !confirmed.value) return;
+            }
+            let didArchive = false;
+            const result = await archiveThread(threadRef, {
+              onArchived: () => {
+                didArchive = true;
+              },
+            });
+            if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
+              failureToast(
+                didArchive ? "Thread archived, but navigation failed" : "Failed to archive thread",
+                squashAtomCommandFailure(result),
+              );
+            }
+            return;
+          }
           case "delete": {
             if (confirmThreadDelete) {
               const confirmed = await settlePromise(() =>
@@ -294,7 +311,9 @@ export function useThreadActionMenu(input: {
     [
       archiveThread,
       autoSettleAfterDays,
+      autoSettleOnMerge,
       changeRequestState,
+      confirmThreadArchive,
       confirmThreadDelete,
       copyBranchToClipboard,
       copyPathToClipboard,

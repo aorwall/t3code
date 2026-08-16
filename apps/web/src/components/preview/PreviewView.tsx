@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BROWSER_HISTORY_MAX_ENTRIES_PER_PROJECT,
   recordVisitForThread,
+  removeUrlForThread,
   setTitleForThreadUrl,
   useThreadRecentHistory,
 } from "~/browserHistoryStore";
@@ -868,6 +869,8 @@ export function PreviewView({
         {showEmptyState ? (
           <PreviewEmptyState
             threadRef={threadRef}
+            recentEntries={recentHistoryEntries}
+            onRemoveRecent={(url) => removeUrlForThread(threadRef, url)}
             onOpenUrl={(next) => void handleOpenServerUrl(next)}
           />
         ) : null}

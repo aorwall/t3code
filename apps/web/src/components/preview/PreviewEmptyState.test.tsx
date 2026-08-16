@@ -26,6 +26,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock("./useThreadPreviewServers", () => ({
   useThreadPreviewServers: () => mocks.view,
 }));
+vi.mock("./PreviewFaviconIcon", () => ({
+  PreviewFaviconIcon: () => <span data-favicon-icon />,
+}));
 
 import { PreviewEmptyState } from "./PreviewEmptyState";
 
@@ -47,9 +50,14 @@ function server(name: string, port: number, url: string | null) {
   };
 }
 
-function render() {
+function render(recentEntries: Array<{ url: string; lastVisitedAt: number; title?: string }> = []) {
   return renderToStaticMarkup(
-    <PreviewEmptyState threadRef={threadRef} onOpenUrl={() => undefined} />,
+    <PreviewEmptyState
+      threadRef={threadRef}
+      recentEntries={recentEntries}
+      onRemoveRecent={() => undefined}
+      onOpenUrl={() => undefined}
+    />,
   );
 }
 
@@ -61,7 +69,7 @@ describe("PreviewEmptyState", () => {
       error: null,
     };
     const html = render();
-    expect(html).toContain("Preview Servers");
+    expect(html).toContain("Preview servers");
     expect(html).toContain("web");
     expect(html).toContain("api");
     expect(html).toContain("port 5173");
@@ -86,5 +94,37 @@ describe("PreviewEmptyState", () => {
     const html = render();
     expect(html).toContain("No preview yet");
     expect(html).toContain("Type a URL above");
+  });
+
+  it("renders recently used URLs beside the servers", () => {
+    mocks.view = {
+      servers: [server("web", 5173, "http://localhost:5173")],
+      isPending: false,
+      error: null,
+    };
+    const html = render([
+      { url: "https://myapp.test/admin#users", lastVisitedAt: Date.now(), title: "Admin" },
+    ]);
+    expect(html).toContain("Recently used");
+    expect(html).toContain("Preview servers");
+    expect(html).toContain("myapp.test/admin#users");
+    expect(html).toContain("Admin");
+  });
+
+  it("renders only the recents group when no servers are reported", () => {
+    mocks.view = { servers: [], isPending: false, error: null };
+    const html = render([{ url: "https://myapp.test/", lastVisitedAt: 0 }]);
+    expect(html).toContain("Recently used");
+    expect(html).not.toContain("Preview servers");
+  });
+
+  it("renders an out-of-range lastVisitedAt entry without throwing", () => {
+    mocks.view = { servers: [], isPending: false, error: null };
+    let html = "";
+    expect(() => {
+      html = render([{ url: "https://myapp.test/", lastVisitedAt: 1e20 }]);
+    }).not.toThrow();
+    expect(html).toContain("myapp.test");
+    expect(html).toContain("Remove");
   });
 });

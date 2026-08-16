@@ -80,6 +80,12 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
       one today), so clients show the scripts but not the control that runs
       them, and never send scripts.run under version skew. */
   workspaceScripts: Schema.optionalKey(Schema.Boolean),
+  /** Agent-activity publishes (push notifications and Live Activities)
+      currently leave this environment: the publish opt-in is enabled and the
+      relay link credentials exist. Clients skip seeding a Live Activity when
+      this is false — no update would ever repaint it. Absent on older
+      servers, which may still publish, so only an explicit false skips. */
+  agentActivityPublishing: Schema.optionalKey(Schema.Boolean),
 });
 export type ExecutionEnvironmentCapabilities = typeof ExecutionEnvironmentCapabilities.Type;
 
