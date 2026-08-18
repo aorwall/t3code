@@ -3033,11 +3033,10 @@ function ChatViewContent(props: ChatViewProps) {
         cwd: targetCwd,
         worktreePath: targetWorktreePath,
       });
-      setTerminalOpen(true);
       if (!activeThreadRef) {
+        setTerminalOpen(true);
         return;
       }
-      setTerminalFocusRequestId((value) => value + 1);
 
       // Host-driven path: a hosted environment runs the script in its sandbox,
       // hosts it in a named terminal, and (when the script serves a port)
@@ -3060,14 +3059,25 @@ function ChatViewContent(props: ChatViewProps) {
           return;
         }
         const { terminalId, url } = runResult.value;
+        // Register the environment's terminal *before* opening the panel.
+        // Opening it first finds the thread with no terminal yet and
+        // synthesizes the default `term-1`, so the panel attaches to a session
+        // the environment never opened — a TerminalSessionLookupError in the
+        // user's face while the real script terminal is still starting.
         storeNewTerminal(activeThreadRef, terminalId);
         storeSetActiveTerminal(activeThreadRef, terminalId);
+        setTerminalOpen(true);
         setTerminalFocusRequestId((value) => value + 1);
         if (url) {
           void addBrowserSurface({ threadRef: activeThreadRef, openPreview, url });
         }
         return;
       }
+
+      // Local path: this client opens the PTY itself, so the terminal the panel
+      // synthesizes on open is one it is about to create.
+      setTerminalOpen(true);
+      setTerminalFocusRequestId((value) => value + 1);
 
       const runtimeEnv = projectScriptRuntimeEnv({
         project: {
