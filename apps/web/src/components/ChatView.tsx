@@ -73,6 +73,8 @@ import {
   type AtomCommandResult,
 } from "@t3tools/client-runtime/state/runtime";
 import * as Cause from "effect/Cause";
+// Fork: schema-aware checking of a tagged error the environment sends.
+import * as Schema from "effect/Schema";
 import { AsyncResult } from "effect/unstable/reactivity";
 import { isElectron } from "../env";
 import { FEATURES } from "../fork/features";
@@ -527,6 +529,12 @@ const SCRIPT_TERMINAL_ROWS = 30;
  */
 const SANDBOX_START_TIMEOUT_MS = 180_000;
 const SANDBOX_START_POLL_MS = 2_000;
+/**
+ * Fork: the schema-aware check, because the value crossed the wire — an
+ * `instanceof` would ask whether it came from this bundle's class rather than
+ * whether it is the error the environment sent.
+ */
+const isSandboxNotRunning = Schema.is(SandboxNotRunningError);
 
 type ChatViewProps =
   | {
@@ -3031,63 +3039,66 @@ function ChatViewContent(props: ChatViewProps) {
    * Returns false when the sandbox did not get there; the caller has already
    * been told why and should stop.
    */
-  const startSandboxForScript = useCallback(async (): Promise<boolean> => {
-    const toastId = toastManager.add({
-      type: "info",
-      title: "Starting sandbox…",
-      description: "The script will run once it is up.",
-    });
-    try {
-      const startResult = await startSandbox({
-        environmentId,
-        input: { threadId: activeThreadId },
+  const startSandboxForScript = useCallback(
+    async (threadId: ThreadId): Promise<boolean> => {
+      const toastId = toastManager.add({
+        type: "info",
+        title: "Starting sandbox…",
+        description: "The script will run once it is up.",
       });
-      if (startResult._tag === "Failure") {
-        if (isAtomCommandInterrupted(startResult)) return false;
-        const error = squashAtomCommandFailure(startResult);
-        setThreadError(
-          activeThreadId,
-          error instanceof Error ? error.message : "Could not start the sandbox.",
-        );
-        return false;
-      }
-
-      const deadline = Date.now() + SANDBOX_START_TIMEOUT_MS;
-      for (;;) {
-        const statusResult = await readSandboxStatus({
+      try {
+        const startResult = await startSandbox({
           environmentId,
-          input: { threadId: activeThreadId },
+          input: { threadId },
         });
-        if (statusResult._tag === "Failure") {
-          if (isAtomCommandInterrupted(statusResult)) return false;
-          const error = squashAtomCommandFailure(statusResult);
+        if (startResult._tag === "Failure") {
+          if (isAtomCommandInterrupted(startResult)) return false;
+          const error = squashAtomCommandFailure(startResult);
           setThreadError(
-            activeThreadId,
-            error instanceof Error ? error.message : "Could not read the sandbox status.",
+            threadId,
+            error instanceof Error ? error.message : "Could not start the sandbox.",
           );
           return false;
         }
-        const status = statusResult.value.sandboxStatus;
-        if (status === "ready") return true;
-        // Only `initializing` is still on its way. Anything else has settled
-        // somewhere that no amount of waiting improves.
-        if (status !== "initializing") {
-          setThreadError(activeThreadId, `The sandbox stopped starting (${status}).`);
-          return false;
+
+        const deadline = Date.now() + SANDBOX_START_TIMEOUT_MS;
+        for (;;) {
+          const statusResult = await readSandboxStatus({
+            environmentId,
+            input: { threadId },
+          });
+          if (statusResult._tag === "Failure") {
+            if (isAtomCommandInterrupted(statusResult)) return false;
+            const error = squashAtomCommandFailure(statusResult);
+            setThreadError(
+              threadId,
+              error instanceof Error ? error.message : "Could not read the sandbox status.",
+            );
+            return false;
+          }
+          const status = statusResult.value.sandboxStatus;
+          if (status === "ready") return true;
+          // Only `initializing` is still on its way. Anything else has settled
+          // somewhere that no amount of waiting improves.
+          if (status !== "initializing") {
+            setThreadError(threadId, `The sandbox stopped starting (${status}).`);
+            return false;
+          }
+          if (Date.now() >= deadline) {
+            setThreadError(
+              threadId,
+              "The sandbox is taking longer than expected to start. Try the script again in a moment.",
+            );
+            return false;
+          }
+          await new Promise((resolve) => setTimeout(resolve, SANDBOX_START_POLL_MS));
         }
-        if (Date.now() >= deadline) {
-          setThreadError(
-            activeThreadId,
-            "The sandbox is taking longer than expected to start. Try the script again in a moment.",
-          );
-          return false;
-        }
-        await new Promise((resolve) => setTimeout(resolve, SANDBOX_START_POLL_MS));
+      } finally {
+        toastManager.close(toastId);
       }
-    } finally {
-      toastManager.close(toastId);
-    }
-  }, [activeThreadId, environmentId, readSandboxStatus, setThreadError, startSandbox]);
+    },
+    [environmentId, readSandboxStatus, setThreadError, startSandbox],
+  );
 
   const runProjectScript = useCallback(
     async (
@@ -3140,9 +3151,9 @@ function ChatViewContent(props: ChatViewProps) {
         // the person and the script they asked for. Start it, then ask again.
         if (
           runResult._tag === "Failure" &&
-          squashAtomCommandFailure(runResult) instanceof SandboxNotRunningError
+          isSandboxNotRunning(squashAtomCommandFailure(runResult))
         ) {
-          if (!(await startSandboxForScript())) {
+          if (!(await startSandboxForScript(activeThreadId))) {
             return;
           }
           runResult = await runScript({ environmentId, input: runInput });

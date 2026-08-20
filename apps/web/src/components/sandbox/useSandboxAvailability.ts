@@ -1,6 +1,7 @@
 import type { SandboxStatusResult, ScopedThreadRef } from "@t3tools/contracts";
 import { useEffect, useMemo } from "react";
 
+import { useEnvironment } from "~/state/environments";
 import { useEnvironmentQuery, type EnvironmentQueryView } from "~/state/query";
 import { sandboxEnvironment } from "~/state/sandbox";
 
@@ -35,22 +36,37 @@ function disabledReason(
 }
 
 export function useSandboxAvailability(threadRef: ScopedThreadRef | null): SandboxAvailability {
-  const query = useEnvironmentQuery(
-    threadRef === null
+  // Where the environment pushes lifecycle, one subscription replaces the
+  // poll entirely — it is seeded with the current status, so there is nothing
+  // left for a read to answer first.
+  const environment = useEnvironment(threadRef?.environmentId ?? null);
+  const pushed = environment?.serverConfig?.environment.capabilities.sandboxStatusPush === true;
+
+  const live = useEnvironmentQuery(
+    threadRef === null || !pushed
+      ? null
+      : sandboxEnvironment.statusStream({
+          environmentId: threadRef.environmentId,
+          input: { threadId: threadRef.threadId },
+        }),
+  );
+  const polled = useEnvironmentQuery(
+    threadRef === null || pushed
       ? null
       : sandboxEnvironment.status({
           environmentId: threadRef.environmentId,
           input: { threadId: threadRef.threadId },
         }),
   );
+  const query = pushed ? live : polled;
   const { data, error, isPending: queryIsPending, refresh } = query;
   const sandboxStatus = data?.sandboxStatus ?? null;
   const isPending = queryIsPending && sandboxStatus === null;
 
   useEffect(() => {
-    if (threadRef === null) return;
+    if (threadRef === null || pushed) return;
     refresh();
-  }, [refresh, threadRef?.environmentId, threadRef?.threadId]);
+  }, [pushed, refresh, threadRef?.environmentId, threadRef?.threadId]);
 
   const status = useMemo<EnvironmentQueryView<SandboxStatusResult>>(
     () => ({

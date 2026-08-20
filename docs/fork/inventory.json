@@ -417,7 +417,7 @@
         "packages/contracts/src/preview.ts",
         "packages/contracts/fixtures/moatless/**"
       ],
-      "mustSurvive": "Keep fork methods: server list, server status subscription, server log subscription, sandbox status, sandbox start, and sandbox stop. Keep sandbox lifecycle schemas separate from server list schemas."
+      "mustSurvive": "Keep fork methods: server list, server status subscription, server log subscription, sandbox status, sandbox status subscription, sandbox start, and sandbox stop. Keep sandbox lifecycle schemas separate from server list schemas. sandbox.subscribeStatus is gated on the sandboxStatusPush capability: absent, the client polls sandbox.status instead, so both paths have to keep working."
     },
     {
       "id": "server-state-client-runtime",
@@ -428,7 +428,7 @@
         "packages/client-runtime/src/rpc/client.ts",
         "packages/client-runtime/package.json"
       ],
-      "mustSurvive": "Keep fork server and sandbox lifecycle state surfaces separate."
+      "mustSurvive": "Keep fork server and sandbox lifecycle state surfaces separate. sandbox exposes both status (polled query, the fallback) and statusStream (the pushed subscription); dropping either leaves one class of server without a live indicator. The subscription tag is also listed in EnvironmentSubscriptionRpcTag in rpc/client.ts, an upstream file."
     },
     {
       "id": "servers-right-panel",
@@ -471,7 +471,7 @@
         "apps/web/src/components/RightPanelTabs.tsx",
         "apps/web/src/components/chat/ChatHeader.tsx"
       ],
-      "mustSurvive": "Keep top-bar start/status control and right-panel disabling until upstream has an environment lifecycle capability the web client can use."
+      "mustSurvive": "Keep top-bar start/status control and right-panel disabling until upstream has an environment lifecycle capability the web client can use. useSandboxAvailability picks the pushed subscription over the polled read on the sandboxStatusPush capability; without one of the two the indicator goes stale the moment a sandbox moves while the panel is open."
     },
     {
       "id": "unsupported-method-error",

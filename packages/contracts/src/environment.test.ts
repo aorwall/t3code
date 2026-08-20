@@ -39,4 +39,23 @@ describe("ExecutionEnvironmentDescriptor", () => {
       }).capabilities.workspaceScripts,
     ).toBe(true);
   });
+
+  /**
+   * Fork: absent, the client keeps polling `sandbox.status`. Reading a missing key as
+   * "supported" would subscribe to a method the server answers with
+   * `UnsupportedMethodError`, and the indicator would show that error instead of
+   * a status.
+   */
+  it("treats a missing sandbox-status-push capability as unsupported under version skew", () => {
+    expect(decodeDescriptor(descriptor).capabilities.sandboxStatusPush).toBeUndefined();
+  });
+
+  it("preserves an advertised sandbox-status-push capability", () => {
+    expect(
+      decodeDescriptor({
+        ...descriptor,
+        capabilities: { ...descriptor.capabilities, sandboxStatusPush: true },
+      }).capabilities.sandboxStatusPush,
+    ).toBe(true);
+  });
 });

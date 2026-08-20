@@ -2213,6 +2213,13 @@ const makeWsRpcLayer = (
             ),
             { "rpc.aggregate": "scripts" },
           ),
+        // Fork: this server has no sandbox whose lifecycle could move, and it
+        // declares no `sandboxStatusPush` capability, so no client subscribes
+        // here. Silent rather than an error, like the server-status twin below.
+        [WS_METHODS.sandboxSubscribeStatus]: (_input) =>
+          observeRpcStream(WS_METHODS.sandboxSubscribeStatus, Stream.never, {
+            "rpc.aggregate": "sandbox",
+          }),
         [WS_METHODS.subscribeServerStatus]: (_input) =>
           observeRpcStream(WS_METHODS.subscribeServerStatus, Stream.never, {
             "rpc.aggregate": "servers",

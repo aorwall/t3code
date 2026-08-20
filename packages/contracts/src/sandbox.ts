@@ -41,6 +41,9 @@ export type SandboxStopInput = typeof SandboxStopInput.Type;
 export const SandboxStopResult = SandboxStatusResult;
 export type SandboxStopResult = typeof SandboxStopResult.Type;
 
+export const SandboxStatusSubscribeInput = SandboxStatusInput;
+export type SandboxStatusSubscribeInput = typeof SandboxStatusSubscribeInput.Type;
+
 /**
  * The thread's sandbox is not running, so the request needed one and there
  * wasn't one.

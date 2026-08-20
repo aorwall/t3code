@@ -80,6 +80,11 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
       one today), so clients show the scripts but not the control that runs
       them, and never send scripts.run under version skew. */
   workspaceScripts: Schema.optionalKey(Schema.Boolean),
+  /** Fork: server understands sandbox.subscribeStatus — it pushes a thread's sandbox
+      lifecycle status instead of only answering a read. Absent on servers that
+      serve `sandbox.status` alone, where a client that wants a live indicator
+      has to poll it. */
+  sandboxStatusPush: Schema.optionalKey(Schema.Boolean),
   /** Agent-activity publishes (push notifications and Live Activities)
       currently leave this environment: the publish opt-in is enabled and the
       relay link credentials exist. Clients skip seeding a Live Activity when

@@ -122,6 +122,8 @@ export const RPC_REQUIRED_SCOPES = {
   [WS_METHODS.subscribeDiscoveredLocalServers]: AuthOrchestrationReadScope,
   [WS_METHODS.serversList]: AuthOrchestrationReadScope,
   [WS_METHODS.sandboxStatus]: AuthOrchestrationReadScope,
+  // Fork: sandbox lifecycle push, a read like the status it pushes.
+  [WS_METHODS.sandboxSubscribeStatus]: AuthOrchestrationReadScope,
   [WS_METHODS.sandboxStart]: AuthOrchestrationOperateScope,
   [WS_METHODS.sandboxStop]: AuthOrchestrationOperateScope,
   [WS_METHODS.subscribeServerStatus]: AuthOrchestrationReadScope,

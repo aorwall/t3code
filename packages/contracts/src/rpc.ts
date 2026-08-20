@@ -184,6 +184,8 @@ import {
   SandboxStartResult,
   SandboxStatusInput,
   SandboxStatusResult,
+  // Fork: sandbox lifecycle push, a fork-only surface.
+  SandboxStatusSubscribeInput,
   SandboxStopInput,
   SandboxStopResult,
 } from "./sandbox.ts";
@@ -277,6 +279,8 @@ export const WS_METHODS = {
 
   // Sandbox methods
   sandboxStatus: "sandbox.status",
+  // Fork: sandbox lifecycle push; upstream has no sandbox to watch.
+  sandboxSubscribeStatus: "sandbox.subscribeStatus",
   sandboxStart: "sandbox.start",
   sandboxStop: "sandbox.stop",
 
@@ -974,6 +978,22 @@ export const WsSandboxStatusRpc = Rpc.make(WS_METHODS.sandboxStatus, {
   error: EnvironmentAuthorizationError,
 });
 
+/**
+ * Fork: pushes the thread's sandbox status whenever it changes, seeded with the
+ * current one so a subscriber never renders empty while it waits.
+ *
+ * Lifecycle has no event behind it — a sandbox reaches ready because a pod did
+ * — so the environment polls once per subscriber instead of every client
+ * polling for itself. An idle subscription is silent: no message means nothing
+ * moved, not that nothing is known.
+ */
+export const WsSandboxSubscribeStatusRpc = Rpc.make(WS_METHODS.sandboxSubscribeStatus, {
+  payload: SandboxStatusSubscribeInput,
+  success: SandboxStatusResult,
+  error: EnvironmentAuthorizationError,
+  stream: true,
+});
+
 export const WsSandboxStartRpc = Rpc.make(WS_METHODS.sandboxStart, {
   payload: SandboxStartInput,
   success: SandboxStartResult,
@@ -1230,6 +1250,8 @@ export const WsRpcGroup = RpcGroup.make(
   WsServersListRpc,
   WsScriptsRunRpc,
   WsSandboxStatusRpc,
+  // Fork: sandbox lifecycle push.
+  WsSandboxSubscribeStatusRpc,
   WsSandboxStartRpc,
   WsSandboxStopRpc,
   WsSubscribeServerStatusRpc,
