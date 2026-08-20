@@ -10,6 +10,7 @@ import {
   type ProviderApprovalDecision,
   type PreviewAnnotationPayload,
   ProviderInstanceId,
+  // Fork: sandbox lifecycle is ours; upstream has no such error.
   SandboxNotRunningError,
   type ServerProvider,
   type ResolvedKeybindingsConfig,
@@ -236,6 +237,7 @@ import {
   primaryServerSettingsAtom,
   serverEnvironment,
 } from "../state/server";
+// Fork: sandbox lifecycle atoms, a fork-only surface.
 import { sandboxEnvironment } from "../state/sandbox";
 import { scriptsEnvironment } from "../state/scripts";
 import { terminalEnvironment } from "../state/terminal";
@@ -519,9 +521,9 @@ function formatOutgoingPrompt(params: {
 const SCRIPT_TERMINAL_COLS = 120;
 const SCRIPT_TERMINAL_ROWS = 30;
 /**
- * How long to wait for a sandbox started on a script's behalf, and how often to
- * ask. A cold start is tens of seconds — the ceiling is only here so a sandbox
- * that never arrives ends as a sentence rather than a spinner.
+ * Fork: how long to wait for a sandbox started on a script's behalf, and how
+ * often to ask. A cold start is tens of seconds — the ceiling is only here so a
+ * sandbox that never arrives ends as a sentence rather than a spinner.
  */
 const SANDBOX_START_TIMEOUT_MS = 180_000;
 const SANDBOX_START_POLL_MS = 2_000;
@@ -1231,6 +1233,7 @@ function ChatViewContent(props: ChatViewProps) {
   const writeTerminal = useAtomCommand(terminalEnvironment.write, "terminal write");
   const closeTerminalMutation = useAtomCommand(terminalEnvironment.close, "terminal close");
   const runScript = useAtomCommand(scriptsEnvironment.run, { reportFailure: false });
+  // Fork: the two reads `startSandboxForScript` needs.
   const startSandbox = useAtomCommand(sandboxEnvironment.start, { reportFailure: false });
   const readSandboxStatus = useAtomCommand(sandboxEnvironment.statusOnce, { reportFailure: false });
   const createThread = useAtomCommand(threadEnvironment.create, { reportFailure: false });
@@ -3015,8 +3018,9 @@ function ChatViewContent(props: ChatViewProps) {
   );
 
   /**
-   * Bring the thread's sandbox up so a script can run in it, and resolve once
-   * it is ready to be asked again.
+   * Fork: bring the thread's sandbox up so a script can run in it, and resolve
+   * once it is ready to be asked again. Upstream runs scripts on the machine
+   * the server is already on, so it has nothing to start.
    *
    * A sandbox is idle-reaped after its TTL, so the common way to meet this is
    * simply to come back to a thread and press run. Starting it is the whole
@@ -3130,7 +3134,7 @@ function ChatViewContent(props: ChatViewProps) {
         const runInput = { threadId: activeThreadId, scriptId: script.id };
         let runResult = await runScript({ environmentId, input: runInput });
 
-        // The environment declares this one because it is answerable: the
+        // Fork: the environment declares this one because it is answerable: the
         // sandbox is stopped — idle-reaped, most often, just by leaving the
         // thread alone — and starting it is the whole of what stands between
         // the person and the script they asked for. Start it, then ask again.

@@ -235,9 +235,12 @@
       "id": "thread-server-surfaces",
       "paths": [
         "apps/web/src/state/servers.ts",
+        "apps/web/src/state/sandbox.ts",
         "packages/contracts/src/servers.ts",
+        "packages/contracts/src/sandbox.ts",
         "packages/contracts/fixtures/moatless/**",
-        "packages/client-runtime/src/state/servers.ts"
+        "packages/client-runtime/src/state/servers.ts",
+        "packages/client-runtime/src/state/sandbox.ts"
       ],
       "verdict": "ours",
       "note": "Thread-server and sandbox lifecycle surfaces. None of these exist upstream. The thread-server UI components listed here until 2026-08-08 (apps/web/src/components/servers/**, added in #13) are gone; what renders a ThreadServer now lives under components/preview/ and is covered by fork-preview-files."
@@ -546,7 +549,7 @@
         "apps/server/src/auth/RpcAuthorization.ts",
         "apps/web/src/components/ChatView.tsx"
       ],
-      "mustSurvive": "scripts.run asks the environment to run a project's script in its own sandbox, hosted in a named terminal, returning that terminal and the URL of any port it publishes. Gated on the workspaceScripts capability: absent, runProjectScript keeps upstream's client-driven terminal.open + terminal.write path byte-for-byte, so a T3 server behaves exactly as upstream. The rpc.ts union entry is the one documented exception to unsupported-methods.mjs's DROP advice — it is upstream's OWN server that refuses this method, not Moatless, so the derivation reports it backwards once the backend half publishes. Keep it while apps/server answers with UnsupportedMethodError; see 'A script runs on the backend' in gaps.md.",
+      "mustSurvive": "scripts.run asks the environment to run a project's script in its own sandbox, hosted in a named terminal, returning that terminal and the URL of any port it publishes. Gated on the workspaceScripts capability: absent, runProjectScript keeps upstream's client-driven terminal.open + terminal.write path byte-for-byte, so a T3 server behaves exactly as upstream. The rpc.ts union entry is the one documented exception to unsupported-methods.mjs's DROP advice — it is upstream's OWN server that refuses this method, not Moatless, so the derivation reports it backwards once the backend half publishes. Keep it while apps/server answers with UnsupportedMethodError; see 'A script runs on the backend' in gaps.md. A SandboxNotRunningError from scripts.run is answered rather than reported: startSandboxForScript starts the thread's sandbox, polls sandbox.status until ready, and re-runs once. Upstream has nothing to start, so a merge that loses this turns an idle-reaped sandbox back into a dead end.",
       "guard": {
         "symbol": "capabilities.workspaceScripts",
         "files": ["apps/web/src/components/ChatView.tsx"]
