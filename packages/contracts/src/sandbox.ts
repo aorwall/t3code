@@ -40,3 +40,23 @@ export const SandboxStopInput = SandboxStatusInput;
 export type SandboxStopInput = typeof SandboxStopInput.Type;
 export const SandboxStopResult = SandboxStatusResult;
 export type SandboxStopResult = typeof SandboxStopResult.Type;
+
+/**
+ * The thread's sandbox is not running, so the request needed one and there
+ * wasn't one.
+ *
+ * Typed rather than a message because it is the rare failure a client can
+ * answer on its own: the sandbox is startable, the person already said what
+ * they wanted, and `sandbox.start` plus a wait is the whole remedy. Reporting
+ * the sentence instead would make every caller re-derive that from prose.
+ */
+export class SandboxNotRunningError extends Schema.TaggedErrorClass<SandboxNotRunningError>()(
+  "SandboxNotRunningError",
+  {
+    threadId: Schema.String,
+  },
+) {
+  override get message() {
+    return `The sandbox is not running for thread: ${this.threadId}`;
+  }
+}

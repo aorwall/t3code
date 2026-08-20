@@ -179,6 +179,7 @@ import {
   ResourceTelemetrySnapshot,
 } from "./resourceTelemetry.ts";
 import {
+  SandboxNotRunningError,
   SandboxStartInput,
   SandboxStartResult,
   SandboxStatusInput,
@@ -958,7 +959,13 @@ export const WsServersListRpc = Rpc.make(WS_METHODS.serversList, {
 export const WsScriptsRunRpc = Rpc.make(WS_METHODS.scriptsRun, {
   payload: ScriptsRunInput,
   success: ScriptsRunResult,
-  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
+  // Fork: `SandboxNotRunningError` is declared so a client can start the
+  // sandbox and re-run rather than report a stopped one to the person.
+  error: Schema.Union([
+    EnvironmentAuthorizationError,
+    SandboxNotRunningError,
+    UnsupportedMethodError,
+  ]),
 });
 
 export const WsSandboxStatusRpc = Rpc.make(WS_METHODS.sandboxStatus, {

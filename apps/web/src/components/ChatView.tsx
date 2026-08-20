@@ -10,6 +10,7 @@ import {
   type ProviderApprovalDecision,
   type PreviewAnnotationPayload,
   ProviderInstanceId,
+  SandboxNotRunningError,
   type ServerProvider,
   type ResolvedKeybindingsConfig,
   type ScopedThreadRef,
@@ -235,6 +236,7 @@ import {
   primaryServerSettingsAtom,
   serverEnvironment,
 } from "../state/server";
+import { sandboxEnvironment } from "../state/sandbox";
 import { scriptsEnvironment } from "../state/scripts";
 import { terminalEnvironment } from "../state/terminal";
 import { threadEnvironment, useEnvironmentThread } from "../state/threads";
@@ -516,6 +518,13 @@ function formatOutgoingPrompt(params: {
 }
 const SCRIPT_TERMINAL_COLS = 120;
 const SCRIPT_TERMINAL_ROWS = 30;
+/**
+ * How long to wait for a sandbox started on a script's behalf, and how often to
+ * ask. A cold start is tens of seconds — the ceiling is only here so a sandbox
+ * that never arrives ends as a sentence rather than a spinner.
+ */
+const SANDBOX_START_TIMEOUT_MS = 180_000;
+const SANDBOX_START_POLL_MS = 2_000;
 
 type ChatViewProps =
   | {
@@ -1222,6 +1231,8 @@ function ChatViewContent(props: ChatViewProps) {
   const writeTerminal = useAtomCommand(terminalEnvironment.write, "terminal write");
   const closeTerminalMutation = useAtomCommand(terminalEnvironment.close, "terminal close");
   const runScript = useAtomCommand(scriptsEnvironment.run, { reportFailure: false });
+  const startSandbox = useAtomCommand(sandboxEnvironment.start, { reportFailure: false });
+  const readSandboxStatus = useAtomCommand(sandboxEnvironment.statusOnce, { reportFailure: false });
   const createThread = useAtomCommand(threadEnvironment.create, { reportFailure: false });
   const deleteThread = useAtomCommand(threadEnvironment.delete, { reportFailure: false });
   const updateThreadMetadata = useAtomCommand(threadEnvironment.updateMetadata, {
@@ -3002,6 +3013,78 @@ function ChatViewContent(props: ChatViewProps) {
       writeTerminal,
     ],
   );
+
+  /**
+   * Bring the thread's sandbox up so a script can run in it, and resolve once
+   * it is ready to be asked again.
+   *
+   * A sandbox is idle-reaped after its TTL, so the common way to meet this is
+   * simply to come back to a thread and press run. Starting it is the whole
+   * remedy and the person already said what they want, so do it rather than
+   * report a lifecycle state at them. `sandbox.start` only records the intent —
+   * readiness arrives later — hence the poll.
+   *
+   * Returns false when the sandbox did not get there; the caller has already
+   * been told why and should stop.
+   */
+  const startSandboxForScript = useCallback(async (): Promise<boolean> => {
+    const toastId = toastManager.add({
+      type: "info",
+      title: "Starting sandbox…",
+      description: "The script will run once it is up.",
+    });
+    try {
+      const startResult = await startSandbox({
+        environmentId,
+        input: { threadId: activeThreadId },
+      });
+      if (startResult._tag === "Failure") {
+        if (isAtomCommandInterrupted(startResult)) return false;
+        const error = squashAtomCommandFailure(startResult);
+        setThreadError(
+          activeThreadId,
+          error instanceof Error ? error.message : "Could not start the sandbox.",
+        );
+        return false;
+      }
+
+      const deadline = Date.now() + SANDBOX_START_TIMEOUT_MS;
+      for (;;) {
+        const statusResult = await readSandboxStatus({
+          environmentId,
+          input: { threadId: activeThreadId },
+        });
+        if (statusResult._tag === "Failure") {
+          if (isAtomCommandInterrupted(statusResult)) return false;
+          const error = squashAtomCommandFailure(statusResult);
+          setThreadError(
+            activeThreadId,
+            error instanceof Error ? error.message : "Could not read the sandbox status.",
+          );
+          return false;
+        }
+        const status = statusResult.value.sandboxStatus;
+        if (status === "ready") return true;
+        // Only `initializing` is still on its way. Anything else has settled
+        // somewhere that no amount of waiting improves.
+        if (status !== "initializing") {
+          setThreadError(activeThreadId, `The sandbox stopped starting (${status}).`);
+          return false;
+        }
+        if (Date.now() >= deadline) {
+          setThreadError(
+            activeThreadId,
+            "The sandbox is taking longer than expected to start. Try the script again in a moment.",
+          );
+          return false;
+        }
+        await new Promise((resolve) => setTimeout(resolve, SANDBOX_START_POLL_MS));
+      }
+    } finally {
+      toastManager.close(toastId);
+    }
+  }, [activeThreadId, environmentId, readSandboxStatus, setThreadError, startSandbox]);
+
   const runProjectScript = useCallback(
     async (
       script: ProjectScript,
@@ -3044,10 +3127,23 @@ function ChatViewContent(props: ChatViewProps) {
       // and open the preview — the environment already opened the PTY, so we must
       // not open one ourselves.
       if (supportsWorkspaceScripts) {
-        const runResult = await runScript({
-          environmentId,
-          input: { threadId: activeThreadId, scriptId: script.id },
-        });
+        const runInput = { threadId: activeThreadId, scriptId: script.id };
+        let runResult = await runScript({ environmentId, input: runInput });
+
+        // The environment declares this one because it is answerable: the
+        // sandbox is stopped — idle-reaped, most often, just by leaving the
+        // thread alone — and starting it is the whole of what stands between
+        // the person and the script they asked for. Start it, then ask again.
+        if (
+          runResult._tag === "Failure" &&
+          squashAtomCommandFailure(runResult) instanceof SandboxNotRunningError
+        ) {
+          if (!(await startSandboxForScript())) {
+            return;
+          }
+          runResult = await runScript({ environmentId, input: runInput });
+        }
+
         if (runResult._tag === "Failure") {
           if (!isAtomCommandInterrupted(runResult)) {
             const error = squashAtomCommandFailure(runResult);
@@ -3161,6 +3257,7 @@ function ChatViewContent(props: ChatViewProps) {
       writeTerminal,
       supportsWorkspaceScripts,
       runScript,
+      startSandboxForScript,
       addBrowserSurface,
       openPreview,
     ],
