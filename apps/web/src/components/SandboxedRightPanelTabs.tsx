@@ -24,8 +24,10 @@ export function SandboxedRightPanelTabs({ threadRef, ...props }: SandboxedRightP
         <SandboxStatusControl
           threadRef={threadRef}
           status={sandboxAvailability.status}
-          // The sheet is the narrow-viewport panel — the tab list needs the width more.
-          compact={props.mode === "sheet"}
+          // The control follows the panel body: the launcher wants the status
+          // spelled out beside its surface cards, while the disabled state has
+          // already said what is wrong above it and needs only the way out.
+          compact={sandboxAvailability.surfaceDisabled}
         />
       }
     />

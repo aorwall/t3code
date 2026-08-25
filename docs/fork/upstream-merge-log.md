@@ -28,6 +28,33 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-08-25 — the terminal-drawer toggle comes back, the sandbox pill moves down
+
+- Fork delta shrinks by a file. `FEATURES.terminalDrawerToggle` and its gate are
+  deleted rather than flipped, the way `features.ts` says to turn one on, so
+  `PanelLayoutControls.tsx` is upstream's byte for byte again: a `git diff`
+  against `27732293` on that path is empty. This undoes the 2026-08-03 entry
+  below. Row: _Chat surface gates_, which no longer names the file.
+- The sandbox pill left the right panel's tab bar for the panel body: under the
+  launcher's surface cards, and under the disabled state's reason where it is
+  the only way back up. The tab bar's right end is where upstream puts its
+  layout toggles, and a fork element parked there is what the returning button
+  had to fit around. Row: _Sandbox lifecycle controls_.
+- Recorded rather than solved: with the pill in the body, Stop is out of reach
+  while a surface is open and the sandbox is running. Losing a sandbox disables
+  the surfaces and brings the control back with the reason, so the way in is
+  never the one that goes missing.
+- A ready sandbox's dot is `bg-success` now. In the tab bar an amber dot beside
+  "Sandbox running" was a small lie; in the launcher it would have been the
+  loudest thing on the screen.
+- The placement is now a test rather than a habit:
+  `components/sandbox/sandboxControl.placement.test.tsx` renders the panel and
+  fails if the control comes out ahead of the body's opening div. Checked by
+  putting the hunk back in the tab bar, where both cases fail.
+- Verification: web typecheck, lint on the changed files, `vp fmt --check`, and
+  `vp test run` over `apps/web/src/fork`, `components/sandbox` and
+  `RightPanelTabs.test.tsx`, 36 passing. Not verified in a browser.
+
 ### 2026-08-16 — merged upstream to 27732293
 
 - Upstream: `27732293` from base `5a846148` (`159` commits). Landed as a merge

@@ -47,7 +47,8 @@ interface SandboxStatusControlProps {
   readonly className?: string | undefined;
   /**
    * Drop the status text and keep only the indicator and its action, for hosts
-   * too narrow to spare the width. The text moves to the hover title.
+   * that have already said what the status is. The text moves to the hover
+   * title.
    */
   readonly compact?: boolean | undefined;
 }
@@ -138,7 +139,14 @@ export function SandboxStatusControl({
         ) : tone === "error" ? (
           <AlertTriangleIcon className="size-3.5 shrink-0 text-destructive" />
         ) : (
-          <span className="size-2 shrink-0 rounded-full bg-warning" />
+          <span
+            className={cn(
+              "size-2 shrink-0 rounded-full",
+              // The launcher shows this pill while everything is fine, so a
+              // running sandbox has to look like one rather than like a warning.
+              sandboxStatus === "ready" ? "bg-success" : "bg-warning",
+            )}
+          />
         )}
         <div
           className={cn(

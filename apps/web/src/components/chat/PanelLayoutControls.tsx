@@ -1,7 +1,6 @@
 import { Maximize2Icon, Minimize2Icon, PanelBottomIcon, PanelRightIcon } from "lucide-react";
 import { memo } from "react";
 
-import { FEATURES } from "../../fork/features";
 import { Toggle } from "../ui/toggle";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 
@@ -36,7 +35,7 @@ export const PanelLayoutControls = memo(function PanelLayoutControls({
       className="flex h-full shrink-0 items-center gap-1 [-webkit-app-region:no-drag]"
       data-panel-layout-controls
     >
-      {FEATURES.terminalDrawerToggle && showTerminalControl ? (
+      {showTerminalControl ? (
         <Tooltip>
           <TooltipTrigger
             render={

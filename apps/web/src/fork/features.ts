@@ -113,16 +113,6 @@ export const FEATURES = {
    */
   accessMode: false,
   /**
-   * The chat's terminal-drawer button, which splits the screen horizontally by
-   * opening a terminal across the bottom.
-   *
-   * Not a backend gap — the drawer works. The fork shows one way to reach a
-   * terminal, the right panel's terminal surface, and drops the button that
-   * splits the chat horizontally beside it. `terminal.toggle` still opens the
-   * drawer for anyone who wants it.
-   */
-  terminalDrawerToggle: false,
-  /**
    * A thread's pull request deciding whether it is settled: merged or closed
    * settles it outright, open holds it out of the settled shelf.
    *

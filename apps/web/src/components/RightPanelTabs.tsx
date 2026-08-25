@@ -175,6 +175,8 @@ function RightPanelEmptyState(props: {
   pullRequestAvailable: boolean;
   agentsAvailable: boolean;
   liveAgentCount: number;
+  /** Fork: the thread's sandbox status and its start/stop button. */
+  sandboxControl?: ReactNode;
 }) {
   // -1 means no highlight: it only appears on hover or arrow use.
   const [highlight, setHighlight] = useState(-1);
@@ -408,6 +410,10 @@ function RightPanelEmptyState(props: {
             ),
           )}
         </div>
+        {/* Fork: the sandbox the surfaces run in, said where they are opened. */}
+        {props.sandboxControl ? (
+          <div className="mt-3 flex justify-center">{props.sandboxControl}</div>
+        ) : null}
       </div>
     </div>
   );
@@ -773,15 +779,16 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             ) : null}
           </div>
         </ScrollArea>
-        {props.sandboxControl}
         {props.layoutControls}
       </div>
       <div className="flex min-h-0 flex-1 flex-col" data-right-panel-surface-content>
         {/* Fork: a stopped sandbox disables the surface before upstream's empty state. */}
         {props.surfaceDisabled ? (
-          <RightPanelDisabledState reason={surfaceDisabledReason} />
+          <RightPanelDisabledState reason={surfaceDisabledReason} control={props.sandboxControl} />
         ) : props.activeSurfaceId === null ? (
           <RightPanelEmptyState
+            // Fork: the sandbox pill lives with the launcher, not in the top bar.
+            sandboxControl={props.sandboxControl}
             onAddBrowser={props.onAddBrowser}
             onAddTerminal={props.onAddTerminal}
             onAddDiff={props.onAddDiff}

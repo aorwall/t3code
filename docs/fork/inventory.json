@@ -471,7 +471,7 @@
         "apps/web/src/components/RightPanelTabs.tsx",
         "apps/web/src/components/chat/ChatHeader.tsx"
       ],
-      "mustSurvive": "Keep top-bar start/status control and right-panel disabling until upstream has an environment lifecycle capability the web client can use. useSandboxAvailability picks the pushed subscription over the polled read on the sandboxStatusPush capability; without one of the two the indicator goes stale the moment a sandbox moves while the panel is open."
+      "mustSurvive": "Keep the start/status control and right-panel disabling until upstream has an environment lifecycle capability the web client can use. The control renders inside the panel body — under the launcher's surface cards, and under the disabled state's reason where it is the only way back up — not in the tab bar, whose right end belongs to upstream's layout toggles. useSandboxAvailability picks the pushed subscription over the polled read on the sandboxStatusPush capability; without one of the two the indicator goes stale the moment a sandbox moves while the panel is open."
     },
     {
       "id": "unsupported-method-error",
@@ -497,10 +497,9 @@
       "paths": [
         "apps/web/src/components/ChatView.tsx",
         "apps/web/src/components/RightPanelTabs.tsx",
-        "apps/web/src/components/chat/ChatHeader.tsx",
-        "apps/web/src/components/chat/PanelLayoutControls.tsx"
+        "apps/web/src/components/chat/ChatHeader.tsx"
       ],
-      "mustSurvive": "Re-apply additive gates only. PanelLayoutControls.tsx's gate hides the terminal-drawer button, so the fork's chat header has one panel toggle where upstream has two; a merge that finds three toggles has taken upstream's back."
+      "mustSurvive": "Re-apply additive gates only. PanelLayoutControls.tsx left this entry when the fork took the terminal-drawer button back: the file is upstream's byte for byte again, so a merge has nothing to re-apply there."
     },
     {
       "id": "persisted-panel-gating",
