@@ -22,29 +22,13 @@ import {
   ensureFullHistory,
   fetchUpstream,
   git,
-  globToRegExp,
   lines,
   loadInventory,
   requireUpstreamRemote,
   runMain,
+  verdictFor,
 } from "./lib.mjs";
 import { requireUpstream, runInventoryChecks } from "./inventory-check.mjs";
-
-/**
- * The verdict for a path: the most specific matching entry wins, so a fork-only
- * file inside an otherwise-upstream directory keeps its own answer.
- */
-function verdictFor(inventory, path) {
-  let best = null;
-  for (const entry of inventory.pathPolicy) {
-    for (const pattern of entry.paths) {
-      if (!globToRegExp(pattern).test(path)) continue;
-      const score = (pattern.includes("*") ? 0 : 1000) + pattern.length;
-      if (!best || score > best.score) best = { score, entry, pattern };
-    }
-  }
-  return best;
-}
 
 function reportRange(report, base, ref) {
   const section = report.section("Range");
@@ -189,9 +173,7 @@ runMain(async () => {
     return 1;
   }
   process.stdout.write(
-    `${cyan("Ready.")} ${count} commits to merge. Next:\n` +
-      `  UPSTREAM_BASE=${base}\n` +
-      `  git merge ${ref}\n\n`,
+    `${cyan("Ready.")} ${count} commits to merge. Next:\n  git merge ${ref}\n\n`,
   );
   return 0;
 });

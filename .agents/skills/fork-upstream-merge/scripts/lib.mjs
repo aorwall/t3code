@@ -211,6 +211,22 @@ export function mergeBase(a, b) {
 }
 
 /**
+ * The verdict for a path: the most specific matching entry wins, so a fork-only
+ * file inside an otherwise-upstream directory keeps its own answer.
+ */
+export function verdictFor(inventory, path) {
+  let best = null;
+  for (const entry of inventory.pathPolicy) {
+    for (const pattern of entry.paths) {
+      if (!globToRegExp(pattern).test(path)) continue;
+      const score = (pattern.includes("*") ? 0 : 1000) + pattern.length;
+      if (!best || score > best.score) best = { score, entry, pattern };
+    }
+  }
+  return best;
+}
+
+/**
  * Collects findings so a script can print one grouped report and exit non-zero
  * only when something actually needs a decision.
  */

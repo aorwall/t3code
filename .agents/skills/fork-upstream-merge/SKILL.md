@@ -30,21 +30,28 @@ only one written for someone who is not currently merging.
 
 ## The scripts
 
-Fork-owned, dependency-free, and runnable before `pnpm install`. They exist
-because every check they run was previously a paragraph of prose that a merge had
-to remember to perform, and the two merges that skipped one paid for it mid-merge.
+Fork-owned. Most are dependency-free and runnable before `pnpm install`; the two
+that are not say so in the table below. They exist because every check they run
+was previously a paragraph of prose that a merge had to remember to perform, and
+the two merges that skipped one paid for it mid-merge.
 
-| Script                    | When            | What it answers                                                                                                                         |
-| ------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `preflight.mjs`           | before merging  | the range, which inventory entries have gone stale, and every file this merge will conflict on — each with its verdict already attached |
-| `verify.mjs`              | after resolving | tripwires, contract drift, format, lint, types and tests, in one pass that does not stop at the first failure                           |
-| `inventory-check.mjs`     | any time        | does every inventory path still exist on the side its verdict claims                                                                    |
-| `tripwires.mjs`           | after merging   | deleted surfaces, re-deletions, and workflow state in GitHub                                                                            |
-| `unsupported-methods.mjs` | after merging   | which contract methods should declare `UnsupportedMethodError`, derived from both sides                                                 |
+| Script                    | When             | What it answers                                                                                                                                                             |
+| ------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `preflight.mjs`           | before merging   | the range, which inventory entries have gone stale, and every file this merge will conflict on — each with its verdict already attached                                     |
+| `regen-route-tree.mjs`    | after resolving  | rewrites `apps/web/src/routeTree.gen.ts`, headlessly, whenever a route file conflict leaves it stale                                                                        |
+| `verify.mjs`              | after resolving  | tripwires, contract drift, format, lint, types and tests, in one pass that does not stop at the first failure and retries a test package alone before reporting it failed   |
+| `merge-stats.mjs`         | after committing | the tracker entry's numbers — upstream range, landed vs upstream-range file counts with the gap already explained, fork delta, and the conflict list restated with verdicts |
+| `inventory-check.mjs`     | any time         | does every inventory path still exist on the side its verdict claims                                                                                                        |
+| `tripwires.mjs`           | after merging    | deleted surfaces, re-deletions, and workflow state in GitHub                                                                                                                |
+| `unsupported-methods.mjs` | after merging    | which contract methods should declare `UnsupportedMethodError`, derived from both sides                                                                                     |
 
 All live in `.agents/skills/fork-upstream-merge/scripts/`. `verify.mjs` runs
 `tripwires.mjs` and `unsupported-methods.mjs` itself, so the two are listed
-separately only for running one on its own.
+separately only for running one on its own. `regen-route-tree.mjs` and
+`merge-stats.mjs` are the two exceptions to "dependency-free": both need
+`vp install` to have already run — the first because it calls
+`@tanstack/router-generator` directly, the second because it only makes sense
+once a merge commit exists.
 
 A failing check names the `id` of the `inventory.json` entry it came from. Fix
 the entry, in the same merge — a stale entry is not noise to route around, it is
@@ -164,7 +171,6 @@ there were no relevant hits.
 ### 2. Merge and resolve
 
 ```bash
-UPSTREAM_BASE="$(git merge-base HEAD upstream/main)"
 git merge upstream/main
 ```
 
@@ -175,22 +181,47 @@ git merge upstream/main
    survive; it does not name a winner. Read upstream's side and decide it there.
 3. When upstream now provides a fork-built surface, prefer upstream and shrink
    the fork delta. The `convergence` entries say what to watch for.
-4. Read what the merge actually took, against both parents:
+4. If any conflict touched `apps/web/src/routes/**` — an add, a delete, a
+   rename, anything that changes which files are there — regenerate the route
+   tree once resolution is done:
 
    ```bash
-   git diff --stat HEAD^1 HEAD   # upstream content that landed on the fork
-   git diff --stat HEAD^2 HEAD   # the whole fork delta, restated against upstream
+   node .agents/skills/fork-upstream-merge/scripts/regen-route-tree.mjs
    ```
 
-   Compare the first against `git diff --stat "$UPSTREAM_BASE..upstream/main"`.
-   A merge that touched far fewer files than upstream changed is the failure this
-   step exists to catch: `ours` resolutions on live upstream paths produce a
-   clean, green, quiet merge that threw upstream's work away. Record both file
-   counts in the tracker entry. If the gap is not accounted for by the conflicts
-   you resolved, find the missing files before continuing.
+   It calls the same generator `vp dev` would, without starting a dev server,
+   waiting for it to notice the change, and killing it by a tracked PID. A
+   route-file conflict with a stale `routeTree.gen.ts` left behind is a
+   typecheck failure at step 3, not a merge failure now — catch it here.
 
-   The second number is the fork delta. If it grows every merge, the convergence
-   entries are not being worked.
+5. Commit the merge, then read what it actually took, against both parents:
+
+   ```bash
+   node .agents/skills/fork-upstream-merge/scripts/merge-stats.mjs
+   ```
+
+   It restates `git diff --stat HEAD^1 HEAD` (upstream content that landed) and
+   `git diff --stat` from the merge-base to `HEAD^2` (what upstream actually
+   changed) — computed from the merge commit's own parents, nothing to have
+   captured beforehand — diffs the two file lists so any gap already comes
+   with which files are on which side, and prints `git diff --stat HEAD^2
+HEAD` (the whole fork delta, restated against upstream). A merge that
+   touched far fewer files than upstream changed is the failure this step
+   exists to catch: `ours` resolutions on live upstream paths produce a clean,
+   green, quiet merge that threw upstream's work away. If the gap is not
+   accounted for by the conflicts you resolved, find the missing files before
+   continuing. Paste the three summary lines into the tracker entry.
+
+   The fork-delta number is also what the convergence entries are watching. If
+   it grows every merge, they are not being worked.
+
+   The same command also restates every file both sides touched since the
+   merge-base, each with its path-policy verdict — the same set
+   `preflight.mjs` forecast, now against what actually landed. Not every entry
+   produced a `<<<<<<<` marker: git can auto-merge two unrelated additions to
+   the same file (a route added on both sides, an entry appended to the same
+   list) without flagging it as a conflict at all, and a file like that is
+   worth a manual look even when nothing complained.
 
 ### 3. Verify, before writing anything down
 
@@ -203,6 +234,14 @@ derivation, format, lint, types, and every workspace test suite. It keeps going
 after a failure and reports them together, so a formatting nit does not hide the
 type errors behind it — and it raises the heap the web suite needs, whose failure
 mode is otherwise an exit 137 that reads like a real test failure.
+
+A test package that fails is retried alone before being reported: the packages
+`pnpm test` runs share one sandbox's CPU and memory, and a merge on a loaded
+machine reliably turns up a perf-budget miss or a timeout that has nothing to
+do with the merge. A package that passes alone is reported `flaky, passed
+alone`, not silently green — read it, but it does not block the merge on its
+own. A package that fails alone too keeps the step red and names it as
+confirmed.
 
 Run this **before** the classification and documentation steps, not after them.
 Its output is their input: the unsupported-method buckets are step 4's answer,
