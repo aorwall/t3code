@@ -102,9 +102,12 @@ HEAD^2 HEAD` (unchanged from the 2026-08-16 entry).
   `orphanedProviderSessionStartup.integration.test.ts`, `electronPasskeys.test.ts`,
   `041_AuthSessionClientConnection.ts` + `.test.ts` are upstream's own
   session/auth work, not fork auth surfaces.
-- Off-repository: `desktop-macos-preview.yml` is new this merge; unregistered
-  in GitHub until the branch pushes, so disabling it is deferred to the push
-  step below rather than this entry.
+- Off-repository: `desktop-macos-preview.yml` is new this merge. It only
+  triggers on `pull_request: [labeled, synchronize, reopened]`, and GitHub
+  resolves a `pull_request` workflow from the base branch's copy of the file
+  — so it stays unregistered until this merge itself lands on `main`, the way
+  `web-preview.yml` did between the 2026-08-12 and 2026-08-16 entries.
+  Flagged here; disable it once a future merge finds it `active`.
 - Convergence: none fired. The watch list's twelve rows are unchanged.
 - Unsupported methods: ADD 3, DROP 0, KEEP 2. Upstream added
   `attachments.createUploadUrl`, `attachments.delete` (needs no fork gate,
