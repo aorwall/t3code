@@ -209,21 +209,9 @@
     },
     {
       "id": "fork-authored-plans",
-      "paths": [
-        ".plans/moatless-adapter.md",
-        ".plans/moatless-convergence.md",
-        ".plans/preview-servers-in-t3-web.md",
-        ".plans/completed/moatless-admin-in-t3.md"
-      ],
-      "verdict": "ours",
-      "note": "The four fork-authored plans. The first three verified 2026-08-03, the fourth written in this fork on 2026-08-05."
-    },
-    {
-      "id": "upstream-plans",
       "paths": [".plans/**"],
-      "verdict": "theirs",
-      "note": "Everything under .plans/ except the four fork-authored plans above. Upstream owns most files here and adds more. This entry was `ours` until 2026-08-03, which would have discarded every upstream plan edit.",
-      "except": "fork-authored-plans"
+      "verdict": "ours",
+      "note": "Upstream deleted .plans/** entirely on 2026-08-20 (PR #7665, \"move implementation plans out of repository\"), so nothing upstream owns lives under this path anymore. The 2026-08-20 merge took upstream's deletion cleanly (the fork had not touched those files, so it was a non-conflicting delete) and left only the four fork-authored plans: moatless-adapter.md, moatless-convergence.md, preview-servers-in-t3-web.md, completed/moatless-admin-in-t3.md. Was two entries (fork-authored-plans: ours, upstream-plans: theirs) until upstream's deletion made the split moot."
     },
     {
       "id": "dev-runner",

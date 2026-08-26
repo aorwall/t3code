@@ -12,6 +12,7 @@ import { sandboxEnvironment } from "~/state/sandbox";
 import { useAtomCommand } from "~/state/use-atom-command";
 
 import { Button } from "./ui/button";
+import { Tooltip, TooltipPopup, TooltipTrigger } from "./ui/tooltip";
 
 type SandboxStatus = SandboxStatusResult["sandboxStatus"];
 
@@ -122,10 +123,9 @@ export function SandboxStatusControl({
   const showRetry = Boolean(status.error) && !startable;
   const actionLabel = sandboxStatus === "error" || actionError ? "Retry" : "Start";
 
-  return (
+  const control = (
     <div
       aria-live="polite"
-      title={compact ? label : undefined}
       className={cn(
         "flex min-w-0 shrink-0 items-center gap-2 rounded-md border border-border/70 bg-background px-2 py-1 shadow-xs",
         tone === "error" && "border-destructive/35 bg-destructive/5",
@@ -181,5 +181,14 @@ export function SandboxStatusControl({
         </Button>
       ) : null}
     </div>
+  );
+
+  if (!compact) return control;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger render={control} />
+      <TooltipPopup side="top">{label}</TooltipPopup>
+    </Tooltip>
   );
 }
