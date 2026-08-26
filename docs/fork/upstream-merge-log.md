@@ -28,6 +28,104 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-08-26 — merged upstream to badae6a5c, browser defaults get their own settings route
+
+- Upstream: `badae6a5c` from base `27732293` (`188` commits). Landed as a merge
+  commit; the base advanced cleanly from the 2026-08-25 entry.
+- Landed: `719` files from `git diff --stat HEAD^1 HEAD` against `718` in the
+  upstream range. The gap of one is four file-list differences that net to
+  one: `SandboxStatusControl.tsx` (fork-only post-merge lint fix, not in
+  upstream's range), `PreviewChromeRow.test.tsx` (fork's superset already
+  covers upstream's change, file unchanged by the merge but present in both
+  diffs), `settings.browser.tsx` replacing `settings.integrations.tsx` (see
+  below — same file count, different path), and `docs/fork/inventory.json`
+  (fork-only bookkeeping). Fork delta `609` files from `git diff --stat
+HEAD^2 HEAD` (unchanged from the 2026-08-16 entry).
+- Conflicts, thirteen files, all falling to the `decide-then-add-entry`
+  fallback inside an owned concern (no cached `pathPolicy` verdict fired):
+  - `RightPanelTabs.tsx` — upstream replaced its six hardcoded add-surface
+    menu items with a `.map()` over `addSurfaceActions` plus a keydown
+    handler on the menu popup; adopted upstream's loop wholesale, since the
+    fork's items were already flowing through that same array.
+  - `SettingsSidebarNav.tsx` — import conflict (fork's `settingsPathEnabled`,
+    `useMoatlessSession` beside upstream's new `SidebarUtilityMenu`), kept
+    all three. Also fixed a duplicate `SETTINGS_SECTION_ICONS` key the
+    conflict resolution surfaced: upstream's `/settings/integrations` entry
+    is now `/settings/browser` (see below), fork's stays.
+  - `SidebarChrome.tsx` — upstream re-added a `T3Wordmark` component this
+    fork already replaces with `SidebarBrand`'s `APP_BASE_NAME` span (see the
+    2026-08-16 entry's _Moatless branding_ row); dropped the dead function
+    and kept upstream's new `SidebarUtilityItem` helper and the
+    `SidebarChromeFooter` → `SidebarUtilityMenu` rename.
+  - `threadActionMenu.logic.ts` + `.test.ts` — upstream reshuffled the
+    archive/delete tail; re-stated the fork's `FEATURES.threadDeletion` gate
+    around the new `delete` item and rewrote the test to check archive is
+    last, non-destructive and separated, and that `delete` is absent when the
+    gate is off. Entry: _Thread deletion gate in the row menu_.
+  - `settings.tsx` — additive import merge only (fork's admin-gating imports
+    beside upstream's `WorkspacePageHeader`).
+  - `settings.integrations.tsx` — **add/add, no common ancestor.** Upstream
+    independently added a new embedded-surfaces settings page at this exact
+    path the same range the fork already owns it for the Moatless
+    connections/apps/GitHub admin page. Kept the fork's file here and gave
+    upstream's page a new home at `settings.browser.tsx` instead of picking a
+    side. New `pathPolicy` entry: _moatless-admin-integrations-route_
+    (`decide`, not `ours` — `inventory-check.mjs` correctly rejects `ours`
+    the moment upstream ships content at an owned path). New `inventory`
+    entry: _settings-browser-relocation_.
+  - Fallout from the above that git merged silently, no conflict marker:
+    `settingsSearch.ts` had a duplicate `SettingsPath` union member and a
+    duplicate `SETTINGS_SECTION_LABELS` key from the same collision (only one
+    side of an add/add pair gets a marker; the file referencing both paths
+    doesn't). Split the five browser-default search items onto
+    `/settings/browser`, left the fork's three integrations items on
+    `/settings/integrations`. `routeTree.gen.ts` regenerated via `vp dev`
+    picks up the new route.
+- Post-merge fixes the conflict resolution did not catch, all found by
+  `verify.mjs` rather than by reading:
+  - `SandboxStatusControl.tsx` — new `t3code(no-native-title-tooltip)` lint
+    rule flagged the fork's native `title` attribute; replaced with the
+    `Tooltip`/`TooltipTrigger`/`TooltipPopup` pattern the rest of the repo
+    uses.
+  - `PreviewView.tsx` — orphaned `resolveResponsiveBrowserViewportSize`
+    import, dead after upstream's `useBrowserDefaults` replaced its call
+    site.
+  - `imageCompression.test.ts` — orphaned `MAX_STASH_IMAGE_DATA_URL_CHARS`
+    import; the fork's tests use explicit byte limits instead.
+  - `ThreadPreviewMiniPlayer.tsx` — stray blank line, `vp fmt` fixed it.
+  - `addBrowserSurface.test.ts` — real bug: upstream's `openPreviewSession.ts`
+    now unconditionally includes a resolved `viewport` in every `openPreview`
+    call; the fork's second test (URL passthrough / `recentlySeenUrls`,
+    absent from upstream's file) was missing the same expectation already
+    applied to the first test.
+- Sweep: five owned-concern hits, all false positives —
+  `orphanedProviderSessionStartup.integration.test.ts`, `electronPasskeys.test.ts`,
+  `041_AuthSessionClientConnection.ts` + `.test.ts` are upstream's own
+  session/auth work, not fork auth surfaces.
+- Off-repository: `desktop-macos-preview.yml` is new this merge; unregistered
+  in GitHub until the branch pushes, so disabling it is deferred to the push
+  step below rather than this entry.
+- Convergence: none fired. The watch list's twelve rows are unchanged.
+- Unsupported methods: ADD 3, DROP 0, KEEP 2. Upstream added
+  `attachments.createUploadUrl`, `attachments.delete` (needs no fork gate,
+  `capabilities.attachmentUploads` already keeps the composer's attach
+  affordance off) and `provider.uploadFeedback` (Codex's `/feedback` command,
+  posts to OpenAI, correctly resolves to `UnsupportedMethodError`
+  unconditionally). All three added to the `rpc.ts` union per the script's
+  advice; gaps register entries: _Attachment uploads_, _Codex feedback_. KEEP
+  unchanged (`vcs.switchRef`, `git.preparePullRequestThread`); DROP's
+  `scripts.run` exception is unaffected.
+- Verification: `verify.mjs` — tripwires, unsupported-methods (re-run
+  standalone after the `rpc.ts` fix, confirms ADD 0), `fmt:check`, `lint` and
+  `typecheck` all pass. `packages/contracts` typechecked separately with
+  `tsgo --noEmit`, clean. `test` reported four failures across two full runs,
+  all confirmed to pass reliably in isolation and unrelated to any touched
+  file: `session-logic.test.ts` (perf budget, 162ms vs 100ms), `openVsxThemes
+.test.ts` (15000ms timeout), `ProviderRegistry.test.ts`'s codex-binaryPath
+  re-probe test (not touched by any conflict resolution, auto-merged clean).
+  Same load-pressure pattern as the 2026-08-16 entry's `effect-acp` /
+  `oxlint-plugin-t3code` exits.
+
 ### 2026-08-25 — the terminal-drawer toggle comes back, the sandbox pill moves down
 
 - Fork delta shrinks by a file. `FEATURES.terminalDrawerToggle` and its gate are

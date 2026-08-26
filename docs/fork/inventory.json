@@ -214,6 +214,12 @@
       "note": "Upstream deleted .plans/** entirely on 2026-08-20 (PR #7665, \"move implementation plans out of repository\"), so nothing upstream owns lives under this path anymore. The 2026-08-20 merge took upstream's deletion cleanly (the fork had not touched those files, so it was a non-conflicting delete) and left only the four fork-authored plans: moatless-adapter.md, moatless-convergence.md, preview-servers-in-t3-web.md, completed/moatless-admin-in-t3.md. Was two entries (fork-authored-plans: ours, upstream-plans: theirs) until upstream's deletion made the split moot."
     },
     {
+      "id": "moatless-admin-integrations-route",
+      "paths": ["apps/web/src/routes/settings.integrations.tsx"],
+      "verdict": "decide",
+      "note": "Fork's Moatless connections/apps/GitHub admin page. Upstream independently added an unrelated embedded-surface settings page at this same path on 2026-08-26 (add/add conflict, no common ancestor) — that content now lives at apps/web/src/routes/settings.browser.tsx instead of here. Keep ours at this path every merge; diff upstream's file and port anything substantive into settings.browser.tsx. See settings-browser-relocation."
+    },
+    {
       "id": "dev-runner",
       "paths": ["scripts/dev-runner.ts", "scripts/dev-runner.test.ts"],
       "verdict": "theirs-verbatim",
@@ -679,6 +685,12 @@
         "apps/web/src/routes/settings.users_.$login.tsx"
       ],
       "mustSurvive": "An administrator reaches every Moatless administration surface from T3 settings — Workspaces, Loops, Integrations, Skills, Secrets and Users, each with its detail route. Built out of upstream's own settings primitives (SettingsSection, SettingsRow, itemRows), so upstream restyling reaches them for free — keep it that way. See the inventory markdown for the markup conventions."
+    },
+    {
+      "id": "settings-browser-relocation",
+      "name": "Browser-defaults settings relocated off /settings/integrations",
+      "paths": ["apps/web/src/routes/settings.browser.tsx"],
+      "mustSurvive": "Upstream shipped its own /settings/integrations page on 2026-08-26 (embedded-surface preferences — browser default viewport, zoom, appearance, auto-show floating preview — rendered by IntegrationsSettingsPanel in components/settings/IntegrationsSettings.tsx) at the exact path the fork's Moatless admin Integrations page (moatless-admin-pages) already owned. Resolved by keeping settings.integrations.tsx as the fork's page and moving upstream's page, unmodified, to a new fork-only route at /settings/browser importing the same IntegrationsSettingsPanel. settingsSearch.ts's SettingsPath union, SETTINGS_SECTION_LABELS and the five browser-* SETTINGS_SEARCH_ITEMS, plus SettingsSidebarNav.tsx's icon map, point at /settings/browser instead of /settings/integrations for that panel. On the next merge, diff upstream's settings.integrations.tsx and IntegrationsSettings.tsx for changes and port them into settings.browser.tsx; the route file is otherwise the entire fork delta here."
     },
     {
       "id": "moatless-admin-nav",
