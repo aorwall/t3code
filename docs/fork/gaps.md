@@ -143,6 +143,19 @@ what a person loses, which is the part the derivation cannot tell you:
   _desktop_ shell hands to a local editor. That path needs an Electron shell, so
   it does not reach this fork's browser client — but the shape is the one to
   copy if the surface is ever kept rather than deleted.
+- **Attachment uploads** — `attachments.createUploadUrl`, `attachments.delete`,
+  new upstream in the 2026-08-26 merge. Needs no fork gate: the client reads
+  `capabilities.attachmentUploads`, absent from Moatless's handshake, so the
+  composer's attach-file affordance already stays off. Closes when the backend
+  reports the capability and dispatches both methods.
+- **Codex feedback** — `provider.uploadFeedback`, new upstream in the
+  2026-08-26 merge. Backs the `/feedback` slash command that posts a Codex
+  session's transcript to OpenAI (`ChatView.tsx`'s `submitCodexFeedback`).
+  Needs no fork gate: the command is Codex-specific and independent of any
+  capability, so it always resolves to `UnsupportedMethodError` and the
+  composer shows "Could not send feedback to OpenAI" — a correct answer, not a
+  broken button. Closes if Moatless ever wants to relay this itself, which is
+  unlikely: the feedback is addressed to OpenAI, not to the workspace.
 - **Preview automation** — `previewAutomation.connect`, `focusHost`, `respond`.
 - **Desktop and host lifecycle** — `server.updateServer`,
   `updateServerWithProgress`, `getBackgroundPolicy`, `subscribeBackgroundPolicy`,

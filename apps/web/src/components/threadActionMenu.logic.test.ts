@@ -20,6 +20,12 @@ function ids(state: ThreadActionMenuState): string[] {
   return buildThreadActionMenuItems(state).map((item) => item.id);
 }
 
+function allIds(state: ThreadActionMenuState): string[] {
+  const flatten = (items: ReturnType<typeof buildThreadActionMenuItems>): string[] =>
+    items.flatMap((item) => [item.id, ...(item.children ? flatten(item.children) : [])]);
+  return flatten(buildThreadActionMenuItems(state));
+}
+
 describe("buildThreadActionMenuItems", () => {
   it("hides lifecycle items when the environment lacks the capabilities", () => {
     // Fork: `delete` is gated behind FEATURES.threadDeletion (off) and `archive`
@@ -29,15 +35,15 @@ describe("buildThreadActionMenuItems", () => {
         ...baseState,
         supports: { settlement: false, snooze: false, pinning: false, titleRegeneration: false },
       }),
-    ).toEqual(["rename", "mark-unread", "copy-path", "copy-thread-id", "archive"]);
+    ).toEqual(["rename", "mark-unread", "copy", "archive"]);
   });
 
   it("includes branch items only for threads with a branch", () => {
-    const withBranch = ids({ ...baseState, branch: "feat/menu" });
+    const withBranch = allIds({ ...baseState, branch: "feat/menu" });
     expect(withBranch).toContain("new-thread-on-branch");
     expect(withBranch).toContain("copy-branch");
-    expect(ids(baseState)).not.toContain("new-thread-on-branch");
-    expect(ids(baseState)).not.toContain("copy-branch");
+    expect(allIds(baseState)).not.toContain("new-thread-on-branch");
+    expect(allIds(baseState)).not.toContain("copy-branch");
   });
 
   it("flips lifecycle labels with thread state", () => {
@@ -66,8 +72,11 @@ describe("buildThreadActionMenuItems", () => {
   // destructive delete item is absent and archive is the last item instead.
   it("keeps archive last, non-destructive, and omits the gated delete item", () => {
     const items = buildThreadActionMenuItems({ ...baseState, branch: "main" });
-    expect(items.at(-1)).toMatchObject({ id: "archive" });
-    expect(items.at(-1)?.destructive).toBeFalsy();
+    const archiveItem = items.at(-1);
+    expect(archiveItem?.id).toBe("archive");
+    expect(archiveItem?.icon).toBe("archive");
+    expect(archiveItem?.separatorBefore).toBe(true);
+    expect(archiveItem?.destructive).toBeFalsy();
     expect(items.map((item) => item.id)).not.toContain("delete");
   });
 
