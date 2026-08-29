@@ -59,6 +59,11 @@ export function HostedBrowserFrame(props: {
   const active = presentation.visible && presentation.rect !== null;
   const wrapperStyle = resolveHostedBrowserWebviewWrapperStyle({
     active,
+    // Upstream suspends a parked webview unless something — background audio,
+    // picture-in-picture, a recording — still needs it painted. A frame has
+    // none of those to read, and it is the app's only copy of the preview page:
+    // parking it is how it survives a route change, so it stays rendered.
+    renderingActive: true,
     cornerRadius: presentation.cornerRadius,
     rect: presentation.rect,
     hiddenSize: {

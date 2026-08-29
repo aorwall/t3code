@@ -233,7 +233,11 @@ describe("EnvironmentProviderSettings routing", () => {
       panel,
       (element) => element.props.title === "Providers" && "headerAction" in element.props,
     );
-    expect(providersSection?.props.headerAction).not.toBeNull();
+    // Fork: the section still renders, but "Add provider" is gated behind
+    // FEATURES.serverAdministration, which is off — so an editable layout has
+    // no header action here, only the rest of the panel to interact with.
+    expect(providersSection).not.toBeNull();
+    expect(providersSection?.props.headerAction).toBeNull();
   });
 
   it("deletes and resets provider configuration without erasing shared preferences", () => {

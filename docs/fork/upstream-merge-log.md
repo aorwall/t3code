@@ -28,6 +28,78 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-08-29 — merged upstream to 6a9d9f98, the project picker becomes a combobox
+
+- Upstream: `6a9d9f988` from base `badae6a5c` (`58` commits).
+- Landed: `431` files from `git diff --stat HEAD^1 HEAD` against `431` in the
+  upstream range — an exact match, no gap to explain. Fork delta `611` files
+  from `git diff --stat HEAD^2 HEAD`.
+- The clone arrives with only `origin`; `preflight.mjs` refused until
+  `git remote add upstream https://github.com/pingdotgg/t3code.git`. Expected in
+  a fresh sandbox, not a finding.
+- Conflicts, three, all `decide`-shaped in practice:
+  - `Sidebar.tsx` [`mobile-touch-upstream-files`, converged] — upstream replaced
+    the project picker's `Menu`/`MenuRadioGroup` with a searchable `Combobox`
+    (#5931). Took upstream's structure wholesale and re-applied only the
+    `FEATURES.projectManagement` gate on "New project", now carrying the
+    `// Fork:` marker it had been missing. Upstream has since grown the
+    touch-target span itself, so the Mobile Touch Delta has nothing left to
+    re-apply in this file — one convergence, unprompted.
+  - `ProviderSettingsPanel.tsx` [unlisted, outside a fork-owned concern → the
+    fallback says `theirs`] — upstream split provider settings into list and
+    editor (#8380, #8472) and moved `ProviderLastChecked` and the refresh
+    button out of `headerAction` into the list footer, leaving `headerAction` a
+    plain "Add provider" button. Took upstream's and re-applied the gate as
+    `!readOnly && FEATURES.serverAdministration`. The fork's own icon-button
+    "Add provider instance" is gone; upstream's labelled button replaces it.
+    `ProviderSettingsPanel.environment.test.tsx` is upstream's and asserted
+    `headerAction` is not null when editable — adapted, with a marker, to assert
+    the section renders and its header action is null, which is what the gate
+    means.
+  - `pnpm-lock.yaml` — took upstream's and re-ran `vp i`, which restored the
+    fork's `@t3tools/moatless-api` workspace edge. Do not hand-merge this file.
+- Auto-merged but wrong, the failure the tracker exists to catch:
+  `packages/contracts/src/orchestration.test.ts`. Both sides appended
+  `OrchestrationMessage` to the same import list and the same
+  `decodeOrchestrationMessage` const, at different offsets, so git took both
+  without a marker. It surfaced as a parse error in `lint`, `typecheck` and
+  `test` at once. `merge-stats.mjs` lists this file under "conflict candidates";
+  read that list even when the merge printed no conflict for an entry.
+- `HostedBrowserFrame.tsx` (fork-only) needed the new required `renderingActive`
+  prop that #8567 added to `resolveHostedBrowserWebviewWrapperStyle`. Upstream
+  suspends a parked webview unless background audio, PiP or a recording still
+  needs it painted. A frame has none of those to read and is the app's only copy
+  of the preview page, so it passes `true` and keeps today's behavior. Revisit
+  only with a measurement.
+- Sweep: five hits, all false positives, none accepted as fork work.
+  `apps/web/src/connection/clientMetadata.ts` and its test report the client's
+  OS/browser/device on connect (#8481) — auth-adjacent, but it rides
+  `ClientPresentation` on the relay and remote-bearer bootstraps, and the
+  fork's primary environment (`environments/primary/auth.ts`) sends none of it.
+  `packages/client-runtime/src/relay/errorPresentation.ts`, its test, and
+  `connection/errors.test.ts` explain DPoP failures (#8351) — relay only, and
+  T3 Connect is decided out.
+- Contract: `unsupported-methods.mjs` reports `ADD 0`, `DROP 1` (`scripts.run`),
+  `KEEP 2`. Upstream added no WS method in this range. The `scripts.run` DROP is
+  **not** actioned — it is the documented exception in
+  [the gaps register](./gaps.md#a-script-runs-on-the-backend-and-only-the-backend-can-edit-one):
+  the union entry answers for `apps/server`, which still stubs the method, not
+  for Moatless. Verified the stub survived the merge in `apps/server/src/ws.ts`.
+  This check will keep exiting 1 every merge until upstream's server can run a
+  project's script; treat a red `unsupported-methods` as read-the-bucket, not
+  as failure.
+- Gaps: extended **Attachment uploads** with the file half of #8235 — a turn may
+  now carry any file up to 50MB behind a second capability,
+  `capabilities.fileAttachments.maxUploadBytes`. Nothing else standing: the
+  auto-settling churn (#8321 opt-in, reverted by #8596) nets to no change, and
+  upstream's web composer still offers images only.
+- Verification: `verify.mjs`. `tripwires`, `fmt:check`, `lint` and `typecheck`
+  pass. `test` reports `@t3tools/web` **flaky, passed alone** — in the full run
+  its `MessagesTimeline.test.tsx` skipped all 34 tests on a 30s module-import
+  timeout under `ChatMarkdown.tsx`, and alone the package is 297 files / 3117
+  tests green. Load, not the merge. `unsupported-methods` red by the exception
+  above.
+
 ### 2026-08-26 — merged upstream to badae6a5c, browser defaults get their own settings route
 
 - Upstream: `badae6a5c` from base `27732293` (`188` commits). Landed as a merge

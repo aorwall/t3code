@@ -147,7 +147,14 @@ what a person loses, which is the part the derivation cannot tell you:
   new upstream in the 2026-08-26 merge. Needs no fork gate: the client reads
   `capabilities.attachmentUploads`, absent from Moatless's handshake, so the
   composer's attach-file affordance already stays off. Closes when the backend
-  reports the capability and dispatches both methods.
+  reports the capability and dispatches both methods. Upstream widened the
+  surface past images on 2026-08-28: a turn may carry any file up to 50MB, sized
+  by `PROVIDER_SEND_TURN_MAX_FILE_BYTES` and advertised as a second capability,
+  `capabilities.fileAttachments.maxUploadBytes`. That half costs nothing here
+  yet — upstream's own web composer does not offer a non-image file, and
+  `ChatAttachment` widened only far enough to typecheck — but it is the key that
+  decides whether this fork's composer may ever offer a PDF, so report it beside
+  `attachmentUploads` rather than after it.
 - **Codex feedback** — `provider.uploadFeedback`, new upstream in the
   2026-08-26 merge. Backs the `/feedback` slash command that posts a Codex
   session's transcript to OpenAI (`ChatView.tsx`'s `submitCodexFeedback`).
