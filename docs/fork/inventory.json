@@ -226,6 +226,12 @@
       "note": "Take upstream exactly; investigate any re-grown fork delta."
     },
     {
+      "id": "lockfile",
+      "paths": ["pnpm-lock.yaml"],
+      "verdict": "theirs",
+      "note": "Conflicts on every merge, and is never resolved by hand: `git checkout --theirs pnpm-lock.yaml` then `vp i`, which re-derives the fork's own edges (today, the `@t3tools/moatless-api` workspace dependency in apps/web/package.json). Hand-merging it produces a lockfile that matches neither side's resolution and installs something no one chose. The install is also what the merge needs before `regen-route-tree.mjs` or `merge-stats.mjs` can run."
+    },
+    {
       "id": "thread-server-surfaces",
       "paths": [
         "apps/web/src/state/servers.ts",

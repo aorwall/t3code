@@ -24,6 +24,7 @@ import {
   git,
   lines,
   loadInventory,
+  predictConflicts,
   requireUpstreamRemote,
   runMain,
   verdictFor,
@@ -43,43 +44,101 @@ function reportRange(report, base, ref) {
   return { count, upstreamHead };
 }
 
+/** One line per file: the path, and the inventory entry that answers it. */
+function describe(inventory, paths) {
+  return paths.map((path) => {
+    const entry = verdictFor(inventory, path)?.entry;
+    const verdict = entry ? entry.verdict : "unlisted";
+    return `${path}  ${dim(`[${verdict}${entry ? ` — ${entry.id}` : ""}]`)}`;
+  });
+}
+
+function groupByVerdict(inventory, paths) {
+  const byVerdict = new Map();
+  for (const path of paths) {
+    const match = verdictFor(inventory, path);
+    const key = match ? match.entry.verdict : "unlisted";
+    if (!byVerdict.has(key)) byVerdict.set(key, []);
+    byVerdict.get(key).push({ path, entry: match?.entry });
+  }
+  return byVerdict;
+}
+
 /**
- * Files both sides touched. Git will not necessarily conflict on all of them,
- * but every real conflict is in here, and each one's verdict is known now.
+ * The plan for the merge, in two parts: the files git will actually stop on, and
+ * the ones it will resolve on its own.
+ *
+ * These used to be one list — every file both sides touched — which over-reports
+ * the work by about 5x, because git auto-merges most of them. `merge-tree` runs
+ * the real merge into a temporary tree and says which files it could not
+ * resolve, so the first list is the actual conflict set and the second is the
+ * "read these anyway" set. Both matter, and confusing one for the other is what
+ * made the forecast something to skim.
  */
 function reportForecast(inventory, report, base, ref) {
   const upstreamChanged = new Set(lines(git(["diff", "--name-only", base, ref])));
   const forkChanged = lines(git(["diff", "--name-only", base, "HEAD"]));
   const overlap = forkChanged.filter((path) => upstreamChanged.has(path)).sort();
 
-  const section = report.section(`Conflict forecast (${overlap.length} files touched by both)`);
-  if (overlap.length === 0) return section.ok("no overlap");
+  const predicted = predictConflicts("HEAD", ref);
+  const conflicts = predicted === null ? null : predicted.filter(Boolean).sort();
 
-  const byVerdict = new Map();
-  for (const path of overlap) {
-    const match = verdictFor(inventory, path);
-    const key = match ? match.entry.verdict : "unlisted";
-    if (!byVerdict.has(key)) byVerdict.set(key, []);
-    byVerdict.get(key).push({ path, entry: match?.entry });
-  }
+  const section = report.section(
+    conflicts === null
+      ? `Conflict forecast (${overlap.length} files touched by both)`
+      : `Conflicts (${conflicts.length} of ${overlap.length} files touched by both)`,
+  );
 
-  // `decide` and unlisted files are the ones that need a human; lead with them.
-  const order = ["decide", "unlisted", "converged", "theirs-verbatim", "theirs", "ours"];
-  for (const verdict of order) {
-    const group = byVerdict.get(verdict);
-    if (!group) continue;
-    const level = verdict === "decide" || verdict === "unlisted" ? "warn" : "info";
-    section[level](
-      `${verdict} — ${group.length} file(s)`,
-      group.map(({ path, entry }) => `${path}${entry ? dim(`  [${entry.id}]`) : ""}`),
+  if (conflicts === null) {
+    section.info("git could not pre-merge; falling back to every file both sides touched", [
+      "The list below is a superset of the real conflicts, never a subset.",
+    ]);
+  } else if (conflicts.length === 0) {
+    section.ok("git resolves this merge without stopping");
+  } else {
+    // These are the files the merge will actually put in front of a human.
+    section.warn(
+      `${conflicts.length} file(s) will conflict — resolve each by its verdict`,
+      describe(inventory, conflicts),
     );
   }
+
+  const listed = conflicts ?? overlap;
+  const byVerdict = groupByVerdict(inventory, listed);
+  if (conflicts === null) {
+    // `decide` and unlisted files are the ones that need a human; lead with them.
+    const order = ["decide", "unlisted", "converged", "theirs-verbatim", "theirs", "ours"];
+    for (const verdict of order) {
+      const group = byVerdict.get(verdict);
+      if (!group) continue;
+      const level = verdict === "decide" || verdict === "unlisted" ? "warn" : "info";
+      section[level](
+        `${verdict} — ${group.length} file(s)`,
+        group.map(({ path, entry }) => `${path}${entry ? dim(`  [${entry.id}]`) : ""}`),
+      );
+    }
+  }
+
   if (byVerdict.has("unlisted")) {
     section.info("Unlisted files fall back to the concern rules", [
       `inside a fork-owned concern: ${inventory.fallback.insideConcern}`,
       `outside one: ${inventory.fallback.outsideConcern}`,
     ]);
   }
+
+  if (conflicts === null) return;
+
+  // Auto-merged does not mean correct: two unrelated additions to the same list
+  // merge clean and can still be wrong, which is what `duplicate-adds.mjs`
+  // catches after the merge. Naming them here is what makes that check's
+  // findings expected rather than a surprise.
+  const quiet = overlap.filter((path) => !conflicts.includes(path));
+  const quietSection = report.section(`Auto-merged, worth a look (${quiet.length} files)`);
+  if (quiet.length === 0) return quietSection.ok("none");
+  quietSection.info("Git resolves these silently — a wrong resolution leaves no marker", [
+    ...describe(inventory, quiet),
+    "After merging, `duplicate-adds.mjs` checks these for lines both sides added twice.",
+  ]);
 }
 
 /**

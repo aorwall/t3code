@@ -37,7 +37,8 @@ the two merges that skipped one paid for it mid-merge.
 
 | Script                    | When             | What it answers                                                                                                                                                             |
 | ------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `preflight.mjs`           | before merging   | the range, which inventory entries have gone stale, and every file this merge will conflict on — each with its verdict already attached                                     |
+| `preflight.mjs`           | before merging   | the range, which inventory entries have gone stale, the files this merge will actually stop on, and the ones git resolves silently — each with its verdict attached         |
+| `duplicate-adds.mjs`      | after merging    | lines both sides added that the merge kept twice — the clean-but-wrong resolution that leaves no marker behind                                                              |
 | `regen-route-tree.mjs`    | after resolving  | rewrites `apps/web/src/routeTree.gen.ts`, headlessly, whenever a route file conflict leaves it stale                                                                        |
 | `verify.mjs`              | after resolving  | tripwires, contract drift, format, lint, types and tests, in one pass that does not stop at the first failure and retries a test package alone before reporting it failed   |
 | `merge-stats.mjs`         | after committing | the tracker entry's numbers — upstream range, landed vs upstream-range file counts with the gap already explained, fork delta, and the conflict list restated with verdicts |
@@ -46,12 +47,17 @@ the two merges that skipped one paid for it mid-merge.
 | `unsupported-methods.mjs` | after merging    | which contract methods should declare `UnsupportedMethodError`, derived from both sides                                                                                     |
 
 All live in `.agents/skills/fork-upstream-merge/scripts/`. `verify.mjs` runs
-`tripwires.mjs` and `unsupported-methods.mjs` itself, so the two are listed
-separately only for running one on its own. `regen-route-tree.mjs` and
-`merge-stats.mjs` are the two exceptions to "dependency-free": both need
-`vp install` to have already run — the first because it calls
-`@tanstack/router-generator` directly, the second because it only makes sense
-once a merge commit exists.
+`duplicate-adds.mjs`, `tripwires.mjs` and `unsupported-methods.mjs` itself, so
+the three are listed separately only for running one on its own.
+`regen-route-tree.mjs` and `merge-stats.mjs` are the two exceptions to
+"dependency-free": both need `vp install` to have already run — the first
+because it calls `@tanstack/router-generator` directly, the second because it
+only makes sense once a merge commit exists.
+
+`verify.mjs --fast` drops the test step and keeps everything else. The full pass
+is about thirteen minutes and the tests are most of it, so a merge with anything
+to fix pays that twice — once to find the problem, once to confirm the fix.
+Iterate on `--fast`, then run the whole thing once before writing anything down.
 
 A failing check names the `id` of the `inventory.json` entry it came from. Fix
 the entry, in the same merge — a stale entry is not noise to route around, it is
@@ -151,20 +157,34 @@ count or a list in the register is a snapshot for orientation, and the tripwire,
 node .agents/skills/fork-upstream-merge/scripts/preflight.mjs
 ```
 
+A fresh clone has only `origin`, and this is where that surfaces: the script
+refuses with the `git remote add upstream …` line to run. Expect it in a new
+sandbox.
+
 It fetches upstream (un-shallowing the clone first, which a sandbox needs — a
 shallow clone reports an empty merge-base and silently turns the whole upstream
 range into "new"), then prints the range, every stale inventory entry, the
 owned-concern sweep over newly added upstream files, any new upstream workflow,
-and the conflict forecast: every file both sides touched, grouped by the verdict
-that resolves it, with `decide` and unlisted files first.
+and the two halves of the forecast:
+
+- **Conflicts** — the files `git merge` will actually stop on, each with its
+  verdict. This is the work. It comes from `git merge-tree`, which runs the real
+  merge into a throwaway tree without touching the working tree, so it is the
+  same answer the merge will give.
+- **Auto-merged, worth a look** — everything else both sides touched. Git will
+  resolve these without asking, and a wrong resolution here leaves no marker.
+
+The second list used to be the whole forecast, which over-reported the work by
+about 5x — 24 files for 3 real conflicts on 2026-08-29 — and made the plan
+something to skim rather than read.
 
 **Fix the stale entries before merging.** They are what the merge resolves
 against, and an entry whose path upstream has renamed out from under it is a fork
 delta that this merge is about to drop with nothing to notice it. Re-point the
 entry in `docs/fork/inventory.json`, then re-run.
 
-Read the forecast before starting. It is the plan for the merge, and the
-`decide` and unlisted groups are the only files that need thought — everything
+Read the forecast before starting. The **Conflicts** list is the plan; within
+it, `decide` and unlisted files are the ones that need thought and everything
 else has a cached answer. Record the sweep decision in the tracker even when
 there were no relevant hits.
 
@@ -194,7 +214,28 @@ git merge upstream/main
    route-file conflict with a stale `routeTree.gen.ts` left behind is a
    typecheck failure at step 3, not a merge failure now — catch it here.
 
-5. Commit the merge, then read what it actually took, against both parents:
+5. Resolve `pnpm-lock.yaml` by taking upstream's and re-installing —
+   `git checkout --theirs pnpm-lock.yaml && vp i`. It conflicts on every merge,
+   and `vp i` re-derives the fork's own edges. Never hand-merge it.
+
+6. With everything resolved but before committing, check what git resolved on
+   its own:
+
+   ```bash
+   node .agents/skills/fork-upstream-merge/scripts/duplicate-adds.mjs
+   ```
+
+   When both sides append the same line to the same list at different offsets —
+   the same import, the same const, the same catalog entry — git keeps both
+   copies and reports no conflict. Nothing else in the merge mentions it. This
+   names those lines in about a second. It runs mid-merge on purpose: until the
+   merge is committed the fix is a plain edit. It skips files whose conflicts
+   are still unresolved, since those hold both sides' text by definition, which
+   is why this comes after resolving rather than straight after `git merge`.
+   `verify.mjs` runs it again later; running it here is what keeps the finding
+   from costing a full typecheck-and-test pass, as it did on 2026-08-29.
+
+7. Commit the merge, then read what it actually took, against both parents:
 
    ```bash
    node .agents/skills/fork-upstream-merge/scripts/merge-stats.mjs
@@ -229,11 +270,17 @@ HEAD` (the whole fork delta, restated against upstream). A merge that
 node .agents/skills/fork-upstream-merge/scripts/verify.mjs
 ```
 
-One command: tripwires and off-repository state, the unsupported-method
-derivation, format, lint, types, and every workspace test suite. It keeps going
-after a failure and reports them together, so a formatting nit does not hide the
-type errors behind it — and it raises the heap the web suite needs, whose failure
-mode is otherwise an exit 137 that reads like a real test failure.
+One command: duplicated adds, tripwires and off-repository state, the
+unsupported-method derivation, format, lint, types, and every workspace test
+suite. It keeps going after a failure and reports them together, so a formatting
+nit does not hide the type errors behind it — and it raises the heap the web
+suite needs, whose failure mode is otherwise an exit 137 that reads like a real
+test failure.
+
+The full pass is about thirteen minutes and the test step is most of it. When
+something fails, fix it and re-run `verify.mjs --fast`, which keeps every check
+except the tests; run the full command again once it is green. Every failure
+this merge procedure has caught so far was visible without the test step.
 
 A test package that fails is retried alone before being reported: the packages
 `pnpm test` runs share one sandbox's CPU and memory, and a merge on a loaded

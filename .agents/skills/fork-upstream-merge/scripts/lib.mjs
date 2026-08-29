@@ -211,6 +211,69 @@ export function mergeBase(a, b) {
 }
 
 /**
+ * The files `git merge` will actually stop on, computed without touching the
+ * working tree.
+ *
+ * "Files both sides changed" over-reports by about 5x — 24 candidates for 3 real
+ * conflicts in the 2026-08-29 merge — because git auto-merges most of them. This
+ * runs the real merge machinery into a temporary tree and reports what it could
+ * not resolve, in about 100ms. The tree it writes is unreferenced and gets
+ * collected; nothing is checked out and no merge is started.
+ *
+ * Returns `null` when git cannot do the merge at all (unrelated histories, or a
+ * git older than 2.38, which has no `--write-tree`). Callers fall back to the
+ * both-sides-changed set, which is a superset and so never hides a conflict.
+ */
+export function predictConflicts(ours, theirs) {
+  const output = sh("git", ["merge-tree", "--write-tree", "--name-only", ours, theirs], {
+    allowFailure: true,
+  });
+  if (output === "") return null;
+  // `<tree oid>\n<conflicted paths>\n\n<informational messages>`. A clean merge
+  // is the oid alone, which is an empty conflict list rather than a failure.
+  const [summary] = output.split("\n\n");
+  const [oid, ...paths] = lines(summary);
+  if (!/^[0-9a-f]{40}$/.test(oid)) return null;
+  return paths;
+}
+
+/**
+ * Where a merge is: mid-resolution, already committed, or not happening.
+ *
+ * Both states can be checked, and the useful moment is the first one — before
+ * the merge commit exists, while a finding is still a plain edit rather than an
+ * amend.
+ */
+export function mergeSides() {
+  const mergeHead = git(["rev-parse", "--verify", "--quiet", "MERGE_HEAD"], { allowFailure: true });
+  if (mergeHead !== "") {
+    return {
+      state: "in-progress",
+      merged: null,
+      ours: git(["rev-parse", "HEAD"]),
+      theirs: mergeHead,
+    };
+  }
+  const [head, ...parents] = git(["rev-list", "--parents", "-n", "1", "HEAD"]).split(" ");
+  if (parents.length !== 2) return null;
+  return { state: "committed", merged: head, ours: parents[0], theirs: parents[1] };
+}
+
+/**
+ * A blob's lines, or `null` when the path does not exist on that side — which
+ * is normal (a file one side added) and not an error.
+ */
+export function blobLines(ref, path) {
+  const result = NodeChildProcess.spawnSync("git", ["show", `${ref}:${path}`], {
+    cwd: REPO_ROOT,
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (result.status !== 0) return null;
+  return result.stdout.split("\n");
+}
+
+/**
  * The verdict for a path: the most specific matching entry wins, so a fork-only
  * file inside an otherwise-upstream directory keeps its own answer.
  */

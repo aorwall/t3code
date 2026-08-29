@@ -3,7 +3,16 @@
  * The whole verification pass, as one command.
  *
  *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs
+ *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --fast
  *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only typecheck,test
+ *
+ * `--fast` drops the test step and keeps everything else. The full pass is about
+ * thirteen minutes and the test step is most of it, so a merge with something to
+ * fix pays that twice — once to find the problem, once to confirm the fix. The
+ * checks `--fast` keeps are the ones that catch a broken merge: the 2026-08-29
+ * merge's duplicated import showed up in `lint` in twelve seconds and then took
+ * nine more minutes of tests to finish reporting. Iterate on `--fast`, then run
+ * the whole thing once before writing anything down.
  *
  * Three things this does that `a && b && c && d` does not.
  *
@@ -40,6 +49,11 @@ const SCRIPTS = ".agents/skills/fork-upstream-merge/scripts";
  */
 const STEPS = [
   {
+    name: "duplicate-adds",
+    argv: ["node", `${SCRIPTS}/duplicate-adds.mjs`],
+    what: "lines both sides added that the merge took twice",
+  },
+  {
     name: "tripwires",
     argv: ["node", `${SCRIPTS}/tripwires.mjs`],
     what: "deleted surfaces, re-deletions, and workflow state on GitHub",
@@ -54,6 +68,7 @@ const STEPS = [
   { name: "typecheck", argv: ["pnpm", "typecheck"], what: "types across every workspace" },
   {
     name: "test",
+    slow: true,
     // Same as `pnpm test` (`"test": "vp run -r test"`), called directly so
     // `--log labeled` can prefix every line with the package it came from —
     // that prefix is what makes a failure attributable to a package to retry.
@@ -225,10 +240,21 @@ function summarize(results) {
 runMain(async () => {
   const onlyFlag = process.argv.indexOf("--only");
   const only = onlyFlag === -1 ? null : new Set((process.argv[onlyFlag + 1] ?? "").split(","));
+  const fast = process.argv.includes("--fast");
 
-  const steps = only ? STEPS.filter((step) => only.has(step.name)) : STEPS;
+  let steps = only ? STEPS.filter((step) => only.has(step.name)) : STEPS;
+  if (fast) steps = steps.filter((step) => !step.slow);
   if (steps.length === 0) {
     throw new Error(`--only matched no steps. Known: ${STEPS.map((s) => s.name).join(", ")}`);
+  }
+  if (fast) {
+    process.stdout.write(
+      `${yellow("--fast")} ${dim(
+        `skipping: ${STEPS.filter((step) => step.slow)
+          .map((step) => step.name)
+          .join(", ")}. Run the full pass before writing anything down.`,
+      )}\n`,
+    );
   }
 
   const results = [];
@@ -250,6 +276,11 @@ runMain(async () => {
   const flakyNote = results.some((result) => result.retried?.some((entry) => entry.passedAlone))
     ? ` ${yellow("(some packages were flaky under load and passed on retry)")}`
     : "";
-  process.stdout.write(`${bold(green(`All ${results.length} checks passed.`))}${flakyNote}\n\n`);
+  const fastNote = fast
+    ? ` ${yellow("Tests did not run — this is not a merge's final verification.")}`
+    : "";
+  process.stdout.write(
+    `${bold(green(`All ${results.length} checks passed.`))}${flakyNote}${fastNote}\n\n`,
+  );
   return 0;
 });
