@@ -101,9 +101,15 @@ function uploadBytes(input: {
 }
 
 async function runUpload(job: UploadJob): Promise<void> {
-  const mimeType = PROVIDER_SEND_TURN_SUPPORTED_IMAGE_MIME_TYPES.find(
-    (supportedMimeType) => supportedMimeType === job.image.mimeType.toLowerCase(),
-  );
+  // Fork: a generic file mints through the `file` member of the union, which
+  // accepts any mime type up to the larger file ceiling. Only images are held
+  // to the supported-image-type list.
+  const isFile = job.image.type === "file";
+  const mimeType = isFile
+    ? job.image.mimeType
+    : PROVIDER_SEND_TURN_SUPPORTED_IMAGE_MIME_TYPES.find(
+        (supportedMimeType) => supportedMimeType === job.image.mimeType.toLowerCase(),
+      );
   if (!mimeType) {
     setUploadState(job.image.id, {
       status: "failed",
@@ -120,6 +126,9 @@ async function runUpload(job: UploadJob): Promise<void> {
     {
       environmentId: job.environmentId,
       input: {
+        // Fork: `type` is the union discriminator. Omitting it decodes as the
+        // image member, which is what images want and files must not get.
+        ...(isFile ? { type: "file" as const } : {}),
         name: job.image.name,
         mimeType,
         sizeBytes: job.image.file.size,
@@ -371,8 +380,10 @@ export function getUploadedAttachments(input: {
     if (upload?.status !== "ready" || upload.environmentId !== input.environmentId) {
       return null;
     }
+    // Fork: carry the composer attachment's own discriminator so a generic file
+    // arrives as a ChatFileAttachment rather than a mislabelled image.
     attachments.push({
-      type: "image",
+      type: image.type,
       id: upload.attachmentId,
       name: image.name,
       mimeType: image.mimeType,

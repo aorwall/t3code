@@ -110,6 +110,21 @@ function makeImage(id: string): ComposerImageAttachment {
   };
 }
 
+// Fork: generic (non-image) attachment, which mints through the `file` member
+// of the union and is held to the larger file ceiling.
+function makeFile(id: string, mimeType = "application/pdf"): ComposerImageAttachment {
+  const file = new File([new Uint8Array([1, 2, 3, 4])], `${id}.pdf`, { type: mimeType });
+  return {
+    type: "file",
+    id,
+    name: file.name,
+    mimeType: file.type,
+    sizeBytes: file.size,
+    previewUrl: "",
+    file,
+  };
+}
+
 describe("attachmentUploadQueue", () => {
   beforeEach(() => {
     TestXmlHttpRequest.requests = [];
@@ -187,6 +202,73 @@ describe("attachmentUploadQueue", () => {
       },
       expect.anything(),
     );
+  });
+
+  // Fork: generic file attachments.
+  it("mints generic files through the file member and sends them as file attachments", async () => {
+    const attachment = makeFile("doc-1");
+    startAttachmentUpload({ environmentId: firstEnvironment, image: attachment });
+    await Promise.resolve();
+
+    // The mint must carry `type: "file"`: omitting it decodes as the image
+    // member, which refuses every non-image mime type.
+    expect(mocks.runAtomCommand).toHaveBeenCalledWith(
+      expect.anything(),
+      mocks.createUploadUrl,
+      {
+        environmentId: firstEnvironment,
+        input: {
+          type: "file",
+          name: "doc-1.pdf",
+          mimeType: "application/pdf",
+          sizeBytes: 4,
+        },
+      },
+      expect.anything(),
+    );
+
+    const settled = awaitAttachmentUploads([attachment.id]);
+    TestXmlHttpRequest.requests[0]!.complete();
+    await settled;
+
+    expect(
+      getUploadedAttachments({ environmentId: firstEnvironment, images: [attachment] }),
+    ).toEqual([
+      {
+        type: "file",
+        id: "pending-environment-1-doc-1.pdf",
+        name: "doc-1.pdf",
+        mimeType: "application/pdf",
+        sizeBytes: 4,
+      },
+    ]);
+  });
+
+  // Fork: a mime type no image member would accept must still upload as a file.
+  it("uploads a file whose mime type is not a supported image type", async () => {
+    const attachment = makeFile("notes", "text/plain");
+    startAttachmentUpload({ environmentId: firstEnvironment, image: attachment });
+    await Promise.resolve();
+
+    const settled = awaitAttachmentUploads([attachment.id]);
+    TestXmlHttpRequest.requests[0]!.complete();
+    await settled;
+
+    expect(readAttachmentUpload(attachment.id)).toMatchObject({ status: "ready" });
+  });
+
+  // Fork: images keep their own stricter gate.
+  it("still refuses an image whose mime type is unsupported", async () => {
+    const image = makeImage("image-bad");
+    const unsupported: ComposerImageAttachment = { ...image, mimeType: "image/tiff" };
+    startAttachmentUpload({ environmentId: firstEnvironment, image: unsupported });
+    await Promise.resolve();
+
+    expect(readAttachmentUpload(unsupported.id)).toMatchObject({
+      status: "failed",
+      reason: "Unsupported image type",
+    });
+    expect(TestXmlHttpRequest.requests).toHaveLength(0);
   });
 
   it("retries rejected uploads", async () => {

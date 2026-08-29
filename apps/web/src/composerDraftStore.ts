@@ -85,10 +85,17 @@ export const PersistedComposerImageAttachment = Schema.Struct({
   mimeType: Schema.String,
   sizeBytes: Schema.Number,
   dataUrl: Schema.String,
+  // Fork: generic (non-image) attachments persist alongside images. Optional so
+  // drafts written before file support decode unchanged as images.
+  type: Schema.optionalKey(Schema.Literals(["image", "file"])),
 });
 export type PersistedComposerImageAttachment = typeof PersistedComposerImageAttachment.Type;
 
-export interface ComposerImageAttachment extends Omit<ChatImageAttachment, "previewUrl"> {
+export interface ComposerImageAttachment extends Omit<ChatImageAttachment, "previewUrl" | "type"> {
+  // Fork: the composer carries generic files as well as images, so the
+  // discriminator is widened here rather than in a parallel carrier type.
+  type: "image" | "file";
+  // Empty for a generic file: only images have something to paint inline.
   previewUrl: string;
   file: File;
 }
@@ -2194,14 +2201,19 @@ export function hydrateImagesFromPersisted(
     const file = hydratePersistedComposerImageAttachment(attachment);
     if (!file) return [];
 
+    // Fork: honour the persisted discriminator; a draft written before file
+    // support has no `type` and restores as an image, as it did before.
+    const type = attachment.type ?? "image";
     return [
       {
-        type: "image" as const,
+        type,
         id: attachment.id,
         name: attachment.name,
         mimeType: attachment.mimeType,
         sizeBytes: attachment.sizeBytes,
-        previewUrl: attachment.dataUrl,
+        // A generic file has nothing to paint, and handing its data URL to an
+        // <img> would render a broken image instead of the file chip.
+        previewUrl: type === "file" ? "" : attachment.dataUrl,
         file,
       } satisfies ComposerImageAttachment,
     ];

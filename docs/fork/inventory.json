@@ -301,7 +301,7 @@
       "id": "fork-registry",
       "paths": ["apps/web/src/fork/**"],
       "verdict": "ours",
-      "note": "The surface-gating registry and the mobile touch modules."
+      "note": "The surface-gating registry, the mobile touch modules, and the generic file-attachment presentation (fileAttachments.tsx)."
     },
     {
       "id": "message-origin-fork-files",

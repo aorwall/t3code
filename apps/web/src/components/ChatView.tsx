@@ -2162,6 +2162,13 @@ function ChatViewContent(props: ChatViewProps) {
   const attachmentUploadsCapabilityKnown = attachmentEnvironmentConfig !== null;
   const supportsAttachmentUploads =
     attachmentEnvironmentConfig?.environment.capabilities.attachmentUploads === true;
+  // Fork: generic files ride the same signed-upload path as images, so they are
+  // only offered when that path exists AND the server advertises a file
+  // ceiling. There is no inline (dataUrl) fallback for a non-image attachment.
+  const maxFileAttachmentBytes = supportsAttachmentUploads
+    ? (attachmentEnvironmentConfig?.environment.capabilities.fileAttachments?.maxUploadBytes ??
+      null)
+    : null;
   const versionMismatch = resolveServerConfigVersionMismatch(serverConfig);
   const versionMismatchDismissKey =
     versionMismatch && activeThread
@@ -5899,6 +5906,14 @@ function ChatViewContent(props: ChatViewProps) {
           }
           return uploaded;
         }
+        // Fork: the inline fallback is image-only on the wire
+        // (`UploadChatAttachment` has no file member), so a generic file
+        // cannot be sent to a server without upload support. The composer
+        // only offers files when that support exists, so this is unreachable
+        // in practice and refuses loudly rather than sending a broken shape.
+        if (image.type === "file") {
+          throw new Error(`'${image.name}' cannot be attached to this server.`);
+        }
         return {
           type: "image" as const,
           name: image.name,
@@ -5909,7 +5924,9 @@ function ChatViewContent(props: ChatViewProps) {
       }),
     );
     const optimisticAttachments = composerImagesSnapshot.map((image) => ({
-      type: "image" as const,
+      // Fork: keep the composer's discriminator so an optimistic file renders
+      // as a file chip rather than a broken thumbnail.
+      type: image.type,
       id: image.id,
       name: image.name,
       mimeType: image.mimeType,
@@ -7242,6 +7259,8 @@ function ChatViewContent(props: ChatViewProps) {
                             environmentId={environmentId}
                             attachmentUploadsCapabilityKnown={attachmentUploadsCapabilityKnown}
                             supportsAttachmentUploads={supportsAttachmentUploads}
+                            // Fork: generic file attachments
+                            maxFileAttachmentBytes={maxFileAttachmentBytes}
                             routeKind={routeKind}
                             routeThreadRef={routeThreadRef}
                             draftId={draftId}

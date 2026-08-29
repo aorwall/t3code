@@ -130,6 +130,8 @@ import { resolveContextWindowModelDisplayName } from "./ContextWindowMeter.logic
 import { buildExpandedImagePreview, type ExpandedImagePreview } from "./ExpandedImagePreview";
 import { basenameOfPath } from "../../pierre-icons";
 import { FEATURES } from "../../fork/features";
+// Fork: generic file attachments
+import { FileAttachmentChip, formatAttachmentBytes } from "../../fork/fileAttachments";
 import { cn, randomUUID } from "~/lib/utils";
 import { Separator } from "../ui/separator";
 import {
@@ -246,6 +248,8 @@ import {
   type LucideIcon,
   LockIcon,
   LockOpenIcon,
+  // Fork: generic file attachments
+  PaperclipIcon,
   PenLineIcon,
   RotateCcwIcon,
   SparklesIcon,
@@ -304,6 +308,10 @@ const runtimeModeConfig: Record<
 };
 
 const runtimeModeOptions = Object.keys(runtimeModeConfig) as RuntimeMode[];
+// Fork: largest generic file a draft will base64 into local storage. Bigger
+// files stay in memory and are badged as "may not persist".
+const MAX_PERSISTED_FILE_ATTACHMENT_BYTES = 1024 * 1024;
+
 const COMPOSER_FLOATING_LAYER_SELECTOR = [
   '[data-composer-drawer-layer="true"]',
   '[data-slot="popover-popup"]',
@@ -564,6 +572,9 @@ export interface ChatComposerProps {
   environmentId: EnvironmentId;
   attachmentUploadsCapabilityKnown: boolean;
   supportsAttachmentUploads: boolean;
+  // Fork: generic file attachments. Null when the server does not serve them,
+  // otherwise the byte ceiling it advertises (`fileAttachments.maxUploadBytes`).
+  maxFileAttachmentBytes: number | null;
   routeKind: "server" | "draft";
   routeThreadRef: ScopedThreadRef;
   draftId: DraftId | null;
@@ -682,6 +693,8 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     environmentId,
     attachmentUploadsCapabilityKnown,
     supportsAttachmentUploads,
+    // Fork: generic file attachments
+    maxFileAttachmentBytes,
     routeKind,
     routeThreadRef,
     draftId,
@@ -1101,6 +1114,14 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
    * the next draft.
    */
   const pendingImageCompressionsRef = useRef<Map<ThreadId, number>>(new Map());
+
+  // Fork: the hidden file input behind the composer's attach button.
+  // (cap for draft persistence lives with the persist effect below)
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
+  const attachmentPickerLabel =
+    maxFileAttachmentBytes === null
+      ? "Attach images"
+      : `Attach files or images (up to ${formatAttachmentBytes(maxFileAttachmentBytes)})`;
 
   // ------------------------------------------------------------------
   // Derived: composer send state
@@ -1625,6 +1646,14 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
         const stagedAttachmentById = new Map<string, PersistedComposerImageAttachment>();
         await Promise.all(
           composerImages.map(async (image) => {
+            // Fork: a generic file is not size-bounded the way an image is
+            // (10 MB after compression, vs 50 MB here), and base64 in local
+            // storage costs a third again on top. Past a modest cap the draft
+            // keeps the attachment in memory and the composer already badges
+            // it as "may not persist" rather than blowing the storage quota.
+            if (image.type === "file" && image.sizeBytes > MAX_PERSISTED_FILE_ATTACHMENT_BYTES) {
+              return;
+            }
             try {
               const dataUrl = await readFileAsDataUrl(image.file);
               stagedAttachmentById.set(image.id, {
@@ -1633,6 +1662,8 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                 mimeType: image.mimeType,
                 sizeBytes: image.sizeBytes,
                 dataUrl,
+                // Fork: so it rehydrates as a file, not an image.
+                type: image.type,
               });
             } catch {
               const existingPersisted = existingPersistedById.get(image.id);
@@ -2614,23 +2645,60 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     const pendingCount = pendingImageCompressionsRef.current.get(threadId) ?? 0;
     let reservedCount = composerImagesRef.current.length + pendingCount;
     const acceptedFiles: File[] = [];
+    // Fork: generic files are accepted alongside images when the server serves
+    // them. They skip image compression entirely, so they are tracked apart.
+    const acceptedGenericFiles: File[] = [];
     let error: string | null = null;
     for (const file of files) {
       const isHeicImage = isHeicImageFile(file);
-      if (!file.type.startsWith("image/") && !isHeicImage) {
+      const isImage = file.type.startsWith("image/") || isHeicImage;
+      // Fork: a non-image is an error only when the server cannot take files.
+      if (!isImage && maxFileAttachmentBytes === null) {
         error = `Unsupported file type for '${file.name}'. Please attach image files only.`;
         continue;
       }
-      if (!isHeicImage && !isProviderSendTurnSupportedImageMimeType(file.type)) {
+      if (isImage && !isHeicImage && !isProviderSendTurnSupportedImageMimeType(file.type)) {
         error = `'${file.name}' is not a supported image type. Attach GIF, HEIC, HEIF, JPEG, PNG, or WebP images.`;
         continue;
       }
+      // Fork: unlike an oversized image, an oversized file cannot be shrunk to
+      // fit, so it is refused here rather than failing later at the mint.
+      if (!isImage && maxFileAttachmentBytes !== null && file.size > maxFileAttachmentBytes) {
+        error = `'${file.name}' is larger than the ${formatAttachmentBytes(maxFileAttachmentBytes)} limit for attached files.`;
+        continue;
+      }
+      if (!isImage && file.size === 0) {
+        error = `'${file.name}' is empty.`;
+        continue;
+      }
       if (reservedCount >= PROVIDER_SEND_TURN_MAX_ATTACHMENTS) {
-        error = `You can attach up to ${PROVIDER_SEND_TURN_MAX_ATTACHMENTS} images per message.`;
+        error = `You can attach up to ${PROVIDER_SEND_TURN_MAX_ATTACHMENTS} attachments per message.`;
         break;
       }
-      acceptedFiles.push(file);
+      if (isImage) {
+        acceptedFiles.push(file);
+      } else {
+        acceptedGenericFiles.push(file);
+      }
       reservedCount += 1;
+    }
+    // Fork: generic files need no async preparation, so they are added straight
+    // away rather than waiting behind image compression.
+    if (acceptedGenericFiles.length > 0) {
+      const nextFiles: ComposerImageAttachment[] = acceptedGenericFiles.map((file) => ({
+        type: "file" as const,
+        id: randomUUID(),
+        name: file.name || "file",
+        mimeType: file.type || "application/octet-stream",
+        sizeBytes: file.size,
+        previewUrl: "",
+        file,
+      }));
+      if (nextFiles.length === 1 && nextFiles[0]) {
+        addComposerImage(nextFiles[0]);
+      } else {
+        addComposerImagesToDraft(nextFiles);
+      }
     }
     setThreadError(threadId, error);
     if (acceptedFiles.length === 0) return;
@@ -2698,12 +2766,16 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
   const onComposerPaste = (event: React.ClipboardEvent<HTMLElement>) => {
     const files = Array.from(event.clipboardData.files);
     if (files.length === 0) return;
-    const imageFiles = files.filter(
-      (file) => file.type.startsWith("image/") || isHeicImageFile(file),
-    );
-    if (imageFiles.length === 0) return;
+    // Fork: when the server takes generic files, a pasted non-image is an
+    // attachment too. Otherwise keep upstream's behaviour of ignoring it, so
+    // pasting a copied file alongside text does not steal the text paste.
+    const acceptedFiles =
+      maxFileAttachmentBytes !== null
+        ? files
+        : files.filter((file) => file.type.startsWith("image/") || isHeicImageFile(file));
+    if (acceptedFiles.length === 0) return;
     event.preventDefault();
-    void addComposerImages(imageFiles);
+    void addComposerImages(acceptedFiles);
   };
 
   const insertComposerTextAtEnd = (
@@ -3310,7 +3382,12 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                         return (
                           <div
                             key={image.id}
-                            className="relative h-16 w-16 overflow-hidden rounded-lg border border-border/80 bg-background"
+                            className={cn(
+                              "relative h-16 overflow-hidden rounded-lg border border-border/80 bg-background",
+                              // Fork: a file chip shows a name and size, which
+                              // need more room than a square thumbnail.
+                              image.type === "file" ? "w-44" : "w-16",
+                            )}
                           >
                             {image.previewUrl ? (
                               <button
@@ -3332,6 +3409,10 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                                   className="h-full w-full object-cover"
                                 />
                               </button>
+                            ) : image.type === "file" ? (
+                              // Fork: a generic file has no thumbnail; show its
+                              // name and size instead of an empty tile.
+                              <FileAttachmentChip name={image.name} sizeBytes={image.sizeBytes} />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center px-1 text-center text-[10px] text-secondary-label">
                                 {image.name}
@@ -3494,6 +3575,45 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                 )}
               >
                 <div className="-m-1 -ms-3.5 flex min-w-0 flex-1 items-center gap-1 overflow-x-auto p-1 ps-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {/* Fork: attach files. Upstream has no picker at all — it
+                      attaches by paste and drop only, which leaves a phone
+                      browser (no drag, awkward clipboard) with no way in. */}
+                  {supportsAttachmentUploads ? (
+                    <>
+                      <input
+                        ref={attachmentInputRef}
+                        type="file"
+                        multiple
+                        // Images are always allowed; anything else only when
+                        // the server advertises a generic-file ceiling.
+                        {...(maxFileAttachmentBytes === null ? { accept: "image/*" } : {})}
+                        className="hidden"
+                        data-chat-attachment-input="true"
+                        onChange={(event) => {
+                          const picked = Array.from(event.target.files ?? []);
+                          // Reset first so re-picking the same file re-fires.
+                          event.target.value = "";
+                          if (picked.length > 0) void addComposerImages(picked);
+                        }}
+                      />
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <ComposerControl
+                              className="shrink-0"
+                              type="button"
+                              aria-label={attachmentPickerLabel}
+                              data-chat-attachment-button="true"
+                              onClick={() => attachmentInputRef.current?.click()}
+                            />
+                          }
+                        >
+                          <ComposerControlIcon icon={PaperclipIcon} />
+                        </TooltipTrigger>
+                        <TooltipPopup side="top">{attachmentPickerLabel}</TooltipPopup>
+                      </Tooltip>
+                    </>
+                  ) : null}
                   {noProviderAvailable ? (
                     <Button
                       type="button"

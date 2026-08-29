@@ -126,6 +126,8 @@ import {
 import { SkillInlineText } from "./SkillInlineText";
 import { formatWorkspaceRelativePath } from "../../filePathDisplay";
 import { FEATURES } from "../../fork/features";
+// Fork: generic file attachments
+import { FileAttachmentChip } from "../../fork/fileAttachments";
 import {
   buildReviewCommentRenderablePatch,
   formatReviewCommentFence,
@@ -995,6 +997,11 @@ const TimelineRowContent = memo(function TimelineRowContent({ row }: { row: Time
 function UserTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "message" }> }) {
   const ctx = use(TimelineRowCtx);
   const userImages = (row.message.attachments ?? []).filter(isImageAttachment);
+  // Fork: generic files ride the same `attachments` list. Without this they are
+  // filtered out above and a sent file is invisible in the transcript.
+  const userFiles = (row.message.attachments ?? []).filter(
+    (attachment) => attachment.type === "file",
+  );
   const displayedUserMessage = deriveDisplayedUserMessageState(row.message.text);
   const terminalContexts = displayedUserMessage.contexts;
   const previewAnnotations: ParsedPreviewAnnotation[] = [];
@@ -1052,6 +1059,19 @@ function UserTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "message" 
                   </div>
                 )}
               </div>
+            ))}
+          </div>
+        )}
+        {/* Fork: generic file attachments on a sent message. */}
+        {userFiles.length > 0 && (
+          <div className="mb-2 flex max-w-[420px] flex-col gap-1.5">
+            {userFiles.map((file) => (
+              <FileAttachmentChip
+                key={file.id}
+                name={file.name}
+                sizeBytes={file.sizeBytes}
+                className="bg-background/70"
+              />
             ))}
           </div>
         )}
