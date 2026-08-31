@@ -251,6 +251,7 @@
         "apps/web/src/browser/HostedBrowserFrame*.tsx",
         "apps/web/src/browser/WebBrowserHost*.tsx",
         "apps/web/src/browser/hostedFrameReload.ts",
+        "apps/web/src/browser/hostedFrameLoad*.ts",
         "apps/web/src/browser/framePreviewAnnotationBridge*.ts",
         "apps/web/src/browser/previewAnnotationPayloadGuard.ts"
       ],

@@ -117,7 +117,30 @@ function notify(runtimeTabId: string): void {
   for (const listener of subscribers.get(runtimeTabId) ?? []) listener();
 }
 
+/**
+ * Whether a message addressed to the preview's origin can reach the frame yet.
+ *
+ * A frame element that has just been created sits on the about:blank document
+ * it inherited from this window, and stays there until its first load commits.
+ * That document's origin is this app's, so anything addressed to the preview
+ * origin is refused and logged — noisily, once per navigation. Nothing is
+ * listening in about:blank anyway, and `load` re-announces the host.
+ *
+ * Reading `location.origin` is the test, because it succeeds only while the
+ * frame is still same-origin with us; once it reaches the preview it throws,
+ * and that is the case worth sending in.
+ */
+function frameCanReceive(host: FrameAnnotationHost): boolean {
+  if (host.targetOrigin === "*") return true;
+  try {
+    return host.frameWindow.location.origin === host.targetOrigin;
+  } catch {
+    return true;
+  }
+}
+
 function send(host: FrameAnnotationHost, channel: string, args: readonly unknown[] = []): void {
+  if (!frameCanReceive(host)) return;
   host.frameWindow.postMessage(previewAnnotationMessage(channel, args), host.targetOrigin);
 }
 
@@ -126,6 +149,7 @@ function sendBasicInspectorMessage(
   type: string,
   payload: unknown,
 ): void {
+  if (!frameCanReceive(host)) return;
   host.frameWindow.postMessage({ type, payload }, host.targetOrigin);
 }
 

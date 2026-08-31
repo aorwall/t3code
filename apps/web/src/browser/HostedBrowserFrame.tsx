@@ -10,7 +10,7 @@
 
 import { useShallow } from "zustand/react/shallow";
 import type { ScopedThreadRef } from "@t3tools/contracts";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { resolveBrowserSurfacePanelRect, useBrowserSurfaceStore } from "./browserSurfaceStore";
 import {
@@ -19,6 +19,7 @@ import {
   registerFramePreviewAnnotationHost,
   resolveFramePreviewAnnotationOrigin,
 } from "./framePreviewAnnotationBridge";
+import { initialHostedFrameLoad, resolveHostedFrameLoad } from "./hostedFrameLoad";
 import { hostedFrameKey, useHostedFrameReloadStore } from "./hostedFrameReload";
 import { resolveHostedBrowserWebviewWrapperStyle } from "./hostedBrowserWebviewStyle";
 import {
@@ -56,6 +57,20 @@ export function HostedBrowserFrame(props: {
   );
   const reloadNonce = useHostedFrameReloadStore((state) => state.byTabId[runtimeTabId] ?? 0);
 
+  // `url` is where the tab is; `loaded` is what the frame element was built
+  // from. They part company whenever the page routes itself — see
+  // `hostedFrameLoad`. Adjusted during render rather than in an effect because
+  // an effect would run after the frame had already been replaced once.
+  const reportedUrlRef = useRef<string | null>(null);
+  const [loaded, setLoaded] = useState(() => initialHostedFrameLoad({ url, reloadNonce }));
+  const nextLoad = resolveHostedFrameLoad(loaded, {
+    url,
+    reloadNonce,
+    reportedUrl: reportedUrlRef.current,
+  });
+  if (nextLoad !== loaded) setLoaded(nextLoad);
+  const loadedUrl = nextLoad.url;
+
   const active = presentation.visible && presentation.rect !== null;
   const wrapperStyle = resolveHostedBrowserWebviewWrapperStyle({
     active,
@@ -85,6 +100,9 @@ export function HostedBrowserFrame(props: {
       ) {
         return;
       }
+      // Recorded before the write that re-renders this component, so the render
+      // it triggers can tell this URL apart from one the host navigated to.
+      reportedUrlRef.current = change.url;
       updatePreviewServerSnapshot(threadRef, {
         ...snapshot,
         navStatus: {
@@ -111,18 +129,20 @@ export function HostedBrowserFrame(props: {
     routeChangeRef.current = handleInspectorRouteChange;
   }, [handleInspectorRouteChange]);
 
+  // Keyed off the load rather than the tab's URL: a guest route change leaves
+  // the element — and so the window the bridge holds — exactly where it was.
   useEffect(() => {
-    if (!url) return;
+    if (!loadedUrl) return;
     const frameWindow = iframeRef.current?.contentWindow;
     if (!frameWindow) return;
     return registerFramePreviewAnnotationHost({
       runtimeTabId,
       frameWindow,
-      targetOrigin: resolveFramePreviewAnnotationOrigin(url),
-      url,
+      targetOrigin: resolveFramePreviewAnnotationOrigin(loadedUrl),
+      url: loadedUrl,
       onInspectorRouteChange: (change) => routeChangeRef.current(change),
     });
-  }, [runtimeTabId, reloadNonce, url]);
+  }, [runtimeTabId, nextLoad.reloadNonce, loadedUrl]);
 
   return (
     <div
@@ -130,14 +150,14 @@ export function HostedBrowserFrame(props: {
       style={wrapperStyle}
       data-preview-viewport={runtimeTabId}
     >
-      {url === null ? null : (
+      {loadedUrl === null ? null : (
         // The key, not `src`, is what navigates. Assigning `src` on a live
         // frame pushes an entry onto the parent document's history, so every
         // navigation and every reload replaces the element instead.
         <iframe
-          key={hostedFrameKey(url, reloadNonce)}
+          key={hostedFrameKey(loadedUrl, nextLoad.reloadNonce)}
           ref={iframeRef}
-          src={url}
+          src={loadedUrl}
           title="Preview"
           sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
           referrerPolicy="no-referrer"
