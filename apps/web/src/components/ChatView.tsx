@@ -92,6 +92,7 @@ import { AsyncResult } from "effect/unstable/reactivity";
 import { isElectron } from "../env";
 import { FEATURES } from "../fork/features";
 import { parseMoatlessTurnNumber } from "../fork/threadFork";
+import type { ThreadForkSubmission } from "../fork/threadForkDialog";
 import { readLocalApi } from "../localApi";
 import { useDiffPanelStore } from "../diffPanelStore";
 import {
@@ -304,6 +305,8 @@ import { ChatComposer, type ChatComposerHandle } from "./chat/ChatComposer";
 import { DraftHeroHeadline } from "./chat/DraftHeroHeadline";
 import { ExpandedImageDialog } from "./chat/ExpandedImageDialog";
 import { PullRequestThreadDialog } from "./PullRequestThreadDialog";
+// Fork: forking a thread from the chat hover action.
+import { ThreadForkDialog } from "./chat/ThreadForkDialog";
 import { MessagesTimeline } from "./chat/MessagesTimeline";
 import { resolveTimelineIsAtEnd } from "./chat/MessagesTimeline.logic";
 import { ChatHeader } from "./chat/ChatHeader";
@@ -7160,13 +7163,25 @@ function ChatViewContent(props: ChatViewProps) {
     void onRevertToTurnCountRef.current(targetTurnCount);
   }, []);
 
-  // Fork: forking a thread from the chat hover action. Mints the fork's
-  // thread id client-side and follows the same start → wait → navigate path
-  // as starting a thread from a proposed plan, with the same cleanup on
-  // failure.
+  // Fork: forking a thread from the chat hover action. The icon opens a
+  // dialog (same-sandbox toggle, optional first message, branch for an
+  // isolated checkout) rather than forking immediately; confirming it mints
+  // the fork's thread id client-side and follows the same start → wait →
+  // navigate path as starting a thread from a proposed plan, with the same
+  // cleanup on failure.
   const [isForkingThread, setIsForkingThread] = useState(false);
+  const [forkDialogTurnId, setForkDialogTurnId] = useState<TurnId | null>(null);
   const onForkThread = useCallback(
-    async (turnId: TurnId) => {
+    (turnId: TurnId) => {
+      if (!activeThread || !isServerThread || isForkingThread) {
+        return;
+      }
+      setForkDialogTurnId(turnId);
+    },
+    [activeThread, isForkingThread, isServerThread],
+  );
+  const onConfirmForkThread = useCallback(
+    async (turnId: TurnId, submission: ThreadForkSubmission) => {
       if (!activeThread || !isServerThread || isForkingThread) {
         return;
       }
@@ -7181,7 +7196,9 @@ function ChatViewContent(props: ChatViewProps) {
           threadId: nextThreadId,
           sourceThreadId: activeThread.id,
           ...(atTurn === null ? {} : { atTurn }),
-          sameSandbox: true,
+          sameSandbox: submission.sameSandbox,
+          ...(submission.branch === undefined ? {} : { branch: submission.branch }),
+          ...(submission.message === undefined ? {} : { message: submission.message }),
           createdAt,
         },
       });
@@ -7916,6 +7933,22 @@ function ChatViewContent(props: ChatViewProps) {
           onClose={closeExpandedImage}
         />
       )}
+
+      {/* Fork: forking a thread from the chat hover action. */}
+      {forkDialogTurnId !== null ? (
+        <ThreadForkDialog
+          key={forkDialogTurnId}
+          open
+          onOpenChange={(open) => {
+            if (!open) setForkDialogTurnId(null);
+          }}
+          onSubmit={(submission) => {
+            const turnId = forkDialogTurnId;
+            setForkDialogTurnId(null);
+            void onConfirmForkThread(turnId, submission);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

@@ -1012,8 +1012,11 @@ const ThreadCheckpointRevertCommand = Schema.Struct({
 });
 
 // Fork: forking a thread from the chat hover action. `atTurn` omitted cuts
-// after the source thread's newest terminal turn; `sameSandbox` is the only
-// checkout the hover icon offers, so it is required rather than defaulted.
+// after the source thread's newest terminal turn. `sameSandbox` has no server
+// default, so the dialog always sends one explicitly. `branch` only makes
+// sense for an isolated checkout — the dialog disables it while `sameSandbox`
+// is on, mirroring the sink's own `validate_checkout` refusal. `message`
+// becomes the fork's first turn; omitted, the fork is created idle.
 const ThreadForkCommand = Schema.Struct({
   type: Schema.Literal("thread.fork"),
   commandId: CommandId,
@@ -1021,6 +1024,8 @@ const ThreadForkCommand = Schema.Struct({
   sourceThreadId: ThreadId,
   atTurn: Schema.optional(NonNegativeInt),
   sameSandbox: Schema.Boolean,
+  branch: Schema.optional(TrimmedNonEmptyString),
+  message: Schema.optional(TrimmedNonEmptyString),
   createdAt: IsoDateTime,
 });
 

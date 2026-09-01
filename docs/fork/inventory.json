@@ -343,9 +343,13 @@
     },
     {
       "id": "thread-fork-fork-files",
-      "paths": ["apps/server/src/orchestration/decider.threadFork.test.ts"],
+      "paths": [
+        "apps/server/src/orchestration/decider.threadFork.test.ts",
+        "apps/web/src/components/chat/ThreadForkDialog.tsx",
+        "apps/web/src/components/chat/ThreadForkDialog.test.tsx"
+      ],
       "verdict": "ours",
-      "note": "Fork-only test for the bundled server's thread.fork refusal. apps/web/src/fork/threadFork.ts and its test are already covered by the fork-registry entry's apps/web/src/fork/** glob."
+      "note": "Fork-only test for the bundled server's thread.fork refusal, and the dialog the hover icon opens (same-sandbox toggle, initial message, branch). apps/web/src/fork/threadFork.ts, threadForkDialog.ts and their tests are already covered by the fork-registry entry's apps/web/src/fork/** glob."
     },
     {
       "id": "mobile-touch-upstream-files",
@@ -565,13 +569,17 @@
         "packages/client-runtime/src/state/threadCommands.ts",
         "apps/web/src/components/chat/MessagesTimeline.tsx",
         "apps/web/src/components/chat/MessagesTimeline.test.tsx",
+        "apps/web/src/components/chat/ThreadForkDialog.tsx",
+        "apps/web/src/components/chat/ThreadForkDialog.test.tsx",
         "apps/web/src/components/ChatView.tsx",
         "apps/web/src/fork/threadFork.ts",
         "apps/web/src/fork/threadFork.test.ts",
+        "apps/web/src/fork/threadForkDialog.ts",
+        "apps/web/src/fork/threadForkDialog.test.ts",
         "apps/server/src/orchestration/decider.ts",
         "apps/server/src/orchestration/decider.threadFork.test.ts"
       ],
-      "mustSurvive": "Hovering an assistant message with a completed or interrupted turn shows a fork icon beside the copy button; hovering one on a running turn does not. Forking mints a thread id client-side, dispatches `thread.fork` with that id, the source thread's id, the hovered message's turn number and `sameSandbox: true`, then navigates to the new thread the same way starting a thread from a proposed plan does — same wait-for-started-thread and cleanup-on-failure path. Moatless is the only backend that runs `thread.fork`; the bundled server refuses it rather than fabricate a session-less copy."
+      "mustSurvive": "Hovering an assistant message with a completed or interrupted turn shows a fork icon beside the copy button; hovering one on a running turn does not. Clicking it opens a dialog rather than forking immediately: a same-sandbox toggle (on by default — it is the only checkout that resumes this conversation, and the dialog says so when switched off), an optional first message, and a branch field enabled only while same-sandbox is off, since the sink refuses the two together. Confirming mints a thread id client-side, dispatches `thread.fork` with that id, the source thread's id, the hovered message's turn number, and the dialog's fields, then navigates to the new thread the same way starting a thread from a proposed plan does — same wait-for-started-thread and cleanup-on-failure path. Moatless is the only backend that runs `thread.fork`; the bundled server refuses it rather than fabricate a session-less copy."
     },
     {
       "id": "host-run-scripts",
