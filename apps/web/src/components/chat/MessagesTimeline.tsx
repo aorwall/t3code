@@ -15,6 +15,8 @@ import {
 
 const EMPTY_AGENT_PANEL_MODEL = emptyAgentPanelModel();
 const NOOP_OPEN_AGENTS = () => {};
+// Fork: forking a thread from the chat hover action.
+const NOOP_FORK_THREAD = () => {};
 import { resolveChatListAnchoredEndSpace } from "@t3tools/shared/chatList";
 import {
   createContext,
@@ -55,6 +57,7 @@ import {
   ChevronRightIcon,
   CircleAlertIcon,
   EyeIcon,
+  GitForkIcon,
   GlobeIcon,
   HammerIcon,
   HashIcon,
@@ -158,6 +161,8 @@ interface TimelineRowSharedState {
   onToggleWorkGroup: (groupId: string, anchorKey: string) => void;
   agentPanelModel: AgentPanelModel;
   onOpenAgents: () => void;
+  // Fork: forking a thread from the chat hover action.
+  onForkThread: (turnId: TurnId) => void;
 }
 
 interface TimelineRowActivityState {
@@ -166,6 +171,10 @@ interface TimelineRowActivityState {
   latestTurnId: TurnId | null;
   /** Current plan step label for the working row, when the turn has a plan. */
   workingStepLabel: string | null;
+  // Fork: the fork icon is hidden while the source thread's newest turn is
+  // still running, and disabled while a fork it started is in flight.
+  latestTurnState: TimelineLatestTurn["state"] | null;
+  isForkingThread: boolean;
 }
 
 const TimelineRowCtx = createContext<TimelineRowSharedState>(null!);
@@ -230,6 +239,9 @@ interface MessagesTimelineProps {
   revertTurnCountByUserMessageId: Map<MessageId, number>;
   onRevertUserMessage: (messageId: MessageId) => void;
   isRevertingCheckpoint: boolean;
+  // Fork: forking a thread from the chat hover action.
+  onForkThread?: (turnId: TurnId) => void;
+  isForkingThread?: boolean;
   onImageExpand: (preview: ExpandedImagePreview) => void;
   activeThreadEnvironmentId: EnvironmentId;
   markdownCwd: string | undefined;
@@ -275,6 +287,9 @@ export const MessagesTimeline = memo(function MessagesTimeline({
   revertTurnCountByUserMessageId,
   onRevertUserMessage,
   isRevertingCheckpoint,
+  // Fork: forking a thread from the chat hover action.
+  onForkThread = NOOP_FORK_THREAD,
+  isForkingThread = false,
   onImageExpand,
   activeThreadEnvironmentId,
   markdownCwd,
@@ -539,6 +554,8 @@ export const MessagesTimeline = memo(function MessagesTimeline({
       onToggleWorkGroup,
       agentPanelModel,
       onOpenAgents,
+      // Fork: forking a thread from the chat hover action.
+      onForkThread,
     }),
     [
       timestampFormat,
@@ -555,6 +572,7 @@ export const MessagesTimeline = memo(function MessagesTimeline({
       onToggleWorkGroup,
       agentPanelModel,
       onOpenAgents,
+      onForkThread,
     ],
   );
   const activityState = useMemo<TimelineRowActivityState>(
@@ -563,8 +581,18 @@ export const MessagesTimeline = memo(function MessagesTimeline({
       isRevertingCheckpoint,
       latestTurnId: latestTurn?.turnId ?? null,
       workingStepLabel,
+      // Fork: forking a thread from the chat hover action.
+      latestTurnState: latestTurn?.state ?? null,
+      isForkingThread,
     }),
-    [isRevertingCheckpoint, isWorking, latestTurn?.turnId, workingStepLabel],
+    [
+      isRevertingCheckpoint,
+      isWorking,
+      latestTurn?.turnId,
+      latestTurn?.state,
+      workingStepLabel,
+      isForkingThread,
+    ],
   );
 
   // Stable renderItem — no closure deps. Row components read shared state
@@ -1244,6 +1272,8 @@ function AssistantTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "mess
         {row.showAssistantMeta ? (
           <div className="mt-1.5 flex items-center gap-2 text-xs tabular-nums opacity-0 transition-opacity duration-200 focus-within:opacity-100 group-hover/assistant:opacity-100">
             <AssistantCopyButton row={row} />
+            {/* Fork: forking a thread from the chat hover action. */}
+            <AssistantForkButton row={row} />
             {!row.message.streaming && (
               <Tooltip>
                 <TooltipTrigger
@@ -1275,6 +1305,39 @@ function AssistantCopyButton({ row }: { row: Extract<TimelineRow, { kind: "messa
   }
 
   return <MessageCopyButton text={assistantCopyState.text ?? ""} variant="ghost" />;
+}
+
+// Fork: forking a thread from the chat hover action. Hidden while the source
+// thread's newest turn is still running — a fork under it would race the
+// backend's own in-flight-turn check and only surface as a refusal.
+function AssistantForkButton({ row }: { row: Extract<TimelineRow, { kind: "message" }> }) {
+  const ctx = use(TimelineRowCtx);
+  const activity = use(TimelineRowActivityCtx);
+  const turnId = row.message.turnId;
+
+  if (turnId === null || activity.latestTurnState === "running") {
+    return null;
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            type="button"
+            size="xs"
+            variant="ghost"
+            disabled={activity.isForkingThread}
+            onClick={() => void ctx.onForkThread(turnId)}
+            aria-label="Fork from this message"
+          />
+        }
+      >
+        <GitForkIcon className="size-3" />
+      </TooltipTrigger>
+      <TooltipPopup side="top">Fork from this message</TooltipPopup>
+    </Tooltip>
+  );
 }
 
 function ProposedPlanTimelineRow({

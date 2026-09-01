@@ -89,6 +89,7 @@ import * as Schema from "effect/Schema";
 import { AsyncResult } from "effect/unstable/reactivity";
 import { isElectron } from "../env";
 import { FEATURES } from "../fork/features";
+import { parseMoatlessTurnNumber } from "../fork/threadFork";
 import { readLocalApi } from "../localApi";
 import { useDiffPanelStore } from "../diffPanelStore";
 import {
@@ -1313,6 +1314,8 @@ function ChatViewContent(props: ChatViewProps) {
   const startSandbox = useAtomCommand(sandboxEnvironment.start, { reportFailure: false });
   const readSandboxStatus = useAtomCommand(sandboxEnvironment.statusOnce, { reportFailure: false });
   const createThread = useAtomCommand(threadEnvironment.create, { reportFailure: false });
+  // Fork: forking a thread from the chat hover action.
+  const forkThread = useAtomCommand(threadEnvironment.fork, { reportFailure: false });
   const deleteThread = useAtomCommand(threadEnvironment.delete, { reportFailure: false });
   const updateThreadMetadata = useAtomCommand(threadEnvironment.updateMetadata, {
     reportFailure: false,
@@ -6889,6 +6892,92 @@ function ChatViewContent(props: ChatViewProps) {
     void onRevertToTurnCountRef.current(targetTurnCount);
   }, []);
 
+  // Fork: forking a thread from the chat hover action. Mints the fork's
+  // thread id client-side and follows the same start → wait → navigate path
+  // as starting a thread from a proposed plan, with the same cleanup on
+  // failure.
+  const [isForkingThread, setIsForkingThread] = useState(false);
+  const onForkThread = useCallback(
+    async (turnId: TurnId) => {
+      if (!activeThread || !isServerThread || isForkingThread) {
+        return;
+      }
+      const atTurn = parseMoatlessTurnNumber(turnId);
+      const createdAt = new Date().toISOString();
+      const nextThreadId = newThreadId();
+
+      setIsForkingThread(true);
+      const forkResult = await forkThread({
+        environmentId,
+        input: {
+          threadId: nextThreadId,
+          sourceThreadId: activeThread.id,
+          ...(atTurn === null ? {} : { atTurn }),
+          sameSandbox: true,
+          createdAt,
+        },
+      });
+      let failure: AtomCommandResult<unknown, unknown> | null =
+        forkResult._tag === "Failure" ? forkResult : null;
+
+      if (failure === null) {
+        const startedResult = await settlePromise(() =>
+          waitForStartedServerThread(scopeThreadRef(activeThread.environmentId, nextThreadId)),
+        );
+        failure = startedResult._tag === "Failure" ? startedResult : null;
+      }
+
+      if (failure === null) {
+        const navigateResult = await settlePromise(() =>
+          navigate({
+            to: "/$environmentId/$threadId",
+            params: {
+              environmentId: activeThread.environmentId,
+              threadId: nextThreadId,
+            },
+          }),
+        );
+        failure = navigateResult._tag === "Failure" ? navigateResult : null;
+      }
+
+      if (failure !== null) {
+        const cleanupResult = await deleteThread({
+          environmentId,
+          input: { threadId: nextThreadId },
+        });
+        if (cleanupResult._tag === "Failure" && !isAtomCommandInterrupted(cleanupResult)) {
+          console.warn(
+            "Failed to clean up forked thread after fork failure.",
+            squashAtomCommandFailure(cleanupResult),
+          );
+        }
+        if (!isAtomCommandInterrupted(failure)) {
+          const error = squashAtomCommandFailure(failure);
+          toastManager.add(
+            stackedThreadToast({
+              type: "error",
+              title: "Could not fork thread",
+              description:
+                error instanceof Error
+                  ? error.message
+                  : "An error occurred while forking the thread.",
+            }),
+          );
+        }
+      }
+      setIsForkingThread(false);
+    },
+    [
+      activeThread,
+      deleteThread,
+      environmentId,
+      forkThread,
+      isForkingThread,
+      isServerThread,
+      navigate,
+    ],
+  );
+
   // Empty state: no active thread
   if (!activeThread) {
     return <NoActiveThreadState />;
@@ -7159,6 +7248,9 @@ function ChatViewContent(props: ChatViewProps) {
                 revertTurnCountByUserMessageId={revertTurnCountByUserMessageId}
                 onRevertUserMessage={onRevertUserMessage}
                 isRevertingCheckpoint={isRevertingCheckpoint}
+                // Fork: forking a thread from the chat hover action.
+                onForkThread={onForkThread}
+                isForkingThread={isForkingThread}
                 onImageExpand={onExpandTimelineImage}
                 markdownCwd={gitCwd ?? undefined}
                 resolvedTheme={resolvedTheme}

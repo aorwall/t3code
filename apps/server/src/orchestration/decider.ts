@@ -1405,6 +1405,17 @@ export const decideOrchestrationCommand = Effect.fn("decideOrchestrationCommand"
       return [unsettledEvent, activityAppendedEvent];
     }
 
+    // Fork: thread.fork is served by Moatless, the backend this fork's web
+    // client talks to. The bundled server never runs a fork session, so it
+    // refuses the command instead of fabricating a copy with no session to
+    // resume.
+    case "thread.fork": {
+      return yield* new OrchestrationCommandInvariantError({
+        commandType: command.type,
+        detail: "thread.fork is not supported by this server.",
+      });
+    }
+
     default: {
       command satisfies never;
       const fallback = command as never as { type: string };

@@ -891,6 +891,62 @@ describe("MessagesTimeline", () => {
     expect(markup).toContain('data-user-message-footer="true"');
   });
 
+  // Fork: forking a thread from the chat hover action.
+  it("shows the fork icon on a completed assistant message", () => {
+    const turnId = TurnId.make("turn-fork-completed");
+    const assistantEntry = buildAssistantTimelineEntry("Done.");
+    const markup = renderToStaticMarkup(
+      <MessagesTimeline
+        {...buildProps()}
+        latestTurn={{
+          turnId,
+          state: "completed",
+          startedAt: "2026-03-17T19:12:20.000Z",
+          completedAt: "2026-03-17T19:12:28.000Z",
+        }}
+        timelineEntries={[{ ...assistantEntry, message: { ...assistantEntry.message, turnId } }]}
+      />,
+    );
+
+    expect(markup).toContain('aria-label="Fork from this message"');
+  });
+
+  it("hides the fork icon on an older completed turn while the newest turn is running", () => {
+    // The hovered message's own turn is done — showAssistantMeta stays true —
+    // but the thread's newest turn is a later, still-running one, so forking
+    // would race the backend's in-flight-turn check.
+    const olderTurnId = TurnId.make("turn-fork-older");
+    const newerTurnId = TurnId.make("turn-fork-newer");
+    const assistantEntry = buildAssistantTimelineEntry("Done.");
+    const markup = renderToStaticMarkup(
+      <MessagesTimeline
+        {...buildProps()}
+        isWorking
+        latestTurn={{
+          turnId: newerTurnId,
+          state: "running",
+          startedAt: "2026-03-17T19:20:00.000Z",
+          completedAt: null,
+        }}
+        runningTurnId={newerTurnId}
+        timelineEntries={[
+          { ...assistantEntry, message: { ...assistantEntry.message, turnId: olderTurnId } },
+        ]}
+      />,
+    );
+
+    expect(markup).not.toContain('aria-label="Fork from this message"');
+  });
+
+  it("hides the fork icon on a message with no turn id", () => {
+    const assistantEntry = buildAssistantTimelineEntry("Done.");
+    const markup = renderToStaticMarkup(
+      <MessagesTimeline {...buildProps()} timelineEntries={[assistantEntry]} />,
+    );
+
+    expect(markup).not.toContain('aria-label="Fork from this message"');
+  });
+
   it("renders context compaction entries in the normal work log", () => {
     const markup = renderToStaticMarkup(
       <MessagesTimeline

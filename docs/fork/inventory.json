@@ -327,6 +327,27 @@
       "note": "Take upstream, then apply Message Origin Delta. MessagesTimeline.tsx is a file upstream works in steadily; the delta is additive and must not re-indent upstream blocks."
     },
     {
+      "id": "thread-fork-upstream-files",
+      "paths": [
+        "packages/contracts/src/orchestration.ts",
+        "packages/client-runtime/src/operations/commands.ts",
+        "packages/client-runtime/src/state/threadCommands.ts",
+        "apps/web/src/components/chat/MessagesTimeline.tsx",
+        "apps/web/src/components/chat/MessagesTimeline.test.tsx",
+        "apps/web/src/components/ChatView.tsx",
+        "apps/server/src/orchestration/decider.ts"
+      ],
+      "verdict": "converged",
+      "delta": "Thread Fork Delta",
+      "note": "Take upstream, then apply Thread Fork Delta. MessagesTimeline.tsx and orchestration.ts also carry the Message Origin Delta; both must survive. decider.ts's hunk is a deliberate refusal — the bundled server has no fork session to resume."
+    },
+    {
+      "id": "thread-fork-fork-files",
+      "paths": ["apps/server/src/orchestration/decider.threadFork.test.ts"],
+      "verdict": "ours",
+      "note": "Fork-only test for the bundled server's thread.fork refusal. apps/web/src/fork/threadFork.ts and its test are already covered by the fork-registry entry's apps/web/src/fork/** glob."
+    },
+    {
       "id": "mobile-touch-upstream-files",
       "paths": [
         "apps/web/src/components/ui/sidebar.tsx",
@@ -534,6 +555,23 @@
         "apps/web/src/components/chat/messageOrigin.test.ts"
       ],
       "mustSurvive": "A message that reached the thread through an adapter or from another Task says so, and a message typed into the composer renders exactly as upstream renders it. The contract field is optional rather than nullable so the absent case stays byte-identical to upstream's payload."
+    },
+    {
+      "id": "thread-fork",
+      "name": "Fork a thread from the chat",
+      "paths": [
+        "packages/contracts/src/orchestration.ts",
+        "packages/client-runtime/src/operations/commands.ts",
+        "packages/client-runtime/src/state/threadCommands.ts",
+        "apps/web/src/components/chat/MessagesTimeline.tsx",
+        "apps/web/src/components/chat/MessagesTimeline.test.tsx",
+        "apps/web/src/components/ChatView.tsx",
+        "apps/web/src/fork/threadFork.ts",
+        "apps/web/src/fork/threadFork.test.ts",
+        "apps/server/src/orchestration/decider.ts",
+        "apps/server/src/orchestration/decider.threadFork.test.ts"
+      ],
+      "mustSurvive": "Hovering an assistant message with a completed or interrupted turn shows a fork icon beside the copy button; hovering one on a running turn does not. Forking mints a thread id client-side, dispatches `thread.fork` with that id, the source thread's id, the hovered message's turn number and `sameSandbox: true`, then navigates to the new thread the same way starting a thread from a proposed plan does — same wait-for-started-thread and cleanup-on-failure path. Moatless is the only backend that runs `thread.fork`; the bundled server refuses it rather than fabricate a session-less copy."
     },
     {
       "id": "host-run-scripts",
