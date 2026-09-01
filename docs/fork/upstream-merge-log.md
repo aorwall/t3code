@@ -144,6 +144,31 @@ ws.ts`) has no sandbox to run a script in and answers `scriptsRun` with
   flakiness, not a merge regression. `apps/web`'s own suite independently
   confirmed clean: 302 files, 3259 tests, 0 failures.
 
+### 2026-09-01 — folded in origin/main's fork-thread commit before opening the PR
+
+- Not an upstream merge: `origin/main` had moved with a new fork-only commit
+  (`ac7dc2c72`, "fork a thread from the chat hover action") landed directly
+  while the b17cc3d1 upstream merge above was in flight. Merged it into this
+  branch before opening the PR so the two don't fight each other later.
+- Conflict: `apps/web/src/components/chat/MessagesTimeline.tsx`, four blocks —
+  combined both sides (import list, `NOOP_*` constants,
+  `TimelineRowActivityState` fields, and the `activityState` `useMemo` object
+  literal + deps). While combining the deps array, restored
+  `isPreparingWorktree`, which the incoming commit's side had dropped from the
+  deps despite still reading it in the object literal.
+- Auto-merged but wrong, found by `tsgo --noEmit` after the merge commit:
+  `ac7dc2c72` was authored against the fork's pre-`b17cc3d1` main, so its
+  `MessagesTimeline.tsx` diff still threaded `workingStepLabel` through
+  `TimelineRowActivityState` and the `activityState` memo. Upstream had
+  already deleted that entire feature, JSX rendering included, in
+  `3f62e6fa6` ("simplify the working timer", landed via `b17cc3d1` above) —
+  confirmed no consumer of `workingStepLabel` remains anywhere in the tree.
+  Removed the dangling field and its two memo references instead of
+  reinstating the plumbing, since restoring it would fight upstream's
+  deliberate simplification for a feature with nothing left to read it.
+- Verification: `duplicate-adds.mjs` and `inventory-check.mjs` clean.
+  `tsgo --noEmit` (apps/web) clean. `MessagesTimeline.test.tsx`: 41 passed.
+
 ### 2026-08-29 — merged upstream to 6a9d9f98, the project picker becomes a combobox
 
 - Upstream: `6a9d9f988` from base `badae6a5c` (`58` commits).

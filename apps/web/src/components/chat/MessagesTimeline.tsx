@@ -188,8 +188,6 @@ interface TimelineRowActivityState {
   isPreparingWorktree: boolean;
   isRevertingCheckpoint: boolean;
   latestTurnId: TurnId | null;
-  /** Current plan step label for the working row, when the turn has a plan. */
-  workingStepLabel: string | null;
   // Fork: the fork icon is hidden while the source thread's newest turn is
   // still running, and disabled while a fork it started is in flight.
   latestTurnState: TimelineLatestTurn["state"] | null;
@@ -617,7 +615,6 @@ export const MessagesTimeline = memo(function MessagesTimeline({
       isPreparingWorktree,
       isRevertingCheckpoint,
       latestTurnId: latestTurn?.turnId ?? null,
-      workingStepLabel,
       // Fork: forking a thread from the chat hover action.
       latestTurnState: latestTurn?.state ?? null,
       isForkingThread,
@@ -628,7 +625,6 @@ export const MessagesTimeline = memo(function MessagesTimeline({
       isPreparingWorktree,
       latestTurn?.turnId,
       latestTurn?.state,
-      workingStepLabel,
       isForkingThread,
     ],
   );
