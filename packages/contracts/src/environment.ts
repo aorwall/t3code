@@ -100,6 +100,11 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
       serve `sandbox.status` alone, where a client that wants a live indicator
       has to poll it. */
   sandboxStatusPush: Schema.optionalKey(Schema.Boolean),
+  /** Fork: sandbox.status reports agentStatus alongside the lifecycle state.
+      Absent on servers that answer with the lifecycle state alone, where a
+      client cannot tell "this server does not say" from "this agent is idle"
+      and so shows no agent indicator in the sandbox panel. */
+  sandboxAgentStatus: Schema.optionalKey(Schema.Boolean),
   /** Agent-activity publishes (push notifications and Live Activities)
       currently leave this environment: the publish opt-in is enabled and the
       relay link credentials exist. Clients skip seeding a Live Activity when

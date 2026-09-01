@@ -26,8 +26,22 @@ export const SandboxStatusInput = Schema.Struct({
 });
 export type SandboxStatusInput = typeof SandboxStatusInput.Type;
 
+/**
+ * What the agent inside the environment reports it is doing.
+ *
+ * `unknown` is a real answer and not a gap: the sandbox is up but the agent
+ * could not be reached, which is different from it being idle. A gap is the
+ * key being absent — either the sandbox is not up, or the server predates
+ * `capabilities.sandboxAgentStatus`.
+ */
+export const SandboxAgentStatus = Schema.Literals(["running", "waiting", "idle", "unknown"]);
+export type SandboxAgentStatus = typeof SandboxAgentStatus.Type;
+
 export const SandboxStatusResult = Schema.Struct({
   sandboxStatus: SandboxRuntimeStatus,
+  /** Absent whenever the environment is not up, so it is `optionalKey` rather
+      than nullable — a `null` would fail the decode of the whole result. */
+  agentStatus: Schema.optionalKey(SandboxAgentStatus),
 });
 export type SandboxStatusResult = typeof SandboxStatusResult.Type;
 
