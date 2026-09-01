@@ -302,7 +302,7 @@
       "id": "fork-registry",
       "paths": ["apps/web/src/fork/**"],
       "verdict": "ours",
-      "note": "The surface-gating registry, the mobile touch modules, and the generic file-attachment presentation (fileAttachments.tsx)."
+      "note": "The surface-gating registry and the mobile touch modules. (The generic file-attachment presentation, fileAttachments.tsx, converged into upstream's own image/file/video attachment support and was deleted.)"
     },
     {
       "id": "message-origin-fork-files",

@@ -288,7 +288,7 @@ export const SETTINGS_SEARCH_ITEMS = [
   {
     id: "browser-recording-frame-rate",
     title: "Browser recording frame rate",
-    to: "/settings/integrations",
+    to: "/settings/browser",
     targetId: "browser",
   },
   {

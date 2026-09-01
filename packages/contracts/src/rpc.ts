@@ -771,16 +771,12 @@ export const WsAssetsCreateUrlRpc = Rpc.make(WS_METHODS.assetsCreateUrl, {
 export const WsAttachmentsCreateUploadUrlRpc = Rpc.make(WS_METHODS.attachmentsCreateUploadUrl, {
   payload: AttachmentCreateUploadUrlInput,
   success: AttachmentCreateUploadUrlResult,
-  error: Schema.Union([
-    AttachmentUploadSigningKeyError,
-    EnvironmentAuthorizationError,
-    UnsupportedMethodError,
-  ]),
+  error: Schema.Union([AttachmentUploadSigningKeyError, EnvironmentAuthorizationError]),
 });
 
 export const WsAttachmentsDeleteRpc = Rpc.make(WS_METHODS.attachmentsDelete, {
   payload: AttachmentDeleteInput,
-  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
+  error: EnvironmentAuthorizationError,
 });
 
 export const WsProviderUploadFeedbackRpc = Rpc.make(WS_METHODS.providerUploadFeedback, {
@@ -1011,6 +1007,13 @@ export const WsServersListRpc = Rpc.make(WS_METHODS.serversList, {
  * `UnsupportedMethodError` because an environment without the `workspaceScripts`
  * capability — every T3-hosted one today — answers with it, and the client must
  * decode that rather than see an unexpected server error.
+ *
+ * Fork: `unsupported-methods.mjs` reports this method under DROP once Moatless
+ * dispatches it, because it reads Moatless's own dispatch, not `apps/server`'s.
+ * `apps/server` (T3's bundled server) has no sandbox to run a script in and
+ * still answers `scriptsRun` with `UnsupportedMethodError` unconditionally (see
+ * `apps/server/src/ws.ts`), so the union member stays regardless of what the
+ * script says — see "A script runs on the backend" in docs/fork/gaps.md.
  */
 export const WsScriptsRunRpc = Rpc.make(WS_METHODS.scriptsRun, {
   payload: ScriptsRunInput,

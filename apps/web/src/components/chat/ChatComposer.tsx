@@ -165,8 +165,6 @@ import {
 } from "./ExpandedImagePreview";
 import { basenameOfPath } from "../../pierre-icons";
 import { FEATURES } from "../../fork/features";
-// Fork: generic file attachments
-import { FileAttachmentChip } from "../../fork/fileAttachments";
 import { cn, randomUUID } from "~/lib/utils";
 import { Separator } from "../ui/separator";
 import {
@@ -367,10 +365,6 @@ const runtimeModeConfig: Record<
 };
 
 const runtimeModeOptions = Object.keys(runtimeModeConfig) as RuntimeMode[];
-// Fork: largest generic file a draft will base64 into local storage. Bigger
-// files stay in memory and are badged as "may not persist".
-const MAX_PERSISTED_FILE_ATTACHMENT_BYTES = 1024 * 1024;
-
 const COMPOSER_FLOATING_LAYER_SELECTOR = [
   '[data-composer-drawer-layer="true"]',
   '[data-slot="popover-popup"]',
@@ -1821,14 +1815,6 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
         const stagedAttachmentById = new Map<string, PersistedComposerImageAttachment>();
         await Promise.all(
           composerImages.map(async (image) => {
-            // Fork: a generic file is not size-bounded the way an image is
-            // (10 MB after compression, vs 50 MB here), and base64 in local
-            // storage costs a third again on top. Past a modest cap the draft
-            // keeps the attachment in memory and the composer already badges
-            // it as "may not persist" rather than blowing the storage quota.
-            if (image.type === "file" && image.sizeBytes > MAX_PERSISTED_FILE_ATTACHMENT_BYTES) {
-              return;
-            }
             try {
               const dataUrl = await readFileAsDataUrl(image.file);
               stagedAttachmentById.set(image.id, {
@@ -1837,8 +1823,6 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                 mimeType: image.mimeType,
                 sizeBytes: image.sizeBytes,
                 dataUrl,
-                // Fork: so it rehydrates as a file, not an image.
-                type: image.type,
               });
             } catch {
               const existingPersisted = existingPersistedById.get(image.id);
@@ -3788,12 +3772,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                         return (
                           <div
                             key={image.id}
-                            className={cn(
-                              "relative h-16 overflow-hidden rounded-lg border border-border/80 bg-background",
-                              // Fork: a file chip shows a name and size, which
-                              // need more room than a square thumbnail.
-                              image.type === "file" ? "w-44" : "w-16",
-                            )}
+                            className="relative h-16 w-16 overflow-hidden rounded-lg border border-border/80 bg-background"
                           >
                             {image.previewUrl ? (
                               <button
@@ -3815,10 +3794,6 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                                   className="h-full w-full object-cover"
                                 />
                               </button>
-                            ) : image.type === "file" ? (
-                              // Fork: a generic file has no thumbnail; show its
-                              // name and size instead of an empty tile.
-                              <FileAttachmentChip name={image.name} sizeBytes={image.sizeBytes} />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center px-1 text-center text-[10px] text-secondary-label">
                                 {image.name}

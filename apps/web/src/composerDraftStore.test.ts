@@ -71,8 +71,6 @@ import {
   composerFileNeedsReattach,
   useComposerDraftStore,
   DraftId,
-  // Fork: generic file attachments
-  hydrateImagesFromPersisted,
 } from "./composerDraftStore";
 import { removeLocalStorageItem, setLocalStorageItem } from "./hooks/useLocalStorage";
 import {
@@ -2691,47 +2689,5 @@ describe("createDebouncedStorage", () => {
     vi.advanceTimersByTime(300);
     expect(base.setItem).toHaveBeenCalledTimes(1);
     expect(base.setItem).toHaveBeenCalledWith("key", "v2");
-  });
-});
-
-// Fork: generic file attachments round-trip through the persisted draft.
-describe("hydrateImagesFromPersisted file attachments", () => {
-  it("restores a persisted file as a file attachment with no preview", () => {
-    const [restored] = hydrateImagesFromPersisted([
-      {
-        id: "file-1",
-        name: "notes.txt",
-        mimeType: "text/plain",
-        sizeBytes: 5,
-        dataUrl: "data:text/plain;base64,aGVsbG8=",
-        type: "file",
-      },
-    ]);
-
-    expect(restored).toMatchObject({
-      type: "file",
-      id: "file-1",
-      name: "notes.txt",
-      mimeType: "text/plain",
-    });
-    // A data URL handed to an <img> would paint a broken image, so a file
-    // carries no preview and renders through the file chip instead.
-    expect(restored?.previewUrl).toBe("");
-    expect(restored?.file.size).toBe(5);
-  });
-
-  it("restores a draft written before file support as an image", () => {
-    const [restored] = hydrateImagesFromPersisted([
-      {
-        id: "image-1",
-        name: "shot.png",
-        mimeType: "image/png",
-        sizeBytes: 3,
-        dataUrl: "data:image/png;base64,AAEC",
-      },
-    ]);
-
-    expect(restored?.type).toBe("image");
-    expect(restored?.previewUrl).toBe("data:image/png;base64,AAEC");
   });
 });

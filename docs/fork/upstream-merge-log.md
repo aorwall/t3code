@@ -28,6 +28,122 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-01 — merged upstream to b17cc3d1, generic file attachments converge
+
+- Upstream: `b17cc3d1b` from base `6a9d9f988` (`69` commits).
+- Landed: `384` files from `git diff --stat HEAD^1 HEAD` against `385` in the
+  upstream range — the one-file gap is `apps/server/src/cli/pair.test.ts`,
+  already deleted on the fork side (deliberate, matches the tripwire) and so
+  absent from both diffs by different routes. Fork delta `621` files from
+  `git diff --stat HEAD^2 HEAD`.
+- Conflicts, twelve (eleven textual + one modify/delete):
+  - `AGENTS.md` [`agent-instructions`, decide] — kept the fork's "Hit every
+    surface" bullet list; dropped upstream's inserted duplicate
+    Dev-servers/Test-data/Verifying/Pull-requests sections (the fork already
+    has its own later versions). Added one bullet to Verifying about not
+    testing implementation mirrors.
+  - `apps/server/src/cli/pair.test.ts` — modify/delete; `git rm -f`. Both
+    `pair.ts` and `pair.test.ts` are confirmed still-deleted per the tripwire.
+  - `apps/server/src/ws.ts` [`server-hosted-env-stubs`, converged] — took
+    upstream, re-inserted the fork's full hosted-environment stub block
+    (`serversList`/`sandboxStatus`/`sandboxStart`/`sandboxStop`/`scriptsRun`/
+    `sandboxSubscribeStatus`/`subscribeServerStatus`/`serversSubscribeLogs`)
+    ahead of upstream's `subscribeServerConfig` entry.
+  - `apps/web/src/components/ChatView.tsx`,
+    `apps/web/src/components/chat/ChatComposer.tsx`,
+    `apps/web/src/components/chat/MessagesTimeline.tsx`,
+    `apps/web/src/lib/attachmentUploadQueue.ts` (+ `.test.ts`) [unlisted →
+    `decide`, all one concern] — upstream shipped a native image/file/video
+    composer attachment system (`composerAttachmentFiles.ts`,
+    `ComposerFileAttachment`, `classifyComposerAttachmentFile`,
+    `fileAttachmentStagingLimit`) that replaces the fork's own earlier
+    generic-file-attachment work almost line for line. Took upstream wholesale
+    in every one of these files and re-applied only the pieces upstream has no
+    equivalent for: the `maxFileAttachmentBytes`/`FEATURES` prop threading, the
+    `attachmentUploadsCapabilityKnown`/`supportsAttachmentUploads` gating, and
+    the `FEATURES.serverAdministration`-gated affordances. `MessagesTimeline`
+    also had a fully redundant fork-only sent-message file-rendering block
+    (auto-merged, no conflict marker) duplicating upstream's new native
+    rendering — deleted, along with the now-dead `fork/fileAttachments.tsx`
+    import there.
+  - `apps/web/src/components/settings/ProviderSettingsPanel.tsx` (+
+    `.environment.test.tsx`) [`settings-gates`, decide] — took upstream's new
+    header (`ProviderLastChecked` + refresh button, gated only by `!readOnly`)
+    but wrapped only the "Add provider" control in
+    `FEATURES.serverAdministration`, since refreshing is a read every server
+    serves and adding an instance is not.
+  - `apps/web/src/components/settings/SettingsSidebarNav.tsx` [`settings-gates`,
+    decide] — combined upstream's new WSL-visibility-aware `searchableItems`
+    base list with the fork's admin-path filter.
+  - `pnpm-lock.yaml` [`lockfile`, theirs] — took upstream's, re-ran `vp i`
+    (605 lines of fork workspace edges restored).
+- Auto-merged but wrong, the failures the tracker exists to catch (both found
+  after the merge commit, via `tsgo --noEmit` and a full read-only sweep of
+  every remaining "conflict candidate" — see below):
+  - `apps/web/src/composerDraftStore.ts` — the fork's own pre-existing
+    generic-file-attachment hack (`ComposerImageAttachment.type: "image" |
+"file"`, a widened discriminator) survived the merge untouched, sitting
+    right beside upstream's new, real `ComposerFileAttachment` type added a few
+    lines later. No conflict marker; git spliced both in cleanly. The result
+    type-checked file-by-file but broke discriminated-union narrowing at every
+    call site that switches on `.type` (9 real `tsc` errors across
+    `ChatComposer.tsx`, `composerAttachmentFiles.ts`,
+    `attachmentUploadQueue.ts`). Fixed by reverting `ComposerImageAttachment`
+    and `hydrateImagesFromPersisted` to upstream's clean shape, deleting the
+    now-fully-superseded `apps/web/src/fork/fileAttachments.tsx` (+ test) and
+    its two remaining stale call sites in `ChatComposer.tsx` (a persist-effect
+    file-size cap and a file-chip render branch, both dead now that
+    `composerImages` can never carry `type: "file"`), and deleting a dead test
+    `describe` block in `composerDraftStore.test.ts` that exercised the
+    reverted behavior.
+  - `apps/web/src/components/settings/settingsSearch.ts` — the fork renamed
+    upstream's browser-embed settings page from `/settings/integrations` to
+    `/settings/browser`, updating every existing search entry that pointed at
+    it. Upstream, in the same range, added one new entry
+    (`browser-recording-frame-rate`) still pointing at
+    `/settings/integrations` — correct on upstream's side, stale on the
+    fork's, and outside the span the fork's rename touched, so it merged
+    clean with no marker. Searching "recording frame rate" and clicking the
+    result sent a user to the fork's unrelated admin Integrations page instead
+    of Browser settings. Fixed the route and its matching assertion in
+    `settingsSearch.test.ts`.
+  - A read-only agent sweep of the other fourteen `[unlisted]` conflict
+    candidates from `merge-stats.mjs` (`bin.ts`, `DiffPanel.tsx`,
+    `ChatHeader.tsx`, `MessagesTimeline.test.tsx`, `FilePreviewPanel.tsx`,
+    `ProjectSettingsPanel.tsx`, `SettingsPanels.tsx`,
+    `settingsSearch.test.ts`, `previewStateStore.ts`, `routes/__root.tsx`,
+    `docs/README.md`, two `package.json`s, `packages/contracts/src/
+environment.ts`) found no further instances of this failure mode — every
+    fork hunk in those files sits in a region upstream's own changes never
+    touched.
+- Sweep: one hit, false positive. `apps/mobile/src/features/cloud/
+cloud-drafts.ts` (new upstream file) is a pure mobile cloud/relay sign-out
+  feature (`CloudDraftArchiveError`, `removeCloudEnvironments`), unrelated to
+  any fork concern.
+- `packages/contracts/src/rpc.ts` [`contracts-rpc-auth`, converged] — took
+  upstream, then ran `unsupported-methods.mjs`: dropped the now-dead
+  `UnsupportedMethodError` union members for `attachments.createUploadUrl` and
+  `attachments.delete` (Moatless now dispatches both unconditionally) and
+  updated the matching "Attachment uploads" gap. Left `scripts.run`'s member
+  in place despite the script reporting it under DROP — this is the
+  documented exception in gaps.md's "A script runs on the backend" entry:
+  `apps/server` (T3's own bundled server, still checked in `apps/server/src/
+ws.ts`) has no sandbox to run a script in and answers `scriptsRun` with
+  `UnsupportedMethodError` unconditionally, so the union member is for that
+  server, not Moatless. Added a comment on `WsScriptsRunRpc` pointing future
+  merges at the gap entry so this isn't rediscovered from scratch.
+- Verification: `duplicate-adds.mjs` flags one triple
+  (`apps/web/src/components/chat/MessagesTimeline.tsx`: `const content = (` /
+  `<a>` / `</a>`) — confirmed false positive, two unrelated functions
+  (`UserTimelineRow`'s native file rendering and the fork-owned
+  `MessageOriginChip`) sharing generic JSX/variable shapes.
+  `unsupported-methods.mjs` reports `scripts.run` under DROP — expected, see
+  above. `fmt`, `lint`, `typecheck` (all workspaces) clean. Full `test` run:
+  one failure, `apps/mobile`'s `nativeReviewDiffHighlighter.test.ts`, which
+  passed alone on retry — the documented "full suite needs a raised heap"
+  flakiness, not a merge regression. `apps/web`'s own suite independently
+  confirmed clean: 302 files, 3259 tests, 0 failures.
+
 ### 2026-08-29 — merged upstream to 6a9d9f98, the project picker becomes a combobox
 
 - Upstream: `6a9d9f988` from base `badae6a5c` (`58` commits).
