@@ -132,6 +132,16 @@ ws.ts`) has no sandbox to run a script in and answers `scriptsRun` with
   `UnsupportedMethodError` unconditionally, so the union member is for that
   server, not Moatless. Added a comment on `WsScriptsRunRpc` pointing future
   merges at the gap entry so this isn't rediscovered from scratch.
+- Gap correction: the "Attachment uploads" gap this entry originally left open
+  ("only the capability flag on the handshake is left to confirm") was wrong —
+  queried the deployed backend's `server.getConfig` directly (rpc-verification
+  skill) and it already reports `capabilities.attachmentUploads: true` and
+  `capabilities.fileAttachments.maxUploadBytes: 52428800`, gated in
+  `crates/t3code/src/lib.rs` on `SESSION_JWT_SECRET` being configured, which it
+  is on this deployment. The client (`composerAttachmentFiles.ts`) already
+  reads both capabilities and the composer's file input already goes through
+  `classifyComposerAttachmentFile`. Struck the gap entry from `gaps.md`
+  entirely rather than leaving a stale "needs verification" note.
 - Verification: `duplicate-adds.mjs` flags one triple
   (`apps/web/src/components/chat/MessagesTimeline.tsx`: `const content = (` /
   `<a>` / `</a>`) — confirmed false positive, two unrelated functions

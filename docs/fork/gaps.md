@@ -143,22 +143,6 @@ what a person loses, which is the part the derivation cannot tell you:
   _desktop_ shell hands to a local editor. That path needs an Electron shell, so
   it does not reach this fork's browser client — but the shape is the one to
   copy if the surface is ever kept rather than deleted.
-- **Attachment uploads** — `attachments.createUploadUrl`, `attachments.delete`,
-  new upstream in the 2026-08-26 merge. Needs no fork gate: the client reads
-  `capabilities.attachmentUploads`. As of the 2026-09-01 merge, Moatless
-  dispatches both methods unconditionally (`unsupported-methods.mjs` moved them
-  to DROP, and their `UnsupportedMethodError` union members were removed from
-  `rpc.ts`), so only the capability flag on the handshake is left to confirm —
-  if it is still absent the composer's attach-file affordance stays off despite
-  both methods now answering. Closes when the backend also reports the
-  capability. Upstream widened the
-  surface past images on 2026-08-28: a turn may carry any file up to 50MB, sized
-  by `PROVIDER_SEND_TURN_MAX_FILE_BYTES` and advertised as a second capability,
-  `capabilities.fileAttachments.maxUploadBytes`. That half costs nothing here
-  yet — upstream's own web composer does not offer a non-image file, and
-  `ChatAttachment` widened only far enough to typecheck — but it is the key that
-  decides whether this fork's composer may ever offer a PDF, so report it beside
-  `attachmentUploads` rather than after it.
 - **Codex feedback** — `provider.uploadFeedback`, new upstream in the
   2026-08-26 merge. Backs the `/feedback` slash command that posts a Codex
   session's transcript to OpenAI (`ChatView.tsx`'s `submitCodexFeedback`).
