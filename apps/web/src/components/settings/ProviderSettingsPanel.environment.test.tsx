@@ -127,6 +127,10 @@ function renderPanel(options?: {
   }) as ReactElement<Record<string, unknown>>;
 }
 
+function isAddProviderButton(element: ReactElement<Record<string, unknown>>): boolean {
+  return element.props["aria-label"] === "Add provider";
+}
+
 async function flushPromises(): Promise<void> {
   await Promise.resolve();
   await Promise.resolve();
@@ -212,14 +216,10 @@ describe("EnvironmentProviderSettings routing", () => {
     const notice = visitElements(panel, (element) => element.props.title === "Limited permissions");
     expect(notice).not.toBeNull();
 
-    const providersSection = visitElements(
-      panel,
-      (element) => element.props.title === "Providers" && "headerAction" in element.props,
-    );
-    expect(providersSection?.props.headerAction).toBeNull();
     expect(
       visitElements(panel, (element) => element.props["aria-label"] === "Refresh provider status"),
     ).toBeNull();
+    expect(visitElements(panel, isAddProviderButton)).toBeNull();
   });
 
   it("keeps the editable layout interactive when not read only", () => {
@@ -229,15 +229,13 @@ describe("EnvironmentProviderSettings routing", () => {
     expect(
       visitElements(panel, (element) => element.props.title === "Limited permissions"),
     ).toBeNull();
-    const providersSection = visitElements(
-      panel,
-      (element) => element.props.title === "Providers" && "headerAction" in element.props,
-    );
-    // Fork: the section still renders, but "Add provider" is gated behind
-    // FEATURES.serverAdministration, which is off — so an editable layout has
-    // no header action here, only the rest of the panel to interact with.
-    expect(providersSection).not.toBeNull();
-    expect(providersSection?.props.headerAction).toBeNull();
+    expect(
+      visitElements(panel, (element) => element.props["aria-label"] === "Refresh provider status"),
+    ).not.toBeNull();
+    // Fork: "Add provider" stays gated behind FEATURES.serverAdministration,
+    // which is off — refreshing the existing list is a read every server
+    // serves, but adding an instance is not.
+    expect(visitElements(panel, isAddProviderButton)).toBeNull();
   });
 
   it("deletes and resets provider configuration without erasing shared preferences", () => {
