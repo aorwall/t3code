@@ -3,17 +3,11 @@
 /**
  * Fork-only. The dialog the chat hover fork icon opens: a same-sandbox
  * toggle (the only checkout that resumes this conversation, so it defaults
- * on), an optional first message, and a branch that only applies once the
- * toggle is off — the sink refuses `branch` together with `sameSandbox`
- * (`TaskForkService::validate_checkout` in the Moatless backend), so the
- * field is disabled rather than left to round-trip a refusal.
+ * on) and an optional first message. A fork always runs on its source's
+ * branch, so there is no branch control here.
  */
 import { useState } from "react";
 
-import {
-  resolveThreadForkSubmission,
-  type ThreadForkSubmission,
-} from "../../fork/threadForkDialog";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -23,10 +17,15 @@ import {
   DialogPopup,
   DialogTitle,
 } from "../ui/dialog";
-import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
 import { Textarea } from "../ui/textarea";
+
+/** The fields a fork submission carries once resolved from the dialog. */
+export interface ThreadForkSubmission {
+  readonly sameSandbox: boolean;
+  readonly message?: string;
+}
 
 interface ThreadForkDialogProps {
   readonly open: boolean;
@@ -37,7 +36,14 @@ interface ThreadForkDialogProps {
 export function ThreadForkDialog({ open, onOpenChange, onSubmit }: ThreadForkDialogProps) {
   const [sameSandbox, setSameSandbox] = useState(true);
   const [message, setMessage] = useState("");
-  const [branch, setBranch] = useState("");
+
+  const submit = () => {
+    const trimmedMessage = message.trim();
+    onSubmit({
+      sameSandbox,
+      ...(trimmedMessage.length > 0 ? { message: trimmedMessage } : {}),
+    });
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -61,13 +67,7 @@ export function ThreadForkDialog({ open, onOpenChange, onSubmit }: ThreadForkDia
             <Switch
               id="thread-fork-same-sandbox"
               checked={sameSandbox}
-              onCheckedChange={(checked) => {
-                const next = Boolean(checked);
-                setSameSandbox(next);
-                if (next) {
-                  setBranch("");
-                }
-              }}
+              onCheckedChange={(checked) => setSameSandbox(Boolean(checked))}
             />
           </div>
 
@@ -81,32 +81,12 @@ export function ThreadForkDialog({ open, onOpenChange, onSubmit }: ThreadForkDia
               rows={3}
             />
           </label>
-
-          <label className="grid gap-2" htmlFor="thread-fork-branch">
-            <span className="text-xs font-medium text-foreground">Branch</span>
-            <Input
-              id="thread-fork-branch"
-              value={branch}
-              onChange={(event) => setBranch(event.target.value)}
-              placeholder="Repository default"
-              disabled={sameSandbox}
-            />
-            <span className="text-[11px] text-muted-foreground">
-              {sameSandbox
-                ? "Only available for an isolated fork — a same-sandbox fork shares the parent's working tree."
-                : "Checked out fresh for the fork. Leave blank for the repository's default."}
-            </span>
-          </label>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button
-            onClick={() => onSubmit(resolveThreadForkSubmission({ sameSandbox, message, branch }))}
-          >
-            Fork
-          </Button>
+          <Button onClick={submit}>Fork</Button>
         </DialogFooter>
       </DialogPopup>
     </Dialog>

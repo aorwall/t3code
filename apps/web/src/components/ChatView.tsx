@@ -88,7 +88,6 @@ import { AsyncResult } from "effect/unstable/reactivity";
 import { isElectron } from "../env";
 import { FEATURES } from "../fork/features";
 import { parseMoatlessTurnNumber } from "../fork/threadFork";
-import type { ThreadForkSubmission } from "../fork/threadForkDialog";
 import { readLocalApi } from "../localApi";
 import { useDiffPanelStore } from "../diffPanelStore";
 import {
@@ -303,7 +302,7 @@ import { DraftHeroHeadline } from "./chat/DraftHeroHeadline";
 import { ExpandedImageDialog } from "./chat/ExpandedImageDialog";
 import { PullRequestThreadDialog } from "./PullRequestThreadDialog";
 // Fork: forking a thread from the chat hover action.
-import { ThreadForkDialog } from "./chat/ThreadForkDialog";
+import { ThreadForkDialog, type ThreadForkSubmission } from "./chat/ThreadForkDialog";
 import { MessagesTimeline } from "./chat/MessagesTimeline";
 import { resolveTimelineIsAtEnd } from "./chat/MessagesTimeline.logic";
 import { ChatHeader } from "./chat/ChatHeader";
@@ -7219,7 +7218,6 @@ function ChatViewContent(props: ChatViewProps) {
           sourceThreadId: activeThread.id,
           ...(atTurn === null ? {} : { atTurn }),
           sameSandbox: submission.sameSandbox,
-          ...(submission.branch === undefined ? {} : { branch: submission.branch }),
           ...(submission.message === undefined ? {} : { message: submission.message }),
           createdAt,
         },

@@ -35,7 +35,7 @@ describe("ThreadForkDialog", () => {
     hooks.reset();
   });
 
-  it("submits sameSandbox only when nothing else was filled in", () => {
+  it("submits sameSandbox on with no message when nothing was typed", () => {
     const onSubmit = vi.fn();
     const tree = render({ open: true, onOpenChange: vi.fn(), onSubmit });
 
@@ -44,38 +44,7 @@ describe("ThreadForkDialog", () => {
     expect(onSubmit).toHaveBeenCalledWith({ sameSandbox: true });
   });
 
-  it("starts with the branch field disabled, since sameSandbox defaults on", () => {
-    const tree = render({ open: true, onOpenChange: vi.fn(), onSubmit: vi.fn() });
-
-    expect(findById(tree, "thread-fork-branch")?.props.disabled).toBe(true);
-  });
-
-  it("enables branch once sameSandbox is switched off, and disables it again when switched back on", () => {
-    let tree = render({ open: true, onOpenChange: vi.fn(), onSubmit: vi.fn() });
-    const toggleOff = findById(tree, "thread-fork-same-sandbox")?.props.onCheckedChange as
-      | ((checked: boolean) => void)
-      | undefined;
-    toggleOff?.(false);
-
-    tree = render({ open: true, onOpenChange: vi.fn(), onSubmit: vi.fn() });
-    expect(findById(tree, "thread-fork-branch")?.props.disabled).toBe(false);
-
-    const branchOnChange = findById(tree, "thread-fork-branch")?.props.onChange as
-      | ((event: { target: { value: string } }) => void)
-      | undefined;
-    branchOnChange?.({ target: { value: "feat/checkout" } });
-
-    const toggleOn = findById(tree, "thread-fork-same-sandbox")?.props.onCheckedChange as
-      | ((checked: boolean) => void)
-      | undefined;
-    toggleOn?.(true);
-
-    tree = render({ open: true, onOpenChange: vi.fn(), onSubmit: vi.fn() });
-    expect(findById(tree, "thread-fork-branch")?.props.disabled).toBe(true);
-    expect(findById(tree, "thread-fork-branch")?.props.value).toBe("");
-  });
-
-  it("carries a trimmed message and branch once sameSandbox is off", () => {
+  it("carries sameSandbox off once the toggle is switched", () => {
     const onSubmit = vi.fn();
     let tree = render({ open: true, onOpenChange: vi.fn(), onSubmit });
 
@@ -84,28 +53,27 @@ describe("ThreadForkDialog", () => {
         | ((checked: boolean) => void)
         | undefined
     )?.(false);
-    tree = render({ open: true, onOpenChange: vi.fn(), onSubmit });
-    (
-      findById(tree, "thread-fork-message")?.props.onChange as
-        | ((event: unknown) => void)
-        | undefined
-    )?.({
-      target: { value: "  keep going  " },
-    });
-    (
-      findById(tree, "thread-fork-branch")?.props.onChange as ((event: unknown) => void) | undefined
-    )?.({
-      target: { value: "  feat/checkout  " },
-    });
 
     tree = render({ open: true, onOpenChange: vi.fn(), onSubmit });
     (findByText(tree, "Fork")?.props.onClick as (() => void) | undefined)?.();
 
-    expect(onSubmit).toHaveBeenCalledWith({
-      sameSandbox: false,
-      message: "keep going",
-      branch: "feat/checkout",
-    });
+    expect(onSubmit).toHaveBeenCalledWith({ sameSandbox: false });
+  });
+
+  it("trims a typed message and omits it entirely when left blank", () => {
+    const onSubmit = vi.fn();
+    let tree = render({ open: true, onOpenChange: vi.fn(), onSubmit });
+
+    (
+      findById(tree, "thread-fork-message")?.props.onChange as
+        | ((event: { target: { value: string } }) => void)
+        | undefined
+    )?.({ target: { value: "  keep going  " } });
+
+    tree = render({ open: true, onOpenChange: vi.fn(), onSubmit });
+    (findByText(tree, "Fork")?.props.onClick as (() => void) | undefined)?.();
+
+    expect(onSubmit).toHaveBeenCalledWith({ sameSandbox: true, message: "keep going" });
   });
 
   it("cancels without submitting", () => {
