@@ -28,6 +28,69 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-02 — merged upstream to d937e307, server-side settlement converges, prThreadSettling retired
+
+- Upstream: `d937e3075` from base `b17cc3d1b` (`62` commits).
+- Landed: `562` files from `git diff --stat HEAD^1 HEAD` against `560` in the
+  upstream range (`b17cc3d1b..HEAD^2`). Gap of two: landed carries three files
+  the range does not — `apps/web/src/fork/features.ts` and
+  `apps/web/src/components/settings/moatless/listSearch.ts` (both fork
+  resolution edits) and `docs/fork/gaps.md` (fork doc); the range carries one
+  the landing does not — `apps/server/src/cli/pair.ts`, already deleted on the
+  fork side so absent from both sides of `HEAD^1..HEAD`. Fork delta `626` files
+  from `git diff --stat HEAD^2 HEAD`.
+- Conflicts, fourteen textual:
+  - `apps/web/src/components/ChatView.tsx` [`thread-fork`, converged] and
+    `apps/web/src/components/Sidebar.tsx` [`mobile-touch`, converged] — upstream
+    moved thread settlement server-side: it dropped the client-side
+    `effectiveSettled` computation and now renders
+    `thread.settledOverride === "settled"`. Took upstream's model in both; in
+    `Sidebar` re-applied only the fork's pin-before-settled ordering (a pinned
+    thread never auto-settles). This makes the fork's `prThreadSettling` gate
+    redundant — Moatless already owns settlement and never settles from PR state
+    (verified: `settled_override` is set only on explicit user settle/unsettle
+    and cleared on new activity, `crates/tasks/src/task/dao.rs`). Retired the
+    flag: removed it from `apps/web/src/fork/features.ts`, dropped the
+    `prThreadSettling` gate in both files, and removed the `pr-settling-gate`
+    guard + `pr-settling` convergence entry from the inventory. Gaps.md's
+    "A pull request is not the thread's own" section struck and "Settlement
+    rules Moatless owns" rewritten to the server-side model.
+  - `apps/server/src/bin.ts` [`server-cli-surface`, decide] — dropped upstream's
+    reintroduced `pairCommand`, kept the fork's `appCommand` in the subcommand
+    list (`pair.ts`/`pair.test.ts` stay deleted per the tripwire).
+  - `packages/contracts/src/rpc.ts` [`contracts-rpc-auth`, converged] — added
+    `UnsupportedMethodError` to `WsServerCommitDesktopUpdateRpc`'s error union
+    (upstream's new desktop remote-update method Moatless does not serve),
+    marked `// Fork:` and referencing gaps.md "Desktop and host lifecycle".
+  - Settings-search cluster [`settings-gates`, decide] —
+    `apps/web/src/components/settings/settingsSearch.ts` (+ `.test.ts`),
+    `SettingsSidebarNav.tsx`, `SettingsPanels.tsx`, `CommandPalette.tsx`,
+    `moatless/listSearch.ts`: took upstream's new `searchTerms`/
+    `filterAvailableSettingsSearchItems`/`useAvailableSettingsSearchItems` and
+    `serverScoped` settings rows; re-applied the fork's `to: "/settings/browser"`
+    targets, the admin/enabled filter
+    (`settingsPathEnabled(item.to) && (isAdmin || !isMoatlessAdminPath(item.to))`),
+    and the `FEATURES.assistantStreaming`/`FEATURES.projectManagement` row gates
+    (now carrying upstream's `serverScoped` prop). `listSearch.ts` re-pointed at
+    `~/lib/utils` for `normalizeSearchText` after the local re-export was dropped.
+  - `apps/web/src/components/files/FilePreviewPanel.tsx` [`file-preview`, decide]
+    — took upstream's new media detection (image/video/pdf/html/host-file) and
+    re-applied the fork's `onRetargetFile`/`readRelativePath` retarget branch.
+  - `apps/web/src/components/chat/MessagesTimeline.tsx` [`message-origin`,
+    converged] and `threadActionMenu.logic.test.ts` [`settings-gates`] — import
+    and expectation merges only (no delete item — `threadDeletion` off;
+    `project-settings` kept, not fork-gated).
+- Sweep: `duplicate-adds` clean; `tripwires` clean (`pair.ts`/`pair.test.ts`
+  still deleted); `unsupported-methods` reported one ADD —
+  `server.commitDesktopUpdate`, resolved in `rpc.ts` above — and the standing
+  `scripts.run` DROP, the permanent documented exception (`apps/server` refuses
+  it unconditionally and must compile, so the union member stays and the script
+  exits 1 benignly). No routes added/removed, so no route-tree regen.
+- Verification: `verify.mjs --fast` fmt/lint/typecheck clean; tests pass — web
+  `3348`, desktop `689`, mobile `1082`, relay `209`, server `3125` (`10`
+  skipped). `unsupported-methods` exits 1 only for the `scripts.run` exception
+  above (ADD count is `0`).
+
 ### 2026-09-01 — merged upstream to b17cc3d1, generic file attachments converge
 
 - Upstream: `b17cc3d1b` from base `6a9d9f988` (`69` commits).

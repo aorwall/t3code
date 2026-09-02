@@ -153,8 +153,8 @@ what a person loses, which is the part the derivation cannot tell you:
   unlikely: the feedback is addressed to OpenAI, not to the workspace.
 - **Preview automation** — `previewAutomation.connect`, `focusHost`, `respond`.
 - **Desktop and host lifecycle** — `server.updateServer`,
-  `updateServerWithProgress`, `getBackgroundPolicy`, `subscribeBackgroundPolicy`,
-  `reportHostPowerState`, `cloud.installRelayClient`,
+  `updateServerWithProgress`, `commitDesktopUpdate`, `getBackgroundPolicy`,
+  `subscribeBackgroundPolicy`, `reportHostPowerState`, `cloud.installRelayClient`,
   `subscribeDiscoveredLocalServers`. These are upstream's self-hosted desktop
   product and are **not** fork targets — they are listed for completeness, not as
   work. Holds open `FEATURES.serverUpdateBanner` (2026-08-11), which drops the
@@ -235,30 +235,6 @@ it will be the reason for the next one too.
 - **Then here:** delete `threadDeletion`, and the `projectManagement` gates that
   cover `project.create` / `project.delete`.
 
-### A pull request is not the thread's own
-
-Moatless reports, for a checkout, the oldest pull request the Task was ever
-connected to — not one this thread produced. Upstream's `effectiveSettled` reads
-that PR through `resolveThreadPr`, matched by branch name, and treats merged or
-closed as settling the thread outright.
-
-Against Moatless that is wrong in a way a user sees: a thread sitting on `main`
-inherits a stranger's PR, and the day it merges the thread files itself under
-Settled every time the agent goes idle. Confirmed on a live thread whose newest
-message was minutes old.
-
-Upstream restated the rule on 2026-08-16: `changeRequestState` now comes from a
-`ThreadChangeRequestSnapshot` whose branch must match the thread's, which is a
-narrower rule than matching by name alone — but it narrows against the thread's
-branch, and the PR Moatless reports is still not the thread's own, so the gate
-stays. Upstream's new `sidebarAutoSettleOnMerge` setting has no effect here for
-the same reason: the gate feeds `effectiveSettled` a null state either way.
-
-- **Closes when:** the backend reports the change request for the checkout's own
-  ref — `headRef` matching `refName`.
-- **Then here:** delete `prThreadSettling` and both its gates, in `ChatView.tsx`
-  and `Sidebar.tsx`. Upstream's rule is correct once the PR is the thread's.
-
 ### A message does not say where it came from
 
 The fork carries a `messageOrigin` field so the chat can mark a message that did
@@ -296,22 +272,27 @@ too.
 
 ### Settlement rules Moatless owns
 
-Upstream added thread pinning in the 2026-08-06 merge along with a rule worth
-copying: **a pinned thread never auto-settles.** Settlement is Moatless's to
-decide here, so upstream's client-side rule does not reach it — the fork gets the
-pin as a sort order and not as a settlement input.
+As of the 2026-09-02 merge, settlement is fully server-side: upstream removed the
+client-side `effectiveSettled` computation (inactivity age, `autoSettleAfterDays`,
+`autoSettleOnMerge`, and the branch-matched change-request read) and the client
+now renders `thread.settledOverride === "settled"` straight from the server. This
+closed the old _A pull request is not the thread's own_ gap outright — the client
+no longer settles on any PR, so the `prThreadSettling` flag and its two gates were
+deleted in the same merge. Moatless sets `settledOverride` only on explicit user
+settle/unsettle (and clears it on new activity); it never auto-settles, so a
+stranger's PR can no longer file a live thread under Settled.
+
+One fork delta remains, in `Sidebar.tsx`'s partition: **a pinned thread never
+classifies as settled** — the pin check runs before the `settledOverride` check,
+reversing upstream's order, so the pin is a sort order and not a settlement input.
 
 Same shape as the two capabilities beside it: `threadSnooze` suppresses settling
 for a period, `threadSettlement` is the explicit user override. Upstream treats
-all three as one lifecycle and Moatless implements one of them.
+all three as one lifecycle and Moatless implements the explicit override.
 
-Two more rules arrived on 2026-08-16, both in `apps/server/src/orchestration/decider.ts`:
-settling a snoozed thread takes effect at once rather than waiting for the wake
-time, and auto-settle-on-merge became a user setting
-(`sidebarAutoSettleOnMerge`) rather than a fixed rule. The first is a decider
-rule Moatless would have to reproduce; the second is client-side and already
-reaches this fork, but has no effect while _A pull request is not the thread's
-own_ holds the PR state at null.
+A decider rule Moatless would still benefit from reproducing arrived on
+2026-08-16 in `apps/server/src/orchestration/decider.ts`: settling a snoozed
+thread takes effect at once rather than waiting for the wake time.
 
 - **Closes when:** the backend's settlement decision reads pin and snooze state,
   and settles a snoozed thread immediately.

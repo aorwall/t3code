@@ -361,7 +361,7 @@
       ],
       "verdict": "converged",
       "delta": "Mobile Touch Delta",
-      "note": "Take upstream, then apply Mobile Touch Delta. Sidebar.tsx (upstream's default sidebar since 2026-08-08, formerly SidebarV2.tsx) also carries the Navigation gates and PR-driven settling deltas; all must survive."
+      "note": "Take upstream, then apply Mobile Touch Delta. Sidebar.tsx (upstream's default sidebar since 2026-08-08, formerly SidebarV2.tsx) also carries the Navigation gates delta and the pinned-before-settled ordering (a pinned thread never classifies as settled — pin is a sort order, not a settlement input; see 'Settlement rules Moatless owns' in gaps.md); all must survive."
     },
     {
       "id": "fork-only-workflows",
@@ -661,20 +661,6 @@
       }
     },
     {
-      "id": "pr-settling-gate",
-      "name": "PR-driven settling gate",
-      "paths": [
-        "apps/web/src/components/Sidebar.tsx",
-        "apps/web/src/components/ChatView.tsx",
-        "apps/web/src/fork/features.ts"
-      ],
-      "mustSurvive": "A pull request never decides whether a thread is settled — neither merged/closed settling one nor open holding one out of the shelf. Two additive FEATURES.prThreadSettling gates feed effectiveSettled a null changeRequestState; effectiveSettled itself is upstream's and unmodified. A merge that finds a thread settling on a merged PR has taken upstream's side back.",
-      "guard": {
-        "symbol": "FEATURES.prThreadSettling",
-        "files": ["apps/web/src/components/Sidebar.tsx", "apps/web/src/components/ChatView.tsx"]
-      }
-    },
-    {
       "id": "navigation-gates",
       "name": "Navigation gates",
       "paths": [
@@ -812,12 +798,6 @@
       "name": "Send while a turn is running",
       "watchFor": "Upstream widening showSendWhileRunning past isMobileViewport in ChatComposer.tsx, or dropping the prop and always rendering send beside stop.",
       "action": "Take upstream. The fork's own rule was dropped on 2026-08-16 when upstream shipped the prop; a phone browser is a mobile viewport, so the fork's case is served."
-    },
-    {
-      "id": "pr-settling",
-      "name": "PR-driven settling",
-      "watchFor": "Moatless reporting the change request for the checkout's own ref (matching headRef to refName), or upstream keying resolveThreadPr on something stronger than a branch name.",
-      "action": "Delete the prThreadSettling flag and both gates; upstream's rule is correct once the PR is the thread's own."
     },
     {
       "id": "message-provenance",
