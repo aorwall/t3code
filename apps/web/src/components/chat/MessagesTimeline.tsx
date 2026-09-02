@@ -152,6 +152,8 @@ import {
 import { SkillInlineText } from "./SkillInlineText";
 import { formatWorkspaceRelativePath } from "../../filePathDisplay";
 import { FEATURES } from "../../fork/features";
+// Fork: forking a thread from the chat hover action needs to compare turn numbers.
+import { parseMoatlessTurnNumber } from "../../fork/threadFork";
 import {
   buildReviewCommentRenderablePatch,
   formatReviewCommentFence,
@@ -1412,16 +1414,21 @@ function AssistantCopyButton({ row }: { row: Extract<TimelineRow, { kind: "messa
   return <MessageCopyButton text={assistantCopyState.text ?? ""} variant="ghost" />;
 }
 
-// Fork: forking a thread from the chat hover action. Hidden while the source
-// thread's newest turn is still running — a fork under it would race the
-// backend's own in-flight-turn check and only surface as a refusal.
+// Fork: forking a thread from the chat hover action. While the source
+// thread's newest turn is still running, only messages from an earlier,
+// already-ended turn can fork — cutting at or into the open turn would race
+// the backend's own in-flight-turn check and only surface as a refusal.
 function AssistantForkButton({ row }: { row: Extract<TimelineRow, { kind: "message" }> }) {
   const ctx = use(TimelineRowCtx);
   const activity = use(TimelineRowActivityCtx);
   const turnId = row.message.turnId;
 
-  if (turnId === null || activity.latestTurnState === "running") {
-    return null;
+  if (turnId === null) return null;
+  if (activity.latestTurnState === "running") {
+    const cut = parseMoatlessTurnNumber(turnId);
+    const running =
+      activity.latestTurnId === null ? null : parseMoatlessTurnNumber(activity.latestTurnId);
+    if (cut === null || running === null || cut >= running) return null;
   }
 
   return (

@@ -1059,26 +1059,73 @@ describe("MessagesTimeline", () => {
     expect(markup).toContain('aria-label="Fork from this message"');
   });
 
-  it("hides the fork icon on an older completed turn while the newest turn is running", () => {
-    // The hovered message's own turn is done — showAssistantMeta stays true —
-    // but the thread's newest turn is a later, still-running one, so forking
-    // would race the backend's in-flight-turn check.
-    const olderTurnId = TurnId.make("turn-fork-older");
-    const newerTurnId = TurnId.make("turn-fork-newer");
+  it("shows the fork icon on an earlier turn while a later turn is still running", () => {
+    // The hovered message's turn (1) already ended, even though the thread's
+    // newest turn (3) is still running — cutting below the open turn does
+    // not race the backend's in-flight-turn check, only cutting into it does.
+    const olderTurnId = TurnId.make("task-fork-mid:1");
+    const runningTurnId = TurnId.make("task-fork-mid:3");
     const assistantEntry = buildAssistantTimelineEntry("Done.");
     const markup = renderToStaticMarkup(
       <MessagesTimeline
         {...buildProps()}
         isWorking
         latestTurn={{
-          turnId: newerTurnId,
+          turnId: runningTurnId,
           state: "running",
           startedAt: "2026-03-17T19:20:00.000Z",
           completedAt: null,
         }}
-        runningTurnId={newerTurnId}
+        runningTurnId={runningTurnId}
         timelineEntries={[
           { ...assistantEntry, message: { ...assistantEntry.message, turnId: olderTurnId } },
+        ]}
+      />,
+    );
+
+    expect(markup).toContain('aria-label="Fork from this message"');
+  });
+
+  it("hides the fork icon on the still-running turn itself", () => {
+    const runningTurnId = TurnId.make("task-fork-mid:3");
+    const assistantEntry = buildAssistantTimelineEntry("Working...");
+    const markup = renderToStaticMarkup(
+      <MessagesTimeline
+        {...buildProps()}
+        isWorking
+        latestTurn={{
+          turnId: runningTurnId,
+          state: "running",
+          startedAt: "2026-03-17T19:20:00.000Z",
+          completedAt: null,
+        }}
+        runningTurnId={runningTurnId}
+        timelineEntries={[
+          { ...assistantEntry, message: { ...assistantEntry.message, turnId: runningTurnId } },
+        ]}
+      />,
+    );
+
+    expect(markup).not.toContain('aria-label="Fork from this message"');
+  });
+
+  it("hides the fork icon when a turn id cannot be parsed while the newest turn is running", () => {
+    const unparseableTurnId = TurnId.make("turn-fork-older");
+    const runningTurnId = TurnId.make("turn-fork-newer");
+    const assistantEntry = buildAssistantTimelineEntry("Done.");
+    const markup = renderToStaticMarkup(
+      <MessagesTimeline
+        {...buildProps()}
+        isWorking
+        latestTurn={{
+          turnId: runningTurnId,
+          state: "running",
+          startedAt: "2026-03-17T19:20:00.000Z",
+          completedAt: null,
+        }}
+        runningTurnId={runningTurnId}
+        timelineEntries={[
+          { ...assistantEntry, message: { ...assistantEntry.message, turnId: unparseableTurnId } },
         ]}
       />,
     );
