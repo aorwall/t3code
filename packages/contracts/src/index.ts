@@ -31,6 +31,8 @@ export * from "./preview.ts";
 export * from "./previewAutomation.ts";
 export * from "./sandbox.ts";
 export * from "./servers.ts";
+// Fork: the threads a thread spawned; upstream has no task tree.
+export * from "./subtasks.ts";
 export * from "./scripts.ts";
 export * from "./resourceTelemetry.ts";
 export * from "./usage.ts";

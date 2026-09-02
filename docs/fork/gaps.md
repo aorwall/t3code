@@ -216,6 +216,28 @@ no longer writes a URL.
   form dropped, decide per field whether to carry it; the port is the fork's, the
   URL is upstream's.
 
+### A subtask is a Moatless concept, and only T3's own server refuses it
+
+`subtasks.list` runs the derivation backwards for the same reason `scripts.run`
+does, so it carries the same trap and the same standing instruction.
+
+A Moatless thread has two kinds of child. A **subagent** is folded out of the
+thread's own activities and is upstream's concept too. A **subtask** is a Task
+another Task created, or a fork of one — a thread in its own right, with a route
+to open it — and upstream has no task tree at all. So the backend dispatches the
+method and `apps/server` answers `UnsupportedMethodError` unconditionally, beside
+the `serversList` / `sandboxStatus` / `scriptsRun` stubs.
+
+- **Keep the union entry** for as long as `apps/server` answers the method with
+  `UnsupportedMethodError`, whatever `unsupported-methods.mjs` reports it under.
+  The second documented exception to _drop what DROP lists_.
+- **Closes when:** upstream grows a thread tree, or the method leaves the
+  contract. Neither is near.
+
+The client half is fork-only and self-gating rather than flagged: the section is
+absent when the read comes back with a typed refusal, so a build pointed at
+upstream's server shows the agents panel exactly as upstream does.
+
 ### A command cannot be refused
 
 `orchestration.dispatchCommand` is one dispatched method carrying a union of 12

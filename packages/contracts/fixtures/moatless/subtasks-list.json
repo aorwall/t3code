@@ -1,0 +1,43 @@
+{
+  "subtasks": [
+    {
+      "threadId": "e0e1e8a6-1f6c-4e0b-9a30-4a2d5f6f7c11",
+      "title": "Migrate the callers",
+      "relation": "createdBy",
+      "status": "running",
+      "awaitingInput": false,
+      "agentType": "claude-code",
+      "branch": "feat/checkout",
+      "turnCount": 3,
+      "createdAt": "2026-07-01T09:05:00.000Z",
+      "updatedAt": "2026-07-01T09:11:30.000Z",
+      "archivedAt": null
+    },
+    {
+      "threadId": "b7c4d2f0-8a51-42d6-9c07-1d38b6a90e42",
+      "title": "Write the migration note",
+      "relation": "createdBy",
+      "status": "idle",
+      "awaitingInput": true,
+      "agentType": "codex",
+      "branch": null,
+      "turnCount": 1,
+      "createdAt": "2026-07-01T09:06:12.000Z",
+      "updatedAt": "2026-07-01T09:09:44.000Z",
+      "archivedAt": null
+    },
+    {
+      "threadId": "3f9a1c55-6b20-4f8e-8f11-77c0de5b9a03",
+      "title": "New thread",
+      "relation": "forkedFrom",
+      "status": "completed",
+      "awaitingInput": false,
+      "agentType": "claude-code",
+      "branch": "fix/retry-backoff",
+      "turnCount": 0,
+      "createdAt": "2026-07-01T09:07:00.000Z",
+      "updatedAt": "2026-07-01T09:20:03.000Z",
+      "archivedAt": "2026-07-01T09:20:03.000Z"
+    }
+  ]
+}

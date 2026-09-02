@@ -29,6 +29,8 @@ import { cn } from "~/lib/utils";
 import { orchestrationEnvironment } from "~/state/orchestration";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Button } from "~/components/ui/button";
+// Fork: a Moatless thread has a second kind of child — threads it spawned.
+import { SubtasksSection, useThreadSubtasks } from "~/fork/SubtasksSection";
 
 /**
  * In-flight states all present as Working (one steady state, per the
@@ -529,14 +531,20 @@ export function AgentsPanel({
   environmentId?: EnvironmentId | null;
   threadId?: ThreadId | null;
 }) {
-  if (!model.hasAgents) {
+  // Fork: subtasks are threads this one spawned, not members of the fold, so
+  // they are read here rather than derived from the model — and their presence
+  // is half of whether this panel is empty.
+  const subtasks = useThreadSubtasks({ environmentId, threadId });
+
+  if (!model.hasAgents && !subtasks.hasSubtasks && subtasks.error === null) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
         <Bot aria-hidden className="size-6 text-muted-foreground/60" />
         <p className="text-sm font-medium">No agents yet</p>
         <p className="max-w-56 text-xs text-muted-foreground">
-          When this thread spawns subagents or runs a workflow, they show up here with live status,
-          activity, and token usage.
+          {/* Fork: subtasks land here too. */}
+          When this thread spawns subagents, subtasks, or runs a workflow, they show up here with
+          live status, activity, and token usage.
         </p>
       </div>
     );
@@ -546,6 +554,15 @@ export function AgentsPanel({
     <div className="flex h-full min-h-0 flex-col">
       <ScrollArea className="min-h-0 flex-1">
         <div className="flex flex-col gap-2 p-2">
+          {/* Fork: child threads, above the fleet that runs inside this one. */}
+          <SubtasksSection view={subtasks} />
+          {/* Fork: the fleet only needs naming when there is a second section
+              above it to tell it apart from. */}
+          {subtasks.hasSubtasks && model.hasAgents ? (
+            <div className="px-1.5 pt-1 text-[.65rem] font-medium uppercase tracking-wider text-muted-foreground">
+              Subagents
+            </div>
+          ) : null}
           {model.workflows.map((group) => (
             <WorkflowSection
               key={group.workflow.id}

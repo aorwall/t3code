@@ -155,6 +155,10 @@
       "types": "./src/state/servers.ts",
       "default": "./src/state/servers.ts"
     },
+    "./state/subtasks": {
+      "types": "./src/state/subtasks.ts",
+      "default": "./src/state/subtasks.ts"
+    },
     "./state/session": {
       "types": "./src/state/session.ts",
       "default": "./src/state/session.ts"

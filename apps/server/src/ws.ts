@@ -2448,6 +2448,22 @@ const makeWsRpcLayer = (
             Effect.succeed({ sandboxStatus: "not_created" as const }),
             { "rpc.aggregate": "sandbox" },
           ),
+        // Fork: a subtask is a thread another thread created, which needs a
+        // backend with a task tree. This server's only child is a subagent, so
+        // it answers honestly with UnsupportedMethodError rather than with an
+        // empty list — a thread here has no children, and saying "none" would
+        // be indistinguishable from a backend that has them and lost them.
+        [WS_METHODS.subtasksList]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.subtasksList,
+            Effect.fail(
+              new UnsupportedMethodError({
+                method: WS_METHODS.subtasksList,
+                message: "This environment does not have subtasks.",
+              }),
+            ),
+            { "rpc.aggregate": "subtasks" },
+          ),
         // Scripts are read from the project either way, but *running* one is a
         // hosted-environment capability: it needs a sandbox to host the terminal
         // and publish the served port. This server runs threads on the local

@@ -213,6 +213,8 @@ import {
   ServerStatusSnapshot,
   ServerStatusSubscribeInput,
 } from "./servers.ts";
+// Fork: the threads a thread spawned, a fork-only surface.
+import { SubtasksListInput, SubtasksListResult } from "./subtasks.ts";
 import { ScriptsRunInput, ScriptsRunResult } from "./scripts.ts";
 import { UsageReadError, UsageSummary, UsageSummaryInput } from "./usage.ts";
 import { ServerSettings, ServerSettingsError, ServerSettingsPatch } from "./settings.ts";
@@ -294,6 +296,9 @@ export const WS_METHODS = {
   // Thread server methods
   serversList: "servers.list",
   serversSubscribeLogs: "servers.subscribeLogs",
+
+  // Fork: the threads a thread spawned; upstream has no task tree.
+  subtasksList: "subtasks.list",
 
   // Thread script methods
   scriptsRun: "scripts.run",
@@ -1019,6 +1024,24 @@ export const WsServersListRpc = Rpc.make(WS_METHODS.serversList, {
 });
 
 /**
+ * Fork: the child threads of a thread — tasks it created, and forks of it.
+ *
+ * Declared with `UnsupportedMethodError` because it is a Moatless concept:
+ * `apps/server` has no task tree and answers with it, and the client has to
+ * decode that rather than see an unexpected server error. A thread that simply
+ * has no children answers with an empty list, which is not the same thing.
+ *
+ * Fork: `unsupported-methods.mjs` reports this method under DROP, because it
+ * reads Moatless's own dispatch and not `apps/server`'s. The union member stays
+ * regardless — see "A subtask is a Moatless concept" in docs/fork/gaps.md.
+ */
+export const WsSubtasksListRpc = Rpc.make(WS_METHODS.subtasksList, {
+  payload: SubtasksListInput,
+  success: SubtasksListResult,
+  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
+});
+
+/**
  * Runs a project's script in the environment. Declared with
  * `UnsupportedMethodError` because an environment without the `workspaceScripts`
  * capability — every T3-hosted one today — answers with it, and the client must
@@ -1333,6 +1356,8 @@ export const WsRpcGroup = RpcGroup.make(
   WsPreviewAutomationFocusHostRpc,
   WsSubscribePreviewEventsRpc,
   WsServersListRpc,
+  // Fork: the threads a thread spawned.
+  WsSubtasksListRpc,
   WsScriptsRunRpc,
   WsSandboxStatusRpc,
   // Fork: sandbox lifecycle push.

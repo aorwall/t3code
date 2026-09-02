@@ -14,11 +14,15 @@ import previewList from "../fixtures/moatless/preview-list.json" with { type: "j
 import previewListEmpty from "../fixtures/moatless/preview-list-empty.json" with { type: "json" };
 import serversList from "../fixtures/moatless/servers-list.json" with { type: "json" };
 import serversListNeverProvisioned from "../fixtures/moatless/servers-list-never-provisioned.json" with { type: "json" };
+import subtasksList from "../fixtures/moatless/subtasks-list.json" with { type: "json" };
+import subtasksListEmpty from "../fixtures/moatless/subtasks-list-empty.json" with { type: "json" };
 import { PreviewListResult } from "./preview.ts";
 import { ServersListResult } from "./servers.ts";
+import { SubtasksListResult } from "./subtasks.ts";
 
 const decodeServersList = Schema.decodeUnknownSync(ServersListResult);
 const decodePreviewList = Schema.decodeUnknownSync(PreviewListResult);
+const decodeSubtasksList = Schema.decodeUnknownSync(SubtasksListResult);
 
 describe("Moatless servers.list", () => {
   it("decodes a running environment, including a starting and a failed server", () => {
@@ -48,6 +52,36 @@ describe("Moatless servers.list", () => {
     expect(result.servers).toHaveLength(1);
     expect(result.servers[0]?.status).toBe("starting");
     expect(result.servers[0]?.url).not.toBeNull();
+  });
+});
+
+describe("Moatless subtasks.list", () => {
+  it("decodes both parent edges, in spawn order, with the nullable fields written as null", () => {
+    const result = decodeSubtasksList(subtasksList);
+
+    expect(result.subtasks.map((subtask) => subtask.relation)).toEqual([
+      "createdBy",
+      "createdBy",
+      "forkedFrom",
+    ]);
+    // Spawn order, not recency: the panel updates rows in place and must not
+    // re-sort itself when a child settles.
+    expect(result.subtasks.map((subtask) => subtask.createdAt)).toEqual([
+      "2026-07-01T09:05:00.000Z",
+      "2026-07-01T09:06:12.000Z",
+      "2026-07-01T09:07:00.000Z",
+    ]);
+    expect(result.subtasks[1]?.branch).toBeNull();
+    expect(result.subtasks[0]?.archivedAt).toBeNull();
+    // Waiting on a person rides beside the status rather than replacing it.
+    expect(result.subtasks[1]?.status).toBe("idle");
+    expect(result.subtasks[1]?.awaitingInput).toBe(true);
+    // A child that never ran still has a turn count, and it is zero.
+    expect(result.subtasks[2]?.turnCount).toBe(0);
+  });
+
+  it("decodes a thread that spawned nothing", () => {
+    expect(decodeSubtasksList(subtasksListEmpty).subtasks).toEqual([]);
   });
 });
 

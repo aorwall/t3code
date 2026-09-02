@@ -126,6 +126,8 @@ export const RPC_REQUIRED_SCOPES = {
   [WS_METHODS.subscribePreviewEvents]: AuthOrchestrationReadScope,
   [WS_METHODS.subscribeDiscoveredLocalServers]: AuthOrchestrationReadScope,
   [WS_METHODS.serversList]: AuthOrchestrationReadScope,
+  // Fork: the threads a thread spawned, a read like any other thread read.
+  [WS_METHODS.subtasksList]: AuthOrchestrationReadScope,
   [WS_METHODS.sandboxStatus]: AuthOrchestrationReadScope,
   // Fork: sandbox lifecycle push, a read like the status it pushes.
   [WS_METHODS.sandboxSubscribeStatus]: AuthOrchestrationReadScope,

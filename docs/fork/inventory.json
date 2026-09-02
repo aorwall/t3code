@@ -441,9 +441,10 @@
         "packages/contracts/src/rpc.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/preview.ts",
+        "packages/contracts/src/subtasks.ts",
         "packages/contracts/fixtures/moatless/**"
       ],
-      "mustSurvive": "Keep fork methods: server list, server status subscription, server log subscription, sandbox status, sandbox status subscription, sandbox start, and sandbox stop. Keep sandbox lifecycle schemas separate from server list schemas. sandbox.subscribeStatus is gated on the sandboxStatusPush capability: absent, the client polls sandbox.status instead, so both paths have to keep working."
+      "mustSurvive": "Keep fork methods: server list, server status subscription, server log subscription, sandbox status, sandbox status subscription, sandbox start, sandbox stop, and subtasks.list. Keep sandbox lifecycle schemas separate from server list schemas. sandbox.subscribeStatus is gated on the sandboxStatusPush capability: absent, the client polls sandbox.status instead, so both paths have to keep working. subtasks.ts is fork-only and subtasks.list keeps its UnsupportedMethodError union entry for as long as apps/server refuses the method, whatever unsupported-methods.mjs reports."
     },
     {
       "id": "server-state-client-runtime",
@@ -451,10 +452,21 @@
       "paths": [
         "packages/client-runtime/src/state/servers.ts",
         "packages/client-runtime/src/state/sandbox.ts",
+        "packages/client-runtime/src/state/subtasks.ts",
         "packages/client-runtime/src/rpc/client.ts",
         "packages/client-runtime/package.json"
       ],
-      "mustSurvive": "Keep fork server and sandbox lifecycle state surfaces separate. sandbox exposes both status (polled query, the fallback) and statusStream (the pushed subscription); dropping either leaves one class of server without a live indicator. The subscription tag is also listed in EnvironmentSubscriptionRpcTag in rpc/client.ts, an upstream file."
+      "mustSurvive": "Keep fork server, sandbox lifecycle and subtask state surfaces separate. sandbox exposes both status (polled query, the fallback) and statusStream (the pushed subscription); dropping either leaves one class of server without a live indicator. The subscription tag is also listed in EnvironmentSubscriptionRpcTag in rpc/client.ts, an upstream file. subtasks is a query on a refresh interval, not a subscription: a child task settles at the pace of a task, not of a container probe."
+    },
+    {
+      "id": "subtasks-agents-panel",
+      "name": "Subtasks section in the agents panel",
+      "paths": [
+        "apps/web/src/fork/SubtasksSection.tsx",
+        "apps/web/src/state/subtasks.ts",
+        "apps/web/src/components/AgentsPanel.tsx"
+      ],
+      "mustSurvive": "The agents panel has two sections against Moatless: the child threads this thread spawned, and upstream's subagent fleet. Only AgentsPanel.tsx is upstream's, and the whole fork delta there is one import, one useThreadSubtasks call above the empty-state return, the empty-state copy, and two elements in the scroll area. Everything else lives in fork/SubtasksSection.tsx, which mirrors AgentsPanel's STATUS_VISUALS classes on purpose rather than importing them."
     },
     {
       "id": "servers-right-panel",
