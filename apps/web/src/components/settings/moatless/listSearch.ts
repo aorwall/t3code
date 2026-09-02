@@ -1,4 +1,4 @@
-import { normalizeSearchText } from "../settingsSearch";
+import { normalizeSearchText } from "~/lib/utils";
 
 /**
  * Filtering an administration list by what its rows say.

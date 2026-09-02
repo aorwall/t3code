@@ -30,12 +30,24 @@ describe("buildThreadActionMenuItems", () => {
   it("hides lifecycle items when the environment lacks the capabilities", () => {
     // Fork: `delete` is gated behind FEATURES.threadDeletion (off) and `archive`
     // is always offered, so the tail is archive rather than upstream's delete.
+    // `project-settings` stays — it is not fork-gated.
     expect(
       ids({
         ...baseState,
         supports: { settlement: false, snooze: false, pinning: false, titleRegeneration: false },
       }),
-    ).toEqual(["rename", "mark-unread", "copy", "archive"]);
+    ).toEqual(["rename", "mark-unread", "copy", "project-settings", "archive"]);
+  });
+
+  it("groups project settings with utility actions before archive", () => {
+    const items = buildThreadActionMenuItems(baseState);
+    const copyIndex = items.findIndex((item) => item.id === "copy");
+    expect(items[copyIndex + 1]).toMatchObject({
+      id: "project-settings",
+      label: "Project settings",
+      icon: "settings",
+    });
+    expect(items[copyIndex + 2]?.id).toBe("archive");
   });
 
   it("includes branch items only for threads with a branch", () => {
