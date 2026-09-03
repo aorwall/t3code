@@ -14,6 +14,14 @@
  * read as one surface. The classes below mirror `AgentsPanel`'s `STATUS_VISUALS`
  * rather than importing it: keeping the delta out of that upstream file is worth
  * more at merge time than sharing six lines of Tailwind.
+ *
+ * They mirror it in every state but one, and the exception is the point. For a
+ * subagent, `completed` means it finished its work, so upstream paints it with
+ * the success token. For a subtask it means the thread was *closed*, which is
+ * Moatless saying the task is over, not that it went well — `subtask_status`
+ * lets `closed_at` outrank the last turn, so a task closed after an errored
+ * turn arrives here as `completed` too. Green would be the dot overruling its
+ * own label. Closed is settled, so it reads settled.
  */
 import { useAtomValue } from "@effect/atom-react";
 import type { EnvironmentId, Subtask, SubtaskStatus, ThreadId } from "@t3tools/contracts";
@@ -35,7 +43,8 @@ const STATUS_VISUALS: Record<SubtaskStatus, { dotClass: string; label: string }>
   pending: { dotClass: "bg-info", label: "Starting" },
   running: { dotClass: "bg-info", label: "Working" },
   idle: { dotClass: "bg-muted-foreground/50", label: "Idle · resumable" },
-  completed: { dotClass: "bg-success", label: "Closed" },
+  // Settled, like Stopped — see the note above on why this is not `bg-success`.
+  completed: { dotClass: "bg-muted-foreground/60", label: "Closed" },
   failed: { dotClass: "bg-destructive", label: "Failed" },
   interrupted: { dotClass: "bg-muted-foreground/60", label: "Stopped" },
 };
