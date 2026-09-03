@@ -180,6 +180,8 @@ import { PullRequestsUnavailableState } from "./pullRequest/PullRequestsUnavaila
 import type { PullRequestTabStatus } from "./RightPanelTabs";
 // Fork: the sandbox wrapper stands in for upstream's RightPanelTabs.
 import { SandboxedRightPanelTabs as RightPanelTabs } from "./SandboxedRightPanelTabs";
+// Fork: an in-thread banner for `moat cmd` commands running behind an ended turn.
+import { useSandboxCommandsBanner } from "./sandbox/useSandboxCommandsBanner";
 import { AgentsPanel } from "./AgentsPanel";
 import {
   deriveAgentPanelModel,
@@ -5109,6 +5111,9 @@ function ChatViewContent(props: ChatViewProps) {
       }
     }
   }, [activeThread, environmentId, interruptThreadTurn, setThreadError]);
+  // Fork: `moat cmd` commands still running after the turn ended — the agent
+  // reports idle, so this is the only in-thread sign the sandbox is still busy.
+  const sandboxCommandsBannerItem = useSandboxCommandsBanner(activeThreadRef);
   const backgroundLivenessBannerItem = useMemo<ComposerBannerStackItem | null>(() => {
     if (activeBackgroundLiveness === null || !activeThread) {
       return null;
@@ -5317,6 +5322,10 @@ function ChatViewContent(props: ChatViewProps) {
   const composerBannerItems = useMemo<ComposerBannerStackItem[]>(() => {
     const backgroundLivenessItems =
       backgroundLivenessBannerItem === null ? [] : [backgroundLivenessBannerItem];
+    // Fork: sits beside the agent-liveness banner — both report activity, one
+    // the agent's own work and one the commands it left running.
+    const sandboxCommandsItems =
+      sandboxCommandsBannerItem === null ? [] : [sandboxCommandsBannerItem];
     const resumeCompactionItems =
       resumeCompactionBannerItem === null ? [] : [resumeCompactionBannerItem];
     const wokeThreadItems = wokeThreadBannerItem === null ? [] : [wokeThreadBannerItem];
@@ -5325,6 +5334,8 @@ function ChatViewContent(props: ChatViewProps) {
       return [
         ...systemComposerBannerItems,
         ...backgroundLivenessItems,
+        // Fork: the sandbox-commands banner.
+        ...sandboxCommandsItems,
         ...resumeCompactionItems,
         ...wokeThreadItems,
         ...parkedThreadItems,
@@ -5333,6 +5344,8 @@ function ChatViewContent(props: ChatViewProps) {
     return [
       ...systemComposerBannerItems,
       ...backgroundLivenessItems,
+      // Fork: the sandbox-commands banner.
+      ...sandboxCommandsItems,
       ...resumeCompactionItems,
       ...wokeThreadItems,
       {
@@ -5384,6 +5397,8 @@ function ChatViewContent(props: ChatViewProps) {
     localCheckoutBranchMismatch,
     parkedThreadBannerItem,
     resumeCompactionBannerItem,
+    // Fork: the sandbox-commands banner.
+    sandboxCommandsBannerItem,
     showBranchMismatchBanner,
     systemComposerBannerItems,
     wokeThreadBannerItem,

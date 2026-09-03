@@ -37,11 +37,45 @@ export type SandboxStatusInput = typeof SandboxStatusInput.Type;
 export const SandboxAgentStatus = Schema.Literals(["running", "waiting", "idle", "unknown"]);
 export type SandboxAgentStatus = typeof SandboxAgentStatus.Type;
 
+/** Lifecycle of a command the agent registered through `moat cmd`. */
+export const ManagedCommandState = Schema.Literals(["running", "exited", "timedOut", "killed"]);
+export type ManagedCommandState = typeof ManagedCommandState.Type;
+
+/**
+ * A long-running command the agent handed to the sandbox with `moat cmd`.
+ *
+ * The agent reports `idle` while one of these runs — its turn ended and the
+ * sandbox is carrying the work — so a client with `agentStatus` alone cannot
+ * tell a finished thread from one that is mid-build. These are what let it.
+ *
+ * Every field here is an instant, never an elapsed duration: a client renders
+ * "12m in" from `startedAtUnixMs` itself. A server that recomputed elapsed per
+ * read would make the status change on every poll, and the push, which sends
+ * only changes, would then never fall quiet.
+ */
+export const CommandSummary = Schema.Struct({
+  id: Schema.String,
+  /** Human label, defaulted by the sandbox to a prefix of the command line. */
+  label: Schema.String,
+  state: ManagedCommandState,
+  startedAtUnixMs: Schema.Number,
+  /** When the sandbox kills it for outliving its deadline. */
+  deadlineUnixMs: Schema.Number,
+  /** Set once terminal; 124 is a timeout kill, matching coreutils `timeout`. */
+  exitCode: Schema.NullOr(Schema.Number),
+});
+export type CommandSummary = typeof CommandSummary.Type;
+
 export const SandboxStatusResult = Schema.Struct({
   sandboxStatus: SandboxRuntimeStatus,
   /** Absent whenever the environment is not up, so it is `optionalKey` rather
       than nullable — a `null` would fail the decode of the whole result. */
   agentStatus: Schema.optionalKey(SandboxAgentStatus),
+  /** The commands registered through `moat cmd`, running and recently
+      finished. Absent — not `[]` — when none are registered or the server
+      predates `capabilities.sandboxCommands`, so a client reads its presence
+      as "this server reports commands" and its contents as "these are live". */
+  commands: Schema.optionalKey(Schema.Array(CommandSummary)),
 });
 export type SandboxStatusResult = typeof SandboxStatusResult.Type;
 

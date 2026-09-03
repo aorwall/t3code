@@ -11,6 +11,7 @@ import type { EnvironmentQueryView } from "~/state/query";
 import { sandboxEnvironment } from "~/state/sandbox";
 import { useAtomCommand } from "~/state/use-atom-command";
 
+import { SandboxCommandsBadge } from "./sandbox/SandboxCommandsBadge";
 import { Button } from "./ui/button";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "./ui/tooltip";
 
@@ -157,6 +158,12 @@ export function SandboxStatusControl({
           {label}
         </div>
       </div>
+      {/* The commands the agent handed to `moat cmd`, so a build running behind
+          an ended turn is not mistaken for a finished thread. Renders nothing
+          when none are running, which is only ever the case once the sandbox
+          is ready — so it never collides with the compact tooltip below, which
+          is used while the sandbox is not. */}
+      <SandboxCommandsBadge commands={status.data?.commands} />
       {showRetry ? (
         <Button size="xs" variant="outline" onClick={status.refresh}>
           Retry

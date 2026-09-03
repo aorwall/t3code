@@ -109,6 +109,11 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
       client cannot tell "this server does not say" from "this agent is idle"
       and so shows no agent indicator in the sandbox panel. */
   sandboxAgentStatus: Schema.optionalKey(Schema.Boolean),
+  /** Fork: sandbox.status reports the commands registered through `moat cmd`.
+      The agent reports `idle` while one runs, so absent this key a client
+      cannot tell a thread that is mid-build from one with nothing left to do,
+      and shows no command rows at all. */
+  sandboxCommands: Schema.optionalKey(Schema.Boolean),
   /** Agent-activity publishes (push notifications and Live Activities)
       currently leave this environment: the publish opt-in is enabled and the
       relay link credentials exist. Clients skip seeding a Live Activity when
