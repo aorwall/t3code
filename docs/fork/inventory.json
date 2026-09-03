@@ -364,6 +364,12 @@
       "note": "Take upstream, then apply Mobile Touch Delta. Sidebar.tsx (upstream's default sidebar since 2026-08-08, formerly SidebarV2.tsx) also carries the Navigation gates delta and the pinned-before-settled ordering (a pinned thread never classifies as settled — pin is a sort order, not a settlement input; see 'Settlement rules Moatless owns' in gaps.md); all must survive."
     },
     {
+      "id": "file-preview-panel",
+      "paths": ["apps/web/src/components/files/FilePreviewPanel.tsx"],
+      "verdict": "decide",
+      "note": "Upstream owns this file and works in it steadily. Two fork deltas to re-state on top: the browser frame keyed on the page's own bytes (frameRevision, from browserPreviewFrameRevision) instead of on the workspace mutation id, and following the path the read resolved to (onRetargetFile) so a mention into a subdirectory repository lands on the file actually shown."
+    },
+    {
       "id": "fork-only-workflows",
       "paths": [".github/workflows/build-moatless-t3-image.yml", ".github/workflows/README.md"],
       "verdict": "ours",
@@ -767,6 +773,16 @@
         "apps/web/src/routes/settings.tsx"
       ],
       "mustSurvive": "Converged with Settings gates; the same files carry both deltas and both must survive. Additive: the Administration nav group, the MOATLESS_ADMIN_PATHS entries, the beforeLoad redirect for a non-administrator, and an export on normalizeSearchText. The guard matches detail routes by path prefix — a new administration route with children must be added to MOATLESS_ADMIN_PATHS or it is reachable without an admin check."
+    },
+    {
+      "id": "browser-frame-revision",
+      "name": "Browser frame keyed on the page, not the workspace",
+      "paths": [
+        "apps/web/src/fork/browserPreviewRevision.ts",
+        "apps/web/src/fork/browserPreviewRevision.test.ts",
+        "apps/web/src/components/files/FilePreviewPanel.tsx"
+      ],
+      "mustSurvive": "An HTML page open in the file preview is replaced only when its own bytes change. Upstream keys the frame on the workspace mutation id, which against Moatless means every completed command and every checkpoint throws the page's scroll position and in-page state away. The key falls back to upstream's when the bytes cannot answer it: a PDF is never read, and a failed read has nothing to hash. Known blind spot, deliberate: a page that pulls a sibling stylesheet or script does not reload when the sibling changes — the activity stream cannot say which files a command touched, and nothing on the wire carries a directory revision."
     }
   ],
 

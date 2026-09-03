@@ -21,6 +21,8 @@ import * as Schema from "effect/Schema";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { isBrowserPreviewFile, openFileInPreview } from "~/browser/openFileInPreview";
+// Fork: keeps the browser frame from being replaced by an unrelated mutation.
+import { browserPreviewFrameRevision } from "~/fork/browserPreviewRevision";
 import { useAssetUrlRefresh, useAssetUrlState } from "~/assets/assetUrls";
 import { OpenInPicker } from "~/components/chat/OpenInPicker";
 import { MediaVideoPlayer } from "~/components/media/MediaVideoPlayer";
@@ -214,6 +216,10 @@ function WorkspaceBrowserPreview(props: {
   readonly workspaceRoot: string;
   readonly title: string;
   readonly workspaceMutationId: string | null;
+  // Fork: the revision to key the frame on when the page's own bytes can answer
+  // it, so an unrelated command does not replace the page. Null falls back to
+  // upstream's mutation id. See `~/fork/browserPreviewRevision`.
+  readonly frameRevision?: string | null;
 }) {
   const insideWorkspace =
     mediaFileReference(props.absolutePath, props.workspaceRoot).relativePath !== undefined;
@@ -226,10 +232,12 @@ function WorkspaceBrowserPreview(props: {
     [insideWorkspace, props.threadRef.threadId, props.absolutePath],
   );
   const assetUrl = useAssetUrlState(props.environmentId, resource);
+  // Fork: prefer the page's own revision over the workspace mutation id.
+  const revision = props.frameRevision ?? props.workspaceMutationId;
   const revisionSuffix =
-    props.workspaceMutationId === null
+    revision === null
       ? ""
-      : `${assetUrl._tag === "Success" && assetUrl.url.includes("?") ? "&" : "?"}workspace-revision=${encodeURIComponent(props.workspaceMutationId)}`;
+      : `${assetUrl._tag === "Success" && assetUrl.url.includes("?") ? "&" : "?"}workspace-revision=${encodeURIComponent(revision)}`;
 
   if (assetUrl._tag === "Failure") {
     return (
@@ -1009,6 +1017,8 @@ export default function FilePreviewPanel({
     [projectName, relativePath],
   );
   const onFilePostRender = useFileLineReveal(relativePath, revealLine, revealRequestId);
+  // Fork: hashing up to a megabyte is not something to redo on every render.
+  const browserFrameRevision = useMemo(() => browserPreviewFrameRevision(file.data), [file.data]);
   useWorkspaceMutationRefresh({
     enabled: relativePath !== null && !isMedia && !isPdf && !selectedFilePending,
     mutationId: workspaceMutationId,
@@ -1225,6 +1235,9 @@ export default function FilePreviewPanel({
               workspaceRoot={cwd}
               title={relativePath}
               workspaceMutationId={workspaceMutationId}
+              // Fork: an HTML page is replaced when its own bytes change; a PDF
+              // is never read, so it keeps the mutation id.
+              frameRevision={browserFrameRevision}
             />
           ) : relativePath && file.error && file.data === null ? (
             <div className="flex min-h-0 flex-1 items-center justify-center px-6 text-center text-xs leading-relaxed text-destructive">
