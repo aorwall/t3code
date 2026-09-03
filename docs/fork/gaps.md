@@ -133,7 +133,23 @@ what a person loses, which is the part the derivation cannot tell you:
 - **Usage summary** — `server.getUsageSummary`, new upstream in the 2026-08-12
   merge, reading local provider transcript directories in
   `apps/server/src/usage/`. The `/usage` route and its charts render against
-  whatever the RPC returns and have no local fallback on Moatless.
+  whatever the RPC returns and have no local fallback on Moatless. Grown in the
+  2026-09-03 merge by `server.refreshUsageRates` (#9146-era usage-pricing work,
+  `apps/server/src/usage/usagePricing.ts`), which re-fetches provider price
+  tables on the machine the server runs on; it shares no error union with
+  `getUsageSummary`, so it carries `UnsupportedMethodError` directly. Both
+  resolve to a refusal on Moatless.
+- **Provider setup** — the redesigned provider editor's authenticate-and-install
+  flow: `provider.auth.start` / `.complete` / `.cancel` / `.logout` /
+  `.subscribe` and `provider.install.start` / `.cancel` / `.subscribe` /
+  `.remove`, new upstream in the 2026-09-03 merge with the Google Antigravity ACP
+  agent (#9348) and the provider-editor/models-list redesign (#8508). They drive
+  a provider CLI login and a CLI install on the machine the server runs on;
+  Moatless runs providers in its own sandboxes and serves none of them, so all
+  nine share `ProviderSetupRpcError`, which now carries `UnsupportedMethodError`.
+  The editor still reads and the models list renders; the auth and install
+  actions inside it resolve to a refusal. Closes if Moatless ever manages
+  provider credentials on the client's behalf.
 - **Opening in an external editor** — `shell.openInEditor`. Holds open
   `workspaceOpenIn`. Unlikely ever to close: the browser is not on the machine
   the workspace is on, so this one is a candidate for deleting the surface

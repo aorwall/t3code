@@ -283,7 +283,7 @@
       "id": "upstream-preview",
       "paths": ["apps/web/src/components/preview/**"],
       "verdict": "decide",
-      "note": "Everything under components/preview/ except the fork-only files above. Take upstream and re-state the hosted-preview behavior on top. PreviewEmptyState.tsx, PreviewView.tsx and PreviewChromeRow.test.tsx are upstream's files carrying fork deltas.",
+      "note": "Everything under components/preview/ except the fork-only files above. Take upstream and re-state the hosted-preview behavior on top. PreviewEmptyState.tsx and PreviewView.tsx are upstream's files carrying fork deltas. (PreviewChromeRow.test.tsx carried a fork delta until upstream removed it as a static-markup-only test in #9364, taken on the 2026-09-03 merge.)",
       "except": "fork-preview-files"
     },
     {
@@ -638,7 +638,6 @@
       "name": "Project-script editing capability",
       "paths": [
         "apps/web/src/components/ProjectScriptsControl.tsx",
-        "apps/web/src/components/ProjectScriptsControl.test.tsx",
         "apps/web/src/components/chat/ChatHeader.tsx",
         "apps/web/src/components/settings/ProjectSettingsPanel.tsx",
         "apps/web/src/components/ChatView.tsx",

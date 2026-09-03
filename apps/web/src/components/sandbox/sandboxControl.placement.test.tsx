@@ -31,6 +31,7 @@ function render(options: {
   return renderToStaticMarkup(
     <RightPanelTabs
       mode="inline"
+      environmentId={null}
       surfaces={options.surfaces ?? []}
       activeSurfaceId={options.activeSurfaceId ?? null}
       pendingSurfaceIds={new Set()}
@@ -44,6 +45,7 @@ function render(options: {
       onCloseAllSurfaces={() => undefined}
       onCopyFilePath={() => undefined}
       onAddBrowser={() => undefined}
+      onAddBrowserInProfile={() => undefined}
       onAddTerminal={() => undefined}
       onAddPullRequest={() => undefined}
       onAddDiff={() => undefined}

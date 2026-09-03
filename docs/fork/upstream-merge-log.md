@@ -28,6 +28,77 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-03 — merged upstream to 36c4e9cf, Antigravity provider + usage-rates refuse
+
+- Upstream: `36c4e9cf5` from base `d937e3075` (`137` commits).
+- Landed: `816` files from `git diff --stat HEAD^1 HEAD` against `811` in the
+  upstream range (`d937e3075..HEAD^2`); fork delta `650` files from
+  `git diff --stat HEAD^2 HEAD`. Gap of five, all in landed and not the range:
+  two fork-owned files touched during resolution —
+  `apps/web/src/components/sandbox/sandboxControl.placement.test.tsx` (a
+  test-prop fixup) and `apps/web/src/components/sandbox/useSandboxCommandsBanner.tsx`
+  (a reformat) — plus the three fork docs this merge writes,
+  `docs/fork/inventory.json` (the fork-policy edit below), `docs/fork/gaps.md`
+  and this file. No upstream work dropped.
+- Conflicts, resolution by inventory verdict:
+  - `AGENTS.md` [`agent-instructions`, decide] — kept the fork's slimmed shape;
+    added Antigravity to the intro's provider list.
+  - `packages/contracts/src/rpc.ts` [`contracts-rpc-auth`, converged] — kept the
+    fork import block, adopted upstream's `./usage.ts` imports. Union work below.
+  - `packages/contracts/src/environment.ts` — kept the fork capability keys,
+    adopted upstream's `serverUpdateThreadContinuation` (a server-declared
+    capability, not a client method, so no union entry).
+  - `ChatView.tsx`, `MessagesTimeline.tsx` [`thread-fork` / `message-origin`,
+    converged] — took upstream's attachment/right-panel convergence; re-applied
+    the fork's message-origin imports and the fork-a-thread hover action (added
+    as an optional `actions` prop on `AssistantMessageMeta`). Dropped the now-dead
+    `FileIcon` and `configuredPreviewUrls`/`configuredUrls` (the fork's hosted
+    `PreviewPanel` takes no such prop).
+  - `preview/*` [`upstream-preview`, decide] — took upstream's `addBrowserSurface`
+    `profileId` field beside the fork's `url`, `rightPanelStore` `openAttachment`
+    beside the fork's `retargetFile`, and the `RightPanelTabs` add-browser-in-
+    profile props. Fixed a latent fork bug in `PreviewView`'s hosted annotation
+    handler: routed it through the exported `capturePreviewAnnotationScreenshot`
+    wrapper (the internal helper it called is not exported).
+  - `settings/*`, `SidebarChrome.tsx`, `FilePreviewPanel.tsx` [decide] — took
+    upstream's size/icon and attachment-media changes; re-applied the fork's
+    `serverAdministration` / `projectManagement` gates, the `APP_BASE_NAME` span,
+    and the `onRetargetFile` effect.
+  - Deleted per upstream #9364: `ProjectScriptsControl.test.tsx`,
+    `preview/PreviewChromeRow.test.tsx` (git rm, accepting the upstream removal).
+- New unsupported methods (`unsupported-methods.mjs` ADD → 0 after): added
+  `UnsupportedMethodError` to the shared `ProviderSetupRpcError` union (nine
+  `provider.auth.*` / `provider.install.*` methods behind the Antigravity #9348 /
+  provider-editor #8508 work) and to `server.refreshUsageRates`. Gaps.md
+  "Methods the backend does not dispatch" grown with a _Provider setup_ bullet
+  and a `refreshUsageRates` clause on _Usage summary_.
+- Feature triage of the 137 commits:
+  - _Usable as-is_ (UI, no backend dependency): mod+w tab close (#9363),
+    PageUp/PageDown chat nav (#9315), diff-header copy-path (#2403), error-report
+    copy (#9166), opt-in context-window indicator (#9190), diff/PR file tree
+    (#9330), opt-in panel animations (#8830) and proactive panels (#9276),
+    button press feedback (#9349), provider-editor redesign chrome (#8508).
+  - _Unsupported in Moatless_ (refuse; backend serves none): Antigravity provider
+    auth/install and all `provider.*` setup (#9348, #8508), `server.refreshUsageRates`.
+    Desktop-only and already capability-/desktop-gated, no new work: preview
+    browser profiles (#7254), open-links-in-app (#9339), ssh-host suggestions
+    (#9171), environment-as-machine (#9299), continue-threads-across-restart
+    (#9167, rides the `serverUpdateThreadContinuation` capability).
+  - _Backend behavior to reproduce_ if Moatless wants it: project icons (#9137,
+    migration 047), auto-pull clean default branches (#9277, migration 045),
+    inline citations (#9146, needs the backend to emit citations), the usage page.
+    Migration 046 (RepairAutomaticSettlementTimestamps) is upstream-server-only.
+  - Net-zero: context compaction (#8808) landed and was reverted (#9284).
+- Sweep: no owned-concern surprises. `scripts.run`, `subtasks.list`,
+  `threads.getShell` still report under DROP — the three documented keep-anyway
+  exceptions (`apps/server` still refuses them), unchanged.
+- Verification: `fmt:check`, `lint`, `typecheck`, `tripwires` green; full test
+  suite green. `unsupported-methods` and `duplicate-adds` exit non-zero and are
+  the two caveated machine failures — `unsupported-methods` on the three
+  documented DROP exceptions above, `duplicate-adds` on three false positives
+  (`openPreview` in a `ChatView` object literal vs its deps array; three distinct
+  `it()` blocks in `addBrowserSurface.test.ts`), all kept twice legitimately.
+
 ### 2026-09-02 — merged upstream to d937e307, server-side settlement converges, prThreadSettling retired
 
 - Upstream: `d937e3075` from base `b17cc3d1b` (`62` commits).
