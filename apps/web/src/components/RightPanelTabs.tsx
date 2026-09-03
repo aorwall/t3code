@@ -24,7 +24,8 @@ import {
 
 import { isElectron } from "~/env";
 import type { DesktopPreviewOverlay } from "~/previewStateStore";
-import type { RightPanelSurface } from "~/rightPanelStore";
+// Fork: the surface kind is what the sandbox gate is decided against.
+import type { RightPanelKind, RightPanelSurface } from "~/rightPanelStore";
 import { cn } from "~/lib/utils";
 import { readLocalApi } from "~/localApi";
 import { Button } from "~/components/ui/button";
@@ -42,6 +43,11 @@ import { FaviconImage } from "./preview/PreviewFaviconIcon";
 import { previewBridge } from "./preview/previewBridge";
 import { PierreEntryIcon } from "./chat/PierreEntryIcon";
 import { RightPanelDisabledState } from "./sandbox/RightPanelDisabledState";
+import {
+  resolveSurfaceGate,
+  surfaceNeedsSandbox,
+  type SurfaceGate,
+} from "./sandbox/sandboxSurfaces";
 
 interface RightPanelTabsProps {
   mode: PreviewPanelMode;
@@ -269,9 +275,23 @@ function RightPanelEmptyState(props: {
   liveAgentCount: number;
   /** Fork: the thread's sandbox status and its start/stop button. */
   sandboxControl?: ReactNode;
+  /**
+   * Fork: applies the thread's sandbox gate to a card. The same function the
+   * tab bar's "+" menu uses, so the two can never disagree about what a
+   * stopped sandbox closes.
+   */
+  sandboxGate?: (available: boolean, reason: string, kind: RightPanelKind) => SurfaceGate;
 }) {
   // -1 means no highlight: it only appears on hover or arrow use.
   const [highlight, setHighlight] = useState(-1);
+
+  // Fork: ungated where no sandbox owns this panel, which is upstream's case.
+  const gate =
+    props.sandboxGate ??
+    ((available: boolean, reason: string): SurfaceGate => ({
+      available,
+      disabledReason: reason,
+    }));
 
   const actions = [
     {
@@ -279,8 +299,7 @@ function RightPanelEmptyState(props: {
       description: "Open a local app or URL.",
       icon: Globe2,
       shortcut: "B",
-      available: props.browserAvailable,
-      disabledReason: SURFACE_UNAVAILABLE_HINTS.browser,
+      ...gate(props.browserAvailable, SURFACE_UNAVAILABLE_HINTS.browser, "preview"),
       onClick: props.onAddBrowser,
       badgeCount: 0,
     },
@@ -289,8 +308,7 @@ function RightPanelEmptyState(props: {
       description: "Start a shell in this workspace.",
       icon: TerminalSquare,
       shortcut: "T",
-      available: props.terminalAvailable,
-      disabledReason: SURFACE_UNAVAILABLE_HINTS.terminal,
+      ...gate(props.terminalAvailable, SURFACE_UNAVAILABLE_HINTS.terminal, "terminal"),
       onClick: props.onAddTerminal,
       badgeCount: 0,
     },
@@ -299,8 +317,7 @@ function RightPanelEmptyState(props: {
       description: "Browse and read workspace files.",
       icon: Files,
       shortcut: "F",
-      available: props.filesAvailable,
-      disabledReason: SURFACE_UNAVAILABLE_HINTS.files,
+      ...gate(props.filesAvailable, SURFACE_UNAVAILABLE_HINTS.files, "files"),
       onClick: props.onAddFiles,
       badgeCount: 0,
     },
@@ -309,8 +326,7 @@ function RightPanelEmptyState(props: {
       description: "Review changes in this thread.",
       icon: FileDiff,
       shortcut: "D",
-      available: props.diffAvailable,
-      disabledReason: SURFACE_UNAVAILABLE_HINTS.diff,
+      ...gate(props.diffAvailable, SURFACE_UNAVAILABLE_HINTS.diff, "diff"),
       onClick: props.onAddDiff,
       badgeCount: 0,
     },
@@ -319,8 +335,7 @@ function RightPanelEmptyState(props: {
       description: "Open this branch's pull request.",
       icon: GitPullRequest,
       shortcut: "P",
-      available: props.pullRequestAvailable,
-      disabledReason: SURFACE_UNAVAILABLE_HINTS.pullRequest,
+      ...gate(props.pullRequestAvailable, SURFACE_UNAVAILABLE_HINTS.pullRequest, "pull-request"),
       onClick: props.onAddPullRequest,
       badgeCount: 0,
     },
@@ -329,8 +344,7 @@ function RightPanelEmptyState(props: {
       description: "Follow subagents and workflows.",
       icon: Bot,
       shortcut: "A",
-      available: props.agentsAvailable,
-      disabledReason: SURFACE_UNAVAILABLE_HINTS.agents,
+      ...gate(props.agentsAvailable, SURFACE_UNAVAILABLE_HINTS.agents, "agents"),
       onClick: props.onAddAgents,
       badgeCount: props.liveAgentCount,
     },
@@ -625,9 +639,25 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
   const tabListRef = useRef<HTMLDivElement>(null);
   const surfaceDisabledReason =
     props.surfaceDisabledReason ?? "Start the sandbox to use right-panel surfaces.";
-  const surfaceAvailable = (available: boolean) => available && !props.surfaceDisabled;
-  const disabledReason = (reason: string) =>
-    props.surfaceDisabled ? surfaceDisabledReason : reason;
+  // Fork: the sandbox gate is per surface rather than per panel — Agents is
+  // served by the environment and works with the workspace stopped.
+  const sandboxGate = (available: boolean, reason: string, kind: RightPanelKind) =>
+    resolveSurfaceGate({
+      available,
+      reason,
+      needsSandbox: surfaceNeedsSandbox(kind),
+      sandboxDisabled: props.surfaceDisabled === true,
+      sandboxReason: surfaceDisabledReason,
+    });
+  // Fork: an open surface the stopped sandbox has emptied. A surface it does
+  // not own keeps rendering, and an id with no surface behind it is treated as
+  // owned so a stale tab cannot slip past the gate.
+  const activeSurfaceNeedsSandbox =
+    props.surfaceDisabled === true &&
+    props.activeSurfaceId !== null &&
+    surfaceNeedsSandbox(
+      props.surfaces.find((surface) => surface.id === props.activeSurfaceId)?.kind ?? "preview",
+    );
 
   const [addSurfaceMenuOpen, setAddSurfaceMenuOpen] = useState(false);
 
@@ -636,48 +666,46 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
       label: "Browser",
       icon: Globe2,
       shortcut: "B",
-      available: surfaceAvailable(props.browserAvailable),
-      disabledReason: disabledReason(SURFACE_DISABLED_REASONS.browser),
+      ...sandboxGate(props.browserAvailable, SURFACE_DISABLED_REASONS.browser, "preview"),
       onClick: props.onAddBrowser,
     },
     {
       label: "Terminal",
       icon: TerminalSquare,
       shortcut: "T",
-      available: surfaceAvailable(props.terminalAvailable),
-      disabledReason: disabledReason(SURFACE_DISABLED_REASONS.terminal),
+      ...sandboxGate(props.terminalAvailable, SURFACE_DISABLED_REASONS.terminal, "terminal"),
       onClick: props.onAddTerminal,
     },
     {
       label: "Files",
       icon: Files,
       shortcut: "F",
-      available: surfaceAvailable(props.filesAvailable),
-      disabledReason: disabledReason(SURFACE_DISABLED_REASONS.files),
+      ...sandboxGate(props.filesAvailable, SURFACE_DISABLED_REASONS.files, "files"),
       onClick: props.onAddFiles,
     },
     {
       label: "Diff",
       icon: FileDiff,
       shortcut: "D",
-      available: surfaceAvailable(props.diffAvailable),
-      disabledReason: disabledReason(SURFACE_DISABLED_REASONS.diff),
+      ...sandboxGate(props.diffAvailable, SURFACE_DISABLED_REASONS.diff, "diff"),
       onClick: props.onAddDiff,
     },
     {
       label: "Pull request",
       icon: GitPullRequest,
       shortcut: "P",
-      available: surfaceAvailable(props.pullRequestAvailable),
-      disabledReason: disabledReason(SURFACE_DISABLED_REASONS.pullRequest),
+      ...sandboxGate(
+        props.pullRequestAvailable,
+        SURFACE_DISABLED_REASONS.pullRequest,
+        "pull-request",
+      ),
       onClick: props.onAddPullRequest,
     },
     {
       label: "Agents",
       icon: Bot,
       shortcut: "A",
-      available: surfaceAvailable(props.agentsAvailable),
-      disabledReason: disabledReason(SURFACE_DISABLED_REASONS.agents),
+      ...sandboxGate(props.agentsAvailable, SURFACE_DISABLED_REASONS.agents, "agents"),
       onClick: props.onAddAgents,
     },
   ] as const;
@@ -964,13 +992,17 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
         {props.layoutControls}
       </div>
       <div className="flex min-h-0 flex-1 flex-col" data-right-panel-surface-content>
-        {/* Fork: a stopped sandbox disables the surface before upstream's empty state. */}
-        {props.surfaceDisabled ? (
-          <RightPanelDisabledState reason={surfaceDisabledReason} control={props.sandboxControl} />
-        ) : props.activeSurfaceId === null ? (
+        {/*
+          Fork: a stopped sandbox closes the surfaces that live inside it, not
+          the panel. The launcher still opens, so what the environment serves
+          stays reachable; only a surface that needs the workspace is replaced
+          by the way to start one.
+        */}
+        {props.activeSurfaceId === null ? (
           <RightPanelEmptyState
             // Fork: the sandbox pill lives with the launcher, not in the top bar.
             sandboxControl={props.sandboxControl}
+            sandboxGate={sandboxGate}
             onAddBrowser={props.onAddBrowser}
             onAddTerminal={props.onAddTerminal}
             onAddDiff={props.onAddDiff}
@@ -985,6 +1017,8 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             agentsAvailable={props.agentsAvailable}
             liveAgentCount={props.liveAgentCount}
           />
+        ) : activeSurfaceNeedsSandbox ? (
+          <RightPanelDisabledState reason={surfaceDisabledReason} control={props.sandboxControl} />
         ) : (
           props.children
         )}

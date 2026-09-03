@@ -12,6 +12,7 @@ import type { PreviewSessionSnapshot } from "@t3tools/contracts";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vite-plus/test";
 
+import type { RightPanelSurface } from "~/rightPanelStore";
 import { RightPanelTabs } from "../RightPanelTabs";
 
 const NO_SESSIONS: Readonly<Record<string, PreviewSessionSnapshot>> = {};
@@ -19,12 +20,19 @@ const CONTROL_MARKER = "data-sandbox-control-marker";
 
 const BODY_BOUNDARY = "data-right-panel-surface-content";
 
-function render(options: { surfaceDisabled: boolean }) {
+// A surface that lives inside the workspace, so a stopped sandbox empties it.
+const DIFF_SURFACE: RightPanelSurface = { id: "diff", kind: "diff" };
+
+function render(options: {
+  surfaceDisabled: boolean;
+  surfaces?: readonly RightPanelSurface[];
+  activeSurfaceId?: string | null;
+}) {
   return renderToStaticMarkup(
     <RightPanelTabs
       mode="inline"
-      surfaces={[]}
-      activeSurfaceId={null}
+      surfaces={options.surfaces ?? []}
+      activeSurfaceId={options.activeSurfaceId ?? null}
       pendingSurfaceIds={new Set()}
       previewSessions={NO_SESSIONS}
       desktopByTabId={{}}
@@ -72,8 +80,23 @@ describe("the sandbox status control", () => {
   });
 
   it("follows the disabled state, which is the only way back to a sandbox", () => {
-    const markup = render({ surfaceDisabled: true });
+    // A stopped sandbox stands the disabled state up only in front of a surface
+    // that needs the workspace; the diff tab is one, so this is where it shows.
+    const markup = render({
+      surfaceDisabled: true,
+      surfaces: [DIFF_SURFACE],
+      activeSurfaceId: DIFF_SURFACE.id,
+    });
     expect(markup).toContain("Sandbox required");
+    expect(region(markup)).toBe("body");
+  });
+
+  it("keeps the launcher open when the sandbox is down and nothing is active", () => {
+    // The point of the change: a stopped sandbox no longer curtains the panel,
+    // so the surfaces it does not own — Agents — stay one keystroke away.
+    const markup = render({ surfaceDisabled: true });
+    expect(markup).toContain("Open a surface");
+    expect(markup).not.toContain("Sandbox required");
     expect(region(markup)).toBe("body");
   });
 });
