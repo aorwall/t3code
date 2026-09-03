@@ -1,0 +1,42 @@
+{
+  "thread": {
+    "archivedAt": "2026-09-01T05:33:40.403Z",
+    "branch": "main",
+    "createdAt": "2026-09-01T05:09:28.640Z",
+    "hasActionableProposedPlan": false,
+    "hasPendingApprovals": false,
+    "hasPendingUserInput": false,
+    "id": "6da16506-f1bf-4f20-93de-8b7282a8dace",
+    "latestTurn": {
+      "assistantMessageId": null,
+      "completedAt": "2026-09-01T05:09:42.247Z",
+      "requestedAt": "2026-09-01T05:09:40.708Z",
+      "startedAt": "2026-09-01T05:09:40.708Z",
+      "state": "completed",
+      "turnId": "6da16506-f1bf-4f20-93de-8b7282a8dace:1"
+    },
+    "latestUserMessageAt": "2026-09-01T05:09:28.656Z",
+    "modelSelection": {
+      "instanceId": "claudeAgent",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    "projectId": "ws_688b4fb4-e0b7-450c-9888-3ea97caf17c5",
+    "runtimeMode": "full-access",
+    "session": {
+      "activeTurnId": null,
+      "lastError": null,
+      "providerInstanceId": "claudeAgent",
+      "providerName": "claudeAgent",
+      "status": "stopped",
+      "threadId": "6da16506-f1bf-4f20-93de-8b7282a8dace",
+      "updatedAt": "2026-09-01T05:33:40.528Z"
+    },
+    "settledAt": null,
+    "settledOverride": null,
+    "snoozedAt": null,
+    "snoozedUntil": null,
+    "title": "fork-verify-source",
+    "updatedAt": "2026-09-01T05:33:40.403Z",
+    "worktreePath": null
+  }
+}

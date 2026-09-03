@@ -26,6 +26,12 @@ export function resolveThreadRouteRenderState(input: {
   serverThreadDetailExists: boolean;
   serverThreadDetailDeleted: boolean;
   draftThreadExists: boolean;
+  // Fork: whether the environment has yet said anything about this thread.
+  // Against a listing that is every thread there is, absence from it settles
+  // the question; against a Moatless listing — the open work you follow — it
+  // does not, and the thread subscription is what answers. Optional so a caller
+  // that has no such signal keeps the old rule exactly.
+  serverThreadAwaitingFirstAnswer?: boolean;
 }): ThreadRouteRenderState {
   if (!input.bootstrapComplete) {
     return "loading";
@@ -36,7 +42,11 @@ export function resolveThreadRouteRenderState(input: {
   if (input.serverThreadDetailDeleted) {
     return "missing";
   }
-  return input.serverThreadShellExists ? "loading" : "missing";
+  if (input.serverThreadShellExists) {
+    return "loading";
+  }
+  // Fork: a thread nothing has answered about yet is not a thread that is gone.
+  return input.serverThreadAwaitingFirstAnswer === true ? "loading" : "missing";
 }
 
 export function buildThreadRouteParams(ref: ScopedThreadRef): {

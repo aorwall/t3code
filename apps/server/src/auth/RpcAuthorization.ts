@@ -128,6 +128,8 @@ export const RPC_REQUIRED_SCOPES = {
   [WS_METHODS.serversList]: AuthOrchestrationReadScope,
   // Fork: the threads a thread spawned, a read like any other thread read.
   [WS_METHODS.subtasksList]: AuthOrchestrationReadScope,
+  // Fork: one thread's listing row, the same read the listing itself is.
+  [WS_METHODS.threadsGetShell]: AuthOrchestrationReadScope,
   [WS_METHODS.sandboxStatus]: AuthOrchestrationReadScope,
   // Fork: sandbox lifecycle push, a read like the status it pushes.
   [WS_METHODS.sandboxSubscribeStatus]: AuthOrchestrationReadScope,

@@ -16,13 +16,17 @@ import serversList from "../fixtures/moatless/servers-list.json" with { type: "j
 import serversListNeverProvisioned from "../fixtures/moatless/servers-list-never-provisioned.json" with { type: "json" };
 import subtasksList from "../fixtures/moatless/subtasks-list.json" with { type: "json" };
 import subtasksListEmpty from "../fixtures/moatless/subtasks-list-empty.json" with { type: "json" };
+import threadsGetShell from "../fixtures/moatless/threads-get-shell.json" with { type: "json" };
+import threadsGetShellAbsent from "../fixtures/moatless/threads-get-shell-absent.json" with { type: "json" };
 import { PreviewListResult } from "./preview.ts";
 import { ServersListResult } from "./servers.ts";
 import { SubtasksListResult } from "./subtasks.ts";
+import { ThreadShellGetResult } from "./threadShellLookup.ts";
 
 const decodeServersList = Schema.decodeUnknownSync(ServersListResult);
 const decodePreviewList = Schema.decodeUnknownSync(PreviewListResult);
 const decodeSubtasksList = Schema.decodeUnknownSync(SubtasksListResult);
+const decodeThreadShell = Schema.decodeUnknownSync(ThreadShellGetResult);
 
 describe("Moatless servers.list", () => {
   it("decodes a running environment, including a starting and a failed server", () => {
@@ -82,6 +86,31 @@ describe("Moatless subtasks.list", () => {
 
   it("decodes a thread that spawned nothing", () => {
     expect(decodeSubtasksList(subtasksListEmpty).subtasks).toEqual([]);
+  });
+});
+
+/**
+ * The fixture is a real archived Moatless task, and it is deliberately one the
+ * shell listing does not carry: that is the whole reason the method exists.
+ * Decoding it as `OrchestrationThreadShell` is the assertion — the row a client
+ * gets by id has to be the row it would have got from the listing, or the same
+ * thread renders two ways depending on how it was reached.
+ */
+describe("Moatless threads.getShell", () => {
+  it("decodes a closed thread's listing row as the listing's own shape", () => {
+    const result = decodeThreadShell(threadsGetShell);
+
+    expect(result.thread?.title).toBe("fork-verify-source");
+    // What the client could not learn from the thread subscription alone.
+    expect(result.thread?.projectId).not.toBe("");
+    expect(result.thread?.archivedAt).toBe("2026-09-01T05:33:40.403Z");
+    // Sidebar-row facts the shell carries and the detail does not.
+    expect(result.thread?.hasPendingUserInput).toBe(false);
+    expect(result.thread?.latestUserMessageAt).not.toBeNull();
+  });
+
+  it("decodes an absent thread as null rather than an error", () => {
+    expect(decodeThreadShell(threadsGetShellAbsent).thread).toBeNull();
   });
 });
 

@@ -2773,7 +2773,18 @@ export function ArchivedThreadsPanel() {
                     }
                   })();
                 }}
-                title={thread.title}
+                // Fork: an archived thread is readable, so it is openable. The
+                // only way back into one used to be unarchiving it, which
+                // changes the thread in order to read it.
+                title={
+                  <Link
+                    to="/$environmentId/$threadId"
+                    params={{ environmentId: thread.environmentId, threadId: thread.id }}
+                    className="hover:underline"
+                  >
+                    {thread.title}
+                  </Link>
+                }
                 description={
                   <>
                     Archived {formatRelativeTimeLabel(thread.archivedAt ?? thread.createdAt)}

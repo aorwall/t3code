@@ -148,6 +148,52 @@ describe("threadRoutes", () => {
     ).toBe("missing");
   });
 
+  /**
+   * The case a Moatless listing makes ordinary: the sidebar is the open work
+   * you follow, so a thread opened from a link, a subtask row or the archive is
+   * absent from it and still real. Its subscription is what answers, and it
+   * cannot have answered on the frame the route first renders.
+   */
+  it("waits for the environment before calling an unlisted thread missing", () => {
+    expect(
+      resolveThreadRouteRenderState({
+        bootstrapComplete: true,
+        serverThreadShellExists: false,
+        serverThreadDetailExists: false,
+        serverThreadDetailDeleted: false,
+        draftThreadExists: false,
+        serverThreadAwaitingFirstAnswer: true,
+      }),
+    ).toBe("loading");
+  });
+
+  it("calls an unlisted thread missing once the environment has answered", () => {
+    expect(
+      resolveThreadRouteRenderState({
+        bootstrapComplete: true,
+        serverThreadShellExists: false,
+        serverThreadDetailExists: false,
+        serverThreadDetailDeleted: false,
+        draftThreadExists: false,
+        serverThreadAwaitingFirstAnswer: false,
+      }),
+    ).toBe("missing");
+  });
+
+  /** A deleted thread is answered for; waiting on it would wait forever. */
+  it("keeps deletion decisive while an answer is outstanding", () => {
+    expect(
+      resolveThreadRouteRenderState({
+        bootstrapComplete: true,
+        serverThreadShellExists: false,
+        serverThreadDetailExists: false,
+        serverThreadDetailDeleted: true,
+        draftThreadExists: false,
+        serverThreadAwaitingFirstAnswer: true,
+      }),
+    ).toBe("missing");
+  });
+
   it("redirects deleted shell-only threads", () => {
     expect(
       resolveThreadRouteRenderState({

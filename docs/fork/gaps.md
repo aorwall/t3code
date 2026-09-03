@@ -238,6 +238,55 @@ The client half is fork-only and self-gating rather than flagged: the section is
 absent when the read comes back with a typed refusal, so a build pointed at
 upstream's server shows the agents panel exactly as upstream does.
 
+### A thread outside the listing is a Moatless idea, so upstream's server refuses it
+
+`threads.getShell` runs the derivation backwards for the same reason
+`subtasks.list` does, so it carries the same trap and the same instruction.
+
+Upstream's client learns which threads exist from `orchestration.subscribeShell`
+and nowhere else, and that is exact for `apps/server`: the listing is every
+thread it has. A Moatless listing is the **open** work you **follow**, so three
+ordinary things fall outside it — a closed thread (which lives in
+`getArchivedShellSnapshot`), a thread someone else follows that you may read,
+and a subtask you have not written to. Each opens by URL and arrives with a
+transcript and no listing row, which is a title, a project and an archived
+badge the client cannot show.
+
+So the method answers with the listing's own row for one thread by id, and
+`apps/server` answers `UnsupportedMethodError` unconditionally, beside the
+`serversList` / `sandboxStatus` / `scriptsRun` / `subtasksList` stubs.
+
+- **Keep the union entry** for as long as `apps/server` answers the method with
+  `UnsupportedMethodError`, whatever `unsupported-methods.mjs` reports it under.
+  The third documented exception to _drop what DROP lists_.
+- **Closes when:** upstream's listing stops being the whole set of threads, or
+  the method leaves the contract. Neither is near.
+
+The client half is fork-only and degrades rather than breaking: with no row the
+thread still renders from its subscription, which is what upstream's server
+leaves it doing.
+
+### A thread the listing does not carry used to redirect home
+
+Two upstream rules meet badly against Moatless, and this is written down because
+the second one looks correct in isolation and will be re-derived otherwise.
+
+`resolveThreadRouteRenderState` treats "bootstrap done, no shell row, no detail"
+as `missing`, and the route navigates to `/`. Upstream is right: absence from a
+listing that holds every thread is proof the thread is gone. Here it is not
+proof of anything, and because a thread's detail subscription only starts when
+its route mounts, the first frame always looks like that — so every unlisted
+thread bounced home before it could load. The fork adds
+`serverThreadAwaitingFirstAnswer`, optional and defaulting to the old rule, so
+`missing` needs the environment to have actually answered.
+
+Its counterpart is `apps/web/src/fork/adoptedThreadShells.ts`, which grafts a
+fetched row into the snapshot the shell atoms read. Two consequences to keep:
+the graft is decided against the **listing's** snapshot and never the grafted
+one, or a supplied row reads as present and stops being supplied; and the
+sidebar's own `archivedAt === null` filter is what keeps an adopted closed
+thread out of it, so nothing here needs to know about archiving.
+
 ### A command cannot be refused
 
 `orchestration.dispatchCommand` is one dispatched method carrying a union of 12

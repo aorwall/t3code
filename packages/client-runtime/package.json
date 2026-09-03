@@ -159,6 +159,10 @@
       "types": "./src/state/subtasks.ts",
       "default": "./src/state/subtasks.ts"
     },
+    "./state/thread-shell-lookup": {
+      "types": "./src/state/threadShellLookup.ts",
+      "default": "./src/state/threadShellLookup.ts"
+    },
     "./state/session": {
       "types": "./src/state/session.ts",
       "default": "./src/state/session.ts"

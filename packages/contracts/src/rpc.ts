@@ -215,6 +215,8 @@ import {
 } from "./servers.ts";
 // Fork: the threads a thread spawned, a fork-only surface.
 import { SubtasksListInput, SubtasksListResult } from "./subtasks.ts";
+// Fork: one thread's listing row by id, a fork-only surface.
+import { ThreadShellGetInput, ThreadShellGetResult } from "./threadShellLookup.ts";
 import { ScriptsRunInput, ScriptsRunResult } from "./scripts.ts";
 import { UsageReadError, UsageSummary, UsageSummaryInput } from "./usage.ts";
 import { ServerSettings, ServerSettingsError, ServerSettingsPatch } from "./settings.ts";
@@ -299,6 +301,9 @@ export const WS_METHODS = {
 
   // Fork: the threads a thread spawned; upstream has no task tree.
   subtasksList: "subtasks.list",
+
+  // Fork: one thread's listing row, for a thread no listing carried.
+  threadsGetShell: "threads.getShell",
 
   // Thread script methods
   scriptsRun: "scripts.run",
@@ -1042,6 +1047,28 @@ export const WsSubtasksListRpc = Rpc.make(WS_METHODS.subtasksList, {
 });
 
 /**
+ * Fork: one thread's listing row, asked for by id.
+ *
+ * Upstream needs no such method because its shell listing is every thread there
+ * is. A Moatless sidebar is the open work a person follows, so a thread reached
+ * by link, task tree or archive arrives with a transcript and no row — see
+ * `threadShellLookup.ts`.
+ *
+ * A thread that is missing or out of reach is `null` in the success payload,
+ * not an error: the caller is already showing the thread, and failing the read
+ * would take a rendered transcript off the screen over a missing title.
+ *
+ * Fork: `unsupported-methods.mjs` reports this method under DROP, because it
+ * reads Moatless's own dispatch and not `apps/server`'s. The union member stays
+ * regardless — see "A thread outside the listing" in docs/fork/gaps.md.
+ */
+export const WsThreadsGetShellRpc = Rpc.make(WS_METHODS.threadsGetShell, {
+  payload: ThreadShellGetInput,
+  success: ThreadShellGetResult,
+  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
+});
+
+/**
  * Runs a project's script in the environment. Declared with
  * `UnsupportedMethodError` because an environment without the `workspaceScripts`
  * capability — every T3-hosted one today — answers with it, and the client must
@@ -1358,6 +1385,8 @@ export const WsRpcGroup = RpcGroup.make(
   WsServersListRpc,
   // Fork: the threads a thread spawned.
   WsSubtasksListRpc,
+  // Fork: one thread's listing row, for a thread no listing carried.
+  WsThreadsGetShellRpc,
   WsScriptsRunRpc,
   WsSandboxStatusRpc,
   // Fork: sandbox lifecycle push.

@@ -13,7 +13,10 @@ import { AsyncResult, Atom } from "effect/unstable/reactivity";
 
 import { environmentCatalog } from "../connection/catalog";
 import { connectionAtomRuntime } from "../connection/runtime";
-import { environmentSnapshotAtom } from "./shell";
+// Fork: a Moatless listing is the open work you follow, not every thread there
+// is, so the snapshot these atoms read is the listing's plus any thread the
+// client is holding that the listing left out.
+import { adoptedEnvironmentSnapshotAtom } from "../fork/adoptedThreadShells";
 
 export const threadEnvironment = createThreadEnvironmentAtoms(connectionAtomRuntime);
 export const environmentThreads = createEnvironmentThreadStateAtoms(connectionAtomRuntime);
@@ -22,7 +25,8 @@ export const environmentThreadDetails = createEnvironmentThreadDetailAtoms(
 );
 export const environmentThreadShells = createEnvironmentThreadShellAtoms({
   catalogValueAtom: environmentCatalog.catalogValueAtom,
-  snapshotAtom: environmentSnapshotAtom,
+  // Fork: see the import above.
+  snapshotAtom: adoptedEnvironmentSnapshotAtom,
 });
 
 const EMPTY_THREAD_STATE_ATOM = Atom.make(AsyncResult.success(EMPTY_ENVIRONMENT_THREAD_STATE)).pipe(

@@ -2464,6 +2464,21 @@ const makeWsRpcLayer = (
             ),
             { "rpc.aggregate": "subtasks" },
           ),
+        // Fork: this server's shell listing is every thread it has, so a thread
+        // outside it is a thread that does not exist. Refusing says that, where
+        // answering `null` would claim the listing has a complement and that
+        // this thread is not in it.
+        [WS_METHODS.threadsGetShell]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.threadsGetShell,
+            Effect.fail(
+              new UnsupportedMethodError({
+                method: WS_METHODS.threadsGetShell,
+                message: "This environment lists every thread it has.",
+              }),
+            ),
+            { "rpc.aggregate": "orchestration" },
+          ),
         // Scripts are read from the project either way, but *running* one is a
         // hosted-environment capability: it needs a sandbox to host the terminal
         // and publish the served port. This server runs threads on the local

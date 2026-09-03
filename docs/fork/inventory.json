@@ -442,9 +442,10 @@
         "packages/contracts/src/index.ts",
         "packages/contracts/src/preview.ts",
         "packages/contracts/src/subtasks.ts",
+        "packages/contracts/src/threadShellLookup.ts",
         "packages/contracts/fixtures/moatless/**"
       ],
-      "mustSurvive": "Keep fork methods: server list, server status subscription, server log subscription, sandbox status, sandbox status subscription, sandbox start, sandbox stop, and subtasks.list. Keep sandbox lifecycle schemas separate from server list schemas. sandbox.subscribeStatus is gated on the sandboxStatusPush capability: absent, the client polls sandbox.status instead, so both paths have to keep working. subtasks.ts is fork-only and subtasks.list keeps its UnsupportedMethodError union entry for as long as apps/server refuses the method, whatever unsupported-methods.mjs reports."
+      "mustSurvive": "Keep fork methods: server list, server status subscription, server log subscription, sandbox status, sandbox status subscription, sandbox start, sandbox stop, and subtasks.list. Keep sandbox lifecycle schemas separate from server list schemas. sandbox.subscribeStatus is gated on the sandboxStatusPush capability: absent, the client polls sandbox.status instead, so both paths have to keep working. subtasks.ts and threadShellLookup.ts are fork-only, and subtasks.list and threads.getShell each keep their UnsupportedMethodError union entry for as long as apps/server refuses the method, whatever unsupported-methods.mjs reports. threads.getShell returns the listing's own OrchestrationThreadShell and must keep doing so: a thread fetched by id has to be indistinguishable from the same thread delivered by the listing."
     },
     {
       "id": "server-state-client-runtime",
@@ -453,10 +454,11 @@
         "packages/client-runtime/src/state/servers.ts",
         "packages/client-runtime/src/state/sandbox.ts",
         "packages/client-runtime/src/state/subtasks.ts",
+        "packages/client-runtime/src/state/threadShellLookup.ts",
         "packages/client-runtime/src/rpc/client.ts",
         "packages/client-runtime/package.json"
       ],
-      "mustSurvive": "Keep fork server, sandbox lifecycle and subtask state surfaces separate. sandbox exposes both status (polled query, the fallback) and statusStream (the pushed subscription); dropping either leaves one class of server without a live indicator. The subscription tag is also listed in EnvironmentSubscriptionRpcTag in rpc/client.ts, an upstream file. subtasks is a query on a refresh interval, not a subscription: a child task settles at the pace of a task, not of a container probe."
+      "mustSurvive": "Keep fork server, sandbox lifecycle and subtask state surfaces separate. sandbox exposes both status (polled query, the fallback) and statusStream (the pushed subscription); dropping either leaves one class of server without a live indicator. The subscription tag is also listed in EnvironmentSubscriptionRpcTag in rpc/client.ts, an upstream file. subtasks is a query on a refresh interval, not a subscription: a child task settles at the pace of a task, not of a container probe. threadShellLookup is a query with no refresh at all: it is how the client learns a row the listing never sent, and once it has one nothing is pushing changes to re-read."
     },
     {
       "id": "subtasks-agents-panel",
@@ -467,6 +469,20 @@
         "apps/web/src/components/AgentsPanel.tsx"
       ],
       "mustSurvive": "The agents panel has two sections against Moatless: the child threads this thread spawned, and upstream's subagent fleet. Only AgentsPanel.tsx is upstream's, and the whole fork delta there is one import, one useThreadSubtasks call above the empty-state return, the empty-state copy, and two elements in the scroll area. Everything else lives in fork/SubtasksSection.tsx, which mirrors AgentsPanel's STATUS_VISUALS classes on purpose rather than importing them."
+    },
+    {
+      "id": "unlisted-thread-adoption",
+      "name": "Threads the shell listing does not carry",
+      "paths": [
+        "apps/web/src/fork/adoptedThreadShells.ts",
+        "apps/web/src/fork/unlistedThread.ts",
+        "apps/web/src/state/threadShellLookup.ts",
+        "apps/web/src/threadRoutes.ts",
+        "apps/web/src/routes/_chat.$environmentId.$threadId.tsx",
+        "apps/web/src/state/threads.ts",
+        "apps/web/src/components/settings/SettingsPanels.tsx"
+      ],
+      "mustSurvive": "A Moatless shell listing is the open work a viewer follows, not every thread there is, so closed threads, threads followed by someone else, and subtasks all open by URL while absent from it. Three deltas hold that together and each is small in an upstream file. threadRoutes.ts takes an optional serverThreadAwaitingFirstAnswer that defaults to upstream's rule, so 'no shell row' stops meaning 'gone' before the environment has answered — without it the route redirects to / on the first frame of every unlisted thread. state/threads.ts passes adoptedEnvironmentSnapshotAtom where upstream passes environmentSnapshotAtom, which is the whole graft hook. SettingsPanels.tsx makes an archived row's title a link, because unarchiving was the only way back into a thread you may already read. The store in fork/adoptedThreadShells.ts must keep deciding what is missing against the listing's snapshot rather than the grafted one."
     },
     {
       "id": "servers-right-panel",

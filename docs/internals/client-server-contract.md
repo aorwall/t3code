@@ -106,6 +106,16 @@ makes it free for a second implementation: a server that never sets it emits exa
 payload upstream emits, and a client that does not read it is unaffected. See
 `docs/fork/upstream-merge-inventory.md`.
 
+**Fork addition.** `threads.getShell` returns one thread's listing row by id — the same
+`OrchestrationThreadShell` the shell snapshot carries, or `null`. Upstream needs no such
+method because `subscribeShell` lists every thread its server has. A Moatless listing
+does not: it is the open work a viewer follows, so a closed thread, a thread someone else
+follows, and a subtask you have not written to are all readable, all openable by URL, and
+all absent from it. Without the row such a thread renders its transcript from
+`subscribeThread` and has no title, project or archived stamp. `apps/server` answers the
+method with `UnsupportedMethodError`. See "A thread outside the listing" in
+`docs/fork/gaps.md`.
+
 ### Terminal — 9 methods
 
 | Method                        | Payload → Success                                                 | Scope            | Line                                            |
