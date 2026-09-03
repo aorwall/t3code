@@ -21,7 +21,7 @@ import * as Schema from "effect/Schema";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { isBrowserPreviewFile, openFileInPreview } from "~/browser/openFileInPreview";
-// Fork: keeps the browser frame from being replaced by an unrelated mutation.
+// Fork: keys the browser frame on the page, not on every workspace mutation.
 import { browserPreviewFrameRevision } from "~/fork/browserPreviewRevision";
 import { useAssetUrlRefresh, useAssetUrlState } from "~/assets/assetUrls";
 import { OpenInPicker } from "~/components/chat/OpenInPicker";
@@ -216,9 +216,7 @@ function WorkspaceBrowserPreview(props: {
   readonly workspaceRoot: string;
   readonly title: string;
   readonly workspaceMutationId: string | null;
-  // Fork: the revision to key the frame on when the page's own bytes can answer
-  // it, so an unrelated command does not replace the page. Null falls back to
-  // upstream's mutation id. See `~/fork/browserPreviewRevision`.
+  // Fork: the page's own revision; null falls back to the mutation id.
   readonly frameRevision?: string | null;
 }) {
   const insideWorkspace =
@@ -1017,7 +1015,7 @@ export default function FilePreviewPanel({
     [projectName, relativePath],
   );
   const onFilePostRender = useFileLineReveal(relativePath, revealLine, revealRequestId);
-  // Fork: hashing up to a megabyte is not something to redo on every render.
+  // Fork: memoized because it hashes up to a megabyte.
   const browserFrameRevision = useMemo(() => browserPreviewFrameRevision(file.data), [file.data]);
   useWorkspaceMutationRefresh({
     enabled: relativePath !== null && !isMedia && !isPdf && !selectedFilePending,
@@ -1235,8 +1233,7 @@ export default function FilePreviewPanel({
               workspaceRoot={cwd}
               title={relativePath}
               workspaceMutationId={workspaceMutationId}
-              // Fork: an HTML page is replaced when its own bytes change; a PDF
-              // is never read, so it keeps the mutation id.
+              // Fork: null for a PDF, which is never read.
               frameRevision={browserFrameRevision}
             />
           ) : relativePath && file.error && file.data === null ? (
