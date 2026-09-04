@@ -2,12 +2,15 @@
  * Fork-only: which right-panel surfaces stop working when the thread's sandbox
  * does, and what a card says when something has closed it.
  *
- * Most of the surfaces are windows onto the workspace — a shell in it, its
- * files, its diff, a server running inside it — so a stopped sandbox leaves
- * them nothing to show. Agents is not one of them: the roster is folded out of
- * the thread's own activity and its subtasks are other threads, both served by
- * the environment and both readable with the workspace stopped. Gating it with
- * the rest hid a working surface behind a machine it never needed.
+ * A shell in the workspace, its diff and a server running inside it are windows
+ * onto a live machine, so a stopped sandbox leaves them nothing to show. Agents
+ * and files are not: the agent roster is folded out of the thread's own
+ * activity and its subtasks, and the file tree, a file's contents and the name
+ * search are served from the workspace snapshot S3 holds — all readable with
+ * the sandbox stopped. Gating those hid a working surface behind a machine they
+ * did not need. A snapshot the environment never stored (a Task from before the
+ * mirror, or a tar-only fork) answers the file read as "sandbox not running",
+ * so the surface shows that in its own panel rather than being closed outright.
  *
  * Pull requests would qualify on the same reasoning, but the surface is off
  * wholesale on this backend — the client reads `capabilities.pullRequests`,
@@ -16,12 +19,18 @@
 import type { RightPanelKind } from "~/rightPanelStore";
 
 /**
- * Surfaces the environment serves rather than the workspace.
+ * Surfaces the environment serves rather than the live workspace.
  *
- * A kind absent from here needs the sandbox, which is the safe default: a new
- * surface is a window onto the workspace until someone says otherwise.
+ * `files`/`file` are here because the backend reads them from the S3 snapshot
+ * when no sandbox is running. A kind absent from here needs the sandbox, which
+ * is the safe default: a new surface is a window onto the live workspace until
+ * someone says otherwise.
  */
-const SANDBOX_INDEPENDENT_KINDS: ReadonlySet<RightPanelKind> = new Set<RightPanelKind>(["agents"]);
+const SANDBOX_INDEPENDENT_KINDS: ReadonlySet<RightPanelKind> = new Set<RightPanelKind>([
+  "agents",
+  "files",
+  "file",
+]);
 
 export function surfaceNeedsSandbox(kind: RightPanelKind): boolean {
   return !SANDBOX_INDEPENDENT_KINDS.has(kind);

@@ -1,9 +1,11 @@
 /**
  * Fork-only: the rule for which right-panel surfaces survive a stopped sandbox.
  *
- * The load-bearing claim is that Agents is not gated on the workspace while the
- * surfaces that read it are — get that split wrong and either a working surface
- * hides behind a machine it never needed, or a dead one offers to open.
+ * The load-bearing claim is that the surfaces the environment serves — Agents,
+ * and Files now that the backend reads them from the S3 snapshot — are not
+ * gated on the workspace, while the ones that read the live machine are. Get
+ * the split wrong and either a working surface hides behind a machine it never
+ * needed, or a dead one offers to open.
  */
 import { describe, expect, it } from "vite-plus/test";
 
@@ -11,8 +13,10 @@ import { resolveSurfaceGate, surfaceNeedsSandbox } from "./sandboxSurfaces";
 
 describe("surfaceNeedsSandbox", () => {
   it("frees the surfaces the environment serves and gates the rest", () => {
-    expect(surfaceNeedsSandbox("agents")).toBe(false);
-    for (const kind of ["diff", "files", "file", "preview", "terminal", "pull-request"] as const) {
+    for (const kind of ["agents", "files", "file"] as const) {
+      expect(surfaceNeedsSandbox(kind)).toBe(false);
+    }
+    for (const kind of ["diff", "preview", "terminal", "pull-request"] as const) {
       expect(surfaceNeedsSandbox(kind)).toBe(true);
     }
   });
