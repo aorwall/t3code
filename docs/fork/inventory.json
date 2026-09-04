@@ -302,7 +302,14 @@
       "id": "fork-registry",
       "paths": ["apps/web/src/fork/**"],
       "verdict": "ours",
-      "note": "The surface-gating registry and the mobile touch modules. (The generic file-attachment presentation, fileAttachments.tsx, converged into upstream's own image/file/video attachment support and was deleted.)"
+      "note": "The surface-gating registry, the mobile touch modules, and the mermaid diagram renderer. (The generic file-attachment presentation, fileAttachments.tsx, converged into upstream's own image/file/video attachment support and was deleted.)"
+    },
+    {
+      "id": "chat-markdown-mermaid",
+      "paths": ["apps/web/src/components/ChatMarkdown.tsx"],
+      "verdict": "converged",
+      "delta": "Mermaid Diagram Delta",
+      "note": "Take upstream, then apply Mermaid Diagram Delta. Upstream owns this file and works in it steadily; the delta is two imports and one early return above upstream's own return in the `pre` renderer, and must not re-indent upstream's block. If upstream has started rendering mermaid itself, drop the delta rather than porting it."
     },
     {
       "id": "message-origin-fork-files",
@@ -782,6 +789,18 @@
         "apps/web/src/components/files/FilePreviewPanel.tsx"
       ],
       "mustSurvive": "An HTML page open in the file preview is replaced only when its own bytes change. Upstream keys the frame on the workspace mutation id, which against Moatless means every completed command and every checkpoint throws the page's scroll position and in-page state away. The key falls back to upstream's when the bytes cannot answer it: a PDF is never read, and a failed read has nothing to hash. Known blind spot, deliberate: a page that pulls a sibling stylesheet or script does not reload when the sibling changes — the activity stream cannot say which files a command touched, and nothing on the wire carries a directory revision."
+    },
+    {
+      "id": "mermaid-diagrams",
+      "name": "Mermaid diagrams in chat",
+      "paths": [
+        "apps/web/src/fork/MermaidDiagram.tsx",
+        "apps/web/src/fork/mermaidDiagram.ts",
+        "apps/web/src/fork/mermaidDiagram.test.ts",
+        "apps/web/src/components/ChatMarkdown.tsx",
+        "apps/web/package.json"
+      ],
+      "mustSurvive": "A ```mermaid fence in a chat message is drawn as a diagram rather than highlighted as source. The whole delta in upstream's ChatMarkdown.tsx is two imports and one early return above upstream's own return in the `pre` renderer; the diagram sits inside upstream's MarkdownCodeBlock so the header, the language label and the copy button stay upstream's and copy still copies the mermaid source. The fence falls back to that same highlighted source in every case the diagram is not there — while the message streams, while mermaid loads, when mermaid cannot parse the source, and when someone asks for the source back — so a mermaid fence never renders worse than upstream renders it. Four properties are load-bearing and easy to lose in a rewrite: mermaid is imported lazily, because it is around a megabyte and nobody who never sees a diagram should pay for it; renders are serialized, because `initialize` sets the theme globally; rendered SVG is cached and read during the first render, because the message list is virtualized and a scrolled-back diagram would otherwise flash its source; and `securityLevel` is `strict`, because the source is model-written and arrives over the wire."
     }
   ],
 
@@ -833,6 +852,12 @@
       "name": "Web on a phone",
       "watchFor": "A swipeable mobile sidebar, a touch affordance for thread-row actions, or a contextMenuFallback rewritten on a popup primitive.",
       "action": "Prefer upstream and drop the matching part of Mobile Touch Delta."
+    },
+    {
+      "id": "rendered-fences",
+      "name": "Fences rendered as something other than source",
+      "watchFor": "Any per-language branch in the `pre` renderer, a fence-renderer registry, or a mermaid dependency in apps/web.",
+      "action": "Prefer upstream's, delete fork/mermaidDiagram* and drop Mermaid Diagram Delta. A registry upstream owns is also the place to move this to rather than keeping the branch."
     },
     {
       "id": "mid-turn-send",
