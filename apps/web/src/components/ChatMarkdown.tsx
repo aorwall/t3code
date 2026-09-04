@@ -174,6 +174,9 @@ import {
   BrowserPreviewUnavailableError,
 } from "../browser/openFileInPreview";
 import { resolveLinkTarget } from "../browser/browserLinkTarget";
+// Fork: a `mermaid` fence draws instead of highlighting — see the `pre` renderer.
+import { MermaidDiagram } from "~/fork/MermaidDiagram";
+import { MERMAID_FENCE_LANGUAGE } from "~/fork/mermaidDiagram";
 
 interface ChatMarkdownProps {
   text: string;
@@ -2713,6 +2716,35 @@ function ChatMarkdown({
 
         const language = extractFenceLanguage(codeBlock.className);
         const fenceTitle = extractFenceTitle(extractPreCodeMeta(node));
+        // Fork: a `mermaid` fence is a picture to look at, not source to read,
+        // so it is drawn. Everything else about the block stays upstream's,
+        // including the body: MermaidDiagram takes the highlighted source as
+        // its children and shows exactly that whenever it has no diagram —
+        // while the message streams, while mermaid loads, when the source does
+        // not parse, and when someone asks for the source back.
+        if (language === MERMAID_FENCE_LANGUAGE) {
+          return (
+            <MarkdownCodeBlock
+              code={codeBlock.code}
+              language={language}
+              fenceTitle={fenceTitle}
+              theme={resolvedTheme}
+            >
+              <MermaidDiagram code={codeBlock.code} theme={resolvedTheme} isStreaming={isStreaming}>
+                <RenderErrorBoundary fallback={<pre {...props}>{children}</pre>}>
+                  <Suspense fallback={<pre {...props}>{children}</pre>}>
+                    <SuspenseShikiCodeBlock
+                      className={codeBlock.className}
+                      code={codeBlock.code}
+                      themeName={diffThemeName}
+                      isStreaming={isStreaming}
+                    />
+                  </Suspense>
+                </RenderErrorBoundary>
+              </MermaidDiagram>
+            </MarkdownCodeBlock>
+          );
+        }
         return (
           <MarkdownCodeBlock
             code={codeBlock.code}

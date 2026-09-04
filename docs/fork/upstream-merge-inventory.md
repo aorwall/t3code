@@ -192,6 +192,40 @@ under a generic icon rather than being dropped, so the backend can name a new
 source before the client learns about it. Keep that fallback: it is what lets
 the two repositories deploy in either order.
 
+### Mermaid Diagram Delta
+
+Upstream renders every fence as highlighted source, which is right for source
+and wrong for a picture. One upstream file carries the addition, and the fork
+files it reaches are `apps/web/src/fork/mermaidDiagram.ts` and
+`apps/web/src/fork/MermaidDiagram.tsx`. Take upstream first, then re-state:
+
+- **`ChatMarkdown.tsx`** — two imports, and an `if (language ===
+  MERMAID_FENCE_LANGUAGE)` early return above upstream's own return in the `pre`
+  renderer. The branch repeats upstream's `MarkdownCodeBlock` call rather than
+  wrapping it, which costs a dozen duplicated lines and buys the thing worth
+  more at merge time: upstream's block is left byte-identical, so an upstream
+  edit inside it conflicts on the lines it touched instead of on all of them.
+  Behavior that must survive: the diagram sits inside upstream's
+  `MarkdownCodeBlock`, so the header, the language label and the copy button are
+  upstream's and copy still copies the mermaid source; and the highlighted
+  source is passed down as children, so a mermaid fence falls back to exactly
+  what upstream renders whenever there is no diagram to show.
+
+Four properties of the fork files are load-bearing and are the ones a rewrite
+loses quietly, because each shows up as a cost rather than a broken diagram.
+Mermaid is imported lazily — it is around a megabyte, and someone who never sees
+a diagram should never download it. Renders are serialized, because
+`initialize` sets the theme globally and two renders across a theme switch would
+otherwise draw one diagram in the other's colors. Rendered SVG is cached, and
+read during the first render rather than in an effect, because the message list
+is virtualized and a diagram scrolled out of view and back would otherwise flash
+its source on every pass. And `securityLevel` is `strict`, because the source is
+model-written and arrives over the wire.
+
+If upstream grows any per-language branch in `pre`, a fence-renderer registry,
+or mermaid support of its own, drop this delta rather than porting it — see the
+`rendered-fences` convergence entry.
+
 ## Deriving the unsupported set
 
 `UnsupportedMethodError` belongs on exactly the contract WebSocket methods the
