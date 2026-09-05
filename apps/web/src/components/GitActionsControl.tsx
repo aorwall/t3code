@@ -88,6 +88,8 @@ import {
 } from "~/lib/sourceControlActions";
 import { useThread } from "~/state/entities";
 import { useEnvironmentQuery } from "~/state/query";
+// Fork: the git menu lists every pull request the Task is bound to.
+import { forkPullRequestKey, forkPullRequestMenuRows } from "~/fork/threadPullRequest";
 import { serverEnvironment } from "~/state/server";
 import { sourceControlEnvironment } from "~/state/sourceControl";
 import { threadEnvironment } from "~/state/threads";
@@ -1167,6 +1169,17 @@ export default function GitActionsControl({
     () => buildMenuItems(gitStatusForActions, isGitActionRunning, hasPrimaryRemote),
     [gitStatusForActions, hasPrimaryRemote, isGitActionRunning],
   );
+  // Fork: upstream's menu carries one "View" row built from the branch's pull
+  // request, which cannot name which of several bound to the Task it opens, so
+  // with more than one the fork lists them all in its place.
+  const forkPullRequestMenuItems = forkPullRequestMenuRows(activeServerThread);
+  const renderedGitActionMenuItems = useMemo(
+    () =>
+      forkPullRequestMenuItems.length === 0
+        ? gitActionMenuItems
+        : gitActionMenuItems.filter((item) => item.kind !== "open_pr"),
+    [forkPullRequestMenuItems.length, gitActionMenuItems],
+  );
   const quickAction = useMemo(
     () =>
       resolveQuickAction(gitStatusForActions, isGitActionRunning, isDefaultRef, hasPrimaryRemote),
@@ -1754,7 +1767,7 @@ export default function GitActionsControl({
               <ChevronDownIcon aria-hidden="true" className="size-4" />
             </MenuTrigger>
             <MenuPopup align="end" className="w-full">
-              {gitActionMenuItems.map((item) => {
+              {renderedGitActionMenuItems.map((item) => {
                 const disabledReason = getMenuActionDisabledReason({
                   item,
                   gitStatus: gitStatusForActions,
@@ -1797,6 +1810,19 @@ export default function GitActionsControl({
                   </MenuItem>
                 );
               })}
+              {/* Fork: one row per pull request the Task is bound to, in place
+                  of the single row above — see fork/threadPullRequest.ts. */}
+              {forkPullRequestMenuItems.map((pullRequest) => (
+                <MenuItem
+                  key={forkPullRequestKey(pullRequest)}
+                  onClick={() => {
+                    void openLink(pullRequest.url);
+                  }}
+                >
+                  <GitActionItemIcon icon="pr" SourceControlIcon={SourceControlIcon} />
+                  {`View ${changeRequestTerminology.shortLabel} #${pullRequest.number}`}
+                </MenuItem>
+              ))}
               {canPublishRepository ? (
                 <MenuItem
                   disabled={isGitActionRunning}

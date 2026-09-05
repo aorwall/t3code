@@ -626,13 +626,15 @@
     },
     {
       "id": "task-bound-pull-request",
-      "name": "A thread's pull request is the Task's binding",
+      "name": "A thread's pull requests are the Task's bindings",
       "paths": [
         "apps/web/src/components/BranchToolbarBranchSelector.tsx",
+        "apps/web/src/components/Sidebar.tsx",
+        "apps/web/src/components/GitActionsControl.tsx",
         "apps/web/src/fork/threadPullRequest.ts",
         "apps/web/src/fork/threadPullRequest.test.ts"
       ],
-      "mustSurvive": "Every surface that names a thread's pull request names the same one, and it is the Moatless Task's GitHub PR binding: the git menu's \"View PR\", the pill beside the composer's branch selector, the sidebar row's status chip, and the right panel's pull-request tab. Upstream derives `VcsStatusResult.pr` from the checked-out branch, so its surfaces gate the pull request on `refName` matching `thread.branch`; against Moatless that gate reports nothing for most threads that have one, because `tasks.branch` holds the base picked at creation while the agent commits on whatever branch it cut. The backend answers `vcs.status.pr`, `thread.linkedPullRequest` and `pullRequests.summary` from `task_bindings` and picks one primary when a Task has several (live before terminal, then highest number), so the client's job is only to stop re-deriving. `resolveForkThreadPr` (`apps/web/src/fork/threadPullRequest.ts`) is the whole client delta — the sidebar and right panel need none, since they already prefer `linkedPullRequest` when the thread carries one. Do not reintroduce a branch comparison in the composer pill: a binding-derived pull request is the Task's own by construction and names no branch to compare against."
+      "mustSurvive": "Every surface that names a thread's pull request names the same one primary, and it is the Moatless Task's GitHub PR binding: the git menu's \"View PR\", the pill beside the composer's branch selector, the sidebar row's status chip, and the right panel's pull-request tab. Upstream derives `VcsStatusResult.pr` from the checked-out branch, so its surfaces gate the pull request on `refName` matching `thread.branch`; against Moatless that gate reports nothing for most threads that have one, because `tasks.branch` holds the base picked at creation while the agent commits on whatever branch it cut. The backend answers `vcs.status.pr`, `thread.linkedPullRequest` and `pullRequests.summary` from `task_bindings` and picks one primary when a Task has several (live before terminal, then highest number), so the client's job is only to stop re-deriving — `resolveForkThreadPr` is the whole of that delta. A Task can be bound to several pull requests, carried by the fork-only `linkedPullRequests` array beside upstream's single `linkedPullRequest` (its primary, the first element) on `OrchestrationThread` and `OrchestrationThreadShell` in `packages/contracts/src/orchestration.ts`. The three surfaces that can hold more than the one show the rest additively, never replacing upstream's shape: the composer pill keeps its single PR and grows a `+N` menu button beside it (`forkAdditionalPullRequests`), the sidebar row keeps its chip and grows a `+N` count, and the git menu replaces upstream's one branch-derived \"View\" row with one row per bound PR only when there is more than one to disambiguate (`forkPullRequestMenuRows`). The right panel needs no delta — it already keys surfaces by PR reference, so a second reference opens as a peer tab. Do not reintroduce a branch comparison in the composer pill: a binding-derived pull request is the Task's own by construction and names no branch to compare against; and do not re-decide the primary on the client — the server orders the list and its first element is the primary, since the states that choice was made from are not on the wire."
     },
     {
       "id": "host-run-scripts",
@@ -882,9 +884,9 @@
     },
     {
       "id": "task-bound-pull-request",
-      "name": "Where a thread's pull request comes from",
-      "watchFor": "Upstream deriving `VcsStatusResult.pr` from something other than the checked-out branch, or the branch match moving out of `resolveThreadPr` into the surfaces.",
-      "action": "Keep ours until then — the derivation differs, not the presentation. Drop `fork/threadPullRequest.ts` and call upstream's helper again once a pull request upstream reports is no longer the branch's."
+      "name": "Where a thread's pull requests come from",
+      "watchFor": "Upstream deriving `VcsStatusResult.pr` from something other than the checked-out branch, the branch match moving out of `resolveThreadPr` into the surfaces, or upstream growing its own notion of several pull requests per thread.",
+      "action": "Keep ours. The single-PR derivation converges the day upstream reports a pull request that is no longer the branch's — then `resolveForkThreadPr` drops and upstream's helper returns. The `linkedPullRequests` multi-PR presentation is fork-only and stays until upstream ships an equivalent, at which point re-home the `+N` menu and count onto it rather than defending ours."
     },
     {
       "id": "web-on-phone",

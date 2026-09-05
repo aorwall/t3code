@@ -47,8 +47,14 @@ import {
   shouldIncludeBranchPickerItem,
 } from "./BranchToolbar.logic";
 import { ChangeRequestStatusIcon, prStatusIndicator } from "./ThreadStatusIndicators";
-// Fork: the pill's pull request comes from the Task's binding, not its branch.
-import { resolveForkThreadPr } from "../fork/threadPullRequest";
+import { Menu, MenuItem, MenuPopup, MenuTrigger } from "./ui/menu";
+// Fork: the pill's pull requests come from the Task's bindings, not its branch.
+import {
+  forkAdditionalPullRequests,
+  forkPullRequestKey,
+  forkThreadPullRequests,
+  resolveForkThreadPr,
+} from "../fork/threadPullRequest";
 import { Button } from "./ui/button";
 import { Switch } from "./ui/switch";
 import { getVirtualizedScrollFadeClassName } from "./ui/scroll-area";
@@ -627,6 +633,9 @@ export function BranchToolbarBranchSelector({
   const branchPrTooltip = branchPr
     ? `Open ${sourceControlPresentation.terminology.singular} #${branchPr.number} (${branchPr.state})`
     : "";
+  // Fork: the Task's other bound pull requests. The pill opens the one it names
+  // when this is empty and offers a menu when it is not.
+  const otherBranchPrs = forkAdditionalPullRequests(forkThreadPullRequests(serverThread), branchPr);
   const openPrLink = useOpenPrLink(threadRef);
 
   function renderPickerItem(itemValue: string, index: number) {
@@ -760,6 +769,36 @@ export function BranchToolbarBranchSelector({
             </TooltipTrigger>
             <TooltipPopup side="top">{branchPrTooltip}</TooltipPopup>
           </Tooltip>
+        ) : null}
+        {/* Fork: the pill names one pull request, so the Task's others get a
+            counter of their own rather than a second pill each. */}
+        {otherBranchPrs.length > 0 ? (
+          <Menu>
+            <MenuTrigger
+              render={
+                <button
+                  type="button"
+                  aria-label={`Show ${otherBranchPrs.length} more ${
+                    sourceControlPresentation.terminology.singular
+                  }${otherBranchPrs.length === 1 ? "" : "s"}`}
+                  className="inline-flex shrink-0 items-center rounded px-1 py-0.5 font-medium text-[11px] text-muted-foreground/70 tabular-nums transition-colors hover:bg-muted/60 hover:text-foreground/80"
+                />
+              }
+            >
+              +{otherBranchPrs.length}
+            </MenuTrigger>
+            <MenuPopup align="start" side="top">
+              {otherBranchPrs.map((pullRequest) => (
+                <MenuItem
+                  key={forkPullRequestKey(pullRequest)}
+                  onClick={(event) => openPrLink(event, pullRequest.url)}
+                >
+                  <ChangeRequestStatusIcon className="size-3.5" />
+                  {`View ${sourceControlPresentation.terminology.shortLabel} #${pullRequest.number}`}
+                </MenuItem>
+              ))}
+            </MenuPopup>
+          </Menu>
         ) : null}
         {/* Context menu lives on the wrapper: the disabled Button has
             pointer-events-none, so the trigger itself never sees right-clicks
