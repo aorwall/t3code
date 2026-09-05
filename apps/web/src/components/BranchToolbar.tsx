@@ -39,6 +39,8 @@ import {
   MenuTrigger,
 } from "./ui/menu";
 import { Separator } from "./ui/separator";
+// Fork: the workspace picker is gated off — see showWorkspaceControls below.
+import { FEATURES } from "../fork/features";
 import { ComposerSurface } from "./chat/ComposerSurface";
 import { measureRestingComposerControls } from "./chat/restingComposerControlsMeasurement";
 import { resolveRestingComposerControlsNaturalWidth } from "./composerFooterLayout";
@@ -428,6 +430,13 @@ export const BranchToolbar = memo(function BranchToolbar({
   composerControlsHostRef,
   contextStripVisible = true,
 }: BranchToolbarProps) {
+  // Fork: stands in for upstream's `showGitControls` everywhere the strip draws
+  // the workspace picker. `FEATURES.worktreeSelection` off leaves the branch
+  // selector alone and takes both the compact and the wide picker with it — the
+  // compact one is workspace-only here, since a single primary environment
+  // never raises the environment indicator it shares. Turning the flag on
+  // restores upstream: substitute `showGitControls` back and delete this.
+  const showWorkspaceControls = showGitControls && FEATURES.worktreeSelection;
   const threadRef = useMemo(
     () => scopeThreadRef(environmentId, threadId),
     [environmentId, threadId],
@@ -457,7 +466,9 @@ export const BranchToolbar = memo(function BranchToolbar({
   // "Previous worktree" hops a draft into the most recently active worktree
   // of this project — the "keep going where I just was" follow-up flow. Only
   // drafts can hop; started server threads have their workspace pinned.
-  const canUsePreviousWorktree = draftThread !== null && serverThread === null && !envModeLocked;
+  const canUsePreviousWorktree =
+    // Fork: added conjunct — no picker, no hop, and no thread-shell read for it.
+    showWorkspaceControls && draftThread !== null && serverThread === null && !envModeLocked;
   const projectRefsForWorktreeLookup = useMemo(
     () => (canUsePreviousWorktree && activeProjectRef ? [activeProjectRef] : []),
     [canUsePreviousWorktree, activeProjectRef],
@@ -514,7 +525,8 @@ export const BranchToolbar = memo(function BranchToolbar({
         !contextStripVisible && "pointer-events-none invisible absolute inset-x-0 top-full",
       )}
     >
-      {showGitControls ? (
+      {/* Fork: showWorkspaceControls for showGitControls. */}
+      {showWorkspaceControls ? (
         <div className="contents @3xl/composer-surface:hidden">
           <MobileRunContextSelector
             envLocked={envLocked}
@@ -532,11 +544,12 @@ export const BranchToolbar = memo(function BranchToolbar({
           />
         </div>
       ) : null}
-      {showGitControls || showEnvironmentIndicator ? (
+      {/* Fork: showWorkspaceControls for showGitControls, here and below. */}
+      {showWorkspaceControls || showEnvironmentIndicator ? (
         <div
           className={cn(
             "min-h-7 min-w-10 items-center gap-1 sm:min-h-6",
-            showGitControls ? "hidden @3xl/composer-surface:flex" : "flex",
+            showWorkspaceControls ? "hidden @3xl/composer-surface:flex" : "flex",
             composerControlsHostRef ? "shrink" : "flex-1",
           )}
         >
@@ -548,7 +561,7 @@ export const BranchToolbar = memo(function BranchToolbar({
                 availableEnvironments={availableEnvironments}
                 {...(showEnvironmentPicker && onEnvironmentChange ? { onEnvironmentChange } : {})}
               />
-              {showGitControls ? (
+              {showWorkspaceControls ? (
                 <Separator
                   orientation="vertical"
                   className="mx-0.5 h-3.5!"
@@ -557,7 +570,7 @@ export const BranchToolbar = memo(function BranchToolbar({
               ) : null}
             </>
           )}
-          {showGitControls ? (
+          {showWorkspaceControls ? (
             <BranchToolbarEnvModeSelector
               envLocked={envModeLocked}
               effectiveEnvMode={effectiveEnvMode}

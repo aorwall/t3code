@@ -112,6 +112,16 @@ export const FEATURES = {
    * thread is always `full-access` and there is no tier to pick between.
    */
   accessMode: false,
+  /**
+   * The composer's Workspace picker, which runs a thread either in the
+   * project's own checkout or in a git worktree cut for it. Moatless has no
+   * worktree: a task runs in its own sandbox, its checkout is that sandbox's,
+   * and `worktreePath` is never set. So the picker's other entries — "New
+   * worktree" and the "Previous worktree" hop — name a place the backend
+   * cannot put a thread, and the branch selector behind them would offer to
+   * pick a base ref for a worktree nobody cuts.
+   */
+  worktreeSelection: false,
 } satisfies Record<string, boolean>;
 
 export type FeatureName = keyof typeof FEATURES;

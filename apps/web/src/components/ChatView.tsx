@@ -5048,9 +5048,16 @@ function ChatViewContent(props: ChatViewProps) {
     activeThread.worktreePath === null &&
     !envLocked,
   );
-  const envMode: DraftThreadEnvMode = canOverrideServerThreadEnvMode
+  // Fork: renamed from `envMode`, which is now the gated value below.
+  const resolvedEnvMode: DraftThreadEnvMode = canOverrideServerThreadEnvMode
     ? (pendingServerThreadEnvMode ?? draftThread?.envMode ?? derivedEnvMode)
     : derivedEnvMode;
+  // Fork: `FEATURES.worktreeSelection` off removes the workspace picker, and a
+  // draft persisted in "worktree" before it did would otherwise be stuck there
+  // — sending would ask Moatless for a prepareWorktree bootstrap it does not
+  // serve, or refuse the send outright over a missing base branch, with no
+  // control left to say "local". Everything env-mode reads this value.
+  const envMode: DraftThreadEnvMode = FEATURES.worktreeSelection ? resolvedEnvMode : "local";
   const activeThreadBranch =
     canOverrideServerThreadEnvMode && pendingServerThreadBranch !== undefined
       ? pendingServerThreadBranch

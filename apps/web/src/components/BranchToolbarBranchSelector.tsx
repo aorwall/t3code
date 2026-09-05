@@ -33,6 +33,8 @@ import { useAtomCommand } from "../state/use-atom-command";
 import { vcsEnvironment } from "../state/vcs";
 import { cn } from "../lib/utils";
 import { parsePullRequestReference } from "../pullRequestReference";
+// Fork: the workspace picker is gated off — see effectiveEnvMode below.
+import { FEATURES } from "../fork/features";
 import { getSourceControlPresentation } from "../sourceControlPresentation";
 import {
   deriveLocalBranchNameFromRemoteRef,
@@ -141,13 +143,19 @@ export function BranchToolbarBranchSelector({
   const activeProjectCwd = activeProject?.workspaceRoot ?? null;
   const branchCwd = activeWorktreePath ?? activeProjectCwd;
   const hasServerThread = serverThread !== null;
-  const effectiveEnvMode =
+  // Fork: renamed from `effectiveEnvMode`, which is now the gated value below.
+  const resolvedEnvMode =
     effectiveEnvModeOverride ??
     resolveEffectiveEnvMode({
       activeWorktreePath,
       hasServerThread,
       draftThreadEnvMode: draftThread?.envMode,
     });
+  // Fork: with `FEATURES.worktreeSelection` off there is no picker left to
+  // leave "worktree" with, so a draft persisted in it before the gate landed
+  // would strand this selector on a worktree base ref — "From origin/main" and
+  // a start-from-origin switch — for a worktree the backend never cuts.
+  const effectiveEnvMode = FEATURES.worktreeSelection ? resolvedEnvMode : "local";
 
   // ---------------------------------------------------------------------------
   // Thread branch mutation (colocated — only this component calls it)

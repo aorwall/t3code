@@ -699,6 +699,25 @@
       }
     },
     {
+      "id": "worktree-selection-gate",
+      "name": "Workspace picker gate",
+      "paths": [
+        "apps/web/src/components/BranchToolbar.tsx",
+        "apps/web/src/components/BranchToolbarBranchSelector.tsx",
+        "apps/web/src/components/ChatView.tsx",
+        "apps/web/src/fork/features.ts"
+      ],
+      "mustSurvive": "The composer's context strip offers no workspace choice: Moatless runs a task in its own sandbox and never cuts a git worktree, so \"New worktree\" and the \"Previous worktree\" hop name a place a thread cannot go. FEATURES.worktreeSelection is read once in BranchToolbar as showWorkspaceControls, which stands in for upstream's showGitControls at the compact MobileRunContextSelector, the wide group's render condition and its @3xl visibility class, the separator, the BranchToolbarEnvModeSelector, and canUsePreviousWorktree. Gating the compact control whole is deliberate and depends on this build having a single primary environment, so the \"Run on\" group it shares never renders; a build that grows a second environment has to split that control instead. A draft persisted in \"worktree\" before the gate would otherwise have no way back out, so two more reads pin the mode to \"local\": ChatView's envMode, which feeds sendEnvMode and both toolbars, and BranchToolbarBranchSelector's own resolve for the local-draft path that gets no override. Without them a stale draft still asks for a prepareWorktree bootstrap Moatless does not serve, or refuses to send at all over a missing base branch. Drop the flag, all four reads and the showWorkspaceControls alias together once Moatless serves worktrees.",
+      "guard": {
+        "symbol": "FEATURES.worktreeSelection",
+        "files": [
+          "apps/web/src/components/BranchToolbar.tsx",
+          "apps/web/src/components/BranchToolbarBranchSelector.tsx",
+          "apps/web/src/components/ChatView.tsx"
+        ]
+      }
+    },
+    {
       "id": "navigation-gates",
       "name": "Navigation gates",
       "paths": [
