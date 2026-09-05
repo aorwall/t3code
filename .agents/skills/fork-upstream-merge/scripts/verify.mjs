@@ -5,7 +5,7 @@
  *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs
  *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --fast
  *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only typecheck,test
- *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only test --package @t3code/web
+ *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only test --package @t3tools/web
  *
  * `--package` runs the test step for one package. The full pass outruns the
  * ten-minute limit an agent's shell call gets, which turns the last step of
@@ -43,6 +43,8 @@
  * turning up.
  */
 import * as NodeChildProcess from "node:child_process";
+import * as NodeFS from "node:fs";
+import * as NodePath from "node:path";
 
 import { REPO_ROOT, Report, bold, cyan, dim, green, red, runMain, yellow } from "./lib.mjs";
 
@@ -153,6 +155,40 @@ function failedPackagesFromOutput(output) {
     if (/Test Files\s+\d+\s+failed/.test(rest)) failed.add(pkg);
   }
   return failed;
+}
+
+/**
+ * Every workspace package name, read out of `pnpm-workspace.yaml`.
+ *
+ * `--package` takes a name, and a name that matches nothing is a filter that
+ * runs no tests — which reads as a passing test step. Checking the name against
+ * the workspace turns that into an error naming the packages that do exist.
+ */
+function workspacePackages() {
+  const yaml = NodeFS.readFileSync(NodePath.join(REPO_ROOT, "pnpm-workspace.yaml"), "utf8");
+  const globs = [];
+  for (const line of yaml.split("\n")) {
+    if (/^packages:/.test(line)) continue;
+    const match = line.match(/^\s+-\s+(\S+)\s*$/);
+    if (match) globs.push(match[1]);
+    else if (globs.length > 0 && /^\S/.test(line)) break;
+  }
+
+  const dirs = globs.flatMap((glob) => {
+    if (!glob.endsWith("/*")) return [glob];
+    const parent = NodePath.join(REPO_ROOT, glob.slice(0, -2));
+    if (!NodeFS.existsSync(parent)) return [];
+    return NodeFS.readdirSync(parent).map((name) => `${glob.slice(0, -2)}/${name}`);
+  });
+
+  const names = new Set();
+  for (const dir of dirs) {
+    const manifest = NodePath.join(REPO_ROOT, dir, "package.json");
+    if (!NodeFS.existsSync(manifest)) continue;
+    const { name } = JSON.parse(NodeFS.readFileSync(manifest, "utf8"));
+    if (name) names.add(name);
+  }
+  return names;
 }
 
 /**
@@ -278,6 +314,14 @@ runMain(async () => {
     throw new Error(`--only matched no steps. Known: ${STEPS.map((s) => s.name).join(", ")}`);
   }
   if (packageFlag !== -1 && !onlyPackage) throw new Error("--package needs a package name.");
+  if (onlyPackage) {
+    const names = workspacePackages();
+    if (!names.has(onlyPackage)) {
+      throw new Error(
+        `--package ${onlyPackage} is not a workspace package. One of:\n  ${[...names].sort().join("\n  ")}`,
+      );
+    }
+  }
   if (onlyPackage && !steps.some((step) => step.retryPackagesOnFailure)) {
     throw new Error("--package only applies to the test step; add `--only test`.");
   }

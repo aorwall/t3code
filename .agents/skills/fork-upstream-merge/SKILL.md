@@ -288,6 +288,13 @@ git merge upstream/main
    (`ours`) paths — with no upstream side there is nothing to compare against,
    and the `guard` entries in the inventory are what cover those.
 
+   It also says nothing about a file that auto-merged into something neither
+   side wrote. Where upstream rewrote the condition a fork override hangs off,
+   both sides' text survives, the file differs from both parents, and no rule
+   here fires — the delta is intact and no longer reached. **The fork's own test
+   suite is the only check that covers that**, so a merge that touches behavior
+   the fork overrides is not verified until its tests have run.
+
 8. Commit the merge as soon as the last conflict marker is gone — before
    `verify.mjs`, before the tracker entry, before anything is green. Then
    `--amend` through the rest.
@@ -297,6 +304,11 @@ git merge upstream/main
    tree for as long as verification and documentation take. In this sandbox only
    committed history and uncommitted non-gitignored changes survive a restart. A
    scratch file does not help: gitignored artifacts do not survive either.
+
+   **Push the branch as soon as that commit exists**, and after each `--amend`.
+   Committing survives a restart; it does not survive the sandbox being
+   recreated from the repository, which discards anything never pushed. A merge
+   redone from scratch is the most expensive thing that can happen here.
 
    Two things not to sweep into that commit:
 
@@ -380,7 +392,7 @@ last step of a merge into a background job and a polling loop that an
 interruption loses. Run it a package at a time instead:
 
 ```bash
-node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only test --package @t3code/web
+node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only test --package @t3tools/web
 ```
 
 A check that is always red is a check nobody reads, so a derivation known to
