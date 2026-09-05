@@ -22,7 +22,18 @@
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
 
-import { REPO_ROOT, bold, cyan, dim, green, red, runMain, sh, yellow } from "./lib.mjs";
+import {
+  REPO_ROOT,
+  bold,
+  cyan,
+  dim,
+  green,
+  loadInventory,
+  red,
+  runMain,
+  sh,
+  yellow,
+} from "./lib.mjs";
 
 const RPC_PATH = "packages/contracts/src/rpc.ts";
 const ORCHESTRATION_PATH = "packages/contracts/src/orchestration.ts";
@@ -172,12 +183,62 @@ runMain(async () => {
     }
   }
 
-  list("ADD — backend does not dispatch these, and they carry no union entry", add, red);
-  list("DROP — backend serves these unconditionally; the union entry can never fire", drop, red);
+  /*
+   * A method whose derivation is known to read backwards, declared in the
+   * inventory rather than tolerated by habit. `scripts.run` is the standing
+   * one: it is upstream's own server that refuses it, not Moatless, so the
+   * comparison reports a union entry that can never fire while it is exactly
+   * the entry that has to stay.
+   *
+   * These leave the exit code alone. Before this, that single method made the
+   * step exit 1 on every merge, and a check that is always red is a check whose
+   * findings nobody reads — which is the whole failure this script exists to
+   * prevent, applied to the script itself.
+   */
+  const exceptions = loadInventory().unsupportedMethodExceptions ?? [];
+  const excepted = (bucket, direction) => {
+    const matches = exceptions.filter((entry) => entry.direction === direction);
+    const claimed = new Set(matches.map((entry) => entry.method));
+    return {
+      remaining: bucket.filter((wire) => !claimed.has(wire)),
+      waived: matches.filter((entry) => bucket.includes(entry.method)),
+    };
+  };
+  const addBucket = excepted(add, "ADD");
+  const dropBucket = excepted(drop, "DROP");
+  const waived = [...addBucket.waived, ...dropBucket.waived];
+
+  list(
+    "ADD — backend does not dispatch these, and they carry no union entry",
+    addBucket.remaining,
+    red,
+  );
+  list(
+    "DROP — backend serves these unconditionally; the union entry can never fire",
+    dropBucket.remaining,
+    red,
+  );
   list("KEEP — dispatched, but the arm can still reach unsupported_exit", keepConditional, green);
+  list(
+    "KNOWN EXCEPTIONS — declared in inventory.json, not counted",
+    waived.map((entry) => `${entry.direction} ${entry.method} — ${entry.reason}`),
+    yellow,
+  );
+
+  // An exception nobody can trip is an exception nobody will retire.
+  const stale = exceptions.filter((entry) => !waived.includes(entry));
+  if (stale.length > 0) {
+    list(
+      "STALE EXCEPTIONS — no longer reported; delete the entry",
+      stale.map(
+        (entry) => `${entry.direction} ${entry.method} — retire when: ${entry.retiredWhen}`,
+      ),
+      yellow,
+    );
+  }
 
   process.stdout.write(
     `\n${dim("Union entries live in packages/contracts/src/rpc.ts. Reconcile docs/fork/gaps.md after changing them.")}\n\n`,
   );
-  return add.length + drop.length > 0 ? 1 : 0;
+  return addBucket.remaining.length + dropBucket.remaining.length > 0 ? 1 : 0;
 });

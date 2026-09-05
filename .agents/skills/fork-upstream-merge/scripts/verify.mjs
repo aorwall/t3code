@@ -5,6 +5,13 @@
  *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs
  *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --fast
  *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only typecheck,test
+ *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only test --package @t3code/web
+ *
+ * `--package` runs the test step for one package. The full pass outruns the
+ * ten-minute limit an agent's shell call gets, which turns the last step of
+ * every merge into a background job and a polling loop — and a poll that gets
+ * interrupted loses the run. One package at a time fits, and the retry path
+ * below already had to run them individually anyway.
  *
  * `--fast` drops the test step and keeps everything else. The full pass is about
  * thirteen minutes and the test step is most of it, so a merge with something to
@@ -57,6 +64,11 @@ const STEPS = [
     name: "tripwires",
     argv: ["node", `${SCRIPTS}/tripwires.mjs`],
     what: "deleted surfaces, re-deletions, and workflow state on GitHub",
+  },
+  {
+    name: "resolution-check",
+    argv: ["node", `${SCRIPTS}/resolution-check.mjs`],
+    what: "resolutions that landed as one side whole",
   },
   {
     name: "unsupported-methods",
@@ -143,19 +155,35 @@ function failedPackagesFromOutput(output) {
   return failed;
 }
 
-/** Re-runs one package's test task alone, away from the other packages' load. */
-function retryPackageAlone(pkg) {
+/**
+ * Runs one package's test task alone, away from the other packages' load.
+ *
+ * Returns the raw status and signal rather than a boolean: the summary tells an
+ * OOM kill from a failing test by reading them, and the web suite is the one
+ * that gets OOM-killed.
+ */
+function runPackageAlone(pkg) {
   const result = NodeChildProcess.spawnSync("vp", ["run", "--filter", pkg, "test"], {
     cwd: REPO_ROOT,
     stdio: "inherit",
     env: heapEnv(),
   });
-  return (result.status ?? 1) === 0;
+  return { status: result.status ?? 1, signal: result.signal };
 }
 
-async function runTestStep(step) {
+const retryPackageAlone = (pkg) => runPackageAlone(pkg).status === 0;
+
+async function runTestStep(step, onlyPackage) {
   const started = process.hrtime.bigint();
   process.stdout.write(`\n${bold(cyan(`── ${step.name}`))} ${dim(step.what)}\n`);
+
+  // One package is already a single run, so there is nothing to attribute and
+  // nothing to retry alone — it is alone.
+  if (onlyPackage) {
+    const { status, signal } = runPackageAlone(onlyPackage);
+    const seconds = Number(process.hrtime.bigint() - started) / 1e9;
+    return { ...step, what: `${onlyPackage} only`, status, signal, seconds };
+  }
 
   const [command, ...args] = step.argv;
   const { status, signal, output } = await runCapturing(command, args);
@@ -241,11 +269,17 @@ runMain(async () => {
   const onlyFlag = process.argv.indexOf("--only");
   const only = onlyFlag === -1 ? null : new Set((process.argv[onlyFlag + 1] ?? "").split(","));
   const fast = process.argv.includes("--fast");
+  const packageFlag = process.argv.indexOf("--package");
+  const onlyPackage = packageFlag === -1 ? null : process.argv[packageFlag + 1];
 
   let steps = only ? STEPS.filter((step) => only.has(step.name)) : STEPS;
   if (fast) steps = steps.filter((step) => !step.slow);
   if (steps.length === 0) {
     throw new Error(`--only matched no steps. Known: ${STEPS.map((s) => s.name).join(", ")}`);
+  }
+  if (packageFlag !== -1 && !onlyPackage) throw new Error("--package needs a package name.");
+  if (onlyPackage && !steps.some((step) => step.retryPackagesOnFailure)) {
+    throw new Error("--package only applies to the test step; add `--only test`.");
   }
   if (fast) {
     process.stdout.write(
@@ -259,7 +293,7 @@ runMain(async () => {
 
   const results = [];
   for (const step of steps) {
-    results.push(step.retryPackagesOnFailure ? await runTestStep(step) : run(step));
+    results.push(step.retryPackagesOnFailure ? await runTestStep(step, onlyPackage) : run(step));
   }
 
   const report = summarize(results);

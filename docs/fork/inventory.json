@@ -139,6 +139,17 @@
     ]
   },
 
+  "unsupportedMethodExceptions": [
+    {
+      "id": "scripts-run-upstream-refusal",
+      "method": "scripts.run",
+      "direction": "DROP",
+      "reason": "It is upstream's own server that refuses this method, not Moatless, so the derivation reads backwards: it sees the backend serving `scripts.run` and calls the union entry unreachable, when that entry is what keeps `apps/server` compiling and behaving as upstream does.",
+      "retiredWhen": "`apps/server` stops answering `scripts.run` with `UnsupportedMethodError` — at which point delete this entry and let the DROP stand.",
+      "see": "pathPolicy `scripts-run-hosted`, and 'A script runs on the backend' in gaps.md"
+    }
+  ],
+
   "pathPolicy": [
     {
       "id": "primary-auth",
