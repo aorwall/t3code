@@ -148,9 +148,12 @@
     },
     {
       "id": "primary-http-layer",
-      "paths": ["apps/web/src/environments/primary/httpLayer.ts"],
+      "paths": [
+        "apps/web/src/environments/primary/httpLayer.ts",
+        "apps/web/src/environments/primary/httpLayer.test.ts"
+      ],
       "verdict": "decide",
-      "note": "Keep cookie session behavior and the absent same-origin gate. Take upstream's transport changes."
+      "note": "Keep cookie session behavior, the x-csrf-token echo Moatless requires on unsafe requests, and the absent same-origin gate. Take upstream's transport changes."
     },
     {
       "id": "login-route",
@@ -405,10 +408,11 @@
       "paths": [
         "apps/web/src/environments/primary/auth.ts",
         "apps/web/src/environments/primary/httpLayer.ts",
+        "apps/web/src/environments/primary/httpLayer.test.ts",
         "apps/web/src/routes/login.tsx",
         "apps/web/src/authBootstrap.test.ts"
       ],
-      "mustSurvive": "The browser authenticates by Moatless cookie session, there is no T3 backend session exchange, and /login is the entry point. Only login.tsx is fork-only; the other three are decide — upstream owns them and keeps changing the environment layer they sit in."
+      "mustSurvive": "The browser authenticates by Moatless cookie session, there is no T3 backend session exchange, /login is the entry point, and an unsafe request echoes the moatless_csrf cookie in x-csrf-token or Moatless 403s it. Only login.tsx is fork-only; the rest are decide — upstream owns them and keeps changing the environment layer they sit in."
     },
     {
       "id": "proxy-target-allowed-hosts",
