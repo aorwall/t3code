@@ -625,6 +625,16 @@
       "mustSurvive": "Hovering an assistant message with a completed or interrupted turn shows a fork icon beside the copy button. While the thread's newest turn is still running, the icon stays visible on messages from an earlier, already-ended turn and hides only on messages from that running turn itself — cutting below the open turn is allowed, cutting at or into it is not, matching the backend's own gate. `parseMoatlessTurnNumber` (`apps/web/src/fork/threadFork.ts`) reads the turn number off the wire `TurnId` to compare; either turn number failing to parse hides the icon. Clicking it opens a dialog rather than forking immediately: a same-sandbox toggle (on by default — it is the only checkout that resumes this conversation, and the dialog says so when switched off) and an optional first message. There is no branch control — a fork always runs on its source's branch. Confirming mints a thread id client-side, dispatches `thread.fork` with that id, the source thread's id, the hovered message's turn number, and the dialog's fields, then navigates to the new thread the same way starting a thread from a proposed plan does — same wait-for-started-thread and cleanup-on-failure path. Moatless is the only backend that runs `thread.fork`; the bundled server refuses it rather than fabricate a session-less copy."
     },
     {
+      "id": "task-bound-pull-request",
+      "name": "A thread's pull request is the Task's binding",
+      "paths": [
+        "apps/web/src/components/BranchToolbarBranchSelector.tsx",
+        "apps/web/src/fork/threadPullRequest.ts",
+        "apps/web/src/fork/threadPullRequest.test.ts"
+      ],
+      "mustSurvive": "Every surface that names a thread's pull request names the same one, and it is the Moatless Task's GitHub PR binding: the git menu's \"View PR\", the pill beside the composer's branch selector, the sidebar row's status chip, and the right panel's pull-request tab. Upstream derives `VcsStatusResult.pr` from the checked-out branch, so its surfaces gate the pull request on `refName` matching `thread.branch`; against Moatless that gate reports nothing for most threads that have one, because `tasks.branch` holds the base picked at creation while the agent commits on whatever branch it cut. The backend answers `vcs.status.pr`, `thread.linkedPullRequest` and `pullRequests.summary` from `task_bindings` and picks one primary when a Task has several (live before terminal, then highest number), so the client's job is only to stop re-deriving. `resolveForkThreadPr` (`apps/web/src/fork/threadPullRequest.ts`) is the whole client delta — the sidebar and right panel need none, since they already prefer `linkedPullRequest` when the thread carries one. Do not reintroduce a branch comparison in the composer pill: a binding-derived pull request is the Task's own by construction and names no branch to compare against."
+    },
+    {
       "id": "host-run-scripts",
       "name": "Host-run project scripts",
       "paths": [
@@ -869,6 +879,12 @@
       "name": "Surface gating",
       "watchFor": "New booleans on ExecutionEnvironmentCapabilities. Upstream adds one per thread-lifecycle surface — threadSettlement, threadSnooze, threadPinning and threadPinReorder as of 2026-08-08.",
       "action": "Prefer upstream's capability where one exists and delete the matching FEATURES flag. The server decides, so the surface then follows the backend without a fork edit."
+    },
+    {
+      "id": "task-bound-pull-request",
+      "name": "Where a thread's pull request comes from",
+      "watchFor": "Upstream deriving `VcsStatusResult.pr` from something other than the checked-out branch, or the branch match moving out of `resolveThreadPr` into the surfaces.",
+      "action": "Keep ours until then — the derivation differs, not the presentation. Drop `fork/threadPullRequest.ts` and call upstream's helper again once a pull request upstream reports is no longer the branch's."
     },
     {
       "id": "web-on-phone",

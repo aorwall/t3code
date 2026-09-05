@@ -39,7 +39,6 @@ import { getSourceControlPresentation } from "../sourceControlPresentation";
 import {
   deriveLocalBranchNameFromRemoteRef,
   resolveBranchTriggerLabel,
-  resolveBranchToolbarPrBranch,
   resolveBranchSelectionTarget,
   resolveBranchToolbarValue,
   resolveDraftEnvModeAfterBranchChange,
@@ -47,11 +46,9 @@ import {
   sanitizeNewRefName,
   shouldIncludeBranchPickerItem,
 } from "./BranchToolbar.logic";
-import {
-  ChangeRequestStatusIcon,
-  prStatusIndicator,
-  resolveThreadPr,
-} from "./ThreadStatusIndicators";
+import { ChangeRequestStatusIcon, prStatusIndicator } from "./ThreadStatusIndicators";
+// Fork: the pill's pull request comes from the Task's binding, not its branch.
+import { resolveForkThreadPr } from "../fork/threadPullRequest";
 import { Button } from "./ui/button";
 import { Switch } from "./ui/switch";
 import { getVirtualizedScrollFadeClassName } from "./ui/scroll-area";
@@ -620,14 +617,10 @@ export function BranchToolbarBranchSelector({
     startFromOrigin,
   });
 
-  // PR pill shown next to the branch selector when the active branch has one.
-  const branchPr = resolveThreadPr({
-    threadBranch: resolveBranchToolbarPrBranch({
-      activeThreadBranch,
-      resolvedActiveBranch,
-    }),
-    gitStatus: branchStatusQuery.data ?? null,
-  });
+  // Fork: the pill beside the branch selector shows the Task's bound pull
+  // request, which belongs to no branch — see fork/threadPullRequest.ts for why
+  // upstream's branch match cannot gate it here.
+  const branchPr = resolveForkThreadPr(branchStatusQuery.data ?? null);
   const branchPrStatus = prStatusIndicator(branchPr, branchStatusQuery.data?.sourceControlProvider);
   // Action-oriented tooltip (the pill opens the PR), distinct from the sidebar's
   // state-description tooltip.

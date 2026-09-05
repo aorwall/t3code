@@ -119,17 +119,21 @@ what a person loses, which is the part the derivation cannot tell you:
   2026-08-06 merge. `review.getDiffPreview` is served, so a diff renders and the
   full file behind a hunk cannot be fetched.
 - **Workflow scripts** — `orchestration.getWorkflowScript`, also new upstream.
-- **Pull requests** — the whole `pullRequests.*` group (list, detail, activity,
-  diff, review, comment, reviewer requests), new upstream in the 2026-08-12
-  merge and grown on 2026-08-16 by `pullRequests.update`, `updateComment` and
-  `setReaction` — plus filters and qualifiers, all-server listing, update-branch,
-  and sending a PR line request to the agent — with
+- **Pull requests** — the `pullRequests.*` group except `summary` (list, detail,
+  activity, diff, review, comment, reviewer requests), new upstream in the
+  2026-08-12 merge and grown on 2026-08-16 by `pullRequests.update`,
+  `updateComment` and `setReaction` — plus filters and qualifiers, all-server
+  listing, update-branch, and sending a PR line request to the agent — with
   GitHub/GitLab/Bitbucket/Azure DevOps provider backends in
   `apps/server/src/pullRequest/`. Needs no fork gate: the client reads
   `capabilities.pullRequests`, which decodes to unsupported when a deployment's
   handshake omits it, so the whole surface (sidebar tab, right-panel surface,
-  `/pull-requests` route) already stays off on Moatless. Closes when the backend
-  reports `capabilities.pullRequests: true` and dispatches the group.
+  `/pull-requests` route) already stays off on Moatless. `pullRequests.summary`
+  is the exception and is served, because a thread carrying a
+  `linkedPullRequest` reference has to be able to resolve it; the capability
+  stays absent regardless, since answering one method out of the group is not
+  the group. Closes when the backend reports `capabilities.pullRequests: true`
+  and dispatches the rest.
 - **Usage summary** — `server.getUsageSummary`, new upstream in the 2026-08-12
   merge, reading local provider transcript directories in
   `apps/server/src/usage/`. The `/usage` route and its charts render against
