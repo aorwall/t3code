@@ -31,9 +31,8 @@ only one written for someone who is not currently merging.
 ## The scripts
 
 Fork-owned. Most are dependency-free and runnable before `pnpm install`; the two
-that are not say so in the table below. They exist because every check they run
-was previously a paragraph of prose that a merge had to remember to perform, and
-the two merges that skipped one paid for it mid-merge.
+that are not say so in the table below. Run them rather than performing the
+checks by hand.
 
 | Script                    | When             | What it answers                                                                                                                                                             |
 | ------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -163,15 +162,12 @@ against a stated verdict, not open design.
 Worth delegating:
 
 - **Convergence validation.** Whether Moatless already does what a fork delta
-  stands in for is a read of the backend, independent per delta, and the answer
-  decides whether an entry retires. Retiring `prThreadSettling` on 2026-09-02
-  rested on confirming Moatless sets `settled_override` only on explicit user
-  action and never from PR state — a guess there either keeps dead code or drops
-  live behavior.
-- **Feature classification.** The three buckets for the PR report, over the
-  upstream commit range. Doing it from memory of the conflicts, as the
-  2026-09-02 merge did, misses every feature that arrived in a file that merged
-  cleanly.
+  stands in for. One read of the backend per delta, independent, and the answer
+  decides whether the entry retires. Confirm it against the backend source; a
+  guess either keeps dead code or drops live behavior.
+- **Feature classification.** The three buckets for the PR report, derived from
+  the upstream commit range rather than from the conflicts — a feature that
+  arrived in a cleanly merged file appears nowhere in the resolution work.
 - **Gaps reconciliation.** Each unsupported or reproducible item checked against
   `docs/fork/gaps.md` to add, extend, or strike.
 
@@ -182,10 +178,10 @@ emits the forecast already grouped that way:
 node .agents/skills/fork-upstream-merge/scripts/preflight.mjs --json
 ```
 
-A concern is the unit that can be decided alone. On 2026-09-02 the
-settings-search work spanned five files, and dropping a re-export in
-`settingsSearch.ts` is what broke `listSearch.ts` — split file by file, that is
-one decision handed to two agents who cannot see each other.
+A concern is the unit that can be decided alone. One concern regularly spans
+several files whose edits depend on each other — a removed re-export in one
+breaks another — so splitting by file hands one decision to two agents who
+cannot see each other.
 
 Do not delegate `verify.mjs`. Its packages already contend for one sandbox's
 CPU, which is where the flaky perf and timeout failures come from; running more
@@ -215,10 +211,6 @@ and the two halves of the forecast:
   same answer the merge will give.
 - **Auto-merged, worth a look** — everything else both sides touched. Git will
   resolve these without asking, and a wrong resolution here leaves no marker.
-
-The second list used to be the whole forecast, which over-reported the work by
-about 5x — 24 files for 3 real conflicts on 2026-08-29 — and made the plan
-something to skim rather than read.
 
 **Fix the stale entries before merging.** They are what the merge resolves
 against, and an entry whose path upstream has renamed out from under it is a fork
@@ -274,8 +266,8 @@ git merge upstream/main
    merge is committed the fix is a plain edit. It skips files whose conflicts
    are still unresolved, since those hold both sides' text by definition, which
    is why this comes after resolving rather than straight after `git merge`.
-   `verify.mjs` runs it again later; running it here is what keeps the finding
-   from costing a full typecheck-and-test pass, as it did on 2026-08-29.
+   `verify.mjs` runs it again later; running it here keeps the finding from
+   costing a full typecheck-and-test pass.
 
 7. Check that nothing landed as one side whole:
 
@@ -283,14 +275,13 @@ git merge upstream/main
    node .agents/skills/fork-upstream-merge/scripts/resolution-check.mjs
    ```
 
-   A resolution can disappear without leaving a marker. In the 2026-09-02 merge
-   the sandbox restarted twice and reverted the uncommitted working tree both
-   times; conflicted files came back with their markers and were obvious, while
-   files edited as collateral of resolving a conflict elsewhere reverted in
-   silence. This reads each path against both parents and reports where the
-   result contradicts its verdict — a `converged` path that is byte-identical
-   to upstream has lost its delta, and one identical to the fork's pre-merge
-   copy never took upstream's change at all.
+   A resolution can disappear without leaving a marker. A sandbox restart
+   reverts the uncommitted working tree: a conflicted file comes back with its
+   markers and is obvious, while a file edited as collateral of resolving a
+   conflict elsewhere reverts in silence. This reads each path against both
+   parents and reports where the result contradicts its verdict — a `converged`
+   path that is byte-identical to upstream has lost its delta, and one identical
+   to the fork's pre-merge copy never took upstream's change at all.
 
    It runs mid-merge for the same reason `duplicate-adds.mjs` does: before the
    commit exists the fix is a plain edit. It says nothing about fork-only
@@ -304,24 +295,23 @@ git merge upstream/main
    The merge commit is local until you push, so amending costs nothing, and
    everything above this line is otherwise carried in an uncommitted working
    tree for as long as verification and documentation take. In this sandbox only
-   committed history and uncommitted non-gitignored changes survive a restart,
-   and the 2026-09-02 merge lost hours of resolution twice to exactly that. A
+   committed history and uncommitted non-gitignored changes survive a restart. A
    scratch file does not help: gitignored artifacts do not survive either.
 
    Two things not to sweep into that commit:
 
    - **Never `git add -A` during a merge.** Stage explicit paths. A restart can
      wipe a symlink or a submodule gitlink — `.claude/skills` and
-     `.repos/alchemy-effect/.vendor/alchemy` both went, twice — and `-A` stages
-     those as deletions the merge appears to have made. A deletion you did not
-     make is environment damage, not a resolution.
+     `.repos/alchemy-effect/.vendor/alchemy` are the two that go — and `-A`
+     stages those as deletions the merge appears to have made. A deletion you
+     did not make is environment damage, not a resolution.
    - **Re-check `pnpm-lock.yaml`.** Step 5 resolved it, but a later `vp i` — the
-     one verification needs — rewrites it again. It came within one `--amend` of
-     being folded into the 2026-09-02 merge commit.
+     one verification needs — rewrites it again. Check it before every `--amend`
+     so that rewrite is not folded into the merge commit.
 
    After any interruption, in order: `git status` for the merge state, then
    `git grep -n '<<<<<<<'` for markers left behind, then `resolution-check.mjs`
-   for the silent case — the one that had no answer before it existed.
+   for the silent case.
 
 9. Read what the merge actually took, against both parents:
 
@@ -367,8 +357,7 @@ test failure.
 
 The full pass is about thirteen minutes and the test step is most of it. When
 something fails, fix it and re-run `verify.mjs --fast`, which keeps every check
-except the tests; run the full command again once it is green. Every failure
-this merge procedure has caught so far was visible without the test step.
+except the tests; run the full command again once it is green.
 
 A test package that fails is retried alone before being reported: the packages
 `pnpm test` runs share one sandbox's CPU and memory, and a merge on a loaded

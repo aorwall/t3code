@@ -237,8 +237,8 @@ export function mergeBase(a, b) {
  * The files `git merge` will actually stop on, computed without touching the
  * working tree.
  *
- * "Files both sides changed" over-reports by about 5x — 24 candidates for 3 real
- * conflicts in the 2026-08-29 merge — because git auto-merges most of them. This
+ * "Files both sides changed" over-reports by about 5x, because git auto-merges
+ * most of them. This
  * runs the real merge machinery into a temporary tree and reports what it could
  * not resolve, in about 100ms. The tree it writes is unreferenced and gets
  * collected; nothing is checked out and no merge is started.

@@ -68,12 +68,12 @@ function groupByVerdict(inventory, paths) {
  * The plan for the merge, in two parts: the files git will actually stop on, and
  * the ones it will resolve on its own.
  *
- * These used to be one list — every file both sides touched — which over-reports
- * the work by about 5x, because git auto-merges most of them. `merge-tree` runs
- * the real merge into a temporary tree and says which files it could not
- * resolve, so the first list is the actual conflict set and the second is the
- * "read these anyway" set. Both matter, and confusing one for the other is what
- * made the forecast something to skim.
+ * Every file both sides touched over-reports the work by about 5x, because git
+ * auto-merges most of them. `merge-tree` runs the real merge into a temporary
+ * tree and says which files it could not resolve, so the first list is the
+ * actual conflict set and the second is the "read these anyway" set. Both
+ * matter, and confusing one for the other makes the forecast something to
+ * skim.
  */
 function forecast(base, ref) {
   const upstreamChanged = new Set(lines(git(["diff", "--name-only", base, ref])));
@@ -212,10 +212,10 @@ function reportNewFiles(inventory, report, base, ref) {
  * The forecast as data, grouped the way the work divides.
  *
  * Conflicts are keyed by concern rather than listed by path because a concern
- * is the unit that can be resolved independently: the 2026-09-02 merge's
- * settings-search work spanned five files, and dropping a re-export in one of
- * them broke another, so anyone splitting that merge up file by file would have
- * split a single decision across two people who could not see each other.
+ * is the unit that can be resolved independently. One concern regularly spans
+ * several files whose edits depend on each other — a removed re-export in one
+ * breaks another — so splitting by file splits a single decision across two
+ * people who cannot see each other.
  */
 function forecastJson(inventory, base, ref, upstreamHead, count) {
   const { overlap, conflicts } = forecast(base, ref);

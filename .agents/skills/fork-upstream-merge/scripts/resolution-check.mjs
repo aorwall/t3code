@@ -6,23 +6,16 @@
  *   node .agents/skills/fork-upstream-merge/scripts/resolution-check.mjs c3a5e9b8e
  *
  * The failure this exists for is a resolution that disappears without leaving a
- * marker. In the 2026-09-02 merge the sandbox restarted twice and reverted the
- * uncommitted working tree both times. Conflicted files came back with their
- * `<<<<<<<` markers, so they were obvious. Files edited as collateral of
- * resolving a conflict elsewhere reverted in silence.
+ * marker. A sandbox restart reverts the uncommitted working tree: conflicted
+ * files come back with their `<<<<<<<` markers and are obvious, while files
+ * edited as collateral of resolving a conflict elsewhere revert in silence.
  *
- * That merge got lucky twice. Both files it lost were fork-only, and fork-only
- * files already have a detector: the `guard` entries in the inventory, which is
- * how `features.ts` losing `FEATURES.prThreadSettling` turned into a failing
- * `features.test.ts`. The second was caught only because typecheck happened to
- * fail on an export it had removed.
- *
- * Nothing covered the other half. Had the restart reverted the resolution in an
- * upstream-owned file instead — `Sidebar.tsx`, `ws.ts`, any of the fourteen
- * that conflicted — no guard names it, `merge-stats.mjs` only counts files and
- * one file is lost in the noise, and the merge is green. That is the gap here:
- * this reads the content of each candidate path against both parents and
- * reports where the result contradicts the path's own verdict.
+ * Fork-only files have a detector for that already — the `guard` entries in the
+ * inventory, which turn a lost `FEATURES` flag into a failing `features.test.ts`.
+ * Nothing covered the upstream-owned half: no guard names those paths, and
+ * `merge-stats.mjs` only counts files, so one lost file is noise. This reads the
+ * content of each candidate path against both parents and reports where the
+ * result contradicts the path's own verdict.
  *
  * So it says nothing about fork-only paths (`ours`), and cannot: with no
  * upstream side there is no third reference to compare against, and "identical
@@ -115,10 +108,10 @@ function candidatePaths(sides, base) {
   const upstreamChanged = new Set(lines(git(["diff", "--name-only", base, sides.theirs])));
   const forkChanged = new Set(lines(git(["diff", "--name-only", base, sides.ours])));
 
-  // Both directions are needed. A dropped fork delta shows up in `landed` — the
-  // 2026-09-02 files did. A dropped upstream change cannot: it means the merged
-  // tree still equals the fork's own pre-merge blob, so the path produces no
-  // diff against `ours` at all and appears only in what upstream touched.
+  // Both directions are needed. A dropped fork delta shows up in `landed`. A
+  // dropped upstream change cannot: it means the merged tree still equals the
+  // fork's own pre-merge blob, so the path produces no diff against `ours` at
+  // all and appears only in what upstream touched.
   const unresolved = new Set(lines(git(["diff", "--name-only", "--diff-filter=U"])));
   const candidates = [...new Set([...landed, ...upstreamChanged])]
     .filter((path) => !unresolved.has(path))
@@ -295,7 +288,7 @@ function reportUnlisted(inventory, report, sides, paths) {
 
 /**
  * A landed merge commit's sides, for pointing this at a merge that is already
- * in — which is how the rules were calibrated against the 2026-09-02 merge.
+ * in.
  */
 function sidesOf(commit) {
   const [head, ...parents] = git(["rev-list", "--parents", "-n", "1", commit]).split(" ");

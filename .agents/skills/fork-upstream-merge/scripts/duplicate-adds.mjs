@@ -9,15 +9,13 @@
  * upstream both append the same line to the same list at different offsets —
  * the same import, the same const, the same entry in a catalog — git resolves it
  * without a `<<<<<<<` marker and keeps both copies. Nothing in the merge reports
- * it. In the 2026-08-29 merge that was `OrchestrationMessage` and
- * `decodeOrchestrationMessage` in `packages/contracts/src/orchestration.test.ts`,
- * and it cost a full verify pass — 146s of typecheck and 565s of tests — to
- * learn about as a parse error.
+ * it. The cost of missing one is a full verify pass — minutes of typecheck and
+ * tests — to learn about it as a parse error.
  *
  * The rule is narrow on purpose: a line that appears **exactly once on each
  * side and twice in the merge**. The looser reading — any line more frequent in
- * the merge than in either parent — reports 37 hits on that same merge, almost
- * all of them `});` and `}`, and a check nobody can read is a check nobody runs.
+ * the merge than in either parent — reports dozens of hits, almost all of them
+ * `});` and `}`, and a check nobody can read is a check nobody runs.
  * With the narrow rule the same merge gives 2 hits and both are the defect.
  *
  * It cannot catch a duplicate of a line that already appeared elsewhere in the

@@ -16,10 +16,10 @@
  * `--fast` drops the test step and keeps everything else. The full pass is about
  * thirteen minutes and the test step is most of it, so a merge with something to
  * fix pays that twice — once to find the problem, once to confirm the fix. The
- * checks `--fast` keeps are the ones that catch a broken merge: the 2026-08-29
- * merge's duplicated import showed up in `lint` in twelve seconds and then took
- * nine more minutes of tests to finish reporting. Iterate on `--fast`, then run
- * the whole thing once before writing anything down.
+ * checks `--fast` keeps are the ones that catch a broken merge: a duplicated
+ * import shows up in `lint` in seconds, where the tests take minutes to report
+ * the same thing. Iterate on `--fast`, then run the whole thing once before
+ * writing anything down.
  *
  * Three things this does that `a && b && c && d` does not.
  *

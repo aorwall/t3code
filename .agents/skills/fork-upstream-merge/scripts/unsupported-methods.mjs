@@ -190,10 +190,9 @@ runMain(async () => {
    * comparison reports a union entry that can never fire while it is exactly
    * the entry that has to stay.
    *
-   * These leave the exit code alone. Before this, that single method made the
-   * step exit 1 on every merge, and a check that is always red is a check whose
-   * findings nobody reads — which is the whole failure this script exists to
-   * prevent, applied to the script itself.
+   * These leave the exit code alone. A check that is always red is a check
+   * whose findings nobody reads — which is the whole failure this script
+   * exists to prevent, applied to the script itself.
    */
   const exceptions = loadInventory().unsupportedMethodExceptions ?? [];
   const excepted = (bucket, direction) => {
