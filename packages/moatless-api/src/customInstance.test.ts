@@ -159,6 +159,53 @@ describe("customInstance", () => {
     expect(seen).toBe("https://moatless.example.com/api/v1/workspaces");
   });
 
+  async function withCookie<T>(cookie: string, run: () => Promise<T>): Promise<T> {
+    const had = "document" in globalThis;
+    const original = (globalThis as { document?: unknown }).document;
+    (globalThis as { document?: unknown }).document = { cookie };
+    try {
+      return await run();
+    } finally {
+      if (had) {
+        (globalThis as { document?: unknown }).document = original;
+      } else {
+        delete (globalThis as { document?: unknown }).document;
+      }
+    }
+  }
+
+  it("echoes the moatless_csrf cookie back as X-CSRF-Token", async () => {
+    // The double-submit the backend gates every unsafe method behind: without
+    // this header a PATCH answers 403 "CSRF validation failed".
+    let token: string | null = null;
+    await withCookie("foo=1; moatless_csrf=abc123; bar=2", () =>
+      withFetch(
+        async (_url, init) => {
+          token = new Headers(init?.headers).get("X-CSRF-Token");
+          return new Response(null, { status: 204 });
+        },
+        () => customInstance("/api/v1/secrets/s_1", { method: "PATCH" }),
+      ),
+    );
+
+    expect(token).toBe("abc123");
+  });
+
+  it("sends no CSRF header when the cookie is absent", async () => {
+    let token: string | null = "unset";
+    await withCookie("foo=1; bar=2", () =>
+      withFetch(
+        async (_url, init) => {
+          token = new Headers(init?.headers).get("X-CSRF-Token");
+          return new Response("[]", { status: 200 });
+        },
+        () => customInstance("/api/v1/workspaces"),
+      ),
+    );
+
+    expect(token).toBe(null);
+  });
+
   it("throws when there is no response to narrow on", async () => {
     // No status and no body, so there is nothing to return an envelope from.
     await expect(

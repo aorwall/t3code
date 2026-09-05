@@ -755,7 +755,7 @@
       "id": "moatless-rest-client",
       "name": "Moatless REST client",
       "paths": ["packages/moatless-api/**"],
-      "mustSurvive": "Fork-only. The generated client for the Moatless REST API, plus the checked-in OpenAPI description it is generated from and the CI check that the two have not drifted. Regenerate with `vp run --filter @t3tools/moatless-api generate`; do not hand-edit src/generated/**. customInstance.ts carries an @effect-diagnostics-next-line globalFetch:off — the package is deliberately outside Effect."
+      "mustSurvive": "Fork-only. The generated client for the Moatless REST API, plus the checked-in OpenAPI description it is generated from and the CI check that the two have not drifted. Regenerate with `vp run --filter @t3tools/moatless-api generate`; do not hand-edit src/generated/**. tsconfig.json turns the @effect/language-service globalFetch diagnostic off for the package — it is deliberately outside Effect, and customInstance.ts calls fetch directly. customInstance.ts also attaches the X-CSRF-Token header the Moatless backend requires on every unsafe method."
     },
     {
       "id": "moatless-admin-reads",

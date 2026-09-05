@@ -1,5 +1,7 @@
 /**
- * The fetch mutator every generated Moatless call goes through.
+ * The fetch mutator every generated Moatless call goes through. Fork-only:
+ * upstream has no Moatless REST client (`moatless-rest-client` in the fork
+ * inventory).
  *
  * Same-origin and cookie-authenticated: the Moatless session cookie is already
  * present on this origin, because Traefik matches `PathPrefix('/api')` against
@@ -143,6 +145,32 @@ function requestOrigin(): string {
   return typeof window === "undefined" ? "http://localhost" : window.location.origin;
 }
 
+const CSRF_COOKIE = "moatless_csrf";
+
+/**
+ * Echo the `moatless_csrf` cookie back as `X-CSRF-Token`.
+ *
+ * The Moatless session cookie is attached ambiently by the browser, so the
+ * backend gates every unsafe method behind a double-submit token: an
+ * `X-CSRF-Token` header that equals the non-`HttpOnly` `moatless_csrf` cookie.
+ * `credentials: "include"` sends the cookie; without this header the backend
+ * answers a PATCH/POST/PUT/DELETE with 403 `CSRF validation failed`.
+ */
+function withCsrfToken(init?: HeadersInit): Headers {
+  const headers = new Headers(init);
+  if (typeof document !== "undefined") {
+    const token = document.cookie
+      .split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith(`${CSRF_COOKIE}=`))
+      ?.slice(CSRF_COOKIE.length + 1);
+    if (token) {
+      headers.set("X-CSRF-Token", token);
+    }
+  }
+  return headers;
+}
+
 export const customInstance = async <T>(
   url: string,
   options?: RequestInit & { params?: Record<string, unknown> },
@@ -160,7 +188,11 @@ export const customInstance = async <T>(
   const href = target.toString();
   let response: Response;
   try {
-    response = await fetch(href, { ...options, credentials: "include" });
+    response = await fetch(href, {
+      ...options,
+      headers: withCsrfToken(options?.headers),
+      credentials: "include",
+    });
   } catch (cause) {
     throw new MoatlessTransportError(href, cause);
   }
