@@ -182,13 +182,26 @@ function workspacePackages() {
   });
 
   const names = new Set();
+  const withTests = new Set();
   for (const dir of dirs) {
     const manifest = NodePath.join(REPO_ROOT, dir, "package.json");
     if (!NodeFS.existsSync(manifest)) continue;
-    const { name } = JSON.parse(NodeFS.readFileSync(manifest, "utf8"));
-    if (name) names.add(name);
+    const { name, scripts } = JSON.parse(NodeFS.readFileSync(manifest, "utf8"));
+    if (!name) continue;
+    names.add(name);
+    if (scripts?.test) withTests.add(name);
   }
-  return names;
+  return { names, withTests };
+}
+
+/** Every package label that produced output, whether it passed or failed. */
+function reportedPackages(output) {
+  const seen = new Set();
+  for (const line of output.split("\n")) {
+    const match = LABEL_LINE.exec(line);
+    if (match) seen.add(match[1]);
+  }
+  return seen;
 }
 
 /**
@@ -223,17 +236,45 @@ async function runTestStep(step, onlyPackage) {
 
   const [command, ...args] = step.argv;
   const { status, signal, output } = await runCapturing(command, args);
+
+  // `vp run -r test` does not always reach every package that declares a test
+  // script, and it exits 0 when it does not: a merge can pass this step with
+  // the fork's main surface never tested. The packages that reported are in the
+  // labeled output, so the ones that did not are knowable. Run those rather
+  // than only naming them — a step that reports green is claiming they ran.
+  const skipped = [...workspacePackages().withTests].filter(
+    (pkg) => !reportedPackages(output).has(pkg),
+  );
+  let skippedFailed = [];
+  if (skipped.length > 0) {
+    process.stdout.write(
+      `\n${yellow(`${skipped.length} package(s) declare a test script and did not run: ${skipped.join(", ")}`)}\n` +
+        `${dim("running each alone — `vp run -r test` exits 0 without them")}\n`,
+    );
+    for (const pkg of skipped) {
+      process.stdout.write(`\n${bold(cyan(`── skipped ${pkg}`))}\n`);
+      if (runPackageAlone(pkg).status !== 0) skippedFailed.push(pkg);
+    }
+  }
+
   const seconds = Number(process.hrtime.bigint() - started) / 1e9;
 
   if ((status ?? 1) === 0 || status === 137 || signal === "SIGKILL") {
-    return { ...step, status: status ?? 1, signal, seconds };
+    return {
+      ...step,
+      status: skippedFailed.length > 0 ? 1 : (status ?? 1),
+      signal,
+      seconds,
+      skipped,
+      skippedFailed,
+    };
   }
 
   const failedPackages = failedPackagesFromOutput(output);
   if (failedPackages.size === 0) {
     // Output didn't match the expected shape — do not guess. Report the
     // plain failure the way every other step does.
-    return { ...step, status, signal, seconds };
+    return { ...step, status, signal, seconds, skipped, skippedFailed };
   }
 
   process.stdout.write(
@@ -248,9 +289,11 @@ async function runTestStep(step, onlyPackage) {
   const stillFailing = retried.filter((entry) => !entry.passedAlone);
   return {
     ...step,
+    skipped,
+    skippedFailed,
     // Flaky packages that pass alone no longer fail the step; a package that
     // fails alone too is a real finding and keeps the step red.
-    status: stillFailing.length > 0 ? status : 0,
+    status: stillFailing.length > 0 || skippedFailed.length > 0 ? status || 1 : 0,
     signal,
     seconds,
     retried,
@@ -263,6 +306,25 @@ function summarize(results) {
 
   for (const result of results) {
     const took = `${result.seconds.toFixed(0)}s`;
+
+    // Said before the pass/fail line below, because "green" from a run that
+    // skipped a package is the one result worth distrusting.
+    if (result.skipped?.length > 0) {
+      const detail = [
+        `\`vp run -r test\` did not reach: ${result.skipped.join(", ")}`,
+        "Each was run alone instead. A green step without this line means every package ran.",
+      ];
+      if (result.skippedFailed.length > 0) {
+        section.fail(`${result.name} — skipped package(s) failed when run alone`, [
+          ...detail,
+          `Failing: ${result.skippedFailed.join(", ")}`,
+        ]);
+        continue;
+      }
+      section.warn(`${result.name} ${dim(took)} — ${result.skipped.length} package(s) were skipped`, detail);
+      continue;
+    }
+
     if (result.retried?.length > 0) {
       const stillFailing = result.retried.filter((entry) => !entry.passedAlone);
       const flaky = result.retried.filter((entry) => entry.passedAlone);
@@ -315,7 +377,7 @@ runMain(async () => {
   }
   if (packageFlag !== -1 && !onlyPackage) throw new Error("--package needs a package name.");
   if (onlyPackage) {
-    const names = workspacePackages();
+    const { names } = workspacePackages();
     if (!names.has(onlyPackage)) {
       throw new Error(
         `--package ${onlyPackage} is not a workspace package. One of:\n  ${[...names].sort().join("\n  ")}`,
