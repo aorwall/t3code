@@ -251,10 +251,38 @@ function checkUpstreamDrift(inventory, report, sides, paths) {
 function upstreamReference(inventory, sides) {
   const ref = inventory.upstream.ref;
   if (!git(["rev-parse", "--verify", "--quiet", ref], { allowFailure: true })) return null;
+  if (isUpstreamMerge(inventory, sides)) return git(["rev-parse", sides.theirs]);
+
+  // Not an upstream merge, so neither parent is upstream. The right reference
+  // is the newest upstream commit the merge RESULT carries — taking it from
+  // `ours` alone would compare against whatever upstream the fork had before
+  // the branch being merged brought a newer one in, and report every file that
+  // newer upstream touched as drifted.
+  if (sides.state === "committed") return mergeBase(sides.merged, ref);
+  const fromOurs = mergeBase(sides.ours, ref);
+  const fromTheirs = mergeBase(sides.theirs, ref);
+  return mergeBase(fromOurs, fromTheirs) === fromOurs ? fromTheirs : fromOurs;
+}
+
+/**
+ * Whether the merge being checked is an upstream merge at all.
+ *
+ * Rules 1 and 2 read `theirs` as "upstream's side". That holds only when the
+ * other parent is an upstream commit. Merging one fork branch into another —
+ * a pull request landing on `main`, most obviously — makes `theirs` the fork's
+ * own branch, and every `converged` path it touched then reads as "landed
+ * byte-identical to upstream" because the merge took that branch whole. The
+ * rules are not weaker there, they are meaningless, so they are skipped rather
+ * than reported: a check that is red on every merged pull request is a check
+ * nobody reads.
+ */
+function isUpstreamMerge(inventory, sides) {
+  const ref = inventory.upstream.ref;
+  if (!git(["rev-parse", "--verify", "--quiet", ref], { allowFailure: true })) return false;
   // `theirs` is an upstream commit exactly when it is its own merge-base with
   // the upstream ref — that is, when upstream already contains it.
   const theirs = git(["rev-parse", sides.theirs]);
-  return mergeBase(theirs, ref) === theirs ? theirs : mergeBase(sides.ours, ref);
+  return mergeBase(theirs, ref) === theirs;
 }
 
 function checkVerbatim(inventory, report, sides) {
@@ -335,8 +363,14 @@ export function runResolutionCheck(report, commit = null) {
   const base = mergeBase(sides.ours, sides.theirs);
   const { candidates, bothChanged } = candidatePaths(sides, base);
 
-  checkDeltaDrift(inventory, report, sides, candidates);
-  checkUpstreamDrift(inventory, report, sides, candidates);
+  if (isUpstreamMerge(inventory, sides)) {
+    checkDeltaDrift(inventory, report, sides, candidates);
+    checkUpstreamDrift(inventory, report, sides, candidates);
+  } else {
+    report
+      .section("Resolutions against both sides")
+      .ok(`not an upstream merge — ${sides.theirs} is not in ${inventory.upstream.ref}`);
+  }
   checkVerbatim(inventory, report, sides);
   reportUnlisted(inventory, report, sides, bothChanged);
 }
