@@ -68,20 +68,25 @@ function groupByVerdict(inventory, paths) {
  * The plan for the merge, in two parts: the files git will actually stop on, and
  * the ones it will resolve on its own.
  *
- * These used to be one list — every file both sides touched — which over-reports
- * the work by about 5x, because git auto-merges most of them. `merge-tree` runs
- * the real merge into a temporary tree and says which files it could not
- * resolve, so the first list is the actual conflict set and the second is the
- * "read these anyway" set. Both matter, and confusing one for the other is what
- * made the forecast something to skim.
+ * Every file both sides touched over-reports the work by about 5x, because git
+ * auto-merges most of them. `merge-tree` runs the real merge into a temporary
+ * tree and says which files it could not resolve, so the first list is the
+ * actual conflict set and the second is the "read these anyway" set. Both
+ * matter, and confusing one for the other makes the forecast something to
+ * skim.
  */
-function reportForecast(inventory, report, base, ref) {
+function forecast(base, ref) {
   const upstreamChanged = new Set(lines(git(["diff", "--name-only", base, ref])));
   const forkChanged = lines(git(["diff", "--name-only", base, "HEAD"]));
   const overlap = forkChanged.filter((path) => upstreamChanged.has(path)).sort();
 
   const predicted = predictConflicts("HEAD", ref);
   const conflicts = predicted === null ? null : predicted.filter(Boolean).sort();
+  return { overlap, conflicts };
+}
+
+function reportForecast(inventory, report, base, ref) {
+  const { overlap, conflicts } = forecast(base, ref);
 
   const section = report.section(
     conflicts === null
@@ -203,19 +208,82 @@ function reportNewFiles(inventory, report, base, ref) {
     ]);
 }
 
+/**
+ * The forecast as data, grouped the way the work divides.
+ *
+ * Conflicts are keyed by concern rather than listed by path because a concern
+ * is the unit that can be resolved independently. One concern regularly spans
+ * several files whose edits depend on each other — a removed re-export in one
+ * breaks another — so splitting by file splits a single decision across two
+ * people who cannot see each other.
+ */
+function forecastJson(inventory, base, ref, upstreamHead, count) {
+  const { overlap, conflicts } = forecast(base, ref);
+  const entryOf = (path) => {
+    const entry = verdictFor(inventory, path)?.entry;
+    return { path, verdict: entry?.verdict ?? "unlisted", id: entry?.id ?? null };
+  };
+
+  const byConcern = new Map();
+  for (const item of (conflicts ?? overlap).map(entryOf)) {
+    const key = item.id ?? "unlisted";
+    if (!byConcern.has(key)) {
+      byConcern.set(key, { id: item.id, verdict: item.verdict, paths: [] });
+    }
+    byConcern.get(key).paths.push(item.path);
+  }
+
+  return {
+    upstream: { head: upstreamHead, base, commits: count },
+    // False when git could not pre-merge. `conflicts` is then the whole overlap
+    // rather than the real conflict set, and `autoMerged` is not knowable — it
+    // stays empty rather than repeating the same paths under a name that claims
+    // git resolved them.
+    predicted: conflicts !== null,
+    conflicts: (conflicts ?? overlap).map(entryOf),
+    concerns: [...byConcern.values()],
+    autoMerged:
+      conflicts === null ? [] : overlap.filter((path) => !conflicts.includes(path)).map(entryOf),
+  };
+}
+
 runMain(async () => {
   const inventory = loadInventory();
+  const asJson = process.argv.includes("--json");
 
   // Checked before the un-shallow below, which is a large fetch to spend on a
   // clone that was never going to be able to reach upstream.
   requireUpstreamRemote(inventory);
 
-  if (ensureFullHistory()) {
+  if (ensureFullHistory() && !asJson) {
     process.stdout.write(dim("un-shallowed the clone so merge-base is meaningful\n"));
   }
   fetchUpstream(inventory);
   const ref = requireUpstream(inventory);
   const base = git(["merge-base", "HEAD", ref]);
+
+  if (asJson) {
+    const upstreamHead = git(["rev-parse", "--short", ref]);
+    const count = lines(git(["rev-list", "--no-merges", `${base}..${ref}`])).length;
+
+    // The staleness gate applies here too. A verdict read off an entry whose
+    // path upstream has renamed away is a wrong answer delivered confidently,
+    // and this output exists to be handed to someone who will act on it — so
+    // it says so in the payload and still exits non-zero.
+    const staleReport = new Report();
+    runInventoryChecks(inventory, staleReport, ref);
+    const forecast = forecastJson(inventory, base, ref, upstreamHead, count);
+    forecast.inventoryStale = staleReport.failed;
+    process.stdout.write(`${JSON.stringify(forecast, null, 2)}\n`);
+    if (staleReport.failed) {
+      process.stderr.write(
+        "inventory entries are stale; re-run without --json for the list.\n" +
+          "Fix them before merging — they are what the merge resolves against.\n",
+      );
+      return 1;
+    }
+    return 0;
+  }
 
   const report = new Report();
   const { count } = reportRange(report, base, ref);

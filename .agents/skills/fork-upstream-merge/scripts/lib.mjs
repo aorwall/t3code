@@ -64,8 +64,20 @@ export const git = (args, options) => sh("git", args, options);
 /** Non-empty lines, which is the shape every git listing here wants. */
 export const lines = (output) => output.split("\n").filter((line) => line.length > 0);
 
-export function loadInventory() {
-  const raw = JSON.parse(NodeFS.readFileSync(INVENTORY_PATH, "utf8"));
+/**
+ * The inventory, from the working tree or from a commit.
+ *
+ * `ref` matters when a script is pointed at a merge that is already in: the
+ * policy that merge was resolved against is the one in its own tree, not
+ * today's. Reading the working tree there reports entries written after the
+ * fact as deltas the merge dropped.
+ */
+export function loadInventory(ref = null) {
+  const source =
+    ref === null
+      ? NodeFS.readFileSync(INVENTORY_PATH, "utf8")
+      : git(["show", `${ref}:docs/fork/inventory.json`]);
+  const raw = JSON.parse(source);
   const problems = [];
   const seen = new Set();
   for (const group of ["pathPolicy", "inventory", "convergence", "concerns", "tripwires"]) {
@@ -82,6 +94,17 @@ export function loadInventory() {
       problems.push(`pathPolicy ${entry.id}: unknown verdict ${entry.verdict}`);
     }
     if (!entry.paths?.length) problems.push(`pathPolicy ${entry.id}: no paths`);
+  }
+  for (const entry of raw.unsupportedMethodExceptions ?? []) {
+    if (!entry.id) problems.push("unsupportedMethodExceptions: an entry has no id");
+    if (!entry.method) problems.push(`unsupportedMethodExceptions ${entry.id}: no method`);
+    if (!["ADD", "DROP"].includes(entry.direction)) {
+      problems.push(`unsupportedMethodExceptions ${entry.id}: direction must be ADD or DROP`);
+    }
+    // An exception with no exit is how a permanent one gets made by accident.
+    if (!entry.reason) problems.push(`unsupportedMethodExceptions ${entry.id}: no reason`);
+    if (!entry.retiredWhen)
+      problems.push(`unsupportedMethodExceptions ${entry.id}: no retiredWhen`);
   }
   if (problems.length > 0) {
     throw new Error(`docs/fork/inventory.json is malformed:\n  - ${problems.join("\n  - ")}`);
@@ -214,8 +237,8 @@ export function mergeBase(a, b) {
  * The files `git merge` will actually stop on, computed without touching the
  * working tree.
  *
- * "Files both sides changed" over-reports by about 5x — 24 candidates for 3 real
- * conflicts in the 2026-08-29 merge — because git auto-merges most of them. This
+ * "Files both sides changed" over-reports by about 5x, because git auto-merges
+ * most of them. This
  * runs the real merge machinery into a temporary tree and reports what it could
  * not resolve, in about 100ms. The tree it writes is unreferenced and gets
  * collected; nothing is checked out and no merge is started.

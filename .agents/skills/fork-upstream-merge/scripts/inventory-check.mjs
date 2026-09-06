@@ -5,12 +5,11 @@
  *
  * This is the check that catches the expensive kind of merge surprise: a fork
  * delta whose anchor upstream has renamed, deleted, or started shipping itself.
- * The 2026-08-08 merge found `SidebarV2.tsx` deleted upstream only by hitting a
- * modify/delete conflict mid-merge, because git cannot see that swap as a
- * rename (upstream moved SidebarV2's content into Sidebar.tsx and Sidebar.tsx's
- * into LegacySidebar.tsx — a delete paired with a modify, which no `-M`
- * threshold detects). Reading the inventory's own paths back out of upstream
- * finds it in a second, before the merge starts.
+ * Without it, a path upstream has deleted surfaces only as a modify/delete
+ * conflict mid-merge, because git cannot see a content swap as a rename — a
+ * file's content moved into a different name is a delete paired with a modify,
+ * which no `-M` threshold detects. Reading the inventory's own paths back out
+ * of upstream finds it in a second, before the merge starts.
  *
  * It also enforces the rule the path policy states in prose: an entry may be
  * `ours` only if the path does not exist in upstream/main.

@@ -139,6 +139,33 @@
     ]
   },
 
+  "unsupportedMethodExceptions": [
+    {
+      "id": "scripts-run-upstream-refusal",
+      "method": "scripts.run",
+      "direction": "DROP",
+      "reason": "It is upstream's own server that refuses this method, not Moatless, so the derivation reads backwards: it sees the backend serving `scripts.run` and calls the union entry unreachable, when that entry is what keeps `apps/server` compiling and behaving as upstream does.",
+      "retiredWhen": "`apps/server` stops answering `scripts.run` with `UnsupportedMethodError` — at which point delete this entry and let the DROP stand.",
+      "see": "inventory `host-run-scripts`, and 'A script runs on the backend' in gaps.md"
+    },
+    {
+      "id": "subtasks-list-upstream-refusal",
+      "method": "subtasks.list",
+      "direction": "DROP",
+      "reason": "A subtask is a Moatless concept and upstream has no task tree, so `apps/server` answers the method with `UnsupportedMethodError` unconditionally while Moatless dispatches it. The derivation reads backwards for the same reason `scripts.run` does.",
+      "retiredWhen": "Upstream grows a thread tree, or the method leaves the contract — at which point delete this entry and let the DROP stand.",
+      "see": "inventory `hosted-env-contract`, and 'A subtask is a Moatless concept' in gaps.md"
+    },
+    {
+      "id": "threads-get-shell-upstream-refusal",
+      "method": "threads.getShell",
+      "direction": "DROP",
+      "reason": "Upstream's client learns which threads exist from `orchestration.subscribeShell` and nowhere else, which is exact for `apps/server`, so it refuses a thread fetched by id while Moatless dispatches it. Same backwards derivation as `subtasks.list`.",
+      "retiredWhen": "`apps/server` stops answering `threads.getShell` with `UnsupportedMethodError` — at which point delete this entry and let the DROP stand.",
+      "see": "inventory `unlisted-thread-adoption`, and 'A thread outside the listing is a Moatless idea' in gaps.md"
+    }
+  ],
+
   "pathPolicy": [
     {
       "id": "primary-auth",

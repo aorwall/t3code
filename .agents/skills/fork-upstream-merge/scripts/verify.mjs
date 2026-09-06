@@ -5,14 +5,21 @@
  *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs
  *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --fast
  *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only typecheck,test
+ *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only test --package @t3tools/web
+ *
+ * `--package` runs the test step for one package. The full pass outruns the
+ * ten-minute limit an agent's shell call gets, which turns the last step of
+ * every merge into a background job and a polling loop — and a poll that gets
+ * interrupted loses the run. One package at a time fits, and the retry path
+ * below already had to run them individually anyway.
  *
  * `--fast` drops the test step and keeps everything else. The full pass is about
  * thirteen minutes and the test step is most of it, so a merge with something to
  * fix pays that twice — once to find the problem, once to confirm the fix. The
- * checks `--fast` keeps are the ones that catch a broken merge: the 2026-08-29
- * merge's duplicated import showed up in `lint` in twelve seconds and then took
- * nine more minutes of tests to finish reporting. Iterate on `--fast`, then run
- * the whole thing once before writing anything down.
+ * checks `--fast` keeps are the ones that catch a broken merge: a duplicated
+ * import shows up in `lint` in seconds, where the tests take minutes to report
+ * the same thing. Iterate on `--fast`, then run the whole thing once before
+ * writing anything down.
  *
  * Three things this does that `a && b && c && d` does not.
  *
@@ -36,6 +43,8 @@
  * turning up.
  */
 import * as NodeChildProcess from "node:child_process";
+import * as NodeFS from "node:fs";
+import * as NodePath from "node:path";
 
 import { REPO_ROOT, Report, bold, cyan, dim, green, red, runMain, yellow } from "./lib.mjs";
 
@@ -57,6 +66,11 @@ const STEPS = [
     name: "tripwires",
     argv: ["node", `${SCRIPTS}/tripwires.mjs`],
     what: "deleted surfaces, re-deletions, and workflow state on GitHub",
+  },
+  {
+    name: "resolution-check",
+    argv: ["node", `${SCRIPTS}/resolution-check.mjs`],
+    what: "resolutions that landed as one side whole",
   },
   {
     name: "unsupported-methods",
@@ -143,33 +157,124 @@ function failedPackagesFromOutput(output) {
   return failed;
 }
 
-/** Re-runs one package's test task alone, away from the other packages' load. */
-function retryPackageAlone(pkg) {
+/**
+ * Every workspace package name, read out of `pnpm-workspace.yaml`.
+ *
+ * `--package` takes a name, and a name that matches nothing is a filter that
+ * runs no tests — which reads as a passing test step. Checking the name against
+ * the workspace turns that into an error naming the packages that do exist.
+ */
+function workspacePackages() {
+  const yaml = NodeFS.readFileSync(NodePath.join(REPO_ROOT, "pnpm-workspace.yaml"), "utf8");
+  const globs = [];
+  for (const line of yaml.split("\n")) {
+    if (/^packages:/.test(line)) continue;
+    const match = line.match(/^\s+-\s+(\S+)\s*$/);
+    if (match) globs.push(match[1]);
+    else if (globs.length > 0 && /^\S/.test(line)) break;
+  }
+
+  const dirs = globs.flatMap((glob) => {
+    if (!glob.endsWith("/*")) return [glob];
+    const parent = NodePath.join(REPO_ROOT, glob.slice(0, -2));
+    if (!NodeFS.existsSync(parent)) return [];
+    return NodeFS.readdirSync(parent).map((name) => `${glob.slice(0, -2)}/${name}`);
+  });
+
+  const names = new Set();
+  const withTests = new Set();
+  for (const dir of dirs) {
+    const manifest = NodePath.join(REPO_ROOT, dir, "package.json");
+    if (!NodeFS.existsSync(manifest)) continue;
+    const { name, scripts } = JSON.parse(NodeFS.readFileSync(manifest, "utf8"));
+    if (!name) continue;
+    names.add(name);
+    if (scripts?.test) withTests.add(name);
+  }
+  return { names, withTests };
+}
+
+/** Every package label that produced output, whether it passed or failed. */
+function reportedPackages(output) {
+  const seen = new Set();
+  for (const line of output.split("\n")) {
+    const match = LABEL_LINE.exec(line);
+    if (match) seen.add(match[1]);
+  }
+  return seen;
+}
+
+/**
+ * Runs one package's test task alone, away from the other packages' load.
+ *
+ * Returns the raw status and signal rather than a boolean: the summary tells an
+ * OOM kill from a failing test by reading them, and the web suite is the one
+ * that gets OOM-killed.
+ */
+function runPackageAlone(pkg) {
   const result = NodeChildProcess.spawnSync("vp", ["run", "--filter", pkg, "test"], {
     cwd: REPO_ROOT,
     stdio: "inherit",
     env: heapEnv(),
   });
-  return (result.status ?? 1) === 0;
+  return { status: result.status ?? 1, signal: result.signal };
 }
 
-async function runTestStep(step) {
+const retryPackageAlone = (pkg) => runPackageAlone(pkg).status === 0;
+
+async function runTestStep(step, onlyPackage) {
   const started = process.hrtime.bigint();
   process.stdout.write(`\n${bold(cyan(`── ${step.name}`))} ${dim(step.what)}\n`);
 
+  // One package is already a single run, so there is nothing to attribute and
+  // nothing to retry alone — it is alone.
+  if (onlyPackage) {
+    const { status, signal } = runPackageAlone(onlyPackage);
+    const seconds = Number(process.hrtime.bigint() - started) / 1e9;
+    return { ...step, what: `${onlyPackage} only`, status, signal, seconds };
+  }
+
   const [command, ...args] = step.argv;
   const { status, signal, output } = await runCapturing(command, args);
+
+  // `vp run -r test` does not always reach every package that declares a test
+  // script, and it exits 0 when it does not: a merge can pass this step with
+  // the fork's main surface never tested. The packages that reported are in the
+  // labeled output, so the ones that did not are knowable. Run those rather
+  // than only naming them — a step that reports green is claiming they ran.
+  const skipped = [...workspacePackages().withTests].filter(
+    (pkg) => !reportedPackages(output).has(pkg),
+  );
+  let skippedFailed = [];
+  if (skipped.length > 0) {
+    process.stdout.write(
+      `\n${yellow(`${skipped.length} package(s) declare a test script and did not run: ${skipped.join(", ")}`)}\n` +
+        `${dim("running each alone — `vp run -r test` exits 0 without them")}\n`,
+    );
+    for (const pkg of skipped) {
+      process.stdout.write(`\n${bold(cyan(`── skipped ${pkg}`))}\n`);
+      if (runPackageAlone(pkg).status !== 0) skippedFailed.push(pkg);
+    }
+  }
+
   const seconds = Number(process.hrtime.bigint() - started) / 1e9;
 
   if ((status ?? 1) === 0 || status === 137 || signal === "SIGKILL") {
-    return { ...step, status: status ?? 1, signal, seconds };
+    return {
+      ...step,
+      status: skippedFailed.length > 0 ? 1 : (status ?? 1),
+      signal,
+      seconds,
+      skipped,
+      skippedFailed,
+    };
   }
 
   const failedPackages = failedPackagesFromOutput(output);
   if (failedPackages.size === 0) {
     // Output didn't match the expected shape — do not guess. Report the
     // plain failure the way every other step does.
-    return { ...step, status, signal, seconds };
+    return { ...step, status, signal, seconds, skipped, skippedFailed };
   }
 
   process.stdout.write(
@@ -184,9 +289,11 @@ async function runTestStep(step) {
   const stillFailing = retried.filter((entry) => !entry.passedAlone);
   return {
     ...step,
+    skipped,
+    skippedFailed,
     // Flaky packages that pass alone no longer fail the step; a package that
     // fails alone too is a real finding and keeps the step red.
-    status: stillFailing.length > 0 ? status : 0,
+    status: stillFailing.length > 0 || skippedFailed.length > 0 ? status || 1 : 0,
     signal,
     seconds,
     retried,
@@ -199,6 +306,25 @@ function summarize(results) {
 
   for (const result of results) {
     const took = `${result.seconds.toFixed(0)}s`;
+
+    // Said before the pass/fail line below, because "green" from a run that
+    // skipped a package is the one result worth distrusting.
+    if (result.skipped?.length > 0) {
+      const detail = [
+        `\`vp run -r test\` did not reach: ${result.skipped.join(", ")}`,
+        "Each was run alone instead. A green step without this line means every package ran.",
+      ];
+      if (result.skippedFailed.length > 0) {
+        section.fail(`${result.name} — skipped package(s) failed when run alone`, [
+          ...detail,
+          `Failing: ${result.skippedFailed.join(", ")}`,
+        ]);
+        continue;
+      }
+      section.warn(`${result.name} ${dim(took)} — ${result.skipped.length} package(s) were skipped`, detail);
+      continue;
+    }
+
     if (result.retried?.length > 0) {
       const stillFailing = result.retried.filter((entry) => !entry.passedAlone);
       const flaky = result.retried.filter((entry) => entry.passedAlone);
@@ -241,11 +367,25 @@ runMain(async () => {
   const onlyFlag = process.argv.indexOf("--only");
   const only = onlyFlag === -1 ? null : new Set((process.argv[onlyFlag + 1] ?? "").split(","));
   const fast = process.argv.includes("--fast");
+  const packageFlag = process.argv.indexOf("--package");
+  const onlyPackage = packageFlag === -1 ? null : process.argv[packageFlag + 1];
 
   let steps = only ? STEPS.filter((step) => only.has(step.name)) : STEPS;
   if (fast) steps = steps.filter((step) => !step.slow);
   if (steps.length === 0) {
     throw new Error(`--only matched no steps. Known: ${STEPS.map((s) => s.name).join(", ")}`);
+  }
+  if (packageFlag !== -1 && !onlyPackage) throw new Error("--package needs a package name.");
+  if (onlyPackage) {
+    const { names } = workspacePackages();
+    if (!names.has(onlyPackage)) {
+      throw new Error(
+        `--package ${onlyPackage} is not a workspace package. One of:\n  ${[...names].sort().join("\n  ")}`,
+      );
+    }
+  }
+  if (onlyPackage && !steps.some((step) => step.retryPackagesOnFailure)) {
+    throw new Error("--package only applies to the test step; add `--only test`.");
   }
   if (fast) {
     process.stdout.write(
@@ -259,7 +399,7 @@ runMain(async () => {
 
   const results = [];
   for (const step of steps) {
-    results.push(step.retryPackagesOnFailure ? await runTestStep(step) : run(step));
+    results.push(step.retryPackagesOnFailure ? await runTestStep(step, onlyPackage) : run(step));
   }
 
   const report = summarize(results);

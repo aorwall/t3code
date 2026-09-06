@@ -31,14 +31,14 @@ only one written for someone who is not currently merging.
 ## The scripts
 
 Fork-owned. Most are dependency-free and runnable before `pnpm install`; the two
-that are not say so in the table below. They exist because every check they run
-was previously a paragraph of prose that a merge had to remember to perform, and
-the two merges that skipped one paid for it mid-merge.
+that are not say so in the table below. Run them rather than performing the
+checks by hand.
 
 | Script                    | When             | What it answers                                                                                                                                                             |
 | ------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `preflight.mjs`           | before merging   | the range, which inventory entries have gone stale, the files this merge will actually stop on, and the ones git resolves silently — each with its verdict attached         |
 | `duplicate-adds.mjs`      | after merging    | lines both sides added that the merge kept twice — the clean-but-wrong resolution that leaves no marker behind                                                              |
+| `resolution-check.mjs`    | after resolving  | resolutions that landed as one side whole — a dropped fork delta or a dropped upstream change, in a file that may never have conflicted                                     |
 | `regen-route-tree.mjs`    | after resolving  | rewrites `apps/web/src/routeTree.gen.ts`, headlessly, whenever a route file conflict leaves it stale                                                                        |
 | `verify.mjs`              | after resolving  | tripwires, contract drift, format, lint, types and tests, in one pass that does not stop at the first failure and retries a test package alone before reporting it failed   |
 | `merge-stats.mjs`         | after committing | the tracker entry's numbers — upstream range, landed vs upstream-range file counts with the gap already explained, fork delta, and the conflict list restated with verdicts |
@@ -47,8 +47,9 @@ the two merges that skipped one paid for it mid-merge.
 | `unsupported-methods.mjs` | after merging    | which contract methods should declare `UnsupportedMethodError`, derived from both sides                                                                                     |
 
 All live in `.agents/skills/fork-upstream-merge/scripts/`. `verify.mjs` runs
-`duplicate-adds.mjs`, `tripwires.mjs` and `unsupported-methods.mjs` itself, so
-the three are listed separately only for running one on its own.
+`duplicate-adds.mjs`, `tripwires.mjs`, `resolution-check.mjs` and
+`unsupported-methods.mjs` itself, so the four are listed separately only for
+running one on its own.
 `regen-route-tree.mjs` and `merge-stats.mjs` are the two exceptions to
 "dependency-free": both need `vp install` to have already run — the first
 because it calls `@tanstack/router-generator` directly, the second because it
@@ -66,9 +67,10 @@ the merge telling you a fork delta has lost its anchor upstream.
 ## Completion
 
 Completion for an upstream merge: `preflight.mjs` is clean before merging,
-conflicts are resolved by the verdicts it printed, the merge diff is read against
-both parents and its file counts recorded, `verify.mjs` passes or its failures
-are caveated, new upstream features are classified in the PR report, unsupported
+conflicts are resolved by the verdicts it printed, the merge is committed as
+soon as the markers are gone, `resolution-check.mjs` reports nothing landed as
+one side whole, the merge diff is read against both parents and its file counts
+recorded, `verify.mjs` passes or its failures are caveated, new upstream features are classified in the PR report, unsupported
 Moatless methods declare `UnsupportedMethodError`, backend behavior worth
 reproducing in Moatless is called out, `docs/fork/upstream-merge-log.md` has a
 compact dated entry, and anything the merge found and did not do is an entry in
@@ -149,6 +151,42 @@ count or a list in the register is a snapshot for orientation, and the tripwire,
 - An entry that has sat unchanged across several merges is worth a sentence on
   why it has not moved, so the next reader does not re-derive the answer.
 
+## Delegating a merge
+
+A merge is mostly independent work with a cached answer attached, so most of it
+splits. What does not split is anything that writes to the tree: agents editing
+one worktree collide, so resolutions come back as patches to apply in order, or
+each agent gets its own worktree. Use Sonnet — these are read-and-report tasks
+against a stated verdict, not open design.
+
+Worth delegating:
+
+- **Convergence validation.** Whether Moatless already does what a fork delta
+  stands in for. One read of the backend per delta, independent, and the answer
+  decides whether the entry retires. Confirm it against the backend source; a
+  guess either keeps dead code or drops live behavior.
+- **Feature classification.** The three buckets for the PR report, derived from
+  the upstream commit range rather than from the conflicts — a feature that
+  arrived in a cleanly merged file appears nowhere in the resolution work.
+- **Gaps reconciliation.** Each unsupported or reproducible item checked against
+  `docs/fork/gaps.md` to add, extend, or strike.
+
+Conflict resolution splits **by concern, not by file**. `preflight.mjs --json`
+emits the forecast already grouped that way:
+
+```bash
+node .agents/skills/fork-upstream-merge/scripts/preflight.mjs --json
+```
+
+A concern is the unit that can be decided alone. One concern regularly spans
+several files whose edits depend on each other — a removed re-export in one
+breaks another — so splitting by file hands one decision to two agents who
+cannot see each other.
+
+Do not delegate `verify.mjs`. Its packages already contend for one sandbox's
+CPU, which is where the flaky perf and timeout failures come from; running more
+of it at once makes that worse, not faster.
+
 ## Upstream Merge Procedure
 
 ### 1. Before merging
@@ -173,10 +211,6 @@ and the two halves of the forecast:
   same answer the merge will give.
 - **Auto-merged, worth a look** — everything else both sides touched. Git will
   resolve these without asking, and a wrong resolution here leaves no marker.
-
-The second list used to be the whole forecast, which over-reported the work by
-about 5x — 24 files for 3 real conflicts on 2026-08-29 — and made the plan
-something to skim rather than read.
 
 **Fix the stale entries before merging.** They are what the merge resolves
 against, and an entry whose path upstream has renamed out from under it is a fork
@@ -232,10 +266,66 @@ git merge upstream/main
    merge is committed the fix is a plain edit. It skips files whose conflicts
    are still unresolved, since those hold both sides' text by definition, which
    is why this comes after resolving rather than straight after `git merge`.
-   `verify.mjs` runs it again later; running it here is what keeps the finding
-   from costing a full typecheck-and-test pass, as it did on 2026-08-29.
+   `verify.mjs` runs it again later; running it here keeps the finding from
+   costing a full typecheck-and-test pass.
 
-7. Commit the merge, then read what it actually took, against both parents:
+7. Check that nothing landed as one side whole:
+
+   ```bash
+   node .agents/skills/fork-upstream-merge/scripts/resolution-check.mjs
+   ```
+
+   A resolution can disappear without leaving a marker. A sandbox restart
+   reverts the uncommitted working tree: a conflicted file comes back with its
+   markers and is obvious, while a file edited as collateral of resolving a
+   conflict elsewhere reverts in silence. This reads each path against both
+   parents and reports where the result contradicts its verdict — a `converged`
+   path that is byte-identical to upstream has lost its delta, and one identical
+   to the fork's pre-merge copy never took upstream's change at all.
+
+   It runs mid-merge for the same reason `duplicate-adds.mjs` does: before the
+   commit exists the fix is a plain edit. It says nothing about fork-only
+   (`ours`) paths — with no upstream side there is nothing to compare against,
+   and the `guard` entries in the inventory are what cover those.
+
+   It also says nothing about a file that auto-merged into something neither
+   side wrote. Where upstream rewrote the condition a fork override hangs off,
+   both sides' text survives, the file differs from both parents, and no rule
+   here fires — the delta is intact and no longer reached. **The fork's own test
+   suite is the only check that covers that**, so a merge that touches behavior
+   the fork overrides is not verified until its tests have run.
+
+8. Commit the merge as soon as the last conflict marker is gone — before
+   `verify.mjs`, before the tracker entry, before anything is green. Then
+   `--amend` through the rest.
+
+   The merge commit is local until you push, so amending costs nothing, and
+   everything above this line is otherwise carried in an uncommitted working
+   tree for as long as verification and documentation take. In this sandbox only
+   committed history and uncommitted non-gitignored changes survive a restart. A
+   scratch file does not help: gitignored artifacts do not survive either.
+
+   **Push the branch as soon as that commit exists**, and after each `--amend`.
+   Committing survives a restart; it does not survive the sandbox being
+   recreated from the repository, which discards anything never pushed. A merge
+   redone from scratch is the most expensive thing that can happen here.
+
+   Two things not to sweep into that commit:
+
+   - **Never `git add -A` during a merge.** Stage explicit paths. A restart can
+     wipe a symlink or a submodule gitlink — `.claude/skills` and
+     `.repos/alchemy-effect/.vendor/alchemy` are the two that go — and `-A`
+     stages those as deletions the merge appears to have made. A deletion you
+     did not make is environment damage, not a resolution.
+   - **Re-check `pnpm-lock.yaml`.** Step 5 resolved it, but a later `vp i` — the
+     one verification needs — rewrites it again. Check it before every `--amend`
+     so that rewrite is not folded into the merge commit.
+
+   After any interruption, in order: `git status` for the merge state, then
+   `git grep -n '<<<<<<<'` for markers left behind, then `resolution-check.mjs`
+   for the silent case.
+
+9. Read what the merge actually took, against both parents:
 
    ```bash
    node .agents/skills/fork-upstream-merge/scripts/merge-stats.mjs
@@ -270,17 +360,16 @@ HEAD` (the whole fork delta, restated against upstream). A merge that
 node .agents/skills/fork-upstream-merge/scripts/verify.mjs
 ```
 
-One command: duplicated adds, tripwires and off-repository state, the
-unsupported-method derivation, format, lint, types, and every workspace test
-suite. It keeps going after a failure and reports them together, so a formatting
+One command: duplicated adds, tripwires and off-repository state, resolutions
+against both parents, the unsupported-method derivation, format, lint, types,
+and every workspace test suite. It keeps going after a failure and reports them together, so a formatting
 nit does not hide the type errors behind it — and it raises the heap the web
 suite needs, whose failure mode is otherwise an exit 137 that reads like a real
 test failure.
 
 The full pass is about thirteen minutes and the test step is most of it. When
 something fails, fix it and re-run `verify.mjs --fast`, which keeps every check
-except the tests; run the full command again once it is green. Every failure
-this merge procedure has caught so far was visible without the test step.
+except the tests; run the full command again once it is green.
 
 A test package that fails is retried alone before being reported: the packages
 `pnpm test` runs share one sandbox's CPU and memory, and a merge on a loaded
@@ -297,6 +386,22 @@ documents and then discovering the merge dropped a delta means writing them
 twice.
 
 Re-run one check after a fix with `--only <name>`.
+
+The test step outruns the ten-minute limit a shell call gets, which turns the
+last step of a merge into a background job and a polling loop that an
+interruption loses. Run it a package at a time instead:
+
+```bash
+node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only test --package @t3tools/web
+```
+
+A check that is always red is a check nobody reads, so a derivation known to
+report backwards is declared rather than tolerated: `unsupported-methods.mjs`
+takes its exceptions from `unsupportedMethodExceptions` in
+`docs/fork/inventory.json`, prints them under `KNOWN EXCEPTIONS`, and leaves
+the exit code alone. `scripts.run` is the standing one. Each entry carries the
+condition that retires it, and the script names an exception that has stopped
+firing so it gets deleted rather than accumulating.
 
 ### 4. Record what the merge found
 

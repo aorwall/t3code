@@ -1,3 +1,6 @@
+// Fork: upstream keeps this private and reaches it through the cache-key
+// helpers below. The fork's browser-frame revision needs the bare hash, so the
+// export stays. See apps/web/src/fork/browserPreviewRevision.ts.
 export function fileContentRevision(contents: string): string {
   let hash = 2_166_136_261;
   for (let index = 0; index < contents.length; index += 1) {
