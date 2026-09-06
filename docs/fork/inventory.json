@@ -826,6 +826,12 @@
       "mustSurvive": "An administrator reaches every Moatless administration surface from T3 settings — Workspaces, Loops, Integrations, Skills, Secrets and Users, each with its detail route. Built out of upstream's own settings primitives (SettingsSection, SettingsRow, itemRows), so upstream restyling reaches them for free — keep it that way. See the inventory markdown for the markup conventions."
     },
     {
+      "id": "moatless-account-page",
+      "name": "Moatless account credentials page",
+      "paths": ["apps/web/src/routes/settings.account.tsx"],
+      "mustSurvive": "Everyone — not only an administrator — configures their own GitHub, Claude Code and Codex credentials at /settings/account. The panel and its logic live under components/settings/moatless/** (moatless-admin-pages' glob), but the page is personal: it must stay out of MOATLESS_ADMIN_PATHS, or the settings.tsx beforeLoad redirects every non-admin away from the one page they all need. settingsSearch.ts carries the SettingsPath entry, the SETTINGS_SECTION_LABELS label (first, leading the personal group) and three account-* SETTINGS_SEARCH_ITEMS whose ids the panel's sections anchor to via searchableSetting; SettingsSidebarNav.tsx carries the icon. GitHub's app flow is offered only when the status reports appConnectAvailable, and the PAT form is always offered beside it — a deployment with no GitHub App configured has no other way in."
+    },
+    {
       "id": "settings-browser-relocation",
       "name": "Browser-defaults settings relocated off /settings/integrations",
       "paths": ["apps/web/src/routes/settings.browser.tsx"],

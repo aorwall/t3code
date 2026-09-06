@@ -10,6 +10,7 @@ import {
   compareAdapterApps,
   compareConnections,
   defaultConnectionKind,
+  parseGithubAppRegistration,
   secretFingerprints,
 } from "./integrationRows";
 
@@ -93,5 +94,56 @@ describe("secretFingerprints", () => {
 
   it("treats an app with no configured secrets as empty", () => {
     expect(secretFingerprints(app())).toEqual([]);
+  });
+});
+
+describe("parseGithubAppRegistration", () => {
+  const complete = {
+    githubAppKey: " dev-bot ",
+    appId: " 123456 ",
+    privateKeyPem: "-----BEGIN RSA PRIVATE KEY-----\nabc\n",
+    installationId: "",
+  };
+
+  it("trims the key and reads the app id, leaving no installation pinned", () => {
+    expect(parseGithubAppRegistration(complete)).toEqual({
+      githubAppKey: "dev-bot",
+      appId: 123456,
+      privateKeyPem: "-----BEGIN RSA PRIVATE KEY-----\nabc\n",
+      defaultInstallationId: null,
+    });
+  });
+
+  it("sends the signing key exactly as pasted", () => {
+    const pem = "  -----BEGIN RSA PRIVATE KEY-----\nabc\n  ";
+    expect(parseGithubAppRegistration({ ...complete, privateKeyPem: pem })?.privateKeyPem).toBe(
+      pem,
+    );
+  });
+
+  it("pins an installation when one is given", () => {
+    expect(
+      parseGithubAppRegistration({ ...complete, installationId: " 987 " })?.defaultInstallationId,
+    ).toBe(987);
+  });
+
+  it("does not pin an installation from a half-typed id", () => {
+    for (const installationId of ["9-", "abc", "1.5", "-4"]) {
+      expect(parseGithubAppRegistration({ ...complete, installationId })).toMatchObject({
+        defaultInstallationId: null,
+      });
+    }
+  });
+
+  it("rejects the form until every required field has content", () => {
+    expect(parseGithubAppRegistration({ ...complete, githubAppKey: "   " })).toBeNull();
+    expect(parseGithubAppRegistration({ ...complete, appId: "" })).toBeNull();
+    expect(parseGithubAppRegistration({ ...complete, privateKeyPem: "  \n " })).toBeNull();
+  });
+
+  it("rejects an app id that is not a whole number rather than truncating it", () => {
+    for (const appId of ["12abc", "1e5", "12.0", "-3"]) {
+      expect(parseGithubAppRegistration({ ...complete, appId })).toBeNull();
+    }
   });
 });

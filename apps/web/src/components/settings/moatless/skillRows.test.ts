@@ -20,7 +20,9 @@ import {
 
 function record(overrides: Partial<ActivationResponse>): ActivationResponse {
   return {
+    always: false,
     enabled: true,
+    frontload: false,
     pluginId: "plug_1",
     reach: "everyone",
     ...overrides,

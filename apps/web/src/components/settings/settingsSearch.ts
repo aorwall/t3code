@@ -2,6 +2,10 @@ import { isElectron } from "~/env";
 import { isMacPlatform, isWindowsPlatform, normalizeSearchText } from "~/lib/utils";
 
 export type SettingsPath =
+  // Fork: the viewer's own Moatless credentials — GitHub, Claude Code, Codex.
+  // Personal, not administrative, so it stays out of MoatlessAdminPath below
+  // and everyone reaches it.
+  | "/settings/account"
   | "/settings/general"
   | "/settings/appearance"
   | "/settings/keybindings"
@@ -85,6 +89,9 @@ export interface SettingsSearchAvailability {
  * subtitles both render from this record, so each label exists once.
  */
 export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
+  // Fork: leads the personal group — reaching GitHub is the first thing a
+  // person has to settle before any task of theirs can do useful work.
+  "/settings/account": "Account",
   "/settings/general": "General",
   "/settings/appearance": "Appearance",
   "/settings/keybindings": "Keybindings",
@@ -625,6 +632,28 @@ export const SETTINGS_SEARCH_ITEMS = [
     id: "users",
     title: "Users",
     to: "/settings/users",
+  },
+  // Fork: the Account page's three sections, which the panel anchors to by
+  // these ids. Last in the catalog rather than first so they lose index
+  // tie-breaks: "git" should still reach upstream's git settings, and anyone
+  // after this page types "github", which matches nothing else.
+  {
+    id: "account-github",
+    title: "GitHub access",
+    to: "/settings/account",
+    searchTerms: ["github app connect personal access token pat repositories"],
+  },
+  {
+    id: "account-claude",
+    title: "Claude Code token",
+    to: "/settings/account",
+    searchTerms: ["claude code oauth token anthropic setup-token agent"],
+  },
+  {
+    id: "account-codex",
+    title: "Codex",
+    to: "/settings/account",
+    searchTerms: ["codex chatgpt openai sign in device code auth.json agent"],
   },
 ] as const satisfies ReadonlyArray<SettingsSearchItem>;
 

@@ -2,6 +2,7 @@ import type { AdapterKind } from "@t3tools/moatless-api/generated/model";
 import type {
   AdapterAppSummary,
   AdapterConnectionResponse,
+  RegisterGitHubAppRequest,
 } from "@t3tools/moatless-api/generated/model";
 
 /**
@@ -67,4 +68,50 @@ export function secretFingerprints(app: AdapterAppSummary): SecretFingerprint[] 
   return Object.entries(app.secretFingerprints ?? {})
     .map(([name, fingerprint]) => ({ name, fingerprint }))
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * What the register-a-GitHub-app form has typed so far, as a request — or
+ * `null` while it is not yet a request the backend would accept.
+ *
+ * The two numeric fields differ in kind and so are read differently. The app id
+ * identifies the app, so nothing can be sent without it. The installation id
+ * pins every repository to one installation instead of resolving one per owner,
+ * so an absent one is the ordinary case and must reach the backend as `null`
+ * rather than as a `NaN` that JSON would silently turn into `null` anyway —
+ * and a half-typed one must not be read as a pin the person did not ask for.
+ *
+ * The PEM is deliberately not trimmed into the request: it is checked for
+ * content, but a signing key is sent exactly as pasted.
+ */
+export function parseGithubAppRegistration(fields: {
+  readonly githubAppKey: string;
+  readonly appId: string;
+  readonly privateKeyPem: string;
+  readonly installationId: string;
+}): RegisterGitHubAppRequest | null {
+  const githubAppKey = fields.githubAppKey.trim();
+  const appId = wholeNumber(fields.appId);
+  if (githubAppKey.length === 0 || appId === null || fields.privateKeyPem.trim().length === 0) {
+    return null;
+  }
+  return {
+    githubAppKey,
+    appId,
+    privateKeyPem: fields.privateKeyPem,
+    defaultInstallationId: wholeNumber(fields.installationId),
+  };
+}
+
+/**
+ * A non-negative integer, or `null` for anything else.
+ *
+ * Whole-string rather than `parseInt`, which reads `12abc` as `12` — a GitHub id
+ * with a stray character is a typo, not a smaller id.
+ */
+function wholeNumber(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (!/^\d+$/.test(trimmed)) return null;
+  const value = Number(trimmed);
+  return Number.isSafeInteger(value) ? value : null;
 }

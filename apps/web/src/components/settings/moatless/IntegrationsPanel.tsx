@@ -1,16 +1,43 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronRightIcon, ExternalLinkIcon, LoaderIcon, PlusIcon } from "lucide-react";
+import {
+  ChevronRightIcon,
+  ExternalLinkIcon,
+  KeyRoundIcon,
+  LoaderIcon,
+  PlusIcon,
+  Trash2Icon,
+  UserPlusIcon,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { createAdapterConnection } from "@t3tools/moatless-api/generated/adapters/adapters";
+import {
+  adminRegisterGithubApp,
+  adminRemoveGithubApp,
+  adminRotateGithubAppKey,
+} from "@t3tools/moatless-api/generated/app-administration/app-administration";
 import type {
   AdapterAppSummary,
   AdapterConnectionResponse,
   CreateAdapterConnectionRequest,
+  CreateUserRequest,
   GitHubAppOption,
+  GitHubAppRegistrationResponse,
+  RegisterGitHubAppRequest,
+  RemoveGitHubAppResponse,
+  RotateGitHubAppKeyRequest,
 } from "@t3tools/moatless-api/generated/model";
+import { createUserHandler } from "@t3tools/moatless-api/generated/users/users";
 
 import { useMoatlessCommand, useMoatlessQuery } from "../../../moatless/query";
+import {
+  AlertDialog,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogPopup,
+  AlertDialogTitle,
+} from "../../ui/alert-dialog";
 import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
 import {
@@ -24,6 +51,7 @@ import {
 } from "../../ui/dialog";
 import { Input } from "../../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
+import { Textarea } from "../../ui/textarea";
 import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
 import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
 import { searchableSetting } from "../settingsSearch";
@@ -32,16 +60,11 @@ import {
   compareAdapterApps,
   compareConnections,
   defaultConnectionKind,
+  parseGithubAppRegistration,
   secretFingerprints,
 } from "./integrationRows";
 import { SectionEmpty, SectionError, SectionPending } from "./MoatlessSectionState";
-import {
-  adapterAppsQuery,
-  adaptersQuery,
-  connectionsQuery,
-  githubAppsQuery,
-  globalGithubInstallationQuery,
-} from "./queries";
+import { adapterAppsQuery, adaptersQuery, connectionsQuery, githubAppsQuery } from "./queries";
 import { cn } from "~/lib/utils";
 
 export function IntegrationsPanel() {
@@ -339,64 +362,72 @@ function AppRow({ app }: { readonly app: AdapterAppSummary }) {
 }
 
 /**
- * The GitHub apps registered on this deployment and where each is installed,
- * plus the global installation the deployment uses by default. Read-only:
- * registering an app and rotating its key involve credentials entered elsewhere.
+ * The GitHub apps registered on this deployment, where each is installed, and
+ * whether a bot user staffs it.
+ *
+ * A registered app is only half of a credential. Tasks authenticate to GitHub as
+ * an app *installation*, and the identity that mints that token is the app's bot
+ * user — so an app with no bot has nothing to run as, and the row says so and
+ * offers to create one. Pointing a workspace at that bot is what finally makes
+ * its sandboxes push as the app; that control lives on the workspace.
  */
 function GithubSection() {
   const apps = useMoatlessQuery(githubAppsQuery);
-  const installation = useMoatlessQuery(globalGithubInstallationQuery);
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
 
   const rows = apps.data?.apps ?? [];
 
   return (
-    <SettingsSection {...searchableSetting("integrations-github")}>
+    <SettingsSection
+      {...searchableSetting("integrations-github")}
+      headerAction={
+        <Button
+          size="icon-xs"
+          variant="ghost"
+          aria-label="Register GitHub app"
+          onClick={() => setIsRegisterOpen(true)}
+        >
+          <PlusIcon />
+        </Button>
+      }
+    >
       {apps.error ? (
         <SectionError error={apps.error} label="GitHub apps" onRetry={apps.refresh} />
       ) : apps.data === null ? (
         apps.isPending ? (
           <SectionPending label="GitHub apps" />
         ) : null
+      ) : rows.length === 0 ? (
+        <SectionEmpty>
+          No GitHub apps registered. A GitHub app lets Moatless act on repositories and pull
+          requests.
+        </SectionEmpty>
       ) : (
-        <>
-          {installation.data?.configured ? (
-            <div className={ITEM_ROW_CLASSNAME}>
-              <div className={ITEM_ROW_INNER_CLASSNAME}>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">Default installation</p>
-                  <p className="mt-0.5 truncate text-[13px] leading-[1.45] text-muted-foreground/80">
-                    {installation.data.accountLogin ?? "—"}
-                    {installation.data.accountType ? ` · ${installation.data.accountType}` : ""}
-                  </p>
-                </div>
-                <Badge variant="success" size="sm">
-                  configured
-                </Badge>
-              </div>
-            </div>
-          ) : null}
-
-          {rows.length === 0 ? (
-            <SectionEmpty>
-              No GitHub apps registered. A GitHub app lets Moatless act on repositories and pull
-              requests.
-            </SectionEmpty>
-          ) : (
-            rows.map((app) => <GithubAppRow key={app.githubAppKey} app={app} />)
-          )}
-        </>
+        rows.map((app) => <GithubAppRow key={app.githubAppKey} app={app} />)
       )}
+
+      <RegisterGithubAppDialog open={isRegisterOpen} onOpenChange={setIsRegisterOpen} />
     </SettingsSection>
   );
 }
 
 function GithubAppRow({ app }: { readonly app: GitHubAppOption }) {
+  const [isRotateOpen, setIsRotateOpen] = useState(false);
+  const [isRemoveOpen, setIsRemoveOpen] = useState(false);
+
+  // The deployment's login app is start-up state: its key is not stored here and
+  // removing it would lock everyone out of the UI that removed it.
+  const editable = app.deploymentConfigured !== true;
+
   return (
     <div className={ITEM_ROW_CLASSNAME}>
       <div className={ITEM_ROW_INNER_CLASSNAME}>
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="truncate text-sm font-medium text-foreground">{app.name}</span>
+            <code className="rounded bg-accent px-1 py-px text-[11px] text-muted-foreground">
+              {app.githubAppKey}
+            </code>
             {app.deploymentConfigured ? (
               <Badge variant="outline" size="sm">
                 deployment
@@ -412,18 +443,387 @@ function GithubAppRow({ app }: { readonly app: GitHubAppOption }) {
               ? ` · ${app.installations.map((installation) => installation.accountLogin).join(", ")}`
               : ""}
           </p>
+          {app.botUserId ? null : <CreateBotUserAction app={app} />}
         </div>
-        <Button
-          size="icon-xs"
-          variant="ghost"
-          aria-label={`Install ${app.name}`}
-          render={
-            <a href={app.installUrl} target="_blank" rel="noreferrer">
-              <ExternalLinkIcon />
-            </a>
-          }
-        />
+        <div className="flex shrink-0 items-center gap-0.5 self-center">
+          {editable ? (
+            <Button
+              size="icon-xs"
+              variant="ghost"
+              aria-label={`Rotate signing key for ${app.name}`}
+              onClick={() => setIsRotateOpen(true)}
+            >
+              <KeyRoundIcon />
+            </Button>
+          ) : null}
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            aria-label={`Install ${app.name}`}
+            render={
+              <a href={app.installUrl} target="_blank" rel="noreferrer">
+                <ExternalLinkIcon />
+              </a>
+            }
+          />
+          {editable ? (
+            <Button
+              size="icon-xs"
+              variant="ghost"
+              aria-label={`Remove ${app.name}`}
+              onClick={() => setIsRemoveOpen(true)}
+            >
+              <Trash2Icon />
+            </Button>
+          ) : null}
+        </div>
       </div>
+
+      <RotateGithubAppKeyDialog app={app} open={isRotateOpen} onOpenChange={setIsRotateOpen} />
+      <RemoveGithubAppDialog app={app} open={isRemoveOpen} onOpenChange={setIsRemoveOpen} />
     </div>
+  );
+}
+
+/**
+ * An app with no bot user cannot be run as. Creating one is a single act with no
+ * options — the server resolves the `{slug}[bot]` identity from the app itself —
+ * so it is a button on the row rather than a dialog.
+ */
+function CreateBotUserAction({ app }: { readonly app: GitHubAppOption }) {
+  const create = useMoatlessCommand<CreateUserRequest, unknown>(
+    (request) => createUserHandler(request),
+    // Both lists change: the app gains a bot, and the deployment gains a user.
+    { invalidates: ["integrations", "users"] },
+  );
+
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={create.isRunning}
+        onClick={() => {
+          void create.run({ isBot: true, githubAppKey: app.githubAppKey });
+        }}
+      >
+        {create.isRunning ? <LoaderIcon className="animate-spin" /> : <UserPlusIcon />}
+        Create bot user
+      </Button>
+      <span className="text-[13px] text-muted-foreground/80">
+        {create.error ? (
+          <span className="text-destructive-foreground">{create.error.message}</span>
+        ) : (
+          "No bot user — nothing can run as this app yet."
+        )}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Registering proves the signing key against GitHub before storing anything, so
+ * a key GitHub will not accept leaves the deployment exactly as it was and the
+ * error here is GitHub's own.
+ *
+ * The installation id is left empty in the ordinary case: an app resolves one
+ * installation per repository owner on its own, and pinning one is for a
+ * deployment that wants every repository to go through a single installation.
+ */
+function RegisterGithubAppDialog({
+  open,
+  onOpenChange,
+}: {
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+}) {
+  const [githubAppKey, setGithubAppKey] = useState("");
+  const [appId, setAppId] = useState("");
+  const [privateKeyPem, setPrivateKeyPem] = useState("");
+  const [installationId, setInstallationId] = useState("");
+
+  const register = useMoatlessCommand<RegisterGitHubAppRequest, GitHubAppRegistrationResponse>(
+    (request) => adminRegisterGithubApp(request),
+    { invalidates: ["integrations"] },
+  );
+
+  const request = parseGithubAppRegistration({
+    githubAppKey,
+    appId,
+    privateKeyPem,
+    installationId,
+  });
+
+  function resetFields() {
+    setGithubAppKey("");
+    setAppId("");
+    setPrivateKeyPem("");
+    setInstallationId("");
+    register.reset();
+  }
+
+  async function submit() {
+    if (request === null) return;
+    const registered = await register.run(request);
+    if (registered !== null) {
+      resetFields();
+      onOpenChange(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) resetFields();
+        onOpenChange(next);
+      }}
+    >
+      <DialogPopup className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Register GitHub app</DialogTitle>
+          <DialogDescription>
+            An app created at GitHub, so Moatless can act on the repositories it is installed on.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogPanel className="space-y-4 px-6 pb-5">
+          <div>
+            <label
+              htmlFor="register-github-app-key"
+              className="mb-1.5 block text-xs font-medium text-foreground"
+            >
+              Key
+            </label>
+            <Input
+              id="register-github-app-key"
+              value={githubAppKey}
+              onChange={(event) => setGithubAppKey(event.currentTarget.value)}
+              placeholder="dev-bot"
+              className="font-mono text-[13px]"
+            />
+            <p className="mt-1 text-[13px] text-muted-foreground/80">
+              What a bot user, a connection and a loop refer to this app by.
+            </p>
+          </div>
+          <div>
+            <label
+              htmlFor="register-github-app-id"
+              className="mb-1.5 block text-xs font-medium text-foreground"
+            >
+              App ID
+            </label>
+            <Input
+              id="register-github-app-id"
+              value={appId}
+              onChange={(event) => setAppId(event.currentTarget.value)}
+              placeholder="123456"
+              inputMode="numeric"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="register-github-app-pem"
+              className="mb-1.5 block text-xs font-medium text-foreground"
+            >
+              Signing key
+            </label>
+            <Textarea
+              id="register-github-app-pem"
+              value={privateKeyPem}
+              onChange={(event) => setPrivateKeyPem(event.currentTarget.value)}
+              placeholder="-----BEGIN RSA PRIVATE KEY-----"
+              rows={5}
+              className="font-mono text-[13px]"
+            />
+            <p className="mt-1 text-[13px] text-muted-foreground/80">
+              Proved against GitHub before it is stored, and never shown again.
+            </p>
+          </div>
+          <div>
+            <label
+              htmlFor="register-github-app-installation"
+              className="mb-1.5 block text-xs font-medium text-foreground"
+            >
+              Installation ID
+            </label>
+            <Input
+              id="register-github-app-installation"
+              value={installationId}
+              onChange={(event) => setInstallationId(event.currentTarget.value)}
+              placeholder="Optional — resolved per repository owner"
+              inputMode="numeric"
+            />
+          </div>
+          {register.error ? (
+            <p className="text-[13px] text-destructive-foreground">{register.error.message}</p>
+          ) : null}
+        </DialogPanel>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button disabled={request === null || register.isRunning} onClick={() => void submit()}>
+            {register.isRunning ? <LoaderIcon className="animate-spin" /> : null}
+            Register app
+          </Button>
+        </DialogFooter>
+      </DialogPopup>
+    </Dialog>
+  );
+}
+
+/**
+ * The replacement key is proved before the stored one is replaced, so a bad key
+ * leaves the app exactly as it was and nothing running loses its credential.
+ */
+function RotateGithubAppKeyDialog({
+  app,
+  open,
+  onOpenChange,
+}: {
+  readonly app: GitHubAppOption;
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+}) {
+  const [privateKeyPem, setPrivateKeyPem] = useState("");
+
+  const rotate = useMoatlessCommand<RotateGitHubAppKeyRequest, GitHubAppRegistrationResponse>(
+    (request) => adminRotateGithubAppKey(app.githubAppKey, request),
+    { invalidates: ["integrations"] },
+  );
+
+  function resetFields() {
+    setPrivateKeyPem("");
+    rotate.reset();
+  }
+
+  async function submit() {
+    if (privateKeyPem.trim().length === 0) return;
+    const rotated = await rotate.run({ privateKeyPem });
+    if (rotated !== null) {
+      resetFields();
+      onOpenChange(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) resetFields();
+        onOpenChange(next);
+      }}
+    >
+      <DialogPopup className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Rotate signing key</DialogTitle>
+          <DialogDescription>
+            Replaces the key {app.name} signs with. The current key stays in place until GitHub
+            accepts the new one.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogPanel className="space-y-4 px-6 pb-5">
+          <div>
+            <label
+              htmlFor="rotate-github-app-pem"
+              className="mb-1.5 block text-xs font-medium text-foreground"
+            >
+              New signing key
+            </label>
+            <Textarea
+              id="rotate-github-app-pem"
+              value={privateKeyPem}
+              onChange={(event) => setPrivateKeyPem(event.currentTarget.value)}
+              placeholder="-----BEGIN RSA PRIVATE KEY-----"
+              rows={5}
+              className="font-mono text-[13px]"
+            />
+            {app.keyFingerprint ? (
+              <p className="mt-1 text-[13px] text-muted-foreground/80">
+                Current key {app.keyFingerprint}
+              </p>
+            ) : null}
+          </div>
+          {rotate.error ? (
+            <p className="text-[13px] text-destructive-foreground">{rotate.error.message}</p>
+          ) : null}
+        </DialogPanel>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            disabled={privateKeyPem.trim().length === 0 || rotate.isRunning}
+            onClick={() => void submit()}
+          >
+            {rotate.isRunning ? <LoaderIcon className="animate-spin" /> : null}
+            Rotate key
+          </Button>
+        </DialogFooter>
+      </DialogPopup>
+    </Dialog>
+  );
+}
+
+/**
+ * Removing an app is installation-wide. Bot users backed by it are left in place
+ * so past work stays attributed, which means they survive as identities that can
+ * no longer obtain a token — the server names them and so does this.
+ */
+function RemoveGithubAppDialog({
+  app,
+  open,
+  onOpenChange,
+}: {
+  readonly app: GitHubAppOption;
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+}) {
+  const remove = useMoatlessCommand<void, RemoveGitHubAppResponse>(
+    () => adminRemoveGithubApp(app.githubAppKey),
+    { invalidates: ["integrations", "users"] },
+  );
+
+  return (
+    <AlertDialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) remove.reset();
+        onOpenChange(next);
+      }}
+    >
+      <AlertDialogPopup>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Remove {app.name}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {app.botUserId
+              ? "Its bot user stays, so past work keeps its author, but can no longer obtain a token. Tasks that run as it stop reaching GitHub."
+              : "Tasks that authenticate through this app stop reaching GitHub."}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        {remove.error ? (
+          <p className="px-6 pb-2 text-[13px] text-destructive-foreground">
+            {remove.error.message}
+          </p>
+        ) : null}
+        <AlertDialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            disabled={remove.isRunning}
+            onClick={() => {
+              void remove.run().then((result) => {
+                if (result !== null) onOpenChange(false);
+              });
+            }}
+          >
+            {remove.isRunning ? <LoaderIcon className="animate-spin" /> : null}
+            Remove app
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogPopup>
+    </AlertDialog>
   );
 }

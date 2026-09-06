@@ -32,6 +32,7 @@ import { Route as SettingsConnectionsRouteImport } from './routes/settings.conne
 import { Route as SettingsBrowserRouteImport } from './routes/settings.browser'
 import { Route as SettingsArchivedRouteImport } from './routes/settings.archived'
 import { Route as SettingsAppearanceRouteImport } from './routes/settings.appearance'
+import { Route as SettingsAccountRouteImport } from './routes/settings.account'
 import { Route as ProjectsProjectKeyRouteImport } from './routes/projects.$projectKey'
 import { Route as ConnectCallbackRouteImport } from './routes/connect_.callback'
 import { Route as ChatPullRequestsRouteImport } from './routes/_chat.pull-requests'
@@ -157,6 +158,11 @@ const SettingsAppearanceRoute = SettingsAppearanceRouteImport.update({
   path: '/appearance',
   getParentRoute: () => SettingsRoute,
 } as any)
+const SettingsAccountRoute = SettingsAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const ProjectsProjectKeyRoute = ProjectsProjectKeyRouteImport.update({
   id: '/projects/$projectKey',
   path: '/projects/$projectKey',
@@ -222,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/pull-requests': typeof ChatPullRequestsRoute
   '/connect/callback': typeof ConnectCallbackRoute
   '/projects/$projectKey': typeof ProjectsProjectKeyRoute
+  '/settings/account': typeof SettingsAccountRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/archived': typeof SettingsArchivedRoute
   '/settings/browser': typeof SettingsBrowserRoute
@@ -255,6 +262,7 @@ export interface FileRoutesByTo {
   '/pull-requests': typeof ChatPullRequestsRoute
   '/connect/callback': typeof ConnectCallbackRoute
   '/projects/$projectKey': typeof ProjectsProjectKeyRoute
+  '/settings/account': typeof SettingsAccountRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/archived': typeof SettingsArchivedRoute
   '/settings/browser': typeof SettingsBrowserRoute
@@ -291,6 +299,7 @@ export interface FileRoutesById {
   '/_chat/pull-requests': typeof ChatPullRequestsRoute
   '/connect_/callback': typeof ConnectCallbackRoute
   '/projects/$projectKey': typeof ProjectsProjectKeyRoute
+  '/settings/account': typeof SettingsAccountRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/archived': typeof SettingsArchivedRoute
   '/settings/browser': typeof SettingsBrowserRoute
@@ -328,6 +337,7 @@ export interface FileRouteTypes {
     | '/pull-requests'
     | '/connect/callback'
     | '/projects/$projectKey'
+    | '/settings/account'
     | '/settings/appearance'
     | '/settings/archived'
     | '/settings/browser'
@@ -361,6 +371,7 @@ export interface FileRouteTypes {
     | '/pull-requests'
     | '/connect/callback'
     | '/projects/$projectKey'
+    | '/settings/account'
     | '/settings/appearance'
     | '/settings/archived'
     | '/settings/browser'
@@ -396,6 +407,7 @@ export interface FileRouteTypes {
     | '/_chat/pull-requests'
     | '/connect_/callback'
     | '/projects/$projectKey'
+    | '/settings/account'
     | '/settings/appearance'
     | '/settings/archived'
     | '/settings/browser'
@@ -596,6 +608,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsAppearanceRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/settings/account': {
+      id: '/settings/account'
+      path: '/account'
+      fullPath: '/settings/account'
+      preLoaderRoute: typeof SettingsAccountRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/projects/$projectKey': {
       id: '/projects/$projectKey'
       path: '/projects/$projectKey'
@@ -686,6 +705,7 @@ const ChatRouteChildren: ChatRouteChildren = {
 const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)
 
 interface SettingsRouteChildren {
+  SettingsAccountRoute: typeof SettingsAccountRoute
   SettingsAppearanceRoute: typeof SettingsAppearanceRoute
   SettingsArchivedRoute: typeof SettingsArchivedRoute
   SettingsBrowserRoute: typeof SettingsBrowserRoute
@@ -709,6 +729,7 @@ interface SettingsRouteChildren {
 }
 
 const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsAccountRoute: SettingsAccountRoute,
   SettingsAppearanceRoute: SettingsAppearanceRoute,
   SettingsArchivedRoute: SettingsArchivedRoute,
   SettingsBrowserRoute: SettingsBrowserRoute,

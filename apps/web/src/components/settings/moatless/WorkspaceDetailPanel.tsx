@@ -33,13 +33,14 @@ import {
 } from "../../ui/alert-dialog";
 import { Input } from "../../ui/input";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../../ui/menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
 import { Textarea } from "../../ui/textarea";
 import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
 import { SettingsPageContainer, SettingsRow, SettingsSection } from "../settingsLayout";
 import { AddRepositoryDialog } from "./AddRepositoryDialog";
 import { SectionEmpty, SectionError, SectionPending } from "./MoatlessSectionState";
 import { RepositoryProviderIcon } from "./RepositoryProviderIcon";
-import { repositoriesQuery, workspaceQuery } from "./queries";
+import { repositoriesQuery, usersQuery, workspaceQuery } from "./queries";
 import {
   formatSetupCommands,
   parseSetupCommands,
@@ -102,6 +103,7 @@ function WorkspaceDetail({ workspace }: { readonly workspace: WorkspaceResponse 
       <GeneralSection workspace={workspace} isLocked={provenance.isLocked} />
       <RepositoriesSection workspace={workspace} isLocked={provenance.isLocked} />
       <RunConfigurationSection workspace={workspace} isLocked={provenance.isLocked} />
+      <IdentitySection workspace={workspace} isLocked={provenance.isLocked} />
       <DangerSection workspace={workspace} />
     </>
   );
@@ -405,6 +407,89 @@ function RunConfigurationSection({
             One per line, run in the primary repository after the sandbox starts.
           </p>
         </div>
+        {save.error ? (
+          <p className="text-[13px] text-destructive-foreground">{save.error.message}</p>
+        ) : null}
+      </div>
+      <SaveBar
+        isDirty={form.isDirty && !isLocked}
+        isSaving={save.isRunning}
+        canSave
+        onDiscard={form.reset}
+        onSave={() => void save.run(form.values)}
+      />
+    </SettingsSection>
+  );
+}
+
+/**
+ * The identity every task on this workspace acts as.
+ *
+ * This is what makes a GitHub app the credential a sandbox holds: naming an
+ * app's bot user here means every task on the workspace mints an installation
+ * token through that app instead of using whoever started the task. Commits, pull
+ * requests and comments are attributed to the bot for the same reason.
+ *
+ * Its own section with its own save, deliberately. The backend rejects the field
+ * outright for a non-admin — naming an identity decides whose git credential
+ * every task reaches a host with — so folding it into the run configuration
+ * above would make that section's save fail for everyone who is not an admin,
+ * whether or not they touched this field.
+ */
+function IdentitySection({
+  workspace,
+  isLocked,
+}: {
+  readonly workspace: WorkspaceResponse;
+  readonly isLocked: boolean;
+}) {
+  const users = useMoatlessQuery(usersQuery);
+  const form = useDirtyForm({ runAsUserId: workspace.runAsUserId ?? "" });
+  const save = useMoatlessCommand<{ runAsUserId: string }, WorkspaceResponse>(
+    (values) =>
+      // An empty string is what clears the field; omitting it would leave the
+      // current identity in place, so "run as whoever started the task" has to
+      // be sent rather than left out.
+      updateWorkspace(workspace.id, { runAsUserId: values.runAsUserId }),
+    { invalidates: ["workspaces"] },
+  );
+
+  const rows = users.data?.users ?? [];
+  const selected = rows.find((user) => user.id === form.values.runAsUserId);
+
+  return (
+    <SettingsSection id="workspace-identity" title="Identity">
+      <div className={cn(ITEM_ROW_CLASSNAME, "space-y-2")}>
+        <span className="mb-1.5 block text-xs font-medium text-foreground">Run as</span>
+        <Select
+          value={form.values.runAsUserId}
+          disabled={isLocked}
+          onValueChange={(value) => form.setField("runAsUserId", value ?? "")}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="The person who started the task">
+              {selected ? selected.login : undefined}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">The person who started the task</SelectItem>
+            {rows.map((user) => (
+              <SelectItem key={user.id} value={user.id}>
+                {user.login}
+                {user.isBot ? " (bot)" : ""}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-[11px] text-muted-foreground">
+          A GitHub app's bot user makes every task here authenticate as that app's installation.
+          Admins only.
+        </p>
+        {users.error ? (
+          <p className="text-[13px] text-destructive-foreground">
+            Could not load users: {users.error.message}
+          </p>
+        ) : null}
         {save.error ? (
           <p className="text-[13px] text-destructive-foreground">{save.error.message}</p>
         ) : null}

@@ -16,6 +16,8 @@ import {
   BotIcon,
   BoxesIcon,
   GitBranchIcon,
+  // Fork: the Account section's nav icon.
+  IdCardIcon,
   KeyRoundIcon,
   KeyboardIcon,
   Link2Icon,
@@ -82,6 +84,8 @@ const T3ConnectSidebarAvatar = lazy(() =>
 const SETTINGS_SECTION_ICONS: Readonly<
   Record<SettingsPath, ComponentType<{ className?: string }>>
 > = {
+  // Fork: the Moatless account-credentials page.
+  "/settings/account": IdCardIcon,
   "/settings/general": Settings2Icon,
   "/settings/appearance": PaletteIcon,
   "/settings/keybindings": KeyboardIcon,

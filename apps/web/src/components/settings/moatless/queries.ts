@@ -10,10 +10,11 @@ import {
   listPluginSkills,
 } from "@t3tools/moatless-api/generated/plugins/plugins";
 import {
-  adminGetGlobalGithubInstallation,
   adminListAdapterApps,
   adminListGithubApps,
-} from "@t3tools/moatless-api/generated/provider-settings/provider-settings";
+} from "@t3tools/moatless-api/generated/app-administration/app-administration";
+import { getCodexConfig } from "@t3tools/moatless-api/generated/agent-harness-access/agent-harness-access";
+import { getGithubConfig } from "@t3tools/moatless-api/generated/git-host-access/git-host-access";
 import { listRepositories } from "@t3tools/moatless-api/generated/repositories/repositories";
 import { listSecrets } from "@t3tools/moatless-api/generated/secrets/secrets";
 import { listUsersHandler } from "@t3tools/moatless-api/generated/users/users";
@@ -25,9 +26,10 @@ import type {
   ActivationResponse,
   AdapterAppsResponse,
   AdapterConnectionResponse,
+  CodexAgentHarnessCredentialStatusResponse,
   EffectivePluginResponse,
   GitHubAppsResponse,
-  GitHubInstallationBindingResponse,
+  GitHubProviderTokenStatusResponse,
   Loop,
   PluginResponse,
   PluginSkillResponse,
@@ -91,6 +93,25 @@ export function secretsQuery(scope: Scope) {
 }
 
 /**
+ * The viewer's own credentials, both under `account` so the page refreshes as
+ * one. They are read together and only ever by the person who holds them, which
+ * is what separates them from the deployment-wide reads above.
+ *
+ * The Claude Code token is absent here because it is stored as a user-scoped
+ * secret, so it reads and invalidates through `secretsQuery("user")` — one
+ * store, one cache entry, and the Secrets page cannot disagree with this one.
+ */
+export const githubAccessQuery = moatlessQuery<GitHubProviderTokenStatusResponse>(
+  "account/github",
+  () => getGithubConfig(),
+);
+
+export const codexAccessQuery = moatlessQuery<CodexAgentHarnessCredentialStatusResponse>(
+  "account/codex",
+  () => getCodexConfig(),
+);
+
+/**
  * Every Loop the deployment runs.
  *
  * Its own namespace: a Loop's lifecycle — activate, pause, resume, override,
@@ -144,11 +165,6 @@ export const adapterAppsQuery = moatlessQuery<AdapterAppsResponse>("integrations
 
 export const githubAppsQuery = moatlessQuery<GitHubAppsResponse>("integrations/github-apps", () =>
   adminListGithubApps(),
-);
-
-export const globalGithubInstallationQuery = moatlessQuery<GitHubInstallationBindingResponse>(
-  "integrations/github-installation",
-  () => adminGetGlobalGithubInstallation(),
 );
 
 /**
