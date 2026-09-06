@@ -129,6 +129,19 @@ export function githubConnectOutcome(search: string): GithubConnectOutcome | nul
         message:
           "GitHub authorized, but your personal access token is still the credential in use.",
       };
+    case "denied":
+      // Not a failure — the person declined on GitHub's screen. Saying so is
+      // still better than returning them to an unchanged page with no reply.
+      return { tone: "error", message: "GitHub authorization was cancelled. Nothing was changed." };
+    case "session_changed":
+      // The backend refuses to write one person's GitHub account onto
+      // whoever is signed in now, which on a shared browser is a different
+      // person than the one who started.
+      return {
+        tone: "error",
+        message:
+          "Your session changed while GitHub was authorizing. Nothing was changed — try again.",
+      };
     case "empty_token":
       return { tone: "error", message: "GitHub returned no token. Nothing was changed." };
     case "error":

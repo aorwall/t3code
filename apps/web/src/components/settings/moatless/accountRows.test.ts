@@ -115,9 +115,17 @@ describe("githubConnectOutcome", () => {
     expect(outcome?.message).toContain("still the credential in use");
   });
 
-  it("reports the two failure shapes as errors", () => {
-    expect(githubConnectOutcome("?githubConnect=error")?.tone).toBe("error");
-    expect(githubConnectOutcome("?githubConnect=empty_token")?.tone).toBe("error");
+  it("reports every non-success outcome the backend can send", () => {
+    // Anything falling through to `null` returns the person to an unchanged
+    // page with no reply, which is the state this whole parameter exists to
+    // avoid — so each outcome the backend emits is pinned here.
+    for (const outcome of ["error", "empty_token", "denied", "session_changed"]) {
+      expect(githubConnectOutcome(`?githubConnect=${outcome}`)?.tone).toBe("error");
+    }
+  });
+
+  it("says a cancelled authorization changed nothing", () => {
+    expect(githubConnectOutcome("?githubConnect=denied")?.message).toContain("cancelled");
   });
 });
 
