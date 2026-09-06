@@ -181,6 +181,8 @@ import {
   type TerminalStatusIndicator,
   useLinkedThreadPullRequest,
 } from "./ThreadStatusIndicators";
+// Fork: a row counts the Task's other bound pull requests beside its chip.
+import { forkAdditionalPullRequests, forkThreadPullRequests } from "../fork/threadPullRequest";
 import {
   resolveSnoozePresets,
   snoozeWakeDescription,
@@ -983,6 +985,9 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
     linkedPullRequestStatus,
   });
   const prStatus = prStatusIndicator(pr, prProvider);
+  // Fork: a Task can be bound to several pull requests. The chip names the one
+  // whose state the row resolved; the rest are counted beside it.
+  const otherThreadPrs = forkAdditionalPullRequests(forkThreadPullRequests(thread), pr);
   const settledPrHoverClass = pr ? settledPrHoverColorClass(pr.state, pr.isDraft) : undefined;
   useEffect(() => {
     const nextSnapshot = nextThreadChangeRequestSnapshot({
@@ -1277,6 +1282,21 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
         #{pr.number}
       </a>
     ) : null;
+  // Fork: how many more pull requests the Task is bound to. A count rather than
+  // a badge each — a row is a summary, and the thread's own surfaces open them.
+  const prOverflowBadge =
+    otherThreadPrs.length > 0 ? (
+      <Tooltip>
+        <TooltipTrigger
+          render={<span className="shrink-0 text-secondary-label text-xs tabular-nums" />}
+        >
+          +{otherThreadPrs.length}
+        </TooltipTrigger>
+        <TooltipPopup side="top">
+          {`Also ${otherThreadPrs.map((pullRequest) => `#${pullRequest.number}`).join(", ")}`}
+        </TooltipPopup>
+      </Tooltip>
+    ) : null;
   const terminalStatusIcon = terminalStatus ? (
     <span
       role="img"
@@ -1386,6 +1406,8 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
               remain visible AND clickable while the row is hovered. Only
               the time/jump label yields to the settle affordance. */}
             {prBadge}
+            {/* Fork: the count of the Task's other bound pull requests. */}
+            {prOverflowBadge}
             <span className="relative ml-auto flex h-6 min-w-8 shrink-0 items-center justify-end">
               <span
                 className={cn(
@@ -1691,6 +1713,8 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
               )}
               {terminalStatusIcon}
               {prBadge}
+              {/* Fork: the count of the Task's other bound pull requests. */}
+              {prOverflowBadge}
               {diff ? (
                 <span className="shrink-0 font-mono">
                   <span className="text-emerald-600 dark:text-emerald-400">+{diff.insertions}</span>{" "}

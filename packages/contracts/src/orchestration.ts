@@ -538,6 +538,10 @@ export const OrchestrationThread = Schema.Struct({
   branch: Schema.NullOr(TrimmedNonEmptyString),
   worktreePath: Schema.NullOr(TrimmedNonEmptyString),
   linkedPullRequest: Schema.optional(Schema.NullOr(ThreadLinkedPullRequest)),
+  // Fork: a Moatless Task can be bound to several pull requests, and the
+  // surfaces that show them all read this. `linkedPullRequest` above stays the
+  // primary — the first element — so every upstream reader keeps working.
+  linkedPullRequests: Schema.optional(Schema.Array(ThreadLinkedPullRequest)),
   latestTurn: Schema.NullOr(OrchestrationLatestTurn),
   createdAt: IsoDateTime,
   updatedAt: IsoDateTime,
@@ -618,6 +622,10 @@ export const OrchestrationThreadShell = Schema.Struct({
   branch: Schema.NullOr(TrimmedNonEmptyString),
   worktreePath: Schema.NullOr(TrimmedNonEmptyString),
   linkedPullRequest: Schema.optional(Schema.NullOr(ThreadLinkedPullRequest)),
+  // Fork: a Moatless Task can be bound to several pull requests, and the
+  // surfaces that show them all read this. `linkedPullRequest` above stays the
+  // primary — the first element — so every upstream reader keeps working.
+  linkedPullRequests: Schema.optional(Schema.Array(ThreadLinkedPullRequest)),
   latestTurn: Schema.NullOr(OrchestrationLatestTurn),
   createdAt: IsoDateTime,
   updatedAt: IsoDateTime,

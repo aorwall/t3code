@@ -175,9 +175,12 @@
     },
     {
       "id": "primary-http-layer",
-      "paths": ["apps/web/src/environments/primary/httpLayer.ts"],
+      "paths": [
+        "apps/web/src/environments/primary/httpLayer.ts",
+        "apps/web/src/environments/primary/httpLayer.test.ts"
+      ],
       "verdict": "decide",
-      "note": "Keep cookie session behavior and the absent same-origin gate. Take upstream's transport changes."
+      "note": "Keep cookie session behavior, the x-csrf-token echo Moatless requires on unsafe requests, and the absent same-origin gate. Take upstream's transport changes."
     },
     {
       "id": "login-route",
@@ -432,10 +435,11 @@
       "paths": [
         "apps/web/src/environments/primary/auth.ts",
         "apps/web/src/environments/primary/httpLayer.ts",
+        "apps/web/src/environments/primary/httpLayer.test.ts",
         "apps/web/src/routes/login.tsx",
         "apps/web/src/authBootstrap.test.ts"
       ],
-      "mustSurvive": "The browser authenticates by Moatless cookie session, there is no T3 backend session exchange, and /login is the entry point. Only login.tsx is fork-only; the other three are decide — upstream owns them and keeps changing the environment layer they sit in."
+      "mustSurvive": "The browser authenticates by Moatless cookie session, there is no T3 backend session exchange, /login is the entry point, and an unsafe request echoes the moatless_csrf cookie in x-csrf-token or Moatless 403s it. Only login.tsx is fork-only; the rest are decide — upstream owns them and keeps changing the environment layer they sit in."
     },
     {
       "id": "proxy-target-allowed-hosts",
@@ -648,6 +652,18 @@
       "mustSurvive": "Hovering an assistant message with a completed or interrupted turn shows a fork icon beside the copy button. While the thread's newest turn is still running, the icon stays visible on messages from an earlier, already-ended turn and hides only on messages from that running turn itself — cutting below the open turn is allowed, cutting at or into it is not, matching the backend's own gate. `parseMoatlessTurnNumber` (`apps/web/src/fork/threadFork.ts`) reads the turn number off the wire `TurnId` to compare; either turn number failing to parse hides the icon. Clicking it opens a dialog rather than forking immediately: a same-sandbox toggle (on by default — it is the only checkout that resumes this conversation, and the dialog says so when switched off) and an optional first message. There is no branch control — a fork always runs on its source's branch. Confirming mints a thread id client-side, dispatches `thread.fork` with that id, the source thread's id, the hovered message's turn number, and the dialog's fields, then navigates to the new thread the same way starting a thread from a proposed plan does — same wait-for-started-thread and cleanup-on-failure path. Moatless is the only backend that runs `thread.fork`; the bundled server refuses it rather than fabricate a session-less copy."
     },
     {
+      "id": "task-bound-pull-request",
+      "name": "A thread's pull requests are the Task's bindings",
+      "paths": [
+        "apps/web/src/components/BranchToolbarBranchSelector.tsx",
+        "apps/web/src/components/Sidebar.tsx",
+        "apps/web/src/components/GitActionsControl.tsx",
+        "apps/web/src/fork/threadPullRequest.ts",
+        "apps/web/src/fork/threadPullRequest.test.ts"
+      ],
+      "mustSurvive": "Every surface that names a thread's pull request names the same one primary, and it is the Moatless Task's GitHub PR binding: the git menu's \"View PR\", the pill beside the composer's branch selector, the sidebar row's status chip, and the right panel's pull-request tab. Upstream derives `VcsStatusResult.pr` from the checked-out branch, so its surfaces gate the pull request on `refName` matching `thread.branch`; against Moatless that gate reports nothing for most threads that have one, because `tasks.branch` holds the base picked at creation while the agent commits on whatever branch it cut. The backend answers `vcs.status.pr`, `thread.linkedPullRequest` and `pullRequests.summary` from `task_bindings` and picks one primary when a Task has several (live before terminal, then highest number), so the client's job is only to stop re-deriving — `resolveForkThreadPr` is the whole of that delta. A Task can be bound to several pull requests, carried by the fork-only `linkedPullRequests` array beside upstream's single `linkedPullRequest` (its primary, the first element) on `OrchestrationThread` and `OrchestrationThreadShell` in `packages/contracts/src/orchestration.ts`. The three surfaces that can hold more than the one show the rest additively, never replacing upstream's shape: the composer pill keeps its single PR and grows a `+N` menu button beside it (`forkAdditionalPullRequests`), the sidebar row keeps its chip and grows a `+N` count, and the git menu replaces upstream's one branch-derived \"View\" row with one row per bound PR only when there is more than one to disambiguate (`forkPullRequestMenuRows`). The right panel needs no delta — it already keys surfaces by PR reference, so a second reference opens as a peer tab. Do not reintroduce a branch comparison in the composer pill: a binding-derived pull request is the Task's own by construction and names no branch to compare against; and do not re-decide the primary on the client — the server orders the list and its first element is the primary, since the states that choice was made from are not on the wire."
+    },
+    {
       "id": "host-run-scripts",
       "name": "Host-run project scripts",
       "paths": [
@@ -782,7 +798,7 @@
       "id": "moatless-rest-client",
       "name": "Moatless REST client",
       "paths": ["packages/moatless-api/**"],
-      "mustSurvive": "Fork-only. The generated client for the Moatless REST API, plus the checked-in OpenAPI description it is generated from and the CI check that the two have not drifted. Regenerate with `vp run --filter @t3tools/moatless-api generate`; do not hand-edit src/generated/**. customInstance.ts carries an @effect-diagnostics-next-line globalFetch:off — the package is deliberately outside Effect."
+      "mustSurvive": "Fork-only. The generated client for the Moatless REST API, plus the checked-in OpenAPI description it is generated from and the CI check that the two have not drifted. Regenerate with `vp run --filter @t3tools/moatless-api generate`; do not hand-edit src/generated/**. tsconfig.json turns the @effect/language-service globalFetch diagnostic off for the package — it is deliberately outside Effect, and customInstance.ts calls fetch directly. customInstance.ts also attaches the X-CSRF-Token header the Moatless backend requires on every unsafe method."
     },
     {
       "id": "moatless-admin-reads",
@@ -892,6 +908,12 @@
       "name": "Surface gating",
       "watchFor": "New booleans on ExecutionEnvironmentCapabilities. Upstream adds one per thread-lifecycle surface — threadSettlement, threadSnooze, threadPinning and threadPinReorder as of 2026-08-08.",
       "action": "Prefer upstream's capability where one exists and delete the matching FEATURES flag. The server decides, so the surface then follows the backend without a fork edit."
+    },
+    {
+      "id": "task-bound-pull-request",
+      "name": "Where a thread's pull requests come from",
+      "watchFor": "Upstream deriving `VcsStatusResult.pr` from something other than the checked-out branch, the branch match moving out of `resolveThreadPr` into the surfaces, or upstream growing its own notion of several pull requests per thread.",
+      "action": "Keep ours. The single-PR derivation converges the day upstream reports a pull request that is no longer the branch's — then `resolveForkThreadPr` drops and upstream's helper returns. The `linkedPullRequests` multi-PR presentation is fork-only and stays until upstream ships an equivalent, at which point re-home the `+N` menu and count onto it rather than defending ours."
     },
     {
       "id": "web-on-phone",
