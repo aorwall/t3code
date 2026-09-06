@@ -799,7 +799,10 @@ export function BranchToolbarBranchSelector({
                   key={forkPullRequestKey(pullRequest)}
                   onClick={(event) => openPrLink(event, pullRequest.url)}
                 >
-                  <ChangeRequestStatusIcon className="size-3.5" />
+                  {/* Fork: a bound pull request carries no state, so the
+                      provider's own icon rather than a status one — a status
+                      icon here would have to invent "open". */}
+                  <SourceControlIcon className="size-3.5" />
                   {`View ${sourceControlPresentation.terminology.shortLabel} #${pullRequest.number}`}
                 </MenuItem>
               ))}
