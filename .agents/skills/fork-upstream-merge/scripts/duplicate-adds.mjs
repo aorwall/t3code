@@ -12,10 +12,11 @@
  * it. The cost of missing one is a full verify pass — minutes of typecheck and
  * tests — to learn about it as a parse error.
  *
- * The rule is narrow on purpose: a line that appears **exactly once on each
- * side and twice in the merge**. The looser reading — any line more frequent in
- * the merge than in either parent — reports dozens of hits, almost all of them
- * `});` and `}`, and a check nobody can read is a check nobody runs.
+ * The rule is narrow on purpose: a line that **names something** and appears
+ * **exactly once on each side and twice in the merge**. The looser reading —
+ * any line more frequent in the merge than in either parent — reports dozens of
+ * hits, almost all of them `});` and `}`, and a check nobody can read is a
+ * check nobody runs.
  * With the narrow rule the same merge gives 2 hits and both are the defect.
  *
  * It cannot catch a duplicate of a line that already appeared elsewhere in the
@@ -37,13 +38,23 @@ import {
   runMain,
 } from "./lib.mjs";
 
-/** Lines by frequency, whitespace-normalized and ignoring blanks. */
+/**
+ * Lines that could name something, by frequency, whitespace-normalized.
+ *
+ * Pure punctuation is skipped. A line of closing brackets carries no identity,
+ * so two of them in a merged file are two unrelated blocks far more often than
+ * one block kept twice — `))}` closing an upstream `.map()` in one place and a
+ * fork `.map()` in another satisfies "once on each side, twice in the merge"
+ * while being exactly correct. Every real duplicated add — an import, a const,
+ * a catalog entry — names something, so requiring a word character costs
+ * nothing and drops the whole false-positive class.
+ */
 function counts(content) {
   const tally = new Map();
   if (content === null) return null;
   for (const line of content) {
     const key = line.trim();
-    if (key === "") continue;
+    if (key === "" || !/\w/.test(key)) continue;
     tally.set(key, (tally.get(key) ?? 0) + 1);
   }
   return tally;

@@ -236,8 +236,31 @@ function checkUpstreamDrift(inventory, report, sides, paths) {
  * standing failure `unsupported-methods.mjs` carries for `scripts.run`, which
  * is a thing to stop doing rather than to copy.
  */
+/**
+ * The upstream commit to hold a `theirs-verbatim` path against.
+ *
+ * `sides.theirs` is only upstream when the merge in progress is an upstream
+ * merge. A fork branch merged into another fork branch has a `theirs` that is
+ * not upstream at all, and every `theirs-verbatim` path then reads as drifted
+ * against it. So: use `theirs` when it really is an upstream commit, and
+ * otherwise the newest upstream commit the fork side already contains.
+ *
+ * Returns null when there is no upstream ref to compare against — a clone with
+ * no upstream remote skips the rule rather than failing it.
+ */
+function upstreamReference(inventory, sides) {
+  const ref = inventory.upstream.ref;
+  if (!git(["rev-parse", "--verify", "--quiet", ref], { allowFailure: true })) return null;
+  // `theirs` is an upstream commit exactly when it is its own merge-base with
+  // the upstream ref — that is, when upstream already contains it.
+  const theirs = git(["rev-parse", sides.theirs]);
+  return mergeBase(theirs, ref) === theirs ? theirs : mergeBase(sides.ours, ref);
+}
+
 function checkVerbatim(inventory, report, sides) {
   const section = report.section("theirs-verbatim paths, against upstream");
+  const upstream = upstreamReference(inventory, sides);
+  if (upstream === null) return section.info("no upstream ref to compare against");
   const entries = inventory.pathPolicy.filter((entry) => entry.verdict === "theirs-verbatim");
   let checked = 0;
   let found = 0;
@@ -253,7 +276,7 @@ function checkVerbatim(inventory, report, sides) {
       // fork's one workflow step on purpose. Expanding the glob without asking
       // who actually wins reports that step as a delta that reappeared.
       if (verdictFor(inventory, path)?.entry.id !== entry.id) continue;
-      const theirs = blobLines(sides.theirs, path);
+      const theirs = blobLines(upstream, path);
       const merged = mergedLines(sides, path);
       if (theirs === null || merged === null) continue;
       checked += 1;
