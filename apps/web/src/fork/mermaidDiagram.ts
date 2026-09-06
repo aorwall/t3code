@@ -114,11 +114,7 @@ export function renderMermaidSvg(code: string, theme: ResolvedTheme): Promise<st
   return rendered;
 }
 
-async function drawDiagram(
-  code: string,
-  theme: ResolvedTheme,
-  cacheKey: string,
-): Promise<string> {
+async function drawDiagram(code: string, theme: ResolvedTheme, cacheKey: string): Promise<string> {
   const mermaid = await loadMermaid();
 
   if (initializedTheme !== theme) {

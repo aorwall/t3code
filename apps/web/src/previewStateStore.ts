@@ -173,19 +173,6 @@ export function readThreadPreviewState(ref: ScopedThreadRef): ThreadPreviewState
   return appAtomRegistry.get(previewStateAtom(scopedThreadKey(ref)));
 }
 
-export function subscribeThreadPreviewState(
-  ref: ScopedThreadRef,
-  listener: (state: ThreadPreviewState, previous: ThreadPreviewState) => void,
-): () => void {
-  const atom = previewStateAtom(scopedThreadKey(ref));
-  let previous = appAtomRegistry.get(atom);
-  return appAtomRegistry.subscribe(atom, (state) => {
-    const prior = previous;
-    previous = state;
-    listener(state, prior);
-  });
-}
-
 export function applyPreviewServerEvent(ref: ScopedThreadRef, event: PreviewEvent): void {
   updateThreadPreviewState(ref, (current) => {
     if (current.serverEpoch !== null && event.serverEpoch !== current.serverEpoch) return current;
@@ -472,13 +459,8 @@ export function rememberPreviewUrl(ref: ScopedThreadRef, url: string): void {
   }));
 }
 
-export function removePreviewThread(ref: ScopedThreadRef): void {
-  const threadKey = scopedThreadKey(ref);
-  appAtomRegistry.set(previewStateAtom(threadKey), EMPTY_THREAD_PREVIEW_STATE);
-  syncActivePreviewThread(threadKey, EMPTY_THREAD_PREVIEW_STATE);
-  changedPreviewThreadKeys.delete(threadKey);
-}
-
+// Fork: fine-grained runtime capability used to decide whether preview can
+// use a desktop <webview> or must fall back to a cross-origin <iframe>.
 /**
  * What kind of page surface this runtime can host.
  *
@@ -493,6 +475,7 @@ export function removePreviewThread(ref: ScopedThreadRef): void {
  */
 export type PreviewRuntimeCapability = "webview" | "frame" | "none";
 
+// Fork: see PreviewRuntimeCapability above.
 export function previewRuntimeCapability(): PreviewRuntimeCapability {
   if (typeof window === "undefined") return "none";
   return window.desktopBridge?.preview ? "webview" : "frame";

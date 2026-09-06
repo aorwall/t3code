@@ -200,7 +200,7 @@ files it reaches are `apps/web/src/fork/mermaidDiagram.ts` and
 `apps/web/src/fork/MermaidDiagram.tsx`. Take upstream first, then re-state:
 
 - **`ChatMarkdown.tsx`** — two imports, and an `if (language ===
-  MERMAID_FENCE_LANGUAGE)` early return above upstream's own return in the `pre`
+MERMAID_FENCE_LANGUAGE)` early return above upstream's own return in the `pre`
   renderer. The branch repeats upstream's `MarkdownCodeBlock` call rather than
   wrapping it, which costs a dozen duplicated lines and buys the thing worth
   more at merge time: upstream's block is left byte-identical, so an upstream

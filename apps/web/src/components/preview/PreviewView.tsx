@@ -1,7 +1,10 @@
 "use client";
 
 import { scopedThreadKey } from "@t3tools/client-runtime/environment";
-import { squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
+import {
+  isAtomCommandInterrupted,
+  squashAtomCommandFailure,
+} from "@t3tools/client-runtime/state/runtime";
 import {
   DEFAULT_BROWSER_PROFILE_ID,
   FILL_PREVIEW_VIEWPORT,
@@ -56,8 +59,11 @@ import {
   useFramePreviewInspectorNavigationState,
 } from "~/browser/framePreviewAnnotationBridge";
 import { previewRuntimeTabId } from "~/browser/previewRuntimeTabId";
+// Fork: frame-specific reload and annotation-theme helpers, used by the
+// framed preview surface alongside upstream's BrowserSettingsReadError import.
 import { reloadHostedFrame } from "~/browser/hostedFrameReload";
 import { readPreviewAnnotationTheme } from "~/browser/annotationTheme";
+import { BrowserSettingsReadError } from "~/browser/openFileInPreview";
 import { PreviewUnreachable } from "./PreviewUnreachable";
 import { PreviewFrameUnrendered, useFrameUnrenderedHint } from "./PreviewFrameUnrendered";
 import { PreviewServerNotStarted } from "./PreviewServerNotStarted";
@@ -91,7 +97,7 @@ interface Props {
   ) => void;
 }
 
-export function previewProfileName(
+function previewProfileName(
   profiles: ReadonlyArray<{ readonly id: string; readonly name: string }>,
   profileId: string,
 ): string {
@@ -238,6 +244,16 @@ export function PreviewView({
         return true;
       }
       const result = await openPreviewSession({ openPreview: open, threadRef, url: resolvedUrl });
+      if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
+        const error = squashAtomCommandFailure(result);
+        if (error instanceof BrowserSettingsReadError) {
+          toastManager.add({
+            type: "error",
+            title: "Unable to open browser",
+            description: error.message,
+          });
+        }
+      }
       return result._tag === "Success";
     },
     [framed, navigate, open, runtimeTabId, tabId, threadRef],

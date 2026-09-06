@@ -111,6 +111,19 @@ what a person loses, which is the part the derivation cannot tell you:
 - **Content search** — `projects.searchContents`. Path search, read and list are
   all served, so "Go to file" works and "search in files" does not. Holds open
   `workspaceSearchContents`.
+- **Agent session import** — `agentSessions.scan` and `agentSessions.import`,
+  new upstream in the 2026-09-06 merge. They back the welcome wizard's "Your
+  projects" step (`ImportStep` in `apps/web/src/components/onboarding/WelcomeWizard.tsx`,
+  state in `apps/web/src/state/agentSessions.ts`): scan walks the machine's
+  Claude Code and Codex home directories for existing project directories, and
+  import creates a T3 project from a chosen one and carries over its recent
+  thread history. Neither is fork-gated by a capability, so the step's own
+  error handling is what a Moatless user sees: the scan query resolves with an
+  error, `ImportStep` renders "Could not check this computer for projects."
+  with Retry and Skip, and a user who did have Claude Code or Codex projects on
+  disk gets no offer to bring them, or their history, into T3. Holds open no
+  named flag — the step just always falls through to its own no-op path.
+  Closes when the backend dispatches both methods.
 - **Per-turn diffs** — `orchestration.getTurnDiff`, `getFullThreadDiff`. The
   diff panel's working-tree and branch-range scopes work; "Latest turn" / "Turn"
   and the inline changed-files cards under each assistant turn do not. Holds
@@ -125,11 +138,17 @@ what a person loses, which is the part the derivation cannot tell you:
   `setReaction` — plus filters and qualifiers, all-server listing, update-branch,
   and sending a PR line request to the agent — with
   GitHub/GitLab/Bitbucket/Azure DevOps provider backends in
-  `apps/server/src/pullRequest/`. Needs no fork gate: the client reads
+  `apps/server/src/pullRequest/`. Grown again in the 2026-09-06 merge by
+  `pullRequests.subscribeRefreshes`, a push stream that tells the client a PR's
+  state changed on the host side (new commits, a review, a merge) so it can
+  refetch rather than poll; `createLinkedPullRequestSummaryAtomFamily` in
+  `packages/client-runtime/src/state/pullRequests.ts` wires it as the refresh
+  trigger for a thread's linked PR summary. Needs no fork gate: the client reads
   `capabilities.pullRequests`, which decodes to unsupported when a deployment's
   handshake omits it, so the whole surface (sidebar tab, right-panel surface,
-  `/pull-requests` route) already stays off on Moatless. Closes when the backend
-  reports `capabilities.pullRequests: true` and dispatches the group.
+  `/pull-requests` route, and now the push-refresh path) already stays off on
+  Moatless. Closes when the backend reports `capabilities.pullRequests: true`
+  and dispatches the group.
 - **Usage summary** — `server.getUsageSummary`, new upstream in the 2026-08-12
   merge, reading local provider transcript directories in
   `apps/server/src/usage/`. The `/usage` route and its charts render against

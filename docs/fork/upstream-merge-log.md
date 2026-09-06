@@ -28,6 +28,65 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-06 — merged upstream to b438447f, agent-session import + PR-refresh stream refuse
+
+- Upstream: `b438447f6` from base `36c4e9cf5` (`395` commits).
+- Landed: `1174` files from `git diff --stat HEAD^1 HEAD` against `1175` in the
+  upstream range (`36c4e9cf5..HEAD^2`); fork delta `658` files from
+  `git diff --stat HEAD^2 HEAD`. The one-file gap is
+  `apps/web/src/AppRoot.test.tsx`, a modify/delete kept on the fork side: it
+  still guards the fork-only `WebBrowserHost` render tree.
+- Conflicts: 17 files, resolved by concern. `rpc.ts` converged (fork import
+  block plus upstream's `providerUsageLimits`; fork `UnsupportedMethodError`
+  entries re-applied onto the declarations upstream reformatted). Chat and
+  shell converged (`ChatMarkdown` mermaid fence on upstream's new module-level
+  renderer, `Sidebar` `FEATURES`/`useTouchContextMenu`, `MessagesTimeline` fork
+  activity state, `SidebarChrome` `APP_BASE_NAME`). Preview decided
+  (`previewStateStore` capability helpers kept, upstream z-index taken, fork
+  `hasPreviewSurface` kept). Settings took upstream's six-section split with the
+  four fork gates and the personal/admin nav split inside it. `AGENTS.md`
+  decided, `docs/README.md` unioned, `background-service.md` theirs, `ci.yml`
+  converged, `pnpm-lock.yaml` theirs then regenerated.
+- Three unions added for methods Moatless does not dispatch:
+  `agentSessions.scan`, `agentSessions.import`,
+  `pullRequests.subscribeRefreshes`. Gaps.md grown accordingly.
+- Two breaks that no conflict and no tripwire could show, both caught by a
+  build rather than by review. `pnpm-lock.yaml` comes from upstream by policy,
+  and upstream's lockfile does not carry the fork's `packages/moatless-api`
+  package, so `--frozen-lockfile` refused three specifiers until the lockfile
+  was regenerated. Upstream also made `fileContentRevision` module-private and
+  moved its own callers onto new cache-key helpers; the fork's
+  `browserPreviewRevision.ts` imports the bare hash, and neither file
+  conflicted, so the merge auto-resolved into a missing export. The export is
+  restored with a `// Fork:` marker naming the consumer. Run a web build before
+  trusting a merge: `resolution-check.mjs` reads conflict-set paths and cannot
+  see either of these.
+- Sweep: 22 new upstream files matched an owned-concern pattern; all false
+  positives (relay/cloud/usage/agent-session server code, host-classification
+  shared util, connect-setup doc). 2 new workflows
+  (`cursor-hygiene-webhook.yml`, `windows-tests.yml`) arrive enabled; disable in
+  GitHub after the branch lands.
+- Verification: `duplicate-adds`, `resolution-check` (56 fork deltas preserved,
+  58 upstream changes landed, 17 theirs-verbatim byte-identical), `tripwires`,
+  `fmt:check`, `lint` and `typecheck` all green. The GitHub image build passes.
+  Tests pass across every workspace package. Two caveats, neither a merge
+  regression: `@t3tools/desktop`'s `browser-secret-native.test.mjs` needs
+  `libsecret-1`, which this sandbox cannot install and CI installs itself (its
+  other 831 tests pass); and `@t3tools/shared` failed under full-suite load and
+  passed alone.
+- `verify.mjs --only test` runs `vp run -r test`, which covered 6 of the 12
+  packages that declare a `test` script here. It skipped `@t3tools/web`,
+  `@t3tools/client-runtime` and `t3`, all of which carry conflicts in this
+  merge, and reported green. Run the rest by name with
+  `vp run --filter <pkg> test` until the step itself is fixed; `@t3tools/web`
+  alone is 362 files and 4303 tests.
+- Known-open, recorded and deliberately not fixed here:
+  `unsupported-methods.mjs` reports `server.getUsageSummary` under DROP. Moatless
+  dispatches it, so the union entry is dead and should be removed, and the
+  "Usage summary" bullet in [gaps](./gaps.md) is stale with it. Also
+  `apps/web/src/components/settings/moatless/listSearch.ts` is fork-only with no
+  `inventory.json` entry.
+
 ### 2026-09-03 — merged upstream to 36c4e9cf, Antigravity provider + usage-rates refuse
 
 - Upstream: `36c4e9cf5` from base `d937e3075` (`137` commits).
