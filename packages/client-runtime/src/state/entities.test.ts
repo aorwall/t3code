@@ -232,6 +232,62 @@ describe("environment entity projections", () => {
     expect(merged?.messages).toBe(messages);
   });
 
+  // Fork: the pull requests a Task is bound to reach a detail only in its
+  // snapshot, so a thread open across a binding change shows the old set until
+  // the shell's is taken instead.
+  it("takes the shell's bound pull requests over the set the detail was loaded with", () => {
+    const linked = [
+      { projectId: PROJECT_ID, repository: "owner/repo", number: 2, url: "https://x/2" },
+      { projectId: PROJECT_ID, repository: "owner/repo", number: 1, url: "https://x/1" },
+    ];
+    const base = {
+      ...THREAD_SHELL,
+      environmentId: ENVIRONMENT_ID,
+      deletedAt: null,
+      messages: [],
+      proposedPlans: [],
+      activities: [],
+      checkpoints: [],
+    } satisfies OrchestrationThread & { readonly environmentId: EnvironmentId };
+
+    const merged = mergeEnvironmentThread(base, {
+      ...THREAD_SHELL,
+      environmentId: ENVIRONMENT_ID,
+      linkedPullRequest: linked[0],
+      linkedPullRequests: linked,
+    });
+
+    expect(merged?.linkedPullRequests).toBe(linked);
+    expect(merged?.linkedPullRequest).toBe(linked[0]);
+  });
+
+  // Fork: a server that sends neither field on the shell must not have the
+  // detail's answer replaced by its silence.
+  it("keeps the detail's bound pull requests when the shell carries none", () => {
+    const linked = [
+      { projectId: PROJECT_ID, repository: "owner/repo", number: 7, url: "https://x/7" },
+    ];
+    const detail = {
+      ...THREAD_SHELL,
+      environmentId: ENVIRONMENT_ID,
+      linkedPullRequest: linked[0],
+      linkedPullRequests: linked,
+      deletedAt: null,
+      messages: [],
+      proposedPlans: [],
+      activities: [],
+      checkpoints: [],
+    } satisfies OrchestrationThread & { readonly environmentId: EnvironmentId };
+
+    const merged = mergeEnvironmentThread(detail, {
+      ...THREAD_SHELL,
+      environmentId: ENVIRONMENT_ID,
+    });
+
+    expect(merged?.linkedPullRequests).toBe(linked);
+    expect(merged?.linkedPullRequest).toBe(linked[0]);
+  });
+
   it("preserves untouched project and thread identities across unrelated shell updates", () => {
     const harness = makeHarness();
     const projectRefsAtom = harness.projects.environmentProjectRefsAtom(ENVIRONMENT_ID);

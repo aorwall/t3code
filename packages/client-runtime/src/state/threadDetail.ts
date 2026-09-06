@@ -52,6 +52,20 @@ export function mergeEnvironmentThread(
     interactionMode: shell.interactionMode,
     branch: shell.branch,
     worktreePath: shell.worktreePath,
+    // Fork: which pull requests a thread is bound to changes while the thread
+    // is open, and only the shell row is re-sent when it does — the detail
+    // carries them in its snapshot and no event updates them, so a detail
+    // loaded before a binding changed keeps the old set for as long as the tab
+    // lives. The shell is the fresher of the two here for the same reason it is
+    // for the branch above. Absent rather than empty is what tells a server
+    // that does not send these on the shell apart from one that sends none, so
+    // only a shell that carries them speaks for them.
+    ...(shell.linkedPullRequest !== undefined
+      ? { linkedPullRequest: shell.linkedPullRequest }
+      : {}),
+    ...(shell.linkedPullRequests !== undefined
+      ? { linkedPullRequests: shell.linkedPullRequests }
+      : {}),
     latestTurn: shell.latestTurn,
     createdAt: shell.createdAt,
     updatedAt: shell.updatedAt,
