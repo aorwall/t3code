@@ -47,6 +47,15 @@ export interface ThreadPreviewState {
   serverEpoch: string | null;
   /** Latest ordered server revision applied from a list response or event. */
   serverRevision: number;
+  /**
+   * Fork: the newest tab this client learned about by being told, rather than
+   * by opening it — another viewer's tab, or one the environment opened for a
+   * script started outside any client. Read by `ChatView` to bring the browser
+   * panel up for it; `announcedOpens` is what makes two opens of the same tab
+   * two events rather than one.
+   */
+  announcedTabId: string | null;
+  announcedOpens: number;
 }
 
 const EMPTY_THREAD_PREVIEW_STATE: ThreadPreviewState = Object.freeze({
@@ -59,6 +68,9 @@ const EMPTY_THREAD_PREVIEW_STATE: ThreadPreviewState = Object.freeze({
   recentlySeenUrls: [] as string[],
   serverEpoch: null,
   serverRevision: 0,
+  // Fork: see `announcedTabId`.
+  announcedTabId: null,
+  announcedOpens: 0,
 });
 
 const emptyPreviewStateAtom = Atom.make<ThreadPreviewState>(EMPTY_THREAD_PREVIEW_STATE).pipe(
@@ -191,6 +203,13 @@ export function applyPreviewServerEvent(ref: ScopedThreadRef, event: PreviewEven
           const sessions = { ...current.sessions, [snapshot.tabId]: snapshot };
           const activeTabId = event.type === "opened" ? snapshot.tabId : current.activeTabId;
           const activeSnapshot = sessions[activeTabId ?? snapshot.tabId] ?? snapshot;
+          // Fork: every open worth surfacing, and no replay. `opened` is
+          // published by an open and by nothing else, so a script re-run
+          // announces its tab again even though this client already holds it.
+          // The revision test is what excludes a replay: the events atom holds
+          // its last value, so remounting re-applies it at a revision this
+          // state has already reached.
+          const announced = event.type === "opened" && event.revision > current.serverRevision;
           return {
             ...current,
             sessions,
@@ -198,6 +217,12 @@ export function applyPreviewServerEvent(ref: ScopedThreadRef, event: PreviewEven
             snapshot: activeSnapshot,
             desktopOverlay: current.desktopByTabId[activeSnapshot.tabId] ?? null,
             recentlySeenUrls,
+            ...(announced
+              ? {
+                  announcedTabId: snapshot.tabId,
+                  announcedOpens: current.announcedOpens + 1,
+                }
+              : {}),
           };
         }
         case "failed": {

@@ -2317,9 +2317,10 @@ export function GeneralSettingsPanel() {
           }
         />
 
+        {/* Fork: the browser clause — a script run outside this client opens a tab on the thread. */}
         <SettingsRow
           {...searchableSetting("proactive-panels")}
-          description="Open linked pull requests when found and turn diffs when work changes files."
+          description="Open linked pull requests when found, turn diffs when work changes files, and the browser when something opens a tab on this thread."
           resetAction={
             settings.proactivePanelsEnabled !== DEFAULT_UNIFIED_SETTINGS.proactivePanelsEnabled ? (
               <SettingResetButton

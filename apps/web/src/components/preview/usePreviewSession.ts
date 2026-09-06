@@ -81,3 +81,25 @@ const previewSessionSyncAtom = Atom.family((threadKey: string) => {
 export function usePreviewSession(threadRef: ScopedThreadRef): void {
   useAtomValue(previewSessionSyncAtom(scopedThreadKey(threadRef)));
 }
+
+// Fork: nothing to sync, for a caller with no thread to sync.
+const idlePreviewSessionSyncAtom = Atom.make(() => undefined).pipe(
+  Atom.withLabel("preview:session-sync:idle"),
+);
+
+/**
+ * Fork: the same sync for a thread that may not be there yet.
+ *
+ * `ChatView` holds it open for the thread on screen whether or not its preview
+ * panel is, because a tab can be opened by something other than this client —
+ * another viewer, or a script run from `moat tasks scripts run`. Subscribing
+ * only while the panel is up would mean the one case where it must arrive
+ * unprompted is the one case nobody is listening for.
+ */
+export function useOptionalPreviewSession(threadRef: ScopedThreadRef | null): void {
+  useAtomValue(
+    threadRef === null
+      ? idlePreviewSessionSyncAtom
+      : previewSessionSyncAtom(scopedThreadKey(threadRef)),
+  );
+}

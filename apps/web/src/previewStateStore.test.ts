@@ -107,6 +107,66 @@ describe("previewStateStore (single-tab)", () => {
     expect(state.snapshot?.tabId).toBe(b.tabId);
   });
 
+  // Fork: what `ChatView` raises the browser panel on. A script started from
+  // `moat tasks scripts run` opens its tab with nothing on this side asking
+  // for it, so the open has to arrive as something the view can react to.
+  describe("announcing an open to a client that did not ask for one", () => {
+    const opened = (snapshot: PreviewSessionSnapshot): PreviewEventDraft => ({
+      type: "opened",
+      threadId: "thread-1",
+      tabId: snapshot.tabId,
+      createdAt: snapshot.updatedAt,
+      snapshot,
+    });
+
+    it("names the tab that was opened", () => {
+      applyPreviewServerEvent(ref, opened(makeSnapshot()));
+
+      const state = readThreadPreviewState(ref);
+      expect(state.announcedTabId).toBe("tab_a");
+      expect(state.announcedOpens).toBe(1);
+    });
+
+    it("announces a re-run of the same script again", () => {
+      // A script's tab is addressed by the script, so its second run reopens
+      // the tab the client already holds. Counting only unknown tabs would
+      // leave that run behind a panel the person closed after the first.
+      applyPreviewServerEvent(ref, opened(makeSnapshot()));
+      applyPreviewServerEvent(ref, opened(makeSnapshot({ updatedAt: "2026-01-01T00:01:00.000Z" })));
+
+      expect(readThreadPreviewState(ref).announcedOpens).toBe(2);
+    });
+
+    it("does not announce a navigation or a resize", () => {
+      const snapshot = makeSnapshot();
+      applyPreviewServerEvent(ref, opened(snapshot));
+      applyPreviewServerEvent(ref, {
+        type: "navigated",
+        threadId: "thread-1",
+        tabId: snapshot.tabId,
+        createdAt: "2026-01-01T00:00:01.000Z",
+        snapshot,
+      });
+
+      expect(readThreadPreviewState(ref).announcedOpens).toBe(1);
+    });
+
+    it("does not announce an event it has already applied", () => {
+      // The events atom holds its last value, so a remount re-applies it.
+      // Without the revision test that would raise the panel again every time
+      // the preview surface mounts.
+      const event = {
+        ...opened(makeSnapshot()),
+        serverEpoch,
+        revision: 7,
+      } as PreviewEvent;
+      applyPreviewServerEventImpl(ref, event);
+      applyPreviewServerEventImpl(ref, event);
+
+      expect(readThreadPreviewState(ref).announcedOpens).toBe(1);
+    });
+  });
+
   it("navigated event updates the snapshot URL", () => {
     const snapshot = makeSnapshot();
     applyPreviewServerEvent(ref, {

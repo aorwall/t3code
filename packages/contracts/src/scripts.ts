@@ -21,6 +21,8 @@
  */
 import { Schema } from "effect";
 import { ThreadId, TrimmedNonEmptyString } from "./baseSchemas.ts";
+// Fork: `previewTabId` on the result below is a preview tab id.
+import { PreviewTabId } from "./preview.ts";
 
 /**
  * Run a project's script by its id, in the context of one thread.
@@ -42,9 +44,23 @@ export type ScriptsRunInput = typeof ScriptsRunInput.Type;
  * when the script serves no port or the environment publishes no external URL
  * (no proxy domain). It is not a promise the port is answering yet, only where
  * it will answer.
+ *
+ * Fork (Moatless): `previewTabId` says the environment already opened a tab on
+ * that URL.
  */
 export const ScriptsRunResult = Schema.Struct({
   terminalId: TrimmedNonEmptyString,
   url: Schema.NullOr(TrimmedNonEmptyString),
+  /**
+   * Fork (Moatless): the browser tab the environment opened on `url` itself.
+   *
+   * Null when the script serves no port, absent when the environment does not
+   * open tabs at all. A tab belongs to the thread rather than to whoever asked
+   * (`preview.*`), which is what lets a run started from outside any client —
+   * `moat tasks scripts run` — reach the browser of everyone watching. So a
+   * client that is given one has only its own panel left to open; a client that
+   * is not opens the tab itself.
+   */
+  previewTabId: Schema.optional(Schema.NullOr(PreviewTabId)),
 });
 export type ScriptsRunResult = typeof ScriptsRunResult.Type;

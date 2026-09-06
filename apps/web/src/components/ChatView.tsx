@@ -181,6 +181,8 @@ import { closePreviewSession } from "./preview/closePreviewSession";
 import { ThreadPreviewMiniPlayer } from "./preview/ThreadPreviewMiniPlayer";
 import { subscribePreviewAction } from "./preview/previewActionBus";
 import { useThreadPreviewServers } from "./preview/useThreadPreviewServers";
+// Fork: the preview sync runs for the thread on screen, not for an open panel.
+import { useOptionalPreviewSession } from "./preview/usePreviewSession";
 import { makeWorkspaceFileDropHandlers } from "./chat/workspaceFileDrop";
 import {
   selectThreadPreviewMiniPlayer,
@@ -1894,6 +1896,9 @@ export default function ChatView(props: ChatViewProps) {
   const threadPrRelinkKeysRef = useRef(new Map<string, string>());
   const threadPrRelinkWriteRef = useRef(Promise.resolve());
   const activePreviewState = useThreadPreviewState(activeThreadRef);
+  // Fork: held open for the thread on screen, not just for an open preview
+  // panel — see `useOptionalPreviewSession`.
+  useOptionalPreviewSession(isPreviewSupportedInRuntime() ? activeThreadRef : null);
   const { servers: activePreviewServers } = useThreadPreviewServers(activeThreadRef);
   const activePreviewServerLabelsByOrigin = useMemo(() => {
     const labels = new Map<string, string>();
@@ -3721,7 +3726,7 @@ export default function ChatView(props: ChatViewProps) {
           }
           return;
         }
-        const { terminalId, url } = runResult.value;
+        const { terminalId, url, previewTabId } = runResult.value;
         // Register the environment's terminal *before* opening the panel.
         // Opening it first finds the thread with no terminal yet and
         // synthesizes the default `term-1`, so the panel attaches to a session
@@ -3731,7 +3736,13 @@ export default function ChatView(props: ChatViewProps) {
         storeSetActiveTerminal(activeThreadRef, terminalId);
         setTerminalOpen(true);
         setTerminalFocusRequestId((value) => value + 1);
-        if (url) {
+        // Fork: an environment that opened the tab itself has already given the
+        // thread one, and opening a second here would leave a duplicate behind
+        // on every run. Only the panel is this client's to open. An environment
+        // that did not (an older Moatless) still needs the tab made for it.
+        if (previewTabId) {
+          useRightPanelStore.getState().openBrowser(activeThreadRef, previewTabId);
+        } else if (url) {
           void addBrowserSurface({ threadRef: activeThreadRef, openPreview, url });
         }
         return;
@@ -4339,6 +4350,48 @@ export default function ChatView(props: ChatViewProps) {
     supportsPullRequests,
     threadDetailLoading,
   ]);
+
+  // Fork: show a tab this client was told about rather than asked for. A
+  // script run from `moat tasks scripts run` opens its tab on the thread, and
+  // the point of that tab is to be looked at — but nothing on this side asked
+  // for it, so without this it waits behind a closed panel. Same setting as the
+  // two panels above, and the same restraint on a phone-width sheet, which
+  // covers the conversation.
+  const announcedPreviewOpens = activePreviewState.announcedOpens;
+  const announcedPreviewTabId = activePreviewState.announcedTabId;
+  const proactivePreviewObservationRef = useRef<{
+    threadKey: string;
+    opens: number;
+  } | null>(null);
+  useEffect(() => {
+    if (activeThreadKey === null || activeThreadRef === null) {
+      proactivePreviewObservationRef.current = null;
+      return;
+    }
+    const previousObservation = proactivePreviewObservationRef.current;
+    proactivePreviewObservationRef.current = {
+      threadKey: activeThreadKey,
+      opens: announcedPreviewOpens,
+    };
+    // Arriving at a thread is not an announcement: only a count that moved
+    // while this view watched the same thread is one.
+    if (previousObservation?.threadKey !== activeThreadKey) return;
+    if (previousObservation.opens >= announcedPreviewOpens) return;
+    if (announcedPreviewTabId === null || !clientSettingsHydrated) return;
+    if (!settings.proactivePanelsEnabled || shouldUseRightPanelSheet) return;
+    if (!isPreviewSupportedInRuntime()) return;
+
+    useRightPanelStore.getState().openBrowser(activeThreadRef, announcedPreviewTabId);
+  }, [
+    activeThreadKey,
+    activeThreadRef,
+    announcedPreviewOpens,
+    announcedPreviewTabId,
+    clientSettingsHydrated,
+    settings.proactivePanelsEnabled,
+    shouldUseRightPanelSheet,
+  ]);
+
   const togglePreviewPanel = useCallback(() => {
     if (!activeThreadRef || !isPreviewSupportedInRuntime()) return;
     if (previewPanelOpen) {

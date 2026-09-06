@@ -34,6 +34,24 @@ describe("ScriptsRunResult", () => {
       url: null,
     });
   });
+
+  // Fork: the environment opens the tab, so the client is told which one
+  // rather than opening a second beside it.
+  it("carries the tab the environment opened on the served port", () => {
+    expect(
+      decodeResult({
+        terminalId: "script-dev",
+        url: "https://task--3000.example.dev",
+        previewTabId: "script-dev",
+      }).previewTabId,
+    ).toBe("script-dev");
+  });
+
+  // An environment that opens no tabs — upstream's own server, or a Moatless
+  // older than this field — answers without it, and the client opens its own.
+  it("decodes a result from an environment that opens no tab", () => {
+    expect(decodeResult({ terminalId: "script-dev", url: null }).previewTabId).toBeUndefined();
+  });
 });
 
 describe("a stopped sandbox refusing scripts.run", () => {
