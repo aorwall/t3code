@@ -53,6 +53,7 @@ import {
   canConnectGithubApp,
   claudeTokenSecret,
   codexState,
+  githubConnectLabel,
   githubConnectOutcome,
   githubConnectUrl,
   githubCredential,
@@ -176,6 +177,7 @@ function GithubSection() {
 
   const credential = useMemo(() => githubCredential(data), [data]);
   const canConnect = canConnectGithubApp(data);
+  const connectLabel = githubConnectLabel(data);
 
   const disconnect = useMoatlessCommand<void, GitHubProviderTokenStatusResponse>(
     () => deleteGithubConfig(),
@@ -231,17 +233,14 @@ function GithubSection() {
             }
             actions={
               <>
-                {credential.kind === "none" && canConnect ? (
-                  <Button size="xs" onClick={connect}>
-                    Connect GitHub
-                  </Button>
-                ) : null}
-                {/* Reauthorizing is how an expired or narrowed app credential is
-                    repaired, so it is offered while one is already in place. */}
-                {credential.kind === "app" && canConnect ? (
-                  <Button size="xs" variant="ghost" onClick={connect}>
-                    <RefreshCwIcon />
-                    Reauthorize
+                {connectLabel !== null ? (
+                  <Button
+                    size="xs"
+                    variant={credential.kind === "none" ? "default" : "ghost"}
+                    onClick={connect}
+                  >
+                    {credential.kind === "app" ? <RefreshCwIcon /> : null}
+                    {connectLabel}
                   </Button>
                 ) : null}
                 {data?.hasPatOverride === true ? (

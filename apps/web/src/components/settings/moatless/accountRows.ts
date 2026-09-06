@@ -97,6 +97,38 @@ export function canConnectGithubApp(status: GitHubProviderTokenStatusResponse | 
 }
 
 /**
+ * The label for the app-authorization button, or `null` when this viewer has no
+ * app flow worth offering.
+ *
+ * Offered beside a personal access token rather than instead of one. A token
+ * overrides the app credential; it does not replace the option of having one.
+ * Authorizing while a token is set stashes the app credential, and
+ * `hasPatOverride` then offers the switch to it — so without this the only way
+ * to reach the app is deleting the token first and trusting it comes back.
+ */
+export function githubConnectLabel(
+  status: GitHubProviderTokenStatusResponse | null,
+): string | null {
+  if (!canConnectGithubApp(status)) {
+    return null;
+  }
+  switch (githubCredential(status).kind) {
+    case "none":
+      return "Connect GitHub";
+    // Reauthorizing is how an expired or narrowed credential is repaired, so it
+    // is offered while one is already in place.
+    case "app":
+      return "Reauthorize";
+    case "pat":
+      return "Connect GitHub App";
+    // An installation acts as the app itself, not as the viewer, so there is no
+    // user authorization here to run.
+    case "installation":
+      return null;
+  }
+}
+
+/**
  * Where to send the browser to authorize the app.
  *
  * `returnTo` is absolute because the callback lands on the backend's own host,

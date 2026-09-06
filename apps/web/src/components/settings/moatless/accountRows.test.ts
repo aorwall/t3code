@@ -11,6 +11,7 @@ import {
   canConnectGithubApp,
   claudeTokenSecret,
   codexState,
+  githubConnectLabel,
   githubConnectOutcome,
   githubConnectUrl,
   githubCredential,
@@ -91,6 +92,39 @@ describe("canConnectGithubApp", () => {
     expect(canConnectGithubApp(github({ appConnectAvailable: true }))).toBe(true);
     expect(canConnectGithubApp(github({ appConnectAvailable: false }))).toBe(false);
     expect(canConnectGithubApp(null)).toBe(false);
+  });
+});
+
+describe("githubConnectLabel", () => {
+  it("offers the app flow to someone who already set a token", () => {
+    // A token overrides the app credential; it does not replace the option of
+    // having one. Without this the only way to reach the app is deleting the
+    // token first and trusting it comes back.
+    expect(githubConnectLabel(github({ authMethod: "secret_ref", tokenType: "pat" }))).toBe(
+      "Connect GitHub App",
+    );
+  });
+
+  it("still offers it when the token already overrides a stashed app credential", () => {
+    expect(
+      githubConnectLabel(
+        github({ authMethod: "secret_ref", tokenType: "pat", hasPatOverride: true }),
+      ),
+    ).toBe("Connect GitHub App");
+  });
+
+  it("names the app flow for what it does to each starting point", () => {
+    expect(githubConnectLabel(github({ connected: false }))).toBe("Connect GitHub");
+    expect(githubConnectLabel(github({ authMethod: "github_app" }))).toBe("Reauthorize");
+  });
+
+  it("offers nothing where the deployment has no app to authorize", () => {
+    expect(githubConnectLabel(github({ appConnectAvailable: false }))).toBeNull();
+    expect(githubConnectLabel(null)).toBeNull();
+  });
+
+  it("offers nothing against an installation — it acts as the app, not the viewer", () => {
+    expect(githubConnectLabel(github({ authMethod: "github_app_installation" }))).toBeNull();
   });
 });
 
