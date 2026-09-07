@@ -6,6 +6,7 @@ export type SettingsPath =
   // Personal, not administrative, so it stays out of MoatlessAdminPath below
   // and everyone reaches it.
   | "/settings/account"
+  | "/settings/projects"
   | "/settings/general"
   | "/settings/appearance"
   | "/settings/keybindings"
@@ -94,6 +95,7 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/account": "Account",
   "/settings/general": "General",
   "/settings/appearance": "Appearance",
+  "/settings/projects": "Projects",
   "/settings/keybindings": "Keybindings",
   "/settings/providers": "Providers",
   "/settings/browser": "Browser",
@@ -114,6 +116,14 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
  * that may not be mounted point at their nearest stable section instead.
  */
 export const SETTINGS_SEARCH_ITEMS = [
+  {
+    id: "project-defaults",
+    title: "Project defaults and overrides",
+    to: "/settings/projects",
+    searchTerms: [
+      "model workspace browser machines projects inheritance automatic pull checkout grouping actions scripts",
+    ],
+  },
   {
     id: "color-scheme",
     title: "Color scheme",
@@ -255,11 +265,9 @@ export const SETTINGS_SEARCH_ITEMS = [
   },
   {
     id: "composer-collapse",
-    title: "Collapse composer",
+    title: "Collapse composer on scroll",
     to: "/settings/general",
-    searchTerms: [
-      "composer rest resting unfocus blur focus click away scroll wheel conversation timeline shrink minimize",
-    ],
+    searchTerms: ["composer rest resting scroll wheel conversation timeline shrink minimize"],
   },
   {
     id: "provider-update-checks",
@@ -286,14 +294,13 @@ export const SETTINGS_SEARCH_ITEMS = [
   {
     id: "new-threads",
     title: "New threads",
-    to: "/settings/general",
+    to: "/settings/projects",
     searchTerms: ["default workspace mode draft local worktree"],
   },
   {
     id: "start-from-origin",
     title: "Start from origin",
     to: "/settings/general",
-    targetId: "new-threads",
     searchTerms: ["new worktrees latest matching remote branch local"],
   },
   {
@@ -396,8 +403,7 @@ export const SETTINGS_SEARCH_ITEMS = [
   {
     id: "agent-browser-access",
     title: "Agent browser access",
-    // Fork: routed to /settings/browser, not upstream's /settings/integrations.
-    to: "/settings/browser",
+    to: "/settings/projects",
     searchTerms: ["allow open drive preview tools sessions"],
   },
   {
@@ -561,6 +567,14 @@ export const SETTINGS_SEARCH_ITEMS = [
     title: "Remote environments",
     to: "/settings/connections",
     searchTerms: ["add pair backend host code ssh config agent tunnel saved t3 connect"],
+  },
+  {
+    id: "load-balancing",
+    title: "Load balancing",
+    to: "/settings/connections",
+    searchTerms: [
+      "automatic machine environment resources cpu memory capacity preference weight shared projects",
+    ],
   },
   {
     id: "archive",

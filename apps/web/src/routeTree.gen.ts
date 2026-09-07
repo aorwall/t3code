@@ -23,6 +23,7 @@ import { Route as SettingsSourceControlRouteImport } from './routes/settings.sou
 import { Route as SettingsSkillsRouteImport } from './routes/settings.skills'
 import { Route as SettingsSecretsRouteImport } from './routes/settings.secrets'
 import { Route as SettingsProvidersRouteImport } from './routes/settings.providers'
+import { Route as SettingsProjectsRouteImport } from './routes/settings.projects'
 import { Route as SettingsLoopsRouteImport } from './routes/settings.loops'
 import { Route as SettingsKeybindingsRouteImport } from './routes/settings.keybindings'
 import { Route as SettingsIntegrationsRouteImport } from './routes/settings.integrations'
@@ -111,6 +112,11 @@ const SettingsSecretsRoute = SettingsSecretsRouteImport.update({
 const SettingsProvidersRoute = SettingsProvidersRouteImport.update({
   id: '/providers',
   path: '/providers',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsProjectsRoute = SettingsProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
   getParentRoute: () => SettingsRoute,
 } as any)
 const SettingsLoopsRoute = SettingsLoopsRouteImport.update({
@@ -238,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/keybindings': typeof SettingsKeybindingsRoute
   '/settings/loops': typeof SettingsLoopsRoute
+  '/settings/projects': typeof SettingsProjectsRoute
   '/settings/providers': typeof SettingsProvidersRoute
   '/settings/secrets': typeof SettingsSecretsRoute
   '/settings/skills': typeof SettingsSkillsRoute
@@ -272,6 +279,7 @@ export interface FileRoutesByTo {
   '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/keybindings': typeof SettingsKeybindingsRoute
   '/settings/loops': typeof SettingsLoopsRoute
+  '/settings/projects': typeof SettingsProjectsRoute
   '/settings/providers': typeof SettingsProvidersRoute
   '/settings/secrets': typeof SettingsSecretsRoute
   '/settings/skills': typeof SettingsSkillsRoute
@@ -309,6 +317,7 @@ export interface FileRoutesById {
   '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/keybindings': typeof SettingsKeybindingsRoute
   '/settings/loops': typeof SettingsLoopsRoute
+  '/settings/projects': typeof SettingsProjectsRoute
   '/settings/providers': typeof SettingsProvidersRoute
   '/settings/secrets': typeof SettingsSecretsRoute
   '/settings/skills': typeof SettingsSkillsRoute
@@ -347,6 +356,7 @@ export interface FileRouteTypes {
     | '/settings/integrations'
     | '/settings/keybindings'
     | '/settings/loops'
+    | '/settings/projects'
     | '/settings/providers'
     | '/settings/secrets'
     | '/settings/skills'
@@ -381,6 +391,7 @@ export interface FileRouteTypes {
     | '/settings/integrations'
     | '/settings/keybindings'
     | '/settings/loops'
+    | '/settings/projects'
     | '/settings/providers'
     | '/settings/secrets'
     | '/settings/skills'
@@ -417,6 +428,7 @@ export interface FileRouteTypes {
     | '/settings/integrations'
     | '/settings/keybindings'
     | '/settings/loops'
+    | '/settings/projects'
     | '/settings/providers'
     | '/settings/secrets'
     | '/settings/skills'
@@ -543,6 +555,13 @@ declare module '@tanstack/react-router' {
       path: '/providers'
       fullPath: '/settings/providers'
       preLoaderRoute: typeof SettingsProvidersRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/projects': {
+      id: '/settings/projects'
+      path: '/projects'
+      fullPath: '/settings/projects'
+      preLoaderRoute: typeof SettingsProjectsRouteImport
       parentRoute: typeof SettingsRoute
     }
     '/settings/loops': {
@@ -715,6 +734,7 @@ interface SettingsRouteChildren {
   SettingsIntegrationsRoute: typeof SettingsIntegrationsRoute
   SettingsKeybindingsRoute: typeof SettingsKeybindingsRoute
   SettingsLoopsRoute: typeof SettingsLoopsRoute
+  SettingsProjectsRoute: typeof SettingsProjectsRoute
   SettingsProvidersRoute: typeof SettingsProvidersRoute
   SettingsSecretsRoute: typeof SettingsSecretsRoute
   SettingsSkillsRoute: typeof SettingsSkillsRoute
@@ -739,6 +759,7 @@ const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsIntegrationsRoute: SettingsIntegrationsRoute,
   SettingsKeybindingsRoute: SettingsKeybindingsRoute,
   SettingsLoopsRoute: SettingsLoopsRoute,
+  SettingsProjectsRoute: SettingsProjectsRoute,
   SettingsProvidersRoute: SettingsProvidersRoute,
   SettingsSecretsRoute: SettingsSecretsRoute,
   SettingsSkillsRoute: SettingsSkillsRoute,
