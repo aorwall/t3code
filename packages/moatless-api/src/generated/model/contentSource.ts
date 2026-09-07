@@ -13,10 +13,9 @@
  * (`sandbox-control::workspace_snapshot`), so a caller has to be able to tell
  * live content from content that stopped changing when the pod did.
  */
-export type ContentSource = typeof ContentSource[keyof typeof ContentSource];
-
+export type ContentSource = (typeof ContentSource)[keyof typeof ContentSource];
 
 export const ContentSource = {
-  sandbox: 'sandbox',
-  snapshot: 'snapshot',
+  sandbox: "sandbox",
+  snapshot: "snapshot",
 } as const;

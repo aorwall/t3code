@@ -5,53 +5,57 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type {
-  ErrorBody,
-  ListRepositorySkillsParams,
-  ListSkillsResponse
-} from '../model';
+import type { ErrorBody, ListRepositorySkillsParams, ListSkillsResponse } from "../model";
 
-import { customInstance } from '../../customInstance.ts';
+import { customInstance } from "../../customInstance.ts";
 
 export type listRepositorySkillsResponse200 = {
-  data: ListSkillsResponse
-  status: 200
-}
+  data: ListSkillsResponse;
+  status: 200;
+};
 
 export type listRepositorySkillsResponse404 = {
-  data: ErrorBody
-  status: 404
-}
+  data: ErrorBody;
+  status: 404;
+};
 
 export type listRepositorySkillsResponse502 = {
-  data: ErrorBody
-  status: 502
-}
-
-export type listRepositorySkillsResponseSuccess = (listRepositorySkillsResponse200) & {
-  headers: Headers;
-};
-export type listRepositorySkillsResponseError = (listRepositorySkillsResponse404 | listRepositorySkillsResponse502) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 502;
 };
 
-export type listRepositorySkillsResponse = (listRepositorySkillsResponseSuccess | listRepositorySkillsResponseError)
+export type listRepositorySkillsResponseSuccess = listRepositorySkillsResponse200 & {
+  headers: Headers;
+};
+export type listRepositorySkillsResponseError = (
+  | listRepositorySkillsResponse404
+  | listRepositorySkillsResponse502
+) & {
+  headers: Headers;
+};
 
-export const getListRepositorySkillsUrl = (repositoryId: string,
-    params?: ListRepositorySkillsParams,) => {
+export type listRepositorySkillsResponse =
+  | listRepositorySkillsResponseSuccess
+  | listRepositorySkillsResponseError;
+
+export const getListRepositorySkillsUrl = (
+  repositoryId: string,
+  params?: ListRepositorySkillsParams,
+) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/repositories/${repositoryId}/skills?${stringifiedParams}` : `/api/v1/repositories/${repositoryId}/skills`
-}
+  return stringifiedParams.length > 0
+    ? `/api/v1/repositories/${repositoryId}/skills?${stringifiedParams}`
+    : `/api/v1/repositories/${repositoryId}/skills`;
+};
 
 /**
  * Returns skills from the workspace repo's own `.claude/skills/` directory
@@ -69,16 +73,16 @@ export const getListRepositorySkillsUrl = (repositoryId: string,
  * omit it and the list is what the caller gets anywhere.
  * @summary List all skills discovered for a repository.
  */
-export const listRepositorySkills = async (repositoryId: string,
-    params?: ListRepositorySkillsParams, options?: Parameters<typeof customInstance>[1]): Promise<listRepositorySkillsResponse> => {
-
-  return customInstance<listRepositorySkillsResponse>(getListRepositorySkillsUrl(repositoryId,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
+export const listRepositorySkills = async (
+  repositoryId: string,
+  params?: ListRepositorySkillsParams,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<listRepositorySkillsResponse> => {
+  return customInstance<listRepositorySkillsResponse>(
+    getListRepositorySkillsUrl(repositoryId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};

@@ -7,11 +7,11 @@
  */
 
 export type GetTaskConnectionsParams = {
-/**
- * When `true`, fill in missing/stale connection statuses with a live
- * GitHub / Linear fetch (bounded concurrency). Default is DB-only and
- * fast.
- * @nullable
- */
-refresh?: boolean | null;
+  /**
+   * When `true`, fill in missing/stale connection statuses with a live
+   * GitHub / Linear fetch (bounded concurrency). Default is DB-only and
+   * fast.
+   * @nullable
+   */
+  refresh?: boolean | null;
 };

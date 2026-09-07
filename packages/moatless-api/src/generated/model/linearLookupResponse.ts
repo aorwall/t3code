@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { LinearLookupResponseRaw } from './linearLookupResponseRaw.ts';
+import type { LinearLookupResponseRaw } from "./linearLookupResponseRaw.ts";
 
 /**
  * Response for `/lookup`. Returns at most one match (the first

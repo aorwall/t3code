@@ -11,19 +11,19 @@
  */
 export interface GithubCreatePrResponse {
   /**
-     * Set only when the request included a `task_id` and the binding upsert
-     * succeeded.
-     * @nullable
-     */
+   * Set only when the request included a `task_id` and the binding upsert
+   * succeeded.
+   * @nullable
+   */
   bindingId?: string | null;
   htmlUrl: string;
   /** @minimum 0 */
   number: number;
   /**
-     * `true` when the head branch already had an open pull request, so no new
-     * one was created and the existing one is returned instead. The stacked
-     * action reports this as `opened_existing`.
-     */
+   * `true` when the head branch already had an open pull request, so no new
+   * one was created and the existing one is returned instead. The stacked
+   * action reports this as `opened_existing`.
+   */
   openedExisting?: boolean;
   state: string;
   title: string;

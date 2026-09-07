@@ -5,8 +5,8 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { UsageCacheCreation } from './usageCacheCreation.ts';
-import type { UsageServerToolUse } from './usageServerToolUse.ts';
+import type { UsageCacheCreation } from "./usageCacheCreation.ts";
+import type { UsageServerToolUse } from "./usageServerToolUse.ts";
 
 /**
  * Token usage information.
@@ -15,14 +15,14 @@ export interface Usage {
   /** @nullable */
   cache_creation?: UsageCacheCreation;
   /**
-     * @minimum 0
-     * @nullable
-     */
+   * @minimum 0
+   * @nullable
+   */
   cache_creation_input_tokens?: number | null;
   /**
-     * @minimum 0
-     * @nullable
-     */
+   * @minimum 0
+   * @nullable
+   */
   cache_read_input_tokens?: number | null;
   /** @minimum 0 */
   input_tokens: number;

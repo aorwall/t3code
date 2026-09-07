@@ -9,23 +9,22 @@
 /**
  * Agent sub-types.
  */
-export type AgentSubType = typeof AgentSubType[keyof typeof AgentSubType];
-
+export type AgentSubType = (typeof AgentSubType)[keyof typeof AgentSubType];
 
 export const AgentSubType = {
-  started: 'started',
-  stopped: 'stopped',
-  message: 'message',
-  completed: 'completed',
-  error: 'error',
-  pending_response: 'pending_response',
-  session_init: 'session_init',
-  retrying: 'retrying',
-  scheduled: 'scheduled',
-  recovery_started: 'recovery_started',
-  recovery_exhausted: 'recovery_exhausted',
-  session_context_lost: 'session_context_lost',
-  activity: 'activity',
-  context_window: 'context_window',
-  commands_changed: 'commands_changed',
+  started: "started",
+  stopped: "stopped",
+  message: "message",
+  completed: "completed",
+  error: "error",
+  pending_response: "pending_response",
+  session_init: "session_init",
+  retrying: "retrying",
+  scheduled: "scheduled",
+  recovery_started: "recovery_started",
+  recovery_exhausted: "recovery_exhausted",
+  session_context_lost: "session_context_lost",
+  activity: "activity",
+  context_window: "context_window",
+  commands_changed: "commands_changed",
 } as const;

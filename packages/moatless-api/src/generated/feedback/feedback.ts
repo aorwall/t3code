@@ -12,44 +12,45 @@ import type {
   ListAllFeedbackParams,
   ListAllFeedbackResponse,
   ListFeedbackResponse,
-  UpdateFeedbackStatusRequest
-} from '../model';
+  UpdateFeedbackStatusRequest,
+} from "../model";
 
-import { customInstance } from '../../customInstance.ts';
+import { customInstance } from "../../customInstance.ts";
 
 export type listAllFeedbackResponse200 = {
-  data: ListAllFeedbackResponse
-  status: 200
-}
+  data: ListAllFeedbackResponse;
+  status: 200;
+};
 
 export type listAllFeedbackResponse400 = {
-  data: ErrorBody
-  status: 400
-}
-
-export type listAllFeedbackResponseSuccess = (listAllFeedbackResponse200) & {
-  headers: Headers;
-};
-export type listAllFeedbackResponseError = (listAllFeedbackResponse400) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 400;
 };
 
-export type listAllFeedbackResponse = (listAllFeedbackResponseSuccess | listAllFeedbackResponseError)
+export type listAllFeedbackResponseSuccess = listAllFeedbackResponse200 & {
+  headers: Headers;
+};
+export type listAllFeedbackResponseError = listAllFeedbackResponse400 & {
+  headers: Headers;
+};
 
-export const getListAllFeedbackUrl = (params?: ListAllFeedbackParams,) => {
+export type listAllFeedbackResponse = listAllFeedbackResponseSuccess | listAllFeedbackResponseError;
+
+export const getListAllFeedbackUrl = (params?: ListAllFeedbackParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/feedback?${stringifiedParams}` : `/api/v1/feedback`
-}
+  return stringifiedParams.length > 0
+    ? `/api/v1/feedback?${stringifiedParams}`
+    : `/api/v1/feedback`;
+};
 
 /**
  * @summary List feedback across every task the caller may read, newest first. The
@@ -57,167 +58,164 @@ per-task endpoint answers "does this message have feedback"; this one
 answers "what has the fleet been told", which is why it filters by
 workspace, repository, source, surface, category, submitter, and age.
  */
-export const listAllFeedback = async (params?: ListAllFeedbackParams, options?: Parameters<typeof customInstance>[1]): Promise<listAllFeedbackResponse> => {
-
-  return customInstance<listAllFeedbackResponse>(getListAllFeedbackUrl(params),
-  {
+export const listAllFeedback = async (
+  params?: ListAllFeedbackParams,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<listAllFeedbackResponse> => {
+  return customInstance<listAllFeedbackResponse>(getListAllFeedbackUrl(params), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type createFeedbackResponse200 = {
-  data: FeedbackResponse
-  status: 200
-}
+  data: FeedbackResponse;
+  status: 200;
+};
 
 export type createFeedbackResponse400 = {
-  data: ErrorBody
-  status: 400
-}
+  data: ErrorBody;
+  status: 400;
+};
 
 export type createFeedbackResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type createFeedbackResponseSuccess = (createFeedbackResponse200) & {
-  headers: Headers;
-};
-export type createFeedbackResponseError = (createFeedbackResponse400 | createFeedbackResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type createFeedbackResponse = (createFeedbackResponseSuccess | createFeedbackResponseError)
+export type createFeedbackResponseSuccess = createFeedbackResponse200 & {
+  headers: Headers;
+};
+export type createFeedbackResponseError = (
+  | createFeedbackResponse400
+  | createFeedbackResponse404
+) & {
+  headers: Headers;
+};
+
+export type createFeedbackResponse = createFeedbackResponseSuccess | createFeedbackResponseError;
 
 export const getCreateFeedbackUrl = () => {
-
-
-
-
-  return `/api/v1/feedback`
-}
+  return `/api/v1/feedback`;
+};
 
 /**
  * @summary Create a new feedback row scoped to a task (and optionally a message
 or tool call within that task).
  */
-export const createFeedback = async (createFeedbackRequest: CreateFeedbackRequest, options?: Parameters<typeof customInstance>[1]): Promise<createFeedbackResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const createFeedback = async (
+  createFeedbackRequest: CreateFeedbackRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<createFeedbackResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<createFeedbackResponse>(getCreateFeedbackUrl(),
-  {
+  return customInstance<createFeedbackResponse>(getCreateFeedbackUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(createFeedbackRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(createFeedbackRequest),
+  });
+};
 
 export type setFeedbackStatusResponse200 = {
-  data: FeedbackResponse
-  status: 200
-}
+  data: FeedbackResponse;
+  status: 200;
+};
 
 export type setFeedbackStatusResponse400 = {
-  data: ErrorBody
-  status: 400
-}
+  data: ErrorBody;
+  status: 400;
+};
 
 export type setFeedbackStatusResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type setFeedbackStatusResponseSuccess = (setFeedbackStatusResponse200) & {
-  headers: Headers;
-};
-export type setFeedbackStatusResponseError = (setFeedbackStatusResponse400 | setFeedbackStatusResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type setFeedbackStatusResponse = (setFeedbackStatusResponseSuccess | setFeedbackStatusResponseError)
+export type setFeedbackStatusResponseSuccess = setFeedbackStatusResponse200 & {
+  headers: Headers;
+};
+export type setFeedbackStatusResponseError = (
+  | setFeedbackStatusResponse400
+  | setFeedbackStatusResponse404
+) & {
+  headers: Headers;
+};
 
-export const getSetFeedbackStatusUrl = (feedbackId: string,) => {
+export type setFeedbackStatusResponse =
+  | setFeedbackStatusResponseSuccess
+  | setFeedbackStatusResponseError;
 
-
-
-
-  return `/api/v1/feedback/${feedbackId}/status`
-}
+export const getSetFeedbackStatusUrl = (feedbackId: string) => {
+  return `/api/v1/feedback/${feedbackId}/status`;
+};
 
 /**
  * @summary Set a note's triage status. The row records who set it, so a note closed by
 the same context that filed it stays visible as such.
  */
-export const setFeedbackStatus = async (feedbackId: string,
-    updateFeedbackStatusRequest: UpdateFeedbackStatusRequest, options?: Parameters<typeof customInstance>[1]): Promise<setFeedbackStatusResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const setFeedbackStatus = async (
+  feedbackId: string,
+  updateFeedbackStatusRequest: UpdateFeedbackStatusRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<setFeedbackStatusResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<setFeedbackStatusResponse>(getSetFeedbackStatusUrl(feedbackId),
-  {
+  return customInstance<setFeedbackStatusResponse>(getSetFeedbackStatusUrl(feedbackId), {
     ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(updateFeedbackStatusRequest)
-  }
-);}
-
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateFeedbackStatusRequest),
+  });
+};
 
 export type listTaskFeedbackResponse200 = {
-  data: ListFeedbackResponse
-  status: 200
-}
+  data: ListFeedbackResponse;
+  status: 200;
+};
 
 export type listTaskFeedbackResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type listTaskFeedbackResponseSuccess = (listTaskFeedbackResponse200) & {
-  headers: Headers;
-};
-export type listTaskFeedbackResponseError = (listTaskFeedbackResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type listTaskFeedbackResponse = (listTaskFeedbackResponseSuccess | listTaskFeedbackResponseError)
+export type listTaskFeedbackResponseSuccess = listTaskFeedbackResponse200 & {
+  headers: Headers;
+};
+export type listTaskFeedbackResponseError = listTaskFeedbackResponse404 & {
+  headers: Headers;
+};
 
-export const getListTaskFeedbackUrl = (taskId: string,) => {
+export type listTaskFeedbackResponse =
+  | listTaskFeedbackResponseSuccess
+  | listTaskFeedbackResponseError;
 
-
-
-
-  return `/api/v1/tasks/${taskId}/feedback`
-}
+export const getListTaskFeedbackUrl = (taskId: string) => {
+  return `/api/v1/tasks/${taskId}/feedback`;
+};
 
 /**
  * @summary List all feedback rows for a task, ordered oldest → newest. Used by the
 frontend to render the "has feedback" indicator on messages and tool calls.
  */
-export const listTaskFeedback = async (taskId: string, options?: Parameters<typeof customInstance>[1]): Promise<listTaskFeedbackResponse> => {
-
-  return customInstance<listTaskFeedbackResponse>(getListTaskFeedbackUrl(taskId),
-  {
+export const listTaskFeedback = async (
+  taskId: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<listTaskFeedbackResponse> => {
+  return customInstance<listTaskFeedbackResponse>(getListTaskFeedbackUrl(taskId), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
+    method: "GET",
+  });
+};

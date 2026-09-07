@@ -11,13 +11,12 @@
  *
  * `Failed` covers all error conditions (was: Failed, Error, Timeout — consolidated).
  */
-export type ServerSubType = typeof ServerSubType[keyof typeof ServerSubType];
-
+export type ServerSubType = (typeof ServerSubType)[keyof typeof ServerSubType];
 
 export const ServerSubType = {
-  installing: 'installing',
-  starting: 'starting',
-  started: 'started',
-  stopped: 'stopped',
-  failed: 'failed',
+  installing: "installing",
+  starting: "starting",
+  started: "started",
+  stopped: "stopped",
+  failed: "failed",
 } as const;

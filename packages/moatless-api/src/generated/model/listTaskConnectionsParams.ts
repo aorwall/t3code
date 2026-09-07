@@ -7,19 +7,19 @@
  */
 
 export type ListTaskConnectionsParams = {
-/**
- * @nullable
- */
-limit?: number | null;
-/**
- * @nullable
- */
-offset?: number | null;
-/**
- * When `true`, fill in missing/stale connection statuses with a live
- * GitHub / Linear fetch (bounded concurrency). Default is DB-only and
- * fast.
- * @nullable
- */
-refresh?: boolean | null;
+  /**
+   * @nullable
+   */
+  limit?: number | null;
+  /**
+   * @nullable
+   */
+  offset?: number | null;
+  /**
+   * When `true`, fill in missing/stale connection statuses with a live
+   * GitHub / Linear fetch (bounded concurrency). Default is DB-only and
+   * fast.
+   * @nullable
+   */
+  refresh?: boolean | null;
 };

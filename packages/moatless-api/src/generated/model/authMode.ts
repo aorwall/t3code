@@ -9,10 +9,9 @@
 /**
  * How this deployment authenticates users.
  */
-export type AuthMode = typeof AuthMode[keyof typeof AuthMode];
-
+export type AuthMode = (typeof AuthMode)[keyof typeof AuthMode];
 
 export const AuthMode = {
-  password: 'password',
-  oauth: 'oauth',
+  password: "password",
+  oauth: "oauth",
 } as const;

@@ -5,13 +5,13 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { SecretKind } from './secretKind.ts';
+import type { SecretKind } from "./secretKind.ts";
 
 export interface PatchSecretRequest {
   /**
-     * Toggle the secret active/inactive without touching its value.
-     * @nullable
-     */
+   * Toggle the secret active/inactive without touching its value.
+   * @nullable
+   */
   enabled?: boolean | null;
   /** @nullable */
   externalRef?: string | null;

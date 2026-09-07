@@ -8,20 +8,20 @@
 
 export interface RegisterGitHubAppRequest {
   /**
-     * GitHub's own numeric id for the App.
-     * @minimum 0
-     */
+   * GitHub's own numeric id for the App.
+   * @minimum 0
+   */
   appId: number;
   /**
-     * @minimum 0
-     * @nullable
-     */
+   * @minimum 0
+   * @nullable
+   */
   defaultInstallationId?: number | null;
   /** Short stable name the App will be known by, chosen at registration. */
   githubAppKey: string;
   /**
-     * PEM-encoded signing key. Proved against GitHub before anything is
-     * stored, and never returned by any read path afterwards.
-     */
+   * PEM-encoded signing key. Proved against GitHub before anything is
+   * stored, and never returned by any read path afterwards.
+   */
   privateKeyPem: string;
 }

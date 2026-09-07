@@ -11,390 +11,391 @@ import type {
   CodexDeviceCodePollResponse,
   CodexDeviceCodeStartResponse,
   ErrorBody,
-  SaveCodexAgentHarnessCredentialRequest
-} from '../model';
+  SaveCodexAgentHarnessCredentialRequest,
+} from "../model";
 
-import { customInstance } from '../../customInstance.ts';
+import { customInstance } from "../../customInstance.ts";
 
 export type adminSaveGlobalCodexAuthResponse200 = {
-  data: CodexAgentHarnessCredentialStatusResponse
-  status: 200
-}
+  data: CodexAgentHarnessCredentialStatusResponse;
+  status: 200;
+};
 
 export type adminSaveGlobalCodexAuthResponse400 = {
-  data: ErrorBody
-  status: 400
-}
+  data: ErrorBody;
+  status: 400;
+};
 
 export type adminSaveGlobalCodexAuthResponse401 = {
-  data: ErrorBody
-  status: 401
-}
+  data: ErrorBody;
+  status: 401;
+};
 
 export type adminSaveGlobalCodexAuthResponse403 = {
-  data: ErrorBody
-  status: 403
-}
-
-export type adminSaveGlobalCodexAuthResponseSuccess = (adminSaveGlobalCodexAuthResponse200) & {
-  headers: Headers;
-};
-export type adminSaveGlobalCodexAuthResponseError = (adminSaveGlobalCodexAuthResponse400 | adminSaveGlobalCodexAuthResponse401 | adminSaveGlobalCodexAuthResponse403) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 403;
 };
 
-export type adminSaveGlobalCodexAuthResponse = (adminSaveGlobalCodexAuthResponseSuccess | adminSaveGlobalCodexAuthResponseError)
+export type adminSaveGlobalCodexAuthResponseSuccess = adminSaveGlobalCodexAuthResponse200 & {
+  headers: Headers;
+};
+export type adminSaveGlobalCodexAuthResponseError = (
+  | adminSaveGlobalCodexAuthResponse400
+  | adminSaveGlobalCodexAuthResponse401
+  | adminSaveGlobalCodexAuthResponse403
+) & {
+  headers: Headers;
+};
+
+export type adminSaveGlobalCodexAuthResponse =
+  | adminSaveGlobalCodexAuthResponseSuccess
+  | adminSaveGlobalCodexAuthResponseError;
 
 export const getAdminSaveGlobalCodexAuthUrl = () => {
+  return `/api/v1/admin/settings/codex/config`;
+};
 
-
-
-
-  return `/api/v1/admin/settings/codex/config`
-}
-
-export const adminSaveGlobalCodexAuth = async (saveCodexAgentHarnessCredentialRequest: SaveCodexAgentHarnessCredentialRequest, options?: Parameters<typeof customInstance>[1]): Promise<adminSaveGlobalCodexAuthResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const adminSaveGlobalCodexAuth = async (
+  saveCodexAgentHarnessCredentialRequest: SaveCodexAgentHarnessCredentialRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<adminSaveGlobalCodexAuthResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<adminSaveGlobalCodexAuthResponse>(getAdminSaveGlobalCodexAuthUrl(),
-  {
+  return customInstance<adminSaveGlobalCodexAuthResponse>(getAdminSaveGlobalCodexAuthUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(saveCodexAgentHarnessCredentialRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(saveCodexAgentHarnessCredentialRequest),
+  });
+};
 
 export type adminDeleteGlobalCodexConfigResponse200 = {
-  data: CodexAgentHarnessCredentialStatusResponse
-  status: 200
-}
+  data: CodexAgentHarnessCredentialStatusResponse;
+  status: 200;
+};
 
 export type adminDeleteGlobalCodexConfigResponse401 = {
-  data: ErrorBody
-  status: 401
-}
+  data: ErrorBody;
+  status: 401;
+};
 
 export type adminDeleteGlobalCodexConfigResponse403 = {
-  data: ErrorBody
-  status: 403
-}
-
-export type adminDeleteGlobalCodexConfigResponseSuccess = (adminDeleteGlobalCodexConfigResponse200) & {
-  headers: Headers;
-};
-export type adminDeleteGlobalCodexConfigResponseError = (adminDeleteGlobalCodexConfigResponse401 | adminDeleteGlobalCodexConfigResponse403) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 403;
 };
 
-export type adminDeleteGlobalCodexConfigResponse = (adminDeleteGlobalCodexConfigResponseSuccess | adminDeleteGlobalCodexConfigResponseError)
+export type adminDeleteGlobalCodexConfigResponseSuccess =
+  adminDeleteGlobalCodexConfigResponse200 & {
+    headers: Headers;
+  };
+export type adminDeleteGlobalCodexConfigResponseError = (
+  | adminDeleteGlobalCodexConfigResponse401
+  | adminDeleteGlobalCodexConfigResponse403
+) & {
+  headers: Headers;
+};
+
+export type adminDeleteGlobalCodexConfigResponse =
+  | adminDeleteGlobalCodexConfigResponseSuccess
+  | adminDeleteGlobalCodexConfigResponseError;
 
 export const getAdminDeleteGlobalCodexConfigUrl = () => {
+  return `/api/v1/admin/settings/codex/config`;
+};
 
-
-
-
-  return `/api/v1/admin/settings/codex/config`
-}
-
-export const adminDeleteGlobalCodexConfig = async ( options?: Parameters<typeof customInstance>[1]): Promise<adminDeleteGlobalCodexConfigResponse> => {
-
-  return customInstance<adminDeleteGlobalCodexConfigResponse>(getAdminDeleteGlobalCodexConfigUrl(),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
+export const adminDeleteGlobalCodexConfig = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<adminDeleteGlobalCodexConfigResponse> => {
+  return customInstance<adminDeleteGlobalCodexConfigResponse>(
+    getAdminDeleteGlobalCodexConfigUrl(),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
 
 export type adminSetCodexProviderTokenHandlerResponse200 = {
-  data: CodexAgentHarnessCredentialStatusResponse
-  status: 200
-}
+  data: CodexAgentHarnessCredentialStatusResponse;
+  status: 200;
+};
 
 export type adminSetCodexProviderTokenHandlerResponse400 = {
-  data: ErrorBody
-  status: 400
-}
+  data: ErrorBody;
+  status: 400;
+};
 
 export type adminSetCodexProviderTokenHandlerResponse401 = {
-  data: ErrorBody
-  status: 401
-}
+  data: ErrorBody;
+  status: 401;
+};
 
 export type adminSetCodexProviderTokenHandlerResponse403 = {
-  data: ErrorBody
-  status: 403
-}
+  data: ErrorBody;
+  status: 403;
+};
 
 export type adminSetCodexProviderTokenHandlerResponse500 = {
-  data: ErrorBody
-  status: 500
-}
-
-export type adminSetCodexProviderTokenHandlerResponseSuccess = (adminSetCodexProviderTokenHandlerResponse200) & {
-  headers: Headers;
-};
-export type adminSetCodexProviderTokenHandlerResponseError = (adminSetCodexProviderTokenHandlerResponse400 | adminSetCodexProviderTokenHandlerResponse401 | adminSetCodexProviderTokenHandlerResponse403 | adminSetCodexProviderTokenHandlerResponse500) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 500;
 };
 
-export type adminSetCodexProviderTokenHandlerResponse = (adminSetCodexProviderTokenHandlerResponseSuccess | adminSetCodexProviderTokenHandlerResponseError)
+export type adminSetCodexProviderTokenHandlerResponseSuccess =
+  adminSetCodexProviderTokenHandlerResponse200 & {
+    headers: Headers;
+  };
+export type adminSetCodexProviderTokenHandlerResponseError = (
+  | adminSetCodexProviderTokenHandlerResponse400
+  | adminSetCodexProviderTokenHandlerResponse401
+  | adminSetCodexProviderTokenHandlerResponse403
+  | adminSetCodexProviderTokenHandlerResponse500
+) & {
+  headers: Headers;
+};
 
-export const getAdminSetCodexProviderTokenHandlerUrl = (userId: string,) => {
+export type adminSetCodexProviderTokenHandlerResponse =
+  | adminSetCodexProviderTokenHandlerResponseSuccess
+  | adminSetCodexProviderTokenHandlerResponseError;
 
+export const getAdminSetCodexProviderTokenHandlerUrl = (userId: string) => {
+  return `/api/v1/admin/users/${userId}/provider-tokens/codex`;
+};
 
-
-
-  return `/api/v1/admin/users/${userId}/provider-tokens/codex`
-}
-
-export const adminSetCodexProviderTokenHandler = async (userId: string,
-    saveCodexAgentHarnessCredentialRequest: SaveCodexAgentHarnessCredentialRequest, options?: Parameters<typeof customInstance>[1]): Promise<adminSetCodexProviderTokenHandlerResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const adminSetCodexProviderTokenHandler = async (
+  userId: string,
+  saveCodexAgentHarnessCredentialRequest: SaveCodexAgentHarnessCredentialRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<adminSetCodexProviderTokenHandlerResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<adminSetCodexProviderTokenHandlerResponse>(getAdminSetCodexProviderTokenHandlerUrl(userId),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(saveCodexAgentHarnessCredentialRequest)
-  }
-);}
-
+  return customInstance<adminSetCodexProviderTokenHandlerResponse>(
+    getAdminSetCodexProviderTokenHandlerUrl(userId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+      body: JSON.stringify(saveCodexAgentHarnessCredentialRequest),
+    },
+  );
+};
 
 export type getCodexConfigResponse200 = {
-  data: CodexAgentHarnessCredentialStatusResponse
-  status: 200
-}
+  data: CodexAgentHarnessCredentialStatusResponse;
+  status: 200;
+};
 
 export type getCodexConfigResponse401 = {
-  data: ErrorBody
-  status: 401
-}
-
-export type getCodexConfigResponseSuccess = (getCodexConfigResponse200) & {
-  headers: Headers;
-};
-export type getCodexConfigResponseError = (getCodexConfigResponse401) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 401;
 };
 
-export type getCodexConfigResponse = (getCodexConfigResponseSuccess | getCodexConfigResponseError)
+export type getCodexConfigResponseSuccess = getCodexConfigResponse200 & {
+  headers: Headers;
+};
+export type getCodexConfigResponseError = getCodexConfigResponse401 & {
+  headers: Headers;
+};
+
+export type getCodexConfigResponse = getCodexConfigResponseSuccess | getCodexConfigResponseError;
 
 export const getGetCodexConfigUrl = () => {
+  return `/api/v1/settings/codex/config`;
+};
 
-
-
-
-  return `/api/v1/settings/codex/config`
-}
-
-export const getCodexConfig = async ( options?: Parameters<typeof customInstance>[1]): Promise<getCodexConfigResponse> => {
-
-  return customInstance<getCodexConfigResponse>(getGetCodexConfigUrl(),
-  {
+export const getCodexConfig = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<getCodexConfigResponse> => {
+  return customInstance<getCodexConfigResponse>(getGetCodexConfigUrl(), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type saveCodexAuthResponse200 = {
-  data: CodexAgentHarnessCredentialStatusResponse
-  status: 200
-}
+  data: CodexAgentHarnessCredentialStatusResponse;
+  status: 200;
+};
 
 export type saveCodexAuthResponse400 = {
-  data: ErrorBody
-  status: 400
-}
+  data: ErrorBody;
+  status: 400;
+};
 
 export type saveCodexAuthResponse401 = {
-  data: ErrorBody
-  status: 401
-}
+  data: ErrorBody;
+  status: 401;
+};
 
-export type saveCodexAuthResponseSuccess = (saveCodexAuthResponse200) & {
+export type saveCodexAuthResponseSuccess = saveCodexAuthResponse200 & {
   headers: Headers;
 };
 export type saveCodexAuthResponseError = (saveCodexAuthResponse400 | saveCodexAuthResponse401) & {
   headers: Headers;
 };
 
-export type saveCodexAuthResponse = (saveCodexAuthResponseSuccess | saveCodexAuthResponseError)
+export type saveCodexAuthResponse = saveCodexAuthResponseSuccess | saveCodexAuthResponseError;
 
 export const getSaveCodexAuthUrl = () => {
+  return `/api/v1/settings/codex/config`;
+};
 
-
-
-
-  return `/api/v1/settings/codex/config`
-}
-
-export const saveCodexAuth = async (saveCodexAgentHarnessCredentialRequest: SaveCodexAgentHarnessCredentialRequest, options?: Parameters<typeof customInstance>[1]): Promise<saveCodexAuthResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const saveCodexAuth = async (
+  saveCodexAgentHarnessCredentialRequest: SaveCodexAgentHarnessCredentialRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<saveCodexAuthResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<saveCodexAuthResponse>(getSaveCodexAuthUrl(),
-  {
+  return customInstance<saveCodexAuthResponse>(getSaveCodexAuthUrl(), {
     ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(saveCodexAgentHarnessCredentialRequest)
-  }
-);}
-
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(saveCodexAgentHarnessCredentialRequest),
+  });
+};
 
 export type deleteCodexConfigResponse200 = {
-  data: CodexAgentHarnessCredentialStatusResponse
-  status: 200
-}
+  data: CodexAgentHarnessCredentialStatusResponse;
+  status: 200;
+};
 
 export type deleteCodexConfigResponse401 = {
-  data: ErrorBody
-  status: 401
-}
-
-export type deleteCodexConfigResponseSuccess = (deleteCodexConfigResponse200) & {
-  headers: Headers;
-};
-export type deleteCodexConfigResponseError = (deleteCodexConfigResponse401) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 401;
 };
 
-export type deleteCodexConfigResponse = (deleteCodexConfigResponseSuccess | deleteCodexConfigResponseError)
+export type deleteCodexConfigResponseSuccess = deleteCodexConfigResponse200 & {
+  headers: Headers;
+};
+export type deleteCodexConfigResponseError = deleteCodexConfigResponse401 & {
+  headers: Headers;
+};
+
+export type deleteCodexConfigResponse =
+  | deleteCodexConfigResponseSuccess
+  | deleteCodexConfigResponseError;
 
 export const getDeleteCodexConfigUrl = () => {
+  return `/api/v1/settings/codex/config`;
+};
 
-
-
-
-  return `/api/v1/settings/codex/config`
-}
-
-export const deleteCodexConfig = async ( options?: Parameters<typeof customInstance>[1]): Promise<deleteCodexConfigResponse> => {
-
-  return customInstance<deleteCodexConfigResponse>(getDeleteCodexConfigUrl(),
-  {
+export const deleteCodexConfig = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<deleteCodexConfigResponse> => {
+  return customInstance<deleteCodexConfigResponse>(getDeleteCodexConfigUrl(), {
     ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
+    method: "DELETE",
+  });
+};
 
 export type pollCodexDeviceLoginResponse200 = {
-  data: CodexDeviceCodePollResponse
-  status: 200
-}
+  data: CodexDeviceCodePollResponse;
+  status: 200;
+};
 
 export type pollCodexDeviceLoginResponse401 = {
-  data: ErrorBody
-  status: 401
-}
+  data: ErrorBody;
+  status: 401;
+};
 
 export type pollCodexDeviceLoginResponse502 = {
-  data: ErrorBody
-  status: 502
-}
-
-export type pollCodexDeviceLoginResponseSuccess = (pollCodexDeviceLoginResponse200) & {
-  headers: Headers;
-};
-export type pollCodexDeviceLoginResponseError = (pollCodexDeviceLoginResponse401 | pollCodexDeviceLoginResponse502) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 502;
 };
 
-export type pollCodexDeviceLoginResponse = (pollCodexDeviceLoginResponseSuccess | pollCodexDeviceLoginResponseError)
+export type pollCodexDeviceLoginResponseSuccess = pollCodexDeviceLoginResponse200 & {
+  headers: Headers;
+};
+export type pollCodexDeviceLoginResponseError = (
+  | pollCodexDeviceLoginResponse401
+  | pollCodexDeviceLoginResponse502
+) & {
+  headers: Headers;
+};
+
+export type pollCodexDeviceLoginResponse =
+  | pollCodexDeviceLoginResponseSuccess
+  | pollCodexDeviceLoginResponseError;
 
 export const getPollCodexDeviceLoginUrl = () => {
+  return `/api/v1/settings/codex/login/poll`;
+};
 
-
-
-
-  return `/api/v1/settings/codex/login/poll`
-}
-
-export const pollCodexDeviceLogin = async (codexDeviceCodePollRequest: CodexDeviceCodePollRequest, options?: Parameters<typeof customInstance>[1]): Promise<pollCodexDeviceLoginResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const pollCodexDeviceLogin = async (
+  codexDeviceCodePollRequest: CodexDeviceCodePollRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<pollCodexDeviceLoginResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<pollCodexDeviceLoginResponse>(getPollCodexDeviceLoginUrl(),
-  {
+  return customInstance<pollCodexDeviceLoginResponse>(getPollCodexDeviceLoginUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(codexDeviceCodePollRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(codexDeviceCodePollRequest),
+  });
+};
 
 export type startCodexDeviceLoginResponse200 = {
-  data: CodexDeviceCodeStartResponse
-  status: 200
-}
+  data: CodexDeviceCodeStartResponse;
+  status: 200;
+};
 
 export type startCodexDeviceLoginResponse401 = {
-  data: ErrorBody
-  status: 401
-}
+  data: ErrorBody;
+  status: 401;
+};
 
 export type startCodexDeviceLoginResponse502 = {
-  data: ErrorBody
-  status: 502
-}
-
-export type startCodexDeviceLoginResponseSuccess = (startCodexDeviceLoginResponse200) & {
-  headers: Headers;
-};
-export type startCodexDeviceLoginResponseError = (startCodexDeviceLoginResponse401 | startCodexDeviceLoginResponse502) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 502;
 };
 
-export type startCodexDeviceLoginResponse = (startCodexDeviceLoginResponseSuccess | startCodexDeviceLoginResponseError)
+export type startCodexDeviceLoginResponseSuccess = startCodexDeviceLoginResponse200 & {
+  headers: Headers;
+};
+export type startCodexDeviceLoginResponseError = (
+  | startCodexDeviceLoginResponse401
+  | startCodexDeviceLoginResponse502
+) & {
+  headers: Headers;
+};
+
+export type startCodexDeviceLoginResponse =
+  | startCodexDeviceLoginResponseSuccess
+  | startCodexDeviceLoginResponseError;
 
 export const getStartCodexDeviceLoginUrl = () => {
+  return `/api/v1/settings/codex/login/start`;
+};
 
-
-
-
-  return `/api/v1/settings/codex/login/start`
-}
-
-export const startCodexDeviceLogin = async ( options?: Parameters<typeof customInstance>[1]): Promise<startCodexDeviceLoginResponse> => {
-
-  return customInstance<startCodexDeviceLoginResponse>(getStartCodexDeviceLoginUrl(),
-  {
+export const startCodexDeviceLogin = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<startCodexDeviceLoginResponse> => {
+  return customInstance<startCodexDeviceLoginResponse>(getStartCodexDeviceLoginUrl(), {
     ...options,
-    method: 'POST'
-
-
-  }
-);}
-
-
+    method: "POST",
+  });
+};

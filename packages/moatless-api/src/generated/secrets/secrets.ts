@@ -13,261 +13,238 @@ import type {
   SecretMetadataResponse,
   SecretMutationResponse,
   ValidateSecretsRequest,
-  ValidateSecretsResponse
-} from '../model';
+  ValidateSecretsResponse,
+} from "../model";
 
-import { customInstance } from '../../customInstance.ts';
+import { customInstance } from "../../customInstance.ts";
 
 export type listSecretsResponse200 = {
-  data: SecretMetadataResponse[]
-  status: 200
-}
+  data: SecretMetadataResponse[];
+  status: 200;
+};
 
 export type listSecretsResponse403 = {
-  data: ErrorBody
-  status: 403
-}
-
-export type listSecretsResponseSuccess = (listSecretsResponse200) & {
-  headers: Headers;
-};
-export type listSecretsResponseError = (listSecretsResponse403) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 403;
 };
 
-export type listSecretsResponse = (listSecretsResponseSuccess | listSecretsResponseError)
+export type listSecretsResponseSuccess = listSecretsResponse200 & {
+  headers: Headers;
+};
+export type listSecretsResponseError = listSecretsResponse403 & {
+  headers: Headers;
+};
 
-export const getListSecretsUrl = (params?: ListSecretsParams,) => {
+export type listSecretsResponse = listSecretsResponseSuccess | listSecretsResponseError;
+
+export const getListSecretsUrl = (params?: ListSecretsParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/secrets?${stringifiedParams}` : `/api/v1/secrets`
-}
+  return stringifiedParams.length > 0 ? `/api/v1/secrets?${stringifiedParams}` : `/api/v1/secrets`;
+};
 
-export const listSecrets = async (params?: ListSecretsParams, options?: Parameters<typeof customInstance>[1]): Promise<listSecretsResponse> => {
-
-  return customInstance<listSecretsResponse>(getListSecretsUrl(params),
-  {
+export const listSecrets = async (
+  params?: ListSecretsParams,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<listSecretsResponse> => {
+  return customInstance<listSecretsResponse>(getListSecretsUrl(params), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type putSecretResponse200 = {
-  data: SecretMutationResponse
-  status: 200
-}
+  data: SecretMutationResponse;
+  status: 200;
+};
 
 export type putSecretResponse400 = {
-  data: ErrorBody
-  status: 400
-}
-
-export type putSecretResponseSuccess = (putSecretResponse200) & {
-  headers: Headers;
-};
-export type putSecretResponseError = (putSecretResponse400) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 400;
 };
 
-export type putSecretResponse = (putSecretResponseSuccess | putSecretResponseError)
+export type putSecretResponseSuccess = putSecretResponse200 & {
+  headers: Headers;
+};
+export type putSecretResponseError = putSecretResponse400 & {
+  headers: Headers;
+};
+
+export type putSecretResponse = putSecretResponseSuccess | putSecretResponseError;
 
 export const getPutSecretUrl = () => {
+  return `/api/v1/secrets`;
+};
 
-
-
-
-  return `/api/v1/secrets`
-}
-
-export const putSecret = async (putSecretRequest: PutSecretRequest, options?: Parameters<typeof customInstance>[1]): Promise<putSecretResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const putSecret = async (
+  putSecretRequest: PutSecretRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<putSecretResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<putSecretResponse>(getPutSecretUrl(),
-  {
+  return customInstance<putSecretResponse>(getPutSecretUrl(), {
     ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(putSecretRequest)
-  }
-);}
-
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(putSecretRequest),
+  });
+};
 
 export type validateSecretsResponse200 = {
-  data: ValidateSecretsResponse
-  status: 200
-}
+  data: ValidateSecretsResponse;
+  status: 200;
+};
 
-export type validateSecretsResponseSuccess = (validateSecretsResponse200) & {
+export type validateSecretsResponseSuccess = validateSecretsResponse200 & {
   headers: Headers;
 };
-;
 
-export type validateSecretsResponse = (validateSecretsResponseSuccess)
+export type validateSecretsResponse = validateSecretsResponseSuccess;
 
 export const getValidateSecretsUrl = () => {
+  return `/api/v1/secrets/validate`;
+};
 
-
-
-
-  return `/api/v1/secrets/validate`
-}
-
-export const validateSecrets = async (validateSecretsRequest: ValidateSecretsRequest, options?: Parameters<typeof customInstance>[1]): Promise<validateSecretsResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const validateSecrets = async (
+  validateSecretsRequest: ValidateSecretsRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<validateSecretsResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<validateSecretsResponse>(getValidateSecretsUrl(),
-  {
+  return customInstance<validateSecretsResponse>(getValidateSecretsUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(validateSecretsRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(validateSecretsRequest),
+  });
+};
 
 export type getSecretResponse200 = {
-  data: SecretMetadataResponse
-  status: 200
-}
+  data: SecretMetadataResponse;
+  status: 200;
+};
 
 export type getSecretResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type getSecretResponseSuccess = (getSecretResponse200) & {
-  headers: Headers;
-};
-export type getSecretResponseError = (getSecretResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type getSecretResponse = (getSecretResponseSuccess | getSecretResponseError)
+export type getSecretResponseSuccess = getSecretResponse200 & {
+  headers: Headers;
+};
+export type getSecretResponseError = getSecretResponse404 & {
+  headers: Headers;
+};
 
-export const getGetSecretUrl = (id: string,) => {
+export type getSecretResponse = getSecretResponseSuccess | getSecretResponseError;
 
+export const getGetSecretUrl = (id: string) => {
+  return `/api/v1/secrets/${id}`;
+};
 
-
-
-  return `/api/v1/secrets/${id}`
-}
-
-export const getSecret = async (id: string, options?: Parameters<typeof customInstance>[1]): Promise<getSecretResponse> => {
-
-  return customInstance<getSecretResponse>(getGetSecretUrl(id),
-  {
+export const getSecret = async (
+  id: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<getSecretResponse> => {
+  return customInstance<getSecretResponse>(getGetSecretUrl(id), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type deleteSecretResponse204 = {
-  data: void
-  status: 204
-}
+  data: void;
+  status: 204;
+};
 
 export type deleteSecretResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type deleteSecretResponseSuccess = (deleteSecretResponse204) & {
-  headers: Headers;
-};
-export type deleteSecretResponseError = (deleteSecretResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type deleteSecretResponse = (deleteSecretResponseSuccess | deleteSecretResponseError)
+export type deleteSecretResponseSuccess = deleteSecretResponse204 & {
+  headers: Headers;
+};
+export type deleteSecretResponseError = deleteSecretResponse404 & {
+  headers: Headers;
+};
 
-export const getDeleteSecretUrl = (id: string,) => {
+export type deleteSecretResponse = deleteSecretResponseSuccess | deleteSecretResponseError;
 
+export const getDeleteSecretUrl = (id: string) => {
+  return `/api/v1/secrets/${id}`;
+};
 
-
-
-  return `/api/v1/secrets/${id}`
-}
-
-export const deleteSecret = async (id: string, options?: Parameters<typeof customInstance>[1]): Promise<deleteSecretResponse> => {
-
-  return customInstance<deleteSecretResponse>(getDeleteSecretUrl(id),
-  {
+export const deleteSecret = async (
+  id: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<deleteSecretResponse> => {
+  return customInstance<deleteSecretResponse>(getDeleteSecretUrl(id), {
     ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
+    method: "DELETE",
+  });
+};
 
 export type patchSecretResponse200 = {
-  data: SecretMutationResponse
-  status: 200
-}
+  data: SecretMutationResponse;
+  status: 200;
+};
 
 export type patchSecretResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type patchSecretResponseSuccess = (patchSecretResponse200) & {
-  headers: Headers;
-};
-export type patchSecretResponseError = (patchSecretResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type patchSecretResponse = (patchSecretResponseSuccess | patchSecretResponseError)
+export type patchSecretResponseSuccess = patchSecretResponse200 & {
+  headers: Headers;
+};
+export type patchSecretResponseError = patchSecretResponse404 & {
+  headers: Headers;
+};
 
-export const getPatchSecretUrl = (id: string,) => {
+export type patchSecretResponse = patchSecretResponseSuccess | patchSecretResponseError;
 
+export const getPatchSecretUrl = (id: string) => {
+  return `/api/v1/secrets/${id}`;
+};
 
-
-
-  return `/api/v1/secrets/${id}`
-}
-
-export const patchSecret = async (id: string,
-    patchSecretRequest: PatchSecretRequest, options?: Parameters<typeof customInstance>[1]): Promise<patchSecretResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const patchSecret = async (
+  id: string,
+  patchSecretRequest: PatchSecretRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<patchSecretResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<patchSecretResponse>(getPatchSecretUrl(id),
-  {
+  return customInstance<patchSecretResponse>(getPatchSecretUrl(id), {
     ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(patchSecretRequest)
-  }
-);}
-
-
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchSecretRequest),
+  });
+};

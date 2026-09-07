@@ -5,8 +5,8 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ContentBlock } from './contentBlock.ts';
-import type { Usage } from './usage.ts';
+import type { ContentBlock } from "./contentBlock.ts";
+import type { Usage } from "./usage.ts";
 
 /**
  * A message in the Anthropic API format.

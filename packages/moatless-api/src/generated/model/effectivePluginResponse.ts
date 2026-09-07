@@ -11,9 +11,9 @@
  */
 export interface EffectivePluginResponse {
   /**
-     * The subset of `skillNames` that frontloads into every fresh agent
-     * session rather than waiting to be picked for a turn.
-     */
+   * The subset of `skillNames` that frontloads into every fresh agent
+   * session rather than waiting to be picked for a turn.
+   */
   frontloadSkillNames?: string[];
   pluginId: string;
   pluginName: string;

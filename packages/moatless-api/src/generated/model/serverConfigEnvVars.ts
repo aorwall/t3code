@@ -9,4 +9,4 @@
 /**
  * Per-server environment variables.
  */
-export type ServerConfigEnvVars = {[key: string]: string};
+export type ServerConfigEnvVars = { [key: string]: string };

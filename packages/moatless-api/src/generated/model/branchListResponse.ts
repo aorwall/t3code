@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { BranchEntry } from './branchEntry.ts';
+import type { BranchEntry } from "./branchEntry.ts";
 
 export interface BranchListResponse {
   branches: BranchEntry[];

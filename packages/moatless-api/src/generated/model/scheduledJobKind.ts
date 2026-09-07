@@ -5,14 +5,16 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { BackgroundWatchJobInfo } from './backgroundWatchJobInfo.ts';
-import type { WakeupJobInfo } from './wakeupJobInfo.ts';
+import type { BackgroundWatchJobInfo } from "./backgroundWatchJobInfo.ts";
+import type { WakeupJobInfo } from "./wakeupJobInfo.ts";
 
 /**
  * Per-kind payload for a scheduled job.
  */
-export type ScheduledJobKind = WakeupJobInfo & {
-  kind: 'wakeup';
-} | BackgroundWatchJobInfo & {
-  kind: 'backgroundWatch';
-};
+export type ScheduledJobKind =
+  | (WakeupJobInfo & {
+      kind: "wakeup";
+    })
+  | (BackgroundWatchJobInfo & {
+      kind: "backgroundWatch";
+    });

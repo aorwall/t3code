@@ -9,19 +9,18 @@
 /**
  * All available Moatless tool names injected into the agent sandbox.
  */
-export type MoatlessToolName = typeof MoatlessToolName[keyof typeof MoatlessToolName];
-
+export type MoatlessToolName = (typeof MoatlessToolName)[keyof typeof MoatlessToolName];
 
 export const MoatlessToolName = {
-  updateTaskMetadata: 'updateTaskMetadata',
-  install: 'install',
-  updateRepositoryConfig: 'updateRepositoryConfig',
-  getRepositoryConfig: 'getRepositoryConfig',
-  startOrRestartPreviewServer: 'startOrRestartPreviewServer',
-  getPreviewServerLogs: 'getPreviewServerLogs',
-  navigatePreview: 'navigatePreview',
-  clickElement: 'clickElement',
-  evaluateJavaScript: 'evaluateJavaScript',
-  fillPreviewForm: 'fillPreviewForm',
-  takePreviewSnapshot: 'takePreviewSnapshot',
+  updateTaskMetadata: "updateTaskMetadata",
+  install: "install",
+  updateRepositoryConfig: "updateRepositoryConfig",
+  getRepositoryConfig: "getRepositoryConfig",
+  startOrRestartPreviewServer: "startOrRestartPreviewServer",
+  getPreviewServerLogs: "getPreviewServerLogs",
+  navigatePreview: "navigatePreview",
+  clickElement: "clickElement",
+  evaluateJavaScript: "evaluateJavaScript",
+  fillPreviewForm: "fillPreviewForm",
+  takePreviewSnapshot: "takePreviewSnapshot",
 } as const;

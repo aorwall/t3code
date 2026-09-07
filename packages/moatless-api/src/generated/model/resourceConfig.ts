@@ -5,56 +5,56 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ResourceQuantities } from './resourceQuantities.ts';
-import type { StorageMedium } from './storageMedium.ts';
+import type { ResourceQuantities } from "./resourceQuantities.ts";
+import type { StorageMedium } from "./storageMedium.ts";
 
 /**
  * Per-repository K8s resource requests/limits configuration.
  */
 export interface ResourceConfig {
   /**
-     * Per-repository size cap for the `dind` sidecar's `/var/lib/docker`
-     * emptyDir (e.g. "50Gi"). Only meaningful for repos with `dockerAccess`
-     * and `dockerStorageMode: "emptyDir"`. Exceeding the cap gets the pod
-     * **evicted** by the kubelet, wiping all dind container data. When unset,
-     * the global `K8S_SANDBOX_DOCKER_DIND_STORAGE_SIZE` default applies.
-     * @nullable
-     */
+   * Per-repository size cap for the `dind` sidecar's `/var/lib/docker`
+   * emptyDir (e.g. "50Gi"). Only meaningful for repos with `dockerAccess`
+   * and `dockerStorageMode: "emptyDir"`. Exceeding the cap gets the pod
+   * **evicted** by the kubelet, wiping all dind container data. When unset,
+   * the global `K8S_SANDBOX_DOCKER_DIND_STORAGE_SIZE` default applies.
+   * @nullable
+   */
   dockerStorage?: string | null;
   dockerStorageMode?: null | StorageMedium;
   limits?: ResourceQuantities;
   /**
-     * Whether this repo's sandbox gets a per-task PVC mounted at
-     * `/opt/moatless`. The PVC is owned by the Deployment: it survives pod
-     * restarts and is deleted when the sandbox is removed. When `false`, the
-     * workspace is a node-local emptyDir that dies with the pod.
-     *
-     * When unset, the deployment-wide default applies (`K8S_SANDBOX_DEFAULT_PVC`).
-     * The global `K8S_SANDBOX_STORAGE_ENABLED` kill switch still wins over both.
-     * @nullable
-     */
+   * Whether this repo's sandbox gets a per-task PVC mounted at
+   * `/opt/moatless`. The PVC is owned by the Deployment: it survives pod
+   * restarts and is deleted when the sandbox is removed. When `false`, the
+   * workspace is a node-local emptyDir that dies with the pod.
+   *
+   * When unset, the deployment-wide default applies (`K8S_SANDBOX_DEFAULT_PVC`).
+   * The global `K8S_SANDBOX_STORAGE_ENABLED` kill switch still wins over both.
+   * @nullable
+   */
   pvcEnabled?: boolean | null;
   requests?: ResourceQuantities;
   /**
-     * Whether this repo's sandbox snapshots its workspace to S3 — the copy that
-     * outlives the Deployment. Pushed before a stop or remove, and pulled back
-     * on start when the volume holds nothing usable (a fresh PVC, a redeploy, or
-     * a fallback after the PVC could not attach).
-     *
-     * Independent of [`Self::pvc_enabled`]: with a PVC the volume is the live
-     * copy and S3 is read only when it is empty or broken; without one, S3 is
-     * the only persistence and is read on every start.
-     *
-     * When unset, the deployment-wide default applies (`K8S_SANDBOX_DEFAULT_S3`).
-     * @nullable
-     */
+   * Whether this repo's sandbox snapshots its workspace to S3 — the copy that
+   * outlives the Deployment. Pushed before a stop or remove, and pulled back
+   * on start when the volume holds nothing usable (a fresh PVC, a redeploy, or
+   * a fallback after the PVC could not attach).
+   *
+   * Independent of [`Self::pvc_enabled`]: with a PVC the volume is the live
+   * copy and S3 is read only when it is empty or broken; without one, S3 is
+   * the only persistence and is read on every start.
+   *
+   * When unset, the deployment-wide default applies (`K8S_SANDBOX_DEFAULT_S3`).
+   * @nullable
+   */
   s3Enabled?: boolean | null;
   /**
-     * Per-repository workspace storage size override (e.g. "8Gi"). Sizes the
-     * per-task PVC when `pvc_enabled`, and the node-local emptyDir otherwise.
-     * When unset, the global `K8S_SANDBOX_STORAGE_SIZE` default applies. Never
-     * copied into container resource specs.
-     * @nullable
-     */
+   * Per-repository workspace storage size override (e.g. "8Gi"). Sizes the
+   * per-task PVC when `pvc_enabled`, and the node-local emptyDir otherwise.
+   * When unset, the global `K8S_SANDBOX_STORAGE_SIZE` default applies. Never
+   * copied into container resource specs.
+   * @nullable
+   */
   storage?: string | null;
 }

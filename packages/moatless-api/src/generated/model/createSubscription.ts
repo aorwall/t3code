@@ -5,9 +5,9 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { AdapterKind } from './adapterKind.ts';
-import type { CreateSubscriptionAdapterConfig } from './createSubscriptionAdapterConfig.ts';
-import type { CreateSubscriptionEventFilter } from './createSubscriptionEventFilter.ts';
+import type { AdapterKind } from "./adapterKind.ts";
+import type { CreateSubscriptionAdapterConfig } from "./createSubscriptionAdapterConfig.ts";
+import type { CreateSubscriptionEventFilter } from "./createSubscriptionEventFilter.ts";
 
 export interface CreateSubscription {
   /** @nullable */

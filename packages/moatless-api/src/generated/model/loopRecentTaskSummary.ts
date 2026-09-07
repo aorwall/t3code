@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { TaskStatus } from './taskStatus.ts';
+import type { TaskStatus } from "./taskStatus.ts";
 
 export interface LoopRecentTaskSummary {
   createdAt: string;

@@ -5,8 +5,8 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { TaskRelationDtoContext } from './taskRelationDtoContext.ts';
-import type { TaskRelationType } from './taskRelationType.ts';
+import type { TaskRelationDtoContext } from "./taskRelationDtoContext.ts";
+import type { TaskRelationType } from "./taskRelationType.ts";
 
 /**
  * A typed link from one task to another, with optional JSON context.

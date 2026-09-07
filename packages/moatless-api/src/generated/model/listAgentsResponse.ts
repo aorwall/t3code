@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { AgentDescriptor } from './agentDescriptor.ts';
+import type { AgentDescriptor } from "./agentDescriptor.ts";
 
 export interface ListAgentsResponse {
   agents: AgentDescriptor[];

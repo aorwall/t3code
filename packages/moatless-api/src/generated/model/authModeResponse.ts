@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { AuthMode } from './authMode.ts';
+import type { AuthMode } from "./authMode.ts";
 
 /**
  * GET /api/v1/auth/mode response.
@@ -15,16 +15,16 @@ import type { AuthMode } from './authMode.ts';
  */
 export interface AuthModeResponse {
   /**
-     * Where to send the browser to start an OAuth login. `None` in password mode.
-     * @nullable
-     */
+   * Where to send the browser to start an OAuth login. `None` in password mode.
+   * @nullable
+   */
   loginUrl?: string | null;
   mode: AuthMode;
   /** Provider identifier (`local`, `oidc`, `github_app`, `auth0`). */
   provider: string;
   /**
-     * Human-readable provider label for the login UI (for example, `Google`).
-     * @nullable
-     */
+   * Human-readable provider label for the login UI (for example, `Google`).
+   * @nullable
+   */
   providerName?: string | null;
 }

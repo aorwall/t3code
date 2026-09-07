@@ -13,26 +13,29 @@
  * the Adapter's vocabulary and the caller does not have to know it. Each shape
  * carries the numeric id GitHub returned for the object it made.
  */
-export type GithubExternalEventSubject = {
-  kind: 'reviewComment';
-  /**
-     * `POST repos/{owner}/{repo}/pulls/{n}/comments` — an inline review comment.
-     * @minimum 0
-     */
-  value: number;
-} | {
-  kind: 'review';
-  /**
-     * `POST repos/{owner}/{repo}/pulls/{n}/reviews` — a review submission.
-     * @minimum 0
-     */
-  value: number;
-} | {
-  kind: 'issueComment';
-  /**
-     * `POST repos/{owner}/{repo}/issues/{n}/comments` — a conversation comment
-     * on a pull request or an issue.
-     * @minimum 0
-     */
-  value: number;
-};
+export type GithubExternalEventSubject =
+  | {
+      kind: "reviewComment";
+      /**
+       * `POST repos/{owner}/{repo}/pulls/{n}/comments` — an inline review comment.
+       * @minimum 0
+       */
+      value: number;
+    }
+  | {
+      kind: "review";
+      /**
+       * `POST repos/{owner}/{repo}/pulls/{n}/reviews` — a review submission.
+       * @minimum 0
+       */
+      value: number;
+    }
+  | {
+      kind: "issueComment";
+      /**
+       * `POST repos/{owner}/{repo}/issues/{n}/comments` — a conversation comment
+       * on a pull request or an issue.
+       * @minimum 0
+       */
+      value: number;
+    };

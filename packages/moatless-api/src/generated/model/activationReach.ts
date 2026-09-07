@@ -9,11 +9,10 @@
 /**
  * Who an activation applies to: everyone, one person, or one Workspace.
  */
-export type ActivationReach = typeof ActivationReach[keyof typeof ActivationReach];
-
+export type ActivationReach = (typeof ActivationReach)[keyof typeof ActivationReach];
 
 export const ActivationReach = {
-  everyone: 'everyone',
-  personal: 'personal',
-  workspace: 'workspace',
+  everyone: "everyone",
+  personal: "personal",
+  workspace: "workspace",
 } as const;

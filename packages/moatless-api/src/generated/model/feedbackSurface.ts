@@ -9,12 +9,11 @@
 /**
  * Where in the UI/CLI the feedback originated.
  */
-export type FeedbackSurface = typeof FeedbackSurface[keyof typeof FeedbackSurface];
-
+export type FeedbackSurface = (typeof FeedbackSurface)[keyof typeof FeedbackSurface];
 
 export const FeedbackSurface = {
-  task: 'task',
-  message: 'message',
-  tool_call: 'tool_call',
-  preview_failure: 'preview_failure',
+  task: "task",
+  message: "message",
+  tool_call: "tool_call",
+  preview_failure: "preview_failure",
 } as const;

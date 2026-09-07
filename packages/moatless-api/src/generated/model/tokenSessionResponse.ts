@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { UserInfo } from './userInfo.ts';
+import type { UserInfo } from "./userInfo.ts";
 
 /**
  * POST /api/v1/auth/token/session response.

@@ -10,298 +10,269 @@ import type {
   GitHubProviderTokenStatusResponse,
   GitnessProviderTokenStatusResponse,
   SaveGitHubProviderTokenRequest,
-  SaveGitnessProviderTokenRequest
-} from '../model';
+  SaveGitnessProviderTokenRequest,
+} from "../model";
 
-import { customInstance } from '../../customInstance.ts';
+import { customInstance } from "../../customInstance.ts";
 
 export type getGithubConfigResponse200 = {
-  data: GitHubProviderTokenStatusResponse
-  status: 200
-}
+  data: GitHubProviderTokenStatusResponse;
+  status: 200;
+};
 
 export type getGithubConfigResponse401 = {
-  data: ErrorBody
-  status: 401
-}
-
-export type getGithubConfigResponseSuccess = (getGithubConfigResponse200) & {
-  headers: Headers;
-};
-export type getGithubConfigResponseError = (getGithubConfigResponse401) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 401;
 };
 
-export type getGithubConfigResponse = (getGithubConfigResponseSuccess | getGithubConfigResponseError)
+export type getGithubConfigResponseSuccess = getGithubConfigResponse200 & {
+  headers: Headers;
+};
+export type getGithubConfigResponseError = getGithubConfigResponse401 & {
+  headers: Headers;
+};
+
+export type getGithubConfigResponse = getGithubConfigResponseSuccess | getGithubConfigResponseError;
 
 export const getGetGithubConfigUrl = () => {
+  return `/api/v1/settings/github/config`;
+};
 
-
-
-
-  return `/api/v1/settings/github/config`
-}
-
-export const getGithubConfig = async ( options?: Parameters<typeof customInstance>[1]): Promise<getGithubConfigResponse> => {
-
-  return customInstance<getGithubConfigResponse>(getGetGithubConfigUrl(),
-  {
+export const getGithubConfig = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<getGithubConfigResponse> => {
+  return customInstance<getGithubConfigResponse>(getGetGithubConfigUrl(), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type deleteGithubConfigResponse200 = {
-  data: GitHubProviderTokenStatusResponse
-  status: 200
-}
+  data: GitHubProviderTokenStatusResponse;
+  status: 200;
+};
 
 export type deleteGithubConfigResponse401 = {
-  data: ErrorBody
-  status: 401
-}
-
-export type deleteGithubConfigResponseSuccess = (deleteGithubConfigResponse200) & {
-  headers: Headers;
-};
-export type deleteGithubConfigResponseError = (deleteGithubConfigResponse401) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 401;
 };
 
-export type deleteGithubConfigResponse = (deleteGithubConfigResponseSuccess | deleteGithubConfigResponseError)
+export type deleteGithubConfigResponseSuccess = deleteGithubConfigResponse200 & {
+  headers: Headers;
+};
+export type deleteGithubConfigResponseError = deleteGithubConfigResponse401 & {
+  headers: Headers;
+};
+
+export type deleteGithubConfigResponse =
+  | deleteGithubConfigResponseSuccess
+  | deleteGithubConfigResponseError;
 
 export const getDeleteGithubConfigUrl = () => {
+  return `/api/v1/settings/github/config`;
+};
 
-
-
-
-  return `/api/v1/settings/github/config`
-}
-
-export const deleteGithubConfig = async ( options?: Parameters<typeof customInstance>[1]): Promise<deleteGithubConfigResponse> => {
-
-  return customInstance<deleteGithubConfigResponse>(getDeleteGithubConfigUrl(),
-  {
+export const deleteGithubConfig = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<deleteGithubConfigResponse> => {
+  return customInstance<deleteGithubConfigResponse>(getDeleteGithubConfigUrl(), {
     ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
+    method: "DELETE",
+  });
+};
 
 export type saveGithubPatResponse200 = {
-  data: GitHubProviderTokenStatusResponse
-  status: 200
-}
+  data: GitHubProviderTokenStatusResponse;
+  status: 200;
+};
 
 export type saveGithubPatResponse400 = {
-  data: ErrorBody
-  status: 400
-}
-
-export type saveGithubPatResponseSuccess = (saveGithubPatResponse200) & {
-  headers: Headers;
-};
-export type saveGithubPatResponseError = (saveGithubPatResponse400) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 400;
 };
 
-export type saveGithubPatResponse = (saveGithubPatResponseSuccess | saveGithubPatResponseError)
+export type saveGithubPatResponseSuccess = saveGithubPatResponse200 & {
+  headers: Headers;
+};
+export type saveGithubPatResponseError = saveGithubPatResponse400 & {
+  headers: Headers;
+};
+
+export type saveGithubPatResponse = saveGithubPatResponseSuccess | saveGithubPatResponseError;
 
 export const getSaveGithubPatUrl = () => {
+  return `/api/v1/settings/github/pat`;
+};
 
-
-
-
-  return `/api/v1/settings/github/pat`
-}
-
-export const saveGithubPat = async (saveGitHubProviderTokenRequest: SaveGitHubProviderTokenRequest, options?: Parameters<typeof customInstance>[1]): Promise<saveGithubPatResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const saveGithubPat = async (
+  saveGitHubProviderTokenRequest: SaveGitHubProviderTokenRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<saveGithubPatResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<saveGithubPatResponse>(getSaveGithubPatUrl(),
-  {
+  return customInstance<saveGithubPatResponse>(getSaveGithubPatUrl(), {
     ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(saveGitHubProviderTokenRequest)
-  }
-);}
-
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(saveGitHubProviderTokenRequest),
+  });
+};
 
 export type deleteGithubPatOverrideResponse200 = {
-  data: GitHubProviderTokenStatusResponse
-  status: 200
-}
+  data: GitHubProviderTokenStatusResponse;
+  status: 200;
+};
 
 export type deleteGithubPatOverrideResponse400 = {
-  data: ErrorBody
-  status: 400
-}
+  data: ErrorBody;
+  status: 400;
+};
 
 export type deleteGithubPatOverrideResponse401 = {
-  data: ErrorBody
-  status: 401
-}
-
-export type deleteGithubPatOverrideResponseSuccess = (deleteGithubPatOverrideResponse200) & {
-  headers: Headers;
-};
-export type deleteGithubPatOverrideResponseError = (deleteGithubPatOverrideResponse400 | deleteGithubPatOverrideResponse401) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 401;
 };
 
-export type deleteGithubPatOverrideResponse = (deleteGithubPatOverrideResponseSuccess | deleteGithubPatOverrideResponseError)
+export type deleteGithubPatOverrideResponseSuccess = deleteGithubPatOverrideResponse200 & {
+  headers: Headers;
+};
+export type deleteGithubPatOverrideResponseError = (
+  | deleteGithubPatOverrideResponse400
+  | deleteGithubPatOverrideResponse401
+) & {
+  headers: Headers;
+};
+
+export type deleteGithubPatOverrideResponse =
+  | deleteGithubPatOverrideResponseSuccess
+  | deleteGithubPatOverrideResponseError;
 
 export const getDeleteGithubPatOverrideUrl = () => {
+  return `/api/v1/settings/github/pat`;
+};
 
-
-
-
-  return `/api/v1/settings/github/pat`
-}
-
-export const deleteGithubPatOverride = async ( options?: Parameters<typeof customInstance>[1]): Promise<deleteGithubPatOverrideResponse> => {
-
-  return customInstance<deleteGithubPatOverrideResponse>(getDeleteGithubPatOverrideUrl(),
-  {
+export const deleteGithubPatOverride = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<deleteGithubPatOverrideResponse> => {
+  return customInstance<deleteGithubPatOverrideResponse>(getDeleteGithubPatOverrideUrl(), {
     ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
+    method: "DELETE",
+  });
+};
 
 export type getGitnessConfigResponse200 = {
-  data: GitnessProviderTokenStatusResponse
-  status: 200
-}
+  data: GitnessProviderTokenStatusResponse;
+  status: 200;
+};
 
 export type getGitnessConfigResponse401 = {
-  data: ErrorBody
-  status: 401
-}
-
-export type getGitnessConfigResponseSuccess = (getGitnessConfigResponse200) & {
-  headers: Headers;
-};
-export type getGitnessConfigResponseError = (getGitnessConfigResponse401) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 401;
 };
 
-export type getGitnessConfigResponse = (getGitnessConfigResponseSuccess | getGitnessConfigResponseError)
+export type getGitnessConfigResponseSuccess = getGitnessConfigResponse200 & {
+  headers: Headers;
+};
+export type getGitnessConfigResponseError = getGitnessConfigResponse401 & {
+  headers: Headers;
+};
+
+export type getGitnessConfigResponse =
+  | getGitnessConfigResponseSuccess
+  | getGitnessConfigResponseError;
 
 export const getGetGitnessConfigUrl = () => {
+  return `/api/v1/settings/gitness/config`;
+};
 
-
-
-
-  return `/api/v1/settings/gitness/config`
-}
-
-export const getGitnessConfig = async ( options?: Parameters<typeof customInstance>[1]): Promise<getGitnessConfigResponse> => {
-
-  return customInstance<getGitnessConfigResponse>(getGetGitnessConfigUrl(),
-  {
+export const getGitnessConfig = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<getGitnessConfigResponse> => {
+  return customInstance<getGitnessConfigResponse>(getGetGitnessConfigUrl(), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type deleteGitnessConfigResponse200 = {
-  data: GitnessProviderTokenStatusResponse
-  status: 200
-}
+  data: GitnessProviderTokenStatusResponse;
+  status: 200;
+};
 
 export type deleteGitnessConfigResponse401 = {
-  data: ErrorBody
-  status: 401
-}
-
-export type deleteGitnessConfigResponseSuccess = (deleteGitnessConfigResponse200) & {
-  headers: Headers;
-};
-export type deleteGitnessConfigResponseError = (deleteGitnessConfigResponse401) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 401;
 };
 
-export type deleteGitnessConfigResponse = (deleteGitnessConfigResponseSuccess | deleteGitnessConfigResponseError)
+export type deleteGitnessConfigResponseSuccess = deleteGitnessConfigResponse200 & {
+  headers: Headers;
+};
+export type deleteGitnessConfigResponseError = deleteGitnessConfigResponse401 & {
+  headers: Headers;
+};
+
+export type deleteGitnessConfigResponse =
+  | deleteGitnessConfigResponseSuccess
+  | deleteGitnessConfigResponseError;
 
 export const getDeleteGitnessConfigUrl = () => {
+  return `/api/v1/settings/gitness/config`;
+};
 
-
-
-
-  return `/api/v1/settings/gitness/config`
-}
-
-export const deleteGitnessConfig = async ( options?: Parameters<typeof customInstance>[1]): Promise<deleteGitnessConfigResponse> => {
-
-  return customInstance<deleteGitnessConfigResponse>(getDeleteGitnessConfigUrl(),
-  {
+export const deleteGitnessConfig = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<deleteGitnessConfigResponse> => {
+  return customInstance<deleteGitnessConfigResponse>(getDeleteGitnessConfigUrl(), {
     ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
+    method: "DELETE",
+  });
+};
 
 export type saveGitnessPatResponse200 = {
-  data: GitnessProviderTokenStatusResponse
-  status: 200
-}
+  data: GitnessProviderTokenStatusResponse;
+  status: 200;
+};
 
 export type saveGitnessPatResponse400 = {
-  data: ErrorBody
-  status: 400
-}
-
-export type saveGitnessPatResponseSuccess = (saveGitnessPatResponse200) & {
-  headers: Headers;
-};
-export type saveGitnessPatResponseError = (saveGitnessPatResponse400) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 400;
 };
 
-export type saveGitnessPatResponse = (saveGitnessPatResponseSuccess | saveGitnessPatResponseError)
+export type saveGitnessPatResponseSuccess = saveGitnessPatResponse200 & {
+  headers: Headers;
+};
+export type saveGitnessPatResponseError = saveGitnessPatResponse400 & {
+  headers: Headers;
+};
+
+export type saveGitnessPatResponse = saveGitnessPatResponseSuccess | saveGitnessPatResponseError;
 
 export const getSaveGitnessPatUrl = () => {
+  return `/api/v1/settings/gitness/pat`;
+};
 
-
-
-
-  return `/api/v1/settings/gitness/pat`
-}
-
-export const saveGitnessPat = async (saveGitnessProviderTokenRequest: SaveGitnessProviderTokenRequest, options?: Parameters<typeof customInstance>[1]): Promise<saveGitnessPatResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const saveGitnessPat = async (
+  saveGitnessProviderTokenRequest: SaveGitnessProviderTokenRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<saveGitnessPatResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<saveGitnessPatResponse>(getSaveGitnessPatUrl(),
-  {
+  return customInstance<saveGitnessPatResponse>(getSaveGitnessPatUrl(), {
     ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(saveGitnessProviderTokenRequest)
-  }
-);}
-
-
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(saveGitnessProviderTokenRequest),
+  });
+};

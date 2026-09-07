@@ -6,12 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type SetupActionKind = typeof SetupActionKind[keyof typeof SetupActionKind];
-
+export type SetupActionKind = (typeof SetupActionKind)[keyof typeof SetupActionKind];
 
 export const SetupActionKind = {
-  open_settings: 'open_settings',
-  admin_route: 'admin_route',
-  external_link: 'external_link',
-  unknown: 'unknown',
+  open_settings: "open_settings",
+  admin_route: "admin_route",
+  external_link: "external_link",
+  unknown: "unknown",
 } as const;

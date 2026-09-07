@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ManagedCommandState } from './managedCommandState.ts';
+import type { ManagedCommandState } from "./managedCommandState.ts";
 
 /**
  * One long-running command the agent registered through `moat cmd`. The
@@ -27,8 +27,8 @@ export interface ManagedCommand {
   startedAtUnixMs: number;
   state: ManagedCommandState;
   /**
-     * Seconds the sandbox gives it before killing it and marking it timed out.
-     * @minimum 0
-     */
+   * Seconds the sandbox gives it before killing it and marking it timed out.
+   * @minimum 0
+   */
   timeoutSecs: number;
 }

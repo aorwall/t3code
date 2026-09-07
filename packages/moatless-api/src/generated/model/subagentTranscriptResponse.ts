@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { UiMessage } from './uiMessage.ts';
+import type { UiMessage } from "./uiMessage.ts";
 
 /**
  * Response for GET /tasks/{task_id}/tool-calls/{tool_use_id}/messages — the

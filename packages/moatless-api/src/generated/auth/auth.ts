@@ -15,288 +15,252 @@ import type {
   PasswordLoginRequest,
   SessionResponse,
   TokenSessionResponse,
-  UpdateUserRequest
-} from '../model';
+  UpdateUserRequest,
+} from "../model";
 
-import { customInstance } from '../../customInstance.ts';
+import { customInstance } from "../../customInstance.ts";
 
 export type exchangeApiKeyHandlerResponse200 = {
-  data: SessionResponse
-  status: 200
-}
+  data: SessionResponse;
+  status: 200;
+};
 
 export type exchangeApiKeyHandlerResponse401 = {
-  data: ErrorBody
-  status: 401
-}
-
-export type exchangeApiKeyHandlerResponseSuccess = (exchangeApiKeyHandlerResponse200) & {
-  headers: Headers;
-};
-export type exchangeApiKeyHandlerResponseError = (exchangeApiKeyHandlerResponse401) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 401;
 };
 
-export type exchangeApiKeyHandlerResponse = (exchangeApiKeyHandlerResponseSuccess | exchangeApiKeyHandlerResponseError)
+export type exchangeApiKeyHandlerResponseSuccess = exchangeApiKeyHandlerResponse200 & {
+  headers: Headers;
+};
+export type exchangeApiKeyHandlerResponseError = exchangeApiKeyHandlerResponse401 & {
+  headers: Headers;
+};
+
+export type exchangeApiKeyHandlerResponse =
+  | exchangeApiKeyHandlerResponseSuccess
+  | exchangeApiKeyHandlerResponseError;
 
 export const getExchangeApiKeyHandlerUrl = () => {
-
-
-
-
-  return `/api/v1/auth/api-key/session`
-}
+  return `/api/v1/auth/api-key/session`;
+};
 
 /**
  * @summary Exchange a valid API key for a session cookie (for local dev auth).
  */
-export const exchangeApiKeyHandler = async ( options?: Parameters<typeof customInstance>[1]): Promise<exchangeApiKeyHandlerResponse> => {
-
-  return customInstance<exchangeApiKeyHandlerResponse>(getExchangeApiKeyHandlerUrl(),
-  {
+export const exchangeApiKeyHandler = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<exchangeApiKeyHandlerResponse> => {
+  return customInstance<exchangeApiKeyHandlerResponse>(getExchangeApiKeyHandlerUrl(), {
     ...options,
-    method: 'POST'
-
-
-  }
-);}
-
+    method: "POST",
+  });
+};
 
 export type logoutHandlerResponse200 = {
-  data: MessageResponse
-  status: 200
-}
+  data: MessageResponse;
+  status: 200;
+};
 
 export type logoutHandlerResponse302 = {
-  data: void
-  status: 302
-}
-
-export type logoutHandlerResponseSuccess = (logoutHandlerResponse200) & {
-  headers: Headers;
-};
-export type logoutHandlerResponseError = (logoutHandlerResponse302) & {
-  headers: Headers;
+  data: void;
+  status: 302;
 };
 
-export type logoutHandlerResponse = (logoutHandlerResponseSuccess | logoutHandlerResponseError)
+export type logoutHandlerResponseSuccess = logoutHandlerResponse200 & {
+  headers: Headers;
+};
+export type logoutHandlerResponseError = logoutHandlerResponse302 & {
+  headers: Headers;
+};
+
+export type logoutHandlerResponse = logoutHandlerResponseSuccess | logoutHandlerResponseError;
 
 export const getLogoutHandlerUrl = () => {
-
-
-
-
-  return `/api/v1/auth/logout`
-}
+  return `/api/v1/auth/logout`;
+};
 
 /**
  * @summary Log out the current user session.
  */
-export const logoutHandler = async ( options?: Parameters<typeof customInstance>[1]): Promise<logoutHandlerResponse> => {
-
-  return customInstance<logoutHandlerResponse>(getLogoutHandlerUrl(),
-  {
+export const logoutHandler = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<logoutHandlerResponse> => {
+  return customInstance<logoutHandlerResponse>(getLogoutHandlerUrl(), {
     ...options,
-    method: 'POST'
-
-
-  }
-);}
-
+    method: "POST",
+  });
+};
 
 export type logoutAllHandlerResponse200 = {
-  data: MessageResponse
-  status: 200
-}
+  data: MessageResponse;
+  status: 200;
+};
 
-export type logoutAllHandlerResponseSuccess = (logoutAllHandlerResponse200) & {
+export type logoutAllHandlerResponseSuccess = logoutAllHandlerResponse200 & {
   headers: Headers;
 };
-;
 
-export type logoutAllHandlerResponse = (logoutAllHandlerResponseSuccess)
+export type logoutAllHandlerResponse = logoutAllHandlerResponseSuccess;
 
 export const getLogoutAllHandlerUrl = () => {
-
-
-
-
-  return `/api/v1/auth/logout-all`
-}
+  return `/api/v1/auth/logout-all`;
+};
 
 /**
  * @summary Revoke every auth session belonging to the current user.
  */
-export const logoutAllHandler = async ( options?: Parameters<typeof customInstance>[1]): Promise<logoutAllHandlerResponse> => {
-
-  return customInstance<logoutAllHandlerResponse>(getLogoutAllHandlerUrl(),
-  {
+export const logoutAllHandler = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<logoutAllHandlerResponse> => {
+  return customInstance<logoutAllHandlerResponse>(getLogoutAllHandlerUrl(), {
     ...options,
-    method: 'POST'
-
-
-  }
-);}
-
+    method: "POST",
+  });
+};
 
 export type meHandlerResponse200 = {
-  data: SessionResponse
-  status: 200
-}
+  data: SessionResponse;
+  status: 200;
+};
 
 export type meHandlerResponse401 = {
-  data: ErrorBody
-  status: 401
-}
-
-export type meHandlerResponseSuccess = (meHandlerResponse200) & {
-  headers: Headers;
-};
-export type meHandlerResponseError = (meHandlerResponse401) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 401;
 };
 
-export type meHandlerResponse = (meHandlerResponseSuccess | meHandlerResponseError)
+export type meHandlerResponseSuccess = meHandlerResponse200 & {
+  headers: Headers;
+};
+export type meHandlerResponseError = meHandlerResponse401 & {
+  headers: Headers;
+};
+
+export type meHandlerResponse = meHandlerResponseSuccess | meHandlerResponseError;
 
 export const getMeHandlerUrl = () => {
-
-
-
-
-  return `/api/v1/auth/me`
-}
+  return `/api/v1/auth/me`;
+};
 
 /**
  * @summary Get current user session information.
  */
-export const meHandler = async ( options?: Parameters<typeof customInstance>[1]): Promise<meHandlerResponse> => {
-
-  return customInstance<meHandlerResponse>(getMeHandlerUrl(),
-  {
+export const meHandler = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<meHandlerResponse> => {
+  return customInstance<meHandlerResponse>(getMeHandlerUrl(), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type updateMeHandlerResponse200 = {
-  data: SessionResponse
-  status: 200
-}
+  data: SessionResponse;
+  status: 200;
+};
 
 export type updateMeHandlerResponse401 = {
-  data: ErrorBody
-  status: 401
-}
+  data: ErrorBody;
+  status: 401;
+};
 
 export type updateMeHandlerResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type updateMeHandlerResponseSuccess = (updateMeHandlerResponse200) & {
-  headers: Headers;
-};
-export type updateMeHandlerResponseError = (updateMeHandlerResponse401 | updateMeHandlerResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type updateMeHandlerResponse = (updateMeHandlerResponseSuccess | updateMeHandlerResponseError)
+export type updateMeHandlerResponseSuccess = updateMeHandlerResponse200 & {
+  headers: Headers;
+};
+export type updateMeHandlerResponseError = (
+  | updateMeHandlerResponse401
+  | updateMeHandlerResponse404
+) & {
+  headers: Headers;
+};
+
+export type updateMeHandlerResponse = updateMeHandlerResponseSuccess | updateMeHandlerResponseError;
 
 export const getUpdateMeHandlerUrl = () => {
-
-
-
-
-  return `/api/v1/auth/me`
-}
+  return `/api/v1/auth/me`;
+};
 
 /**
  * @summary Update current user's profile (name, email).
  */
-export const updateMeHandler = async (updateUserRequest: UpdateUserRequest, options?: Parameters<typeof customInstance>[1]): Promise<updateMeHandlerResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const updateMeHandler = async (
+  updateUserRequest: UpdateUserRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<updateMeHandlerResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<updateMeHandlerResponse>(getUpdateMeHandlerUrl(),
-  {
+  return customInstance<updateMeHandlerResponse>(getUpdateMeHandlerUrl(), {
     ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(updateUserRequest)
-  }
-);}
-
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateUserRequest),
+  });
+};
 
 export type authModeHandlerResponse200 = {
-  data: AuthModeResponse
-  status: 200
-}
+  data: AuthModeResponse;
+  status: 200;
+};
 
-export type authModeHandlerResponseSuccess = (authModeHandlerResponse200) & {
+export type authModeHandlerResponseSuccess = authModeHandlerResponse200 & {
   headers: Headers;
 };
-;
 
-export type authModeHandlerResponse = (authModeHandlerResponseSuccess)
+export type authModeHandlerResponse = authModeHandlerResponseSuccess;
 
 export const getAuthModeHandlerUrl = () => {
-
-
-
-
-  return `/api/v1/auth/mode`
-}
+  return `/api/v1/auth/mode`;
+};
 
 /**
  * Public by design: the login page is anonymous, so this cannot live on
  * `/auth/me` (which 401s without a session).
  * @summary Report how this deployment authenticates users.
  */
-export const authModeHandler = async ( options?: Parameters<typeof customInstance>[1]): Promise<authModeHandlerResponse> => {
-
-  return customInstance<authModeHandlerResponse>(getAuthModeHandlerUrl(),
-  {
+export const authModeHandler = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<authModeHandlerResponse> => {
+  return customInstance<authModeHandlerResponse>(getAuthModeHandlerUrl(), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type createPairingCodeHandlerResponse201 = {
-  data: PairingCodeResponse
-  status: 201
-}
+  data: PairingCodeResponse;
+  status: 201;
+};
 
 export type createPairingCodeHandlerResponse401 = {
-  data: ErrorBody
-  status: 401
-}
-
-export type createPairingCodeHandlerResponseSuccess = (createPairingCodeHandlerResponse201) & {
-  headers: Headers;
-};
-export type createPairingCodeHandlerResponseError = (createPairingCodeHandlerResponse401) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 401;
 };
 
-export type createPairingCodeHandlerResponse = (createPairingCodeHandlerResponseSuccess | createPairingCodeHandlerResponseError)
+export type createPairingCodeHandlerResponseSuccess = createPairingCodeHandlerResponse201 & {
+  headers: Headers;
+};
+export type createPairingCodeHandlerResponseError = createPairingCodeHandlerResponse401 & {
+  headers: Headers;
+};
+
+export type createPairingCodeHandlerResponse =
+  | createPairingCodeHandlerResponseSuccess
+  | createPairingCodeHandlerResponseError;
 
 export const getCreatePairingCodeHandlerUrl = () => {
-
-
-
-
-  return `/api/v1/auth/pairing-codes`
-}
+  return `/api/v1/auth/pairing-codes`;
+};
 
 /**
  * The code is the bootstrap half of pairing: the client exchanges it once, at
@@ -304,166 +268,174 @@ export const getCreatePairingCodeHandlerUrl = () => {
  * response and nowhere afterwards.
  * @summary Mint a one-time code that pairs a client on another device to this account.
  */
-export const createPairingCodeHandler = async (createPairingCodeRequest: CreatePairingCodeRequest, options?: Parameters<typeof customInstance>[1]): Promise<createPairingCodeHandlerResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const createPairingCodeHandler = async (
+  createPairingCodeRequest: CreatePairingCodeRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<createPairingCodeHandlerResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<createPairingCodeHandlerResponse>(getCreatePairingCodeHandlerUrl(),
-  {
+  return customInstance<createPairingCodeHandlerResponse>(getCreatePairingCodeHandlerUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(createPairingCodeRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(createPairingCodeRequest),
+  });
+};
 
 export type changePasswordHandlerResponse200 = {
-  data: MessageResponse
-  status: 200
-}
+  data: MessageResponse;
+  status: 200;
+};
 
 export type changePasswordHandlerResponse400 = {
-  data: ErrorBody
-  status: 400
-}
+  data: ErrorBody;
+  status: 400;
+};
 
 export type changePasswordHandlerResponse401 = {
-  data: ErrorBody
-  status: 401
-}
+  data: ErrorBody;
+  status: 401;
+};
 
 export type changePasswordHandlerResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type changePasswordHandlerResponseSuccess = (changePasswordHandlerResponse200) & {
-  headers: Headers;
-};
-export type changePasswordHandlerResponseError = (changePasswordHandlerResponse400 | changePasswordHandlerResponse401 | changePasswordHandlerResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type changePasswordHandlerResponse = (changePasswordHandlerResponseSuccess | changePasswordHandlerResponseError)
+export type changePasswordHandlerResponseSuccess = changePasswordHandlerResponse200 & {
+  headers: Headers;
+};
+export type changePasswordHandlerResponseError = (
+  | changePasswordHandlerResponse400
+  | changePasswordHandlerResponse401
+  | changePasswordHandlerResponse404
+) & {
+  headers: Headers;
+};
+
+export type changePasswordHandlerResponse =
+  | changePasswordHandlerResponseSuccess
+  | changePasswordHandlerResponseError;
 
 export const getChangePasswordHandlerUrl = () => {
-
-
-
-
-  return `/api/v1/auth/password`
-}
+  return `/api/v1/auth/password`;
+};
 
 /**
  * @summary Change your own password.
  */
-export const changePasswordHandler = async (changePasswordRequest: ChangePasswordRequest, options?: Parameters<typeof customInstance>[1]): Promise<changePasswordHandlerResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const changePasswordHandler = async (
+  changePasswordRequest: ChangePasswordRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<changePasswordHandlerResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<changePasswordHandlerResponse>(getChangePasswordHandlerUrl(),
-  {
+  return customInstance<changePasswordHandlerResponse>(getChangePasswordHandlerUrl(), {
     ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(changePasswordRequest)
-  }
-);}
-
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(changePasswordRequest),
+  });
+};
 
 export type passwordLoginHandlerResponse200 = {
-  data: SessionResponse
-  status: 200
-}
+  data: SessionResponse;
+  status: 200;
+};
 
 export type passwordLoginHandlerResponse401 = {
-  data: ErrorBody
-  status: 401
-}
+  data: ErrorBody;
+  status: 401;
+};
 
 export type passwordLoginHandlerResponse404 = {
-  data: ErrorBody
-  status: 404
-}
+  data: ErrorBody;
+  status: 404;
+};
 
 export type passwordLoginHandlerResponse429 = {
-  data: ErrorBody
-  status: 429
-}
-
-export type passwordLoginHandlerResponseSuccess = (passwordLoginHandlerResponse200) & {
-  headers: Headers;
-};
-export type passwordLoginHandlerResponseError = (passwordLoginHandlerResponse401 | passwordLoginHandlerResponse404 | passwordLoginHandlerResponse429) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 429;
 };
 
-export type passwordLoginHandlerResponse = (passwordLoginHandlerResponseSuccess | passwordLoginHandlerResponseError)
+export type passwordLoginHandlerResponseSuccess = passwordLoginHandlerResponse200 & {
+  headers: Headers;
+};
+export type passwordLoginHandlerResponseError = (
+  | passwordLoginHandlerResponse401
+  | passwordLoginHandlerResponse404
+  | passwordLoginHandlerResponse429
+) & {
+  headers: Headers;
+};
+
+export type passwordLoginHandlerResponse =
+  | passwordLoginHandlerResponseSuccess
+  | passwordLoginHandlerResponseError;
 
 export const getPasswordLoginHandlerUrl = () => {
-
-
-
-
-  return `/api/v1/auth/password/login`
-}
+  return `/api/v1/auth/password/login`;
+};
 
 /**
  * @summary Log in with an email and password, returning an auth-session cookie.
  */
-export const passwordLoginHandler = async (passwordLoginRequest: PasswordLoginRequest, options?: Parameters<typeof customInstance>[1]): Promise<passwordLoginHandlerResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const passwordLoginHandler = async (
+  passwordLoginRequest: PasswordLoginRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<passwordLoginHandlerResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<passwordLoginHandlerResponse>(getPasswordLoginHandlerUrl(),
-  {
+  return customInstance<passwordLoginHandlerResponse>(getPasswordLoginHandlerUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(passwordLoginRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(passwordLoginRequest),
+  });
+};
 
 export type exchangeTokenHandlerResponse200 = {
-  data: TokenSessionResponse
-  status: 200
-}
+  data: TokenSessionResponse;
+  status: 200;
+};
 
 export type exchangeTokenHandlerResponse401 = {
-  data: ErrorBody
-  status: 401
-}
-
-export type exchangeTokenHandlerResponseSuccess = (exchangeTokenHandlerResponse200) & {
-  headers: Headers;
-};
-export type exchangeTokenHandlerResponseError = (exchangeTokenHandlerResponse401) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 401;
 };
 
-export type exchangeTokenHandlerResponse = (exchangeTokenHandlerResponseSuccess | exchangeTokenHandlerResponseError)
+export type exchangeTokenHandlerResponseSuccess = exchangeTokenHandlerResponse200 & {
+  headers: Headers;
+};
+export type exchangeTokenHandlerResponseError = exchangeTokenHandlerResponse401 & {
+  headers: Headers;
+};
+
+export type exchangeTokenHandlerResponse =
+  | exchangeTokenHandlerResponseSuccess
+  | exchangeTokenHandlerResponseError;
 
 export const getExchangeTokenHandlerUrl = () => {
-
-
-
-
-  return `/api/v1/auth/token/session`
-}
+  return `/api/v1/auth/token/session`;
+};
 
 /**
  * Sandbox pods carry a `USER_AUTH_TOKEN` JWT signed with `TASK_TOKEN_SECRET`.
@@ -471,64 +443,53 @@ export const getExchangeTokenHandlerUrl = () => {
  * to call authenticated `/api/v1/*` endpoints.
  * @summary Exchange a sandbox user auth token (JWT) for a session cookie.
  */
-export const exchangeTokenHandler = async ( options?: Parameters<typeof customInstance>[1]): Promise<exchangeTokenHandlerResponse> => {
-
-  return customInstance<exchangeTokenHandlerResponse>(getExchangeTokenHandlerUrl(),
-  {
+export const exchangeTokenHandler = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<exchangeTokenHandlerResponse> => {
+  return customInstance<exchangeTokenHandlerResponse>(getExchangeTokenHandlerUrl(), {
     ...options,
-    method: 'POST'
-
-
-  }
-);}
-
+    method: "POST",
+  });
+};
 
 export type verifyHandlerResponse200 = {
-  data: void
-  status: 200
-}
+  data: void;
+  status: 200;
+};
 
 export type verifyHandlerResponse401 = {
-  data: ErrorBody
-  status: 401
-}
+  data: ErrorBody;
+  status: 401;
+};
 
 export type verifyHandlerResponse403 = {
-  data: ErrorBody
-  status: 403
-}
+  data: ErrorBody;
+  status: 403;
+};
 
-export type verifyHandlerResponseSuccess = (verifyHandlerResponse200) & {
+export type verifyHandlerResponseSuccess = verifyHandlerResponse200 & {
   headers: Headers;
 };
 export type verifyHandlerResponseError = (verifyHandlerResponse401 | verifyHandlerResponse403) & {
   headers: Headers;
 };
 
-export type verifyHandlerResponse = (verifyHandlerResponseSuccess | verifyHandlerResponseError)
+export type verifyHandlerResponse = verifyHandlerResponseSuccess | verifyHandlerResponseError;
 
 export const getVerifyHandlerUrl = () => {
-
-
-
-
-  return `/api/v1/auth/verify`
-}
+  return `/api/v1/auth/verify`;
+};
 
 /**
  * Returns 200/401 only — no response headers.
  * For preview URLs (hostname contains `--`), also checks task-based access.
  * @summary Verify authentication via session cookie or API key (Traefik `ForwardAuth`).
  */
-export const verifyHandler = async ( options?: Parameters<typeof customInstance>[1]): Promise<verifyHandlerResponse> => {
-
-  return customInstance<verifyHandlerResponse>(getVerifyHandlerUrl(),
-  {
+export const verifyHandler = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<verifyHandlerResponse> => {
+  return customInstance<verifyHandlerResponse>(getVerifyHandlerUrl(), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
+    method: "GET",
+  });
+};

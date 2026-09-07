@@ -5,16 +5,16 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { Scope } from './scope.ts';
-import type { UpdateLoopConfig } from './updateLoopConfig.ts';
-import type { UpdateLoopSource } from './updateLoopSource.ts';
+import type { Scope } from "./scope.ts";
+import type { UpdateLoopConfig } from "./updateLoopConfig.ts";
+import type { UpdateLoopSource } from "./updateLoopSource.ts";
 
 export interface UpdateLoopRequest {
   config?: null | UpdateLoopConfig;
   /**
-     * Rename the Loop. Omit to keep the current name; a name cannot be cleared.
-     * @nullable
-     */
+   * Rename the Loop. Omit to keep the current name; a name cannot be cleared.
+   * @nullable
+   */
   name?: string | null;
   scope?: null | Scope;
   source?: null | UpdateLoopSource;

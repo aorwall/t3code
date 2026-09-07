@@ -10,4 +10,4 @@
  * Env entries to set, merged into any existing override.
  * @nullable
  */
-export type UpdateServerConfigRequestEnv = {[key: string]: string} | null;
+export type UpdateServerConfigRequestEnv = { [key: string]: string } | null;

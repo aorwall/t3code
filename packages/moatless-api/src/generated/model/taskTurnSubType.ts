@@ -9,13 +9,12 @@
 /**
  * `TaskTurn` sub-types.
  */
-export type TaskTurnSubType = typeof TaskTurnSubType[keyof typeof TaskTurnSubType];
-
+export type TaskTurnSubType = (typeof TaskTurnSubType)[keyof typeof TaskTurnSubType];
 
 export const TaskTurnSubType = {
-  active: 'active',
-  completed: 'completed',
-  error: 'error',
-  stopped: 'stopped',
-  turn_interrupted: 'turn_interrupted',
+  active: "active",
+  completed: "completed",
+  error: "error",
+  stopped: "stopped",
+  turn_interrupted: "turn_interrupted",
 } as const;

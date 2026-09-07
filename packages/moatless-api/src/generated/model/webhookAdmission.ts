@@ -9,10 +9,9 @@
 /**
  * What admission did with a delivery.
  */
-export type WebhookAdmission = typeof WebhookAdmission[keyof typeof WebhookAdmission];
-
+export type WebhookAdmission = (typeof WebhookAdmission)[keyof typeof WebhookAdmission];
 
 export const WebhookAdmission = {
-  admitted: 'admitted',
-  duplicate: 'duplicate',
+  admitted: "admitted",
+  duplicate: "duplicate",
 } as const;

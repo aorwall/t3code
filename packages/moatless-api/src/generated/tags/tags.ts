@@ -5,52 +5,41 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type {
-  ErrorBody,
-  TagResponse
-} from '../model';
+import type { ErrorBody, TagResponse } from "../model";
 
-import { customInstance } from '../../customInstance.ts';
+import { customInstance } from "../../customInstance.ts";
 
 export type listTagsResponse200 = {
-  data: TagResponse[]
-  status: 200
-}
+  data: TagResponse[];
+  status: 200;
+};
 
 export type listTagsResponse500 = {
-  data: ErrorBody
-  status: 500
-}
-
-export type listTagsResponseSuccess = (listTagsResponse200) & {
-  headers: Headers;
-};
-export type listTagsResponseError = (listTagsResponse500) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 500;
 };
 
-export type listTagsResponse = (listTagsResponseSuccess | listTagsResponseError)
+export type listTagsResponseSuccess = listTagsResponse200 & {
+  headers: Headers;
+};
+export type listTagsResponseError = listTagsResponse500 & {
+  headers: Headers;
+};
+
+export type listTagsResponse = listTagsResponseSuccess | listTagsResponseError;
 
 export const getListTagsUrl = () => {
-
-
-
-
-  return `/api/v1/tags`
-}
+  return `/api/v1/tags`;
+};
 
 /**
  * @summary List all tags.
  */
-export const listTags = async ( options?: Parameters<typeof customInstance>[1]): Promise<listTagsResponse> => {
-
-  return customInstance<listTagsResponse>(getListTagsUrl(),
-  {
+export const listTags = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<listTagsResponse> => {
+  return customInstance<listTagsResponse>(getListTagsUrl(), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
+    method: "GET",
+  });
+};

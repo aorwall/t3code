@@ -11,20 +11,20 @@
  */
 export interface WorkspaceRepoInput {
   /**
-     * Override the repository's default branch for this placement.
-     * @nullable
-     */
+   * Override the repository's default branch for this placement.
+   * @nullable
+   */
   branch?: string | null;
   /**
-     * Mark this placement as the primary (diff/PR/AGENTS.md) repo. At most one
-     * primary is kept per workspace; when several are flagged the first wins.
-     * @nullable
-     */
+   * Mark this placement as the primary (diff/PR/AGENTS.md) repo. At most one
+   * primary is kept per workspace; when several are flagged the first wins.
+   * @nullable
+   */
   isPrimary?: boolean | null;
   /**
-     * Subdir under the workspace dir (defaults to the repo name at runtime).
-     * @nullable
-     */
+   * Subdir under the workspace dir (defaults to the repo name at runtime).
+   * @nullable
+   */
   mountName?: string | null;
   /** @nullable */
   position?: number | null;

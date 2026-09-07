@@ -5,8 +5,8 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { PaginationResponse } from './paginationResponse.ts';
-import type { TaskResponse } from './taskResponse.ts';
+import type { PaginationResponse } from "./paginationResponse.ts";
+import type { TaskResponse } from "./taskResponse.ts";
 
 export interface ListTasksResponse {
   items: TaskResponse[];

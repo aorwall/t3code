@@ -5,9 +5,9 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { AgentStatus } from './agentStatus.ts';
-import type { CommandSummary } from './commandSummary.ts';
-import type { SandboxStatus } from './sandboxStatus.ts';
+import type { AgentStatus } from "./agentStatus.ts";
+import type { CommandSummary } from "./commandSummary.ts";
+import type { SandboxStatus } from "./sandboxStatus.ts";
 
 /**
  * The complete live status of a Task's Sandbox and Agent.
@@ -15,13 +15,13 @@ import type { SandboxStatus } from './sandboxStatus.ts';
 export interface LiveStatus {
   agentStatus: null | AgentStatus;
   /**
-     * Commands registered through `moat cmd`, running and recently finished.
-     *
-     * The agent reports `idle` while one of these runs — its turn ended and
-     * the sandbox is carrying the work — so a reader with the agent status
-     * alone cannot tell a finished Task from one that is mid-build. Empty
-     * whenever the sandbox is not `Ready`, or when nothing is registered.
-     */
+   * Commands registered through `moat cmd`, running and recently finished.
+   *
+   * The agent reports `idle` while one of these runs — its turn ended and
+   * the sandbox is carrying the work — so a reader with the agent status
+   * alone cannot tell a finished Task from one that is mid-build. Empty
+   * whenever the sandbox is not `Ready`, or when nothing is registered.
+   */
   commands?: CommandSummary[];
   /** @nullable */
   sandboxError: string | null;

@@ -5,20 +5,20 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { AgentMode } from './agentMode.ts';
-import type { MessageContextInput } from './messageContextInput.ts';
-import type { SendMessageRequestToolResponse } from './sendMessageRequestToolResponse.ts';
+import type { AgentMode } from "./agentMode.ts";
+import type { MessageContextInput } from "./messageContextInput.ts";
+import type { SendMessageRequestToolResponse } from "./sendMessageRequestToolResponse.ts";
 
 export interface SendMessageRequest {
   agentMode?: null | AgentMode;
   contexts?: MessageContextInput[];
   /**
-     * Reasoning effort for the turn, in the agent's own vocabulary
-     * (`low`/`medium`/`high`/`xhigh`/`max` for Claude,
-     * `minimal`/`low`/`medium`/`high` for Codex). Omit to leave the agent on
-     * its own default.
-     * @nullable
-     */
+   * Reasoning effort for the turn, in the agent's own vocabulary
+   * (`low`/`medium`/`high`/`xhigh`/`max` for Claude,
+   * `minimal`/`low`/`medium`/`high` for Codex). Omit to leave the agent on
+   * its own default.
+   * @nullable
+   */
   effort?: string | null;
   fileIds?: string[];
   message: string;
@@ -27,20 +27,20 @@ export interface SendMessageRequest {
   /** @nullable */
   resume?: boolean | null;
   /**
-     * Skills to activate for this turn. Names only — the sandbox resolves each
-     * one's `SKILL.md` on disk and frontloads its body ahead of the message.
-     */
+   * Skills to activate for this turn. Names only — the sandbox resolves each
+   * one's `SKILL.md` on disk and frontloads its body ahead of the message.
+   */
   skills?: string[];
   /**
-     * Task ID of the sender (set automatically when sent from within a sandbox).
-     * @nullable
-     */
+   * Task ID of the sender (set automatically when sent from within a sandbox).
+   * @nullable
+   */
   sourceTaskId?: string | null;
   /**
-     * When true, the next agent run starts a fresh session instead of resuming.
-     * Per-message and cleared after send.
-     * @nullable
-     */
+   * When true, the next agent run starts a fresh session instead of resuming.
+   * Per-message and cleared after send.
+   * @nullable
+   */
   startFresh?: boolean | null;
   /** @nullable */
   toolName?: string | null;

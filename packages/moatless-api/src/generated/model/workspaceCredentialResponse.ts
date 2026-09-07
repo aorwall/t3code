@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { WorkspaceCredentialProvider } from './workspaceCredentialProvider.ts';
+import type { WorkspaceCredentialProvider } from "./workspaceCredentialProvider.ts";
 
 /**
  * Metadata for one workspace credential. The value is deliberately absent.

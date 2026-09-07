@@ -8,26 +8,26 @@
 
 export interface CodexAgentHarnessCredentialStatusResponse {
   /**
-     * "`device_code`" | "`auth_json`" | "`api_key`" — which save path produced the row.
-     * @nullable
-     */
+   * "`device_code`" | "`auth_json`" | "`api_key`" — which save path produced the row.
+   * @nullable
+   */
   authMethod?: string | null;
   connected: boolean;
   /**
-     * Email reported by ChatGPT account on the `id_token` (device-code flow only).
-     * @nullable
-     */
+   * Email reported by ChatGPT account on the `id_token` (device-code flow only).
+   * @nullable
+   */
   email?: string | null;
   /**
-     * True when the stored credential hit a permanent refresh failure and
-     * the user must sign in again. Absent when no credential exists.
-     * @nullable
-     */
+   * True when the stored credential hit a permanent refresh failure and
+   * the user must sign in again. Absent when no credential exists.
+   * @nullable
+   */
   needsReconnect?: boolean | null;
   /**
-     * ChatGPT plan type (e.g., "plus", "pro").
-     * @nullable
-     */
+   * ChatGPT plan type (e.g., "plus", "pro").
+   * @nullable
+   */
   planType?: string | null;
   /** @nullable */
   tokenType?: string | null;

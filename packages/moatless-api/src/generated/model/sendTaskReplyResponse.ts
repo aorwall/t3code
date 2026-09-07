@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ReplyTargetDescriptor } from './replyTargetDescriptor.ts';
+import type { ReplyTargetDescriptor } from "./replyTargetDescriptor.ts";
 
 export interface SendTaskReplyResponse {
   errors: string[];

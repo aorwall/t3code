@@ -9,12 +9,11 @@
 /**
  * Observed Agent lifecycle while its Sandbox is ready.
  */
-export type AgentStatus = typeof AgentStatus[keyof typeof AgentStatus];
-
+export type AgentStatus = (typeof AgentStatus)[keyof typeof AgentStatus];
 
 export const AgentStatus = {
-  running: 'running',
-  waiting: 'waiting',
-  idle: 'idle',
-  unknown: 'unknown',
+  running: "running",
+  waiting: "waiting",
+  idle: "idle",
+  unknown: "unknown",
 } as const;

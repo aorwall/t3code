@@ -5,17 +5,17 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { FeedbackStatus } from './feedbackStatus.ts';
+import type { FeedbackStatus } from "./feedbackStatus.ts";
 
 /**
  * Request body for `PATCH /api/v1/feedback/{feedback_id}/status`.
  */
 export interface UpdateFeedbackStatusRequest {
   /**
-     * Why. Replaces the note the previous status carried; an empty string
-     * reads as none.
-     * @nullable
-     */
+   * Why. Replaces the note the previous status carried; an empty string
+   * reads as none.
+   * @nullable
+   */
   note?: string | null;
   status: FeedbackStatus;
 }

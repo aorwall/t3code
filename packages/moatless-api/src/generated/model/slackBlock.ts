@@ -5,9 +5,9 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { SlackPlainText } from './slackPlainText.ts';
-import type { SlackTableCell } from './slackTableCell.ts';
-import type { SlackText } from './slackText.ts';
+import type { SlackPlainText } from "./slackPlainText.ts";
+import type { SlackTableCell } from "./slackTableCell.ts";
+import type { SlackText } from "./slackText.ts";
 
 /**
  * One Slack Block Kit block.
@@ -16,27 +16,34 @@ import type { SlackText } from './slackText.ts';
  * entered, with a field path, instead of reaching Slack and returning a bare
  * `invalid_blocks` with the message silently unposted.
  */
-export type SlackBlock = {
-  text: SlackPlainText;
-  type: 'header';
-} | {
-  /** @nullable */
-  fields?: SlackText[] | null;
-  text?: null | SlackText;
-  type: 'section';
-} | {
-  text: string;
-  type: 'markdown';
-} | {
-  rows: SlackTableCell[][];
-  type: 'table';
-} | {
-  elements: SlackText[];
-  type: 'context';
-} | {
-  type: 'divider';
-} | {
-  alt_text: string;
-  image_url: string;
-  type: 'image';
-};
+export type SlackBlock =
+  | {
+      text: SlackPlainText;
+      type: "header";
+    }
+  | {
+      /** @nullable */
+      fields?: SlackText[] | null;
+      text?: null | SlackText;
+      type: "section";
+    }
+  | {
+      text: string;
+      type: "markdown";
+    }
+  | {
+      rows: SlackTableCell[][];
+      type: "table";
+    }
+  | {
+      elements: SlackText[];
+      type: "context";
+    }
+  | {
+      type: "divider";
+    }
+  | {
+      alt_text: string;
+      image_url: string;
+      type: "image";
+    };

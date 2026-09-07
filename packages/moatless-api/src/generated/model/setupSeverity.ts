@@ -10,10 +10,9 @@
  * A closed vocabulary: a new value here is a real contract change the
  * frontend should fail to compile against rather than silently ignore.
  */
-export type SetupSeverity = typeof SetupSeverity[keyof typeof SetupSeverity];
-
+export type SetupSeverity = (typeof SetupSeverity)[keyof typeof SetupSeverity];
 
 export const SetupSeverity = {
-  required: 'required',
-  recommended: 'recommended',
+  required: "required",
+  recommended: "recommended",
 } as const;

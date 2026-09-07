@@ -9,11 +9,10 @@
 /**
  * Kind of firing source owned by a Loop.
  */
-export type LoopKind = typeof LoopKind[keyof typeof LoopKind];
-
+export type LoopKind = (typeof LoopKind)[keyof typeof LoopKind];
 
 export const LoopKind = {
-  adapter_event: 'adapter_event',
-  schedule: 'schedule',
-  manual: 'manual',
+  adapter_event: "adapter_event",
+  schedule: "schedule",
+  manual: "manual",
 } as const;

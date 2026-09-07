@@ -9,10 +9,9 @@
 /**
  * Where a node-local sandbox volume is backed.
  */
-export type StorageMedium = typeof StorageMedium[keyof typeof StorageMedium];
-
+export type StorageMedium = (typeof StorageMedium)[keyof typeof StorageMedium];
 
 export const StorageMedium = {
-  emptyDir: 'emptyDir',
-  node: 'node',
+  emptyDir: "emptyDir",
+  node: "node",
 } as const;

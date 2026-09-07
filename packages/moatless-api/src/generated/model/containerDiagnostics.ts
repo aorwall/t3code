@@ -11,10 +11,10 @@
  */
 export interface ContainerDiagnostics {
   /**
-     * CPU usage in millicores (from K8s Metrics API, if available)
-     * @minimum 0
-     * @nullable
-     */
+   * CPU usage in millicores (from K8s Metrics API, if available)
+   * @minimum 0
+   * @nullable
+   */
   cpuMillicores?: number | null;
   /** @nullable */
   exitCode?: number | null;
@@ -23,10 +23,10 @@ export interface ContainerDiagnostics {
   /** @nullable */
   lastTerminatedReason?: string | null;
   /**
-     * Memory usage in megabytes (from K8s Metrics API, if available)
-     * @minimum 0
-     * @nullable
-     */
+   * Memory usage in megabytes (from K8s Metrics API, if available)
+   * @minimum 0
+   * @nullable
+   */
   memoryMb?: number | null;
   name: string;
   restartCount: number;

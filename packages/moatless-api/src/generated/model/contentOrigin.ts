@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ContentSource } from './contentSource.ts';
+import type { ContentSource } from "./contentSource.ts";
 
 /**
  * Where a file answer came from, carried by every file response.
@@ -13,9 +13,9 @@ import type { ContentSource } from './contentSource.ts';
 export interface ContentOrigin {
   source: ContentSource;
   /**
-     * When the mirror this came from was stored, RFC 3339. Absent for
-     * [`ContentSource::Sandbox`], whose answer is current by construction.
-     * @nullable
-     */
+   * When the mirror this came from was stored, RFC 3339. Absent for
+   * [`ContentSource::Sandbox`], whose answer is current by construction.
+   * @nullable
+   */
   syncedAt?: string | null;
 }

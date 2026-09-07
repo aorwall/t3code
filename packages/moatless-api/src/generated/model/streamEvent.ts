@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { EventType } from './eventType.ts';
+import type { EventType } from "./eventType.ts";
 
 /**
  * SSE event envelope — the shape of events streamed to the frontend.
@@ -17,12 +17,12 @@ export interface StreamEvent {
   /** @nullable */
   agentType?: string | null;
   /**
-     * What this event says about whether the agent is working, if anything.
-     *
-     * Absent means *this event does not say*, so the client leaves whatever it
-     * last knew alone. It never means "not working". See [`agent_working`].
-     * @nullable
-     */
+   * What this event says about whether the agent is working, if anything.
+   *
+   * Absent means *this event does not say*, so the client leaves whatever it
+   * last knew alone. It never means "not working". See [`agent_working`].
+   * @nullable
+   */
   agentWorking?: boolean | null;
   eventId: string;
   isError: boolean;

@@ -14,22 +14,22 @@
  */
 export interface RuntimeEvent {
   /**
-     * Number of times this event has occurred
-     * @nullable
-     */
+   * Number of times this event has occurred
+   * @nullable
+   */
   count?: number | null;
   /**
-     * Last time the event occurred (ISO 8601)
-     * @nullable
-     */
+   * Last time the event occurred (ISO 8601)
+   * @nullable
+   */
   lastTimestamp?: string | null;
   /** Human-readable message */
   message: string;
   /** Event reason (e.g. "`BackOff`", "`FailedScheduling`", "Pulling", "`OOMKilled`") */
   reason: string;
   /**
-     * Severity: "normal" or "warning"
-     * @nullable
-     */
+   * Severity: "normal" or "warning"
+   * @nullable
+   */
   severity?: string | null;
 }

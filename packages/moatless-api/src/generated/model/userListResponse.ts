@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { UserListItem } from './userListItem.ts';
+import type { UserListItem } from "./userListItem.ts";
 
 /**
  * GET /api/v1/users response.

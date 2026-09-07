@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { FeedbackListItem } from './feedbackListItem.ts';
+import type { FeedbackListItem } from "./feedbackListItem.ts";
 
 /**
  * Response for `GET /api/v1/feedback`, newest first. `total` counts every row

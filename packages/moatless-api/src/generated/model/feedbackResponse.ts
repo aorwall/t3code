@@ -5,10 +5,10 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { FeedbackCategory } from './feedbackCategory.ts';
-import type { FeedbackSource } from './feedbackSource.ts';
-import type { FeedbackStatus } from './feedbackStatus.ts';
-import type { FeedbackSurface } from './feedbackSurface.ts';
+import type { FeedbackCategory } from "./feedbackCategory.ts";
+import type { FeedbackSource } from "./feedbackSource.ts";
+import type { FeedbackStatus } from "./feedbackStatus.ts";
+import type { FeedbackSurface } from "./feedbackSurface.ts";
 
 /**
  * Response shape for a single feedback row.
@@ -25,19 +25,19 @@ export interface FeedbackResponse {
   source: FeedbackSource;
   status: FeedbackStatus;
   /**
-     * Why the current status was set.
-     * @nullable
-     */
+   * Why the current status was set.
+   * @nullable
+   */
   statusNote?: string | null;
   /**
-     * RFC 3339 instant the status was last set.
-     * @nullable
-     */
+   * RFC 3339 instant the status was last set.
+   * @nullable
+   */
   statusUpdatedAt?: string | null;
   /**
-     * User id of the reader who set the current status.
-     * @nullable
-     */
+   * User id of the reader who set the current status.
+   * @nullable
+   */
   statusUpdatedBy?: string | null;
   surface: FeedbackSurface;
   taskId: string;

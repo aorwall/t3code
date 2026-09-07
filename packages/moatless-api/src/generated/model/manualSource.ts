@@ -6,4 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface ManualSource { [key: string]: unknown }
+export interface ManualSource {
+  [key: string]: unknown;
+}

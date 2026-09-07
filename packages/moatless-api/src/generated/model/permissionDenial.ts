@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { PermissionDenialToolInput } from './permissionDenialToolInput.ts';
+import type { PermissionDenialToolInput } from "./permissionDenialToolInput.ts";
 
 /**
  * Permission denial record.

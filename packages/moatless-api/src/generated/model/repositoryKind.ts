@@ -9,11 +9,10 @@
 /**
  * Kind of repository source.
  */
-export type RepositoryKind = typeof RepositoryKind[keyof typeof RepositoryKind];
-
+export type RepositoryKind = (typeof RepositoryKind)[keyof typeof RepositoryKind];
 
 export const RepositoryKind = {
-  git: 'git',
-  remote: 'remote',
-  template: 'template',
+  git: "git",
+  remote: "remote",
+  template: "template",
 } as const;

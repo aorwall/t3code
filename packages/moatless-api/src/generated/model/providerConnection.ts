@@ -15,14 +15,14 @@
  */
 export interface ProviderConnection {
   /**
-     * True when a usable token exists and, for refreshable tokens, the most
-     * recent refresh succeeded.
-     */
+   * True when a usable token exists and, for refreshable tokens, the most
+   * recent refresh succeeded.
+   */
   connected: boolean;
   /**
-     * Provider login (e.g. GitHub username) when available.
-     * @nullable
-     */
+   * Provider login (e.g. GitHub username) when available.
+   * @nullable
+   */
   login?: string | null;
   /** Provider identifier (e.g. `"github"`). */
   provider: string;

@@ -9,11 +9,10 @@
 /**
  * Git hosting provider.
  */
-export type RepositoryProvider = typeof RepositoryProvider[keyof typeof RepositoryProvider];
-
+export type RepositoryProvider = (typeof RepositoryProvider)[keyof typeof RepositoryProvider];
 
 export const RepositoryProvider = {
-  github: 'github',
-  gitlab: 'gitlab',
-  gitness: 'gitness',
+  github: "github",
+  gitlab: "gitlab",
+  gitness: "gitness",
 } as const;

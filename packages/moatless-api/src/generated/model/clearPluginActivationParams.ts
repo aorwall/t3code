@@ -5,23 +5,23 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ActivationReach } from './activationReach.ts';
+import type { ActivationReach } from "./activationReach.ts";
 
 export type ClearPluginActivationParams = {
-/**
- * Whose record to clear
- */
-reach: ActivationReach;
-/**
- * Omit to clear the whole-plugin record
- */
-skillName?: string;
-/**
- * Whose personal record; omit for your own
- */
-userId?: string;
-/**
- * Which Workspace's record; required with the workspace reach
- */
-workspaceId?: string;
+  /**
+   * Whose record to clear
+   */
+  reach: ActivationReach;
+  /**
+   * Omit to clear the whole-plugin record
+   */
+  skillName?: string;
+  /**
+   * Whose personal record; omit for your own
+   */
+  userId?: string;
+  /**
+   * Which Workspace's record; required with the workspace reach
+   */
+  workspaceId?: string;
 };

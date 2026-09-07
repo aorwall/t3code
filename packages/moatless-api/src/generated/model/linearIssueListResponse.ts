@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { LinearIssueListResponseDataItem } from './linearIssueListResponseDataItem.ts';
+import type { LinearIssueListResponseDataItem } from "./linearIssueListResponseDataItem.ts";
 
 /**
  * Response for `GET /api/v1/linear/issues`. `data` holds the raw Linear issue

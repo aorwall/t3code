@@ -5,15 +5,15 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { AgentStatus } from './agentStatus.ts';
-import type { ContainerDiagnostics } from './containerDiagnostics.ts';
-import type { ManagedCommand } from './managedCommand.ts';
-import type { ResourceMetrics } from './resourceMetrics.ts';
-import type { RuntimeEvent } from './runtimeEvent.ts';
-import type { SandboxDesiredState } from './sandboxDesiredState.ts';
-import type { SandboxStatus } from './sandboxStatus.ts';
-import type { ScheduledJobInfo } from './scheduledJobInfo.ts';
-import type { ServerEntry } from './serverEntry.ts';
+import type { AgentStatus } from "./agentStatus.ts";
+import type { ContainerDiagnostics } from "./containerDiagnostics.ts";
+import type { ManagedCommand } from "./managedCommand.ts";
+import type { ResourceMetrics } from "./resourceMetrics.ts";
+import type { RuntimeEvent } from "./runtimeEvent.ts";
+import type { SandboxDesiredState } from "./sandboxDesiredState.ts";
+import type { SandboxStatus } from "./sandboxStatus.ts";
+import type { ScheduledJobInfo } from "./scheduledJobInfo.ts";
+import type { ServerEntry } from "./serverEntry.ts";
 
 /**
  * Full sandbox status response to frontend (matches TS `SandboxStatusFullResponse`)
@@ -21,31 +21,31 @@ import type { ServerEntry } from './serverEntry.ts';
 export interface SandboxStatusFullResponse {
   agentStatus: null | AgentStatus;
   /**
-     * Commands registered through `moat cmd`, running and recently finished.
-     * Empty when the agent registered none.
-     */
+   * Commands registered through `moat cmd`, running and recently finished.
+   * Empty when the agent registered none.
+   */
   commands?: ManagedCommand[];
   /** @nullable */
   containerDiagnostics?: ContainerDiagnostics[] | null;
   /**
-     * Image the currently-provisioned sandbox container is running, read from
-     * the live Deployment/container. `None` when no sandbox exists yet.
-     * @nullable
-     */
+   * Image the currently-provisioned sandbox container is running, read from
+   * the live Deployment/container. `None` when no sandbox exists yet.
+   * @nullable
+   */
   currentSandboxImage?: string | null;
   /**
-     * `true` when `current_sandbox_image` matches `latest_sandbox_image`.
-     * `None` when either image is unknown (e.g. no sandbox provisioned).
-     * @nullable
-     */
+   * `true` when `current_sandbox_image` matches `latest_sandbox_image`.
+   * `None` when either image is unknown (e.g. no sandbox provisioned).
+   * @nullable
+   */
   imageUpToDate?: boolean | null;
   /**
-     * Image a fresh (re)deploy would use for the sandbox container: the
-     * per-repo `docker_image` override when set, otherwise the configured
-     * default. Compare against `current_sandbox_image` to know whether a
-     * redeploy would change the image.
-     * @nullable
-     */
+   * Image a fresh (re)deploy would use for the sandbox container: the
+   * per-repo `docker_image` override when set, otherwise the configured
+   * default. Compare against `current_sandbox_image` to know whether a
+   * redeploy would change the image.
+   * @nullable
+   */
   latestSandboxImage?: string | null;
   resources?: null | ResourceMetrics;
   /** @nullable */

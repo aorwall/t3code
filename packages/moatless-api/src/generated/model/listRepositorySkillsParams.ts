@@ -7,8 +7,8 @@
  */
 
 export type ListRepositorySkillsParams = {
-/**
- * Narrow to what loads in this Workspace
- */
-workspaceId?: string;
+  /**
+   * Narrow to what loads in this Workspace
+   */
+  workspaceId?: string;
 };

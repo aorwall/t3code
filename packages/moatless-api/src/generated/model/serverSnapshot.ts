@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ServerStatus } from './serverStatus.ts';
+import type { ServerStatus } from "./serverStatus.ts";
 
 /**
  * Server snapshot from sandbox GET /status
@@ -19,9 +19,9 @@ export interface ServerSnapshot {
   label?: string;
   name: string;
   /**
-     * @minimum 0
-     * @nullable
-     */
+   * @minimum 0
+   * @nullable
+   */
   pid?: number | null;
   /** @minimum 0 */
   port?: number;

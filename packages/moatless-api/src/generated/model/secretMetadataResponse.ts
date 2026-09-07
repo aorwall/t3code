@@ -5,9 +5,9 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { Scope } from './scope.ts';
-import type { SecretKind } from './secretKind.ts';
-import type { SecretSource } from './secretSource.ts';
+import type { Scope } from "./scope.ts";
+import type { SecretKind } from "./secretKind.ts";
+import type { SecretSource } from "./secretSource.ts";
 
 export interface SecretMetadataResponse {
   enabled: boolean;

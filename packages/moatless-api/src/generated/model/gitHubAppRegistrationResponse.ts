@@ -13,9 +13,9 @@ export interface GitHubAppRegistrationResponse {
   /** @minimum 0 */
   appId: number;
   /**
-     * The bot login this App would have. Creating the Bot user is a separate
-     * act — an App that only reaches repositories never runs as anyone.
-     */
+   * The bot login this App would have. Creating the Bot user is a separate
+   * act — an App that only reaches repositories never runs as anyone.
+   */
   botLogin: string;
   githubAppKey: string;
   keyFingerprint: string;

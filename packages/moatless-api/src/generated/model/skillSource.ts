@@ -9,10 +9,9 @@
 /**
  * Origin of a discovered skill.
  */
-export type SkillSource = typeof SkillSource[keyof typeof SkillSource];
-
+export type SkillSource = (typeof SkillSource)[keyof typeof SkillSource];
 
 export const SkillSource = {
-  workspace: 'workspace',
-  plugin: 'plugin',
+  workspace: "workspace",
+  plugin: "plugin",
 } as const;

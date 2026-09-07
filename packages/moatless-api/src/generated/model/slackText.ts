@@ -9,12 +9,14 @@
 /**
  * A Slack composition text object.
  */
-export type SlackText = {
-  text: string;
-  type: 'mrkdwn';
-} | {
-  /** @nullable */
-  emoji?: boolean | null;
-  text: string;
-  type: 'plain_text';
-};
+export type SlackText =
+  | {
+      text: string;
+      type: "mrkdwn";
+    }
+  | {
+      /** @nullable */
+      emoji?: boolean | null;
+      text: string;
+      type: "plain_text";
+    };

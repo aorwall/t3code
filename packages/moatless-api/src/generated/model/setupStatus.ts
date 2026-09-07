@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { SetupRequirement } from './setupRequirement.ts';
+import type { SetupRequirement } from "./setupRequirement.ts";
 
 /**
  * Environment-setup state for the current user.
@@ -14,8 +14,8 @@ export interface SetupStatus {
   /** True when every `Required`-severity requirement is `Satisfied`. */
   complete: boolean;
   /**
-     * Every evaluated requirement, satisfied ones included, so the frontend
-     * can render a full checklist as well as a nag banner.
-     */
+   * Every evaluated requirement, satisfied ones included, so the frontend
+   * can render a full checklist as well as a nag banner.
+   */
   requirements?: SetupRequirement[];
 }

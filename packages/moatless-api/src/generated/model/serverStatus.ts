@@ -9,13 +9,12 @@
 /**
  * Matches TS `ServerStatusEnumSchema`: 'stopped' | 'installing' | 'starting' | 'started' | 'failed'
  */
-export type ServerStatus = typeof ServerStatus[keyof typeof ServerStatus];
-
+export type ServerStatus = (typeof ServerStatus)[keyof typeof ServerStatus];
 
 export const ServerStatus = {
-  stopped: 'stopped',
-  installing: 'installing',
-  starting: 'starting',
-  started: 'started',
-  failed: 'failed',
+  stopped: "stopped",
+  installing: "installing",
+  starting: "starting",
+  started: "started",
+  failed: "failed",
 } as const;

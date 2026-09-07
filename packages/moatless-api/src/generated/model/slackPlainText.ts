@@ -14,5 +14,5 @@ export type SlackPlainText = {
   /** @nullable */
   emoji?: boolean | null;
   text: string;
-  type: 'plain_text';
+  type: "plain_text";
 };

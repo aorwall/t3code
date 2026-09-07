@@ -9,14 +9,13 @@
 /**
  * Secret value category.
  */
-export type SecretKind = typeof SecretKind[keyof typeof SecretKind];
-
+export type SecretKind = (typeof SecretKind)[keyof typeof SecretKind];
 
 export const SecretKind = {
-  env: 'env',
-  provider_token: 'provider_token',
-  runtime_file: 'runtime_file',
-  deployment: 'deployment',
-  ssh_key: 'ssh_key',
-  internal: 'internal',
+  env: "env",
+  provider_token: "provider_token",
+  runtime_file: "runtime_file",
+  deployment: "deployment",
+  ssh_key: "ssh_key",
+  internal: "internal",
 } as const;

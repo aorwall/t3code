@@ -15,42 +15,43 @@ import type {
   GithubCreatePrResponse,
   GithubExternalEventRequest,
   GithubExternalEventResponse,
-  GithubReplyRequest
-} from '../model';
+  GithubReplyRequest,
+} from "../model";
 
-import { customInstance } from '../../customInstance.ts';
+import { customInstance } from "../../customInstance.ts";
 
 export type recordExternalEventResponse200 = {
-  data: GithubExternalEventResponse
-  status: 200
-}
+  data: GithubExternalEventResponse;
+  status: 200;
+};
 
 export type recordExternalEventResponse400 = {
-  data: ErrorBody
-  status: 400
-}
+  data: ErrorBody;
+  status: 400;
+};
 
 export type recordExternalEventResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type recordExternalEventResponseSuccess = (recordExternalEventResponse200) & {
-  headers: Headers;
-};
-export type recordExternalEventResponseError = (recordExternalEventResponse400 | recordExternalEventResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type recordExternalEventResponse = (recordExternalEventResponseSuccess | recordExternalEventResponseError)
+export type recordExternalEventResponseSuccess = recordExternalEventResponse200 & {
+  headers: Headers;
+};
+export type recordExternalEventResponseError = (
+  | recordExternalEventResponse400
+  | recordExternalEventResponse404
+) & {
+  headers: Headers;
+};
+
+export type recordExternalEventResponse =
+  | recordExternalEventResponseSuccess
+  | recordExternalEventResponseError;
 
 export const getRecordExternalEventUrl = () => {
-
-
-
-
-  return `/api/v1/github/external-events`
-}
+  return `/api/v1/github/external-events`;
+};
 
 /**
  * `moat gh api` reaches GitHub directly, because the endpoint surface of `gh
@@ -59,256 +60,263 @@ export const getRecordExternalEventUrl = () => {
  * that calls this, with the response in hand.
  * @summary Record a GitHub event the caller produced outside the typed routes above.
  */
-export const recordExternalEvent = async (githubExternalEventRequest: GithubExternalEventRequest, options?: Parameters<typeof customInstance>[1]): Promise<recordExternalEventResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const recordExternalEvent = async (
+  githubExternalEventRequest: GithubExternalEventRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<recordExternalEventResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<recordExternalEventResponse>(getRecordExternalEventUrl(),
-  {
+  return customInstance<recordExternalEventResponse>(getRecordExternalEventUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(githubExternalEventRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(githubExternalEventRequest),
+  });
+};
 
 export type postCommentResponse200 = {
-  data: GithubCommentResponse
-  status: 200
-}
+  data: GithubCommentResponse;
+  status: 200;
+};
 
 export type postCommentResponse400 = {
-  data: ErrorBody
-  status: 400
-}
+  data: ErrorBody;
+  status: 400;
+};
 
 export type postCommentResponse404 = {
-  data: ErrorBody
-  status: 404
-}
+  data: ErrorBody;
+  status: 404;
+};
 
 export type postCommentResponse502 = {
-  data: ErrorBody
-  status: 502
-}
-
-export type postCommentResponseSuccess = (postCommentResponse200) & {
-  headers: Headers;
-};
-export type postCommentResponseError = (postCommentResponse400 | postCommentResponse404 | postCommentResponse502) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 502;
 };
 
-export type postCommentResponse = (postCommentResponseSuccess | postCommentResponseError)
+export type postCommentResponseSuccess = postCommentResponse200 & {
+  headers: Headers;
+};
+export type postCommentResponseError = (
+  | postCommentResponse400
+  | postCommentResponse404
+  | postCommentResponse502
+) & {
+  headers: Headers;
+};
 
-export const getPostCommentUrl = (owner: string,
-    repo: string,
-    number: number,) => {
+export type postCommentResponse = postCommentResponseSuccess | postCommentResponseError;
 
+export const getPostCommentUrl = (owner: string, repo: string, number: number) => {
+  return `/api/v1/github/repos/${owner}/${repo}/issues/${number}/comments`;
+};
 
-
-
-  return `/api/v1/github/repos/${owner}/${repo}/issues/${number}/comments`
-}
-
-export const postComment = async (owner: string,
-    repo: string,
-    number: number,
-    githubCommentRequest: GithubCommentRequest, options?: Parameters<typeof customInstance>[1]): Promise<postCommentResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const postComment = async (
+  owner: string,
+  repo: string,
+  number: number,
+  githubCommentRequest: GithubCommentRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<postCommentResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<postCommentResponse>(getPostCommentUrl(owner,repo,number),
-  {
+  return customInstance<postCommentResponse>(getPostCommentUrl(owner, repo, number), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(githubCommentRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(githubCommentRequest),
+  });
+};
 
 export type createPrResponse200 = {
-  data: GithubCreatePrResponse
-  status: 200
-}
+  data: GithubCreatePrResponse;
+  status: 200;
+};
 
 export type createPrResponse400 = {
-  data: ErrorBody
-  status: 400
-}
+  data: ErrorBody;
+  status: 400;
+};
 
 export type createPrResponse404 = {
-  data: ErrorBody
-  status: 404
-}
+  data: ErrorBody;
+  status: 404;
+};
 
 export type createPrResponse502 = {
-  data: ErrorBody
-  status: 502
-}
-
-export type createPrResponseSuccess = (createPrResponse200) & {
-  headers: Headers;
-};
-export type createPrResponseError = (createPrResponse400 | createPrResponse404 | createPrResponse502) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 502;
 };
 
-export type createPrResponse = (createPrResponseSuccess | createPrResponseError)
+export type createPrResponseSuccess = createPrResponse200 & {
+  headers: Headers;
+};
+export type createPrResponseError = (
+  | createPrResponse400
+  | createPrResponse404
+  | createPrResponse502
+) & {
+  headers: Headers;
+};
 
-export const getCreatePrUrl = (owner: string,
-    repo: string,) => {
+export type createPrResponse = createPrResponseSuccess | createPrResponseError;
 
+export const getCreatePrUrl = (owner: string, repo: string) => {
+  return `/api/v1/github/repos/${owner}/${repo}/pulls`;
+};
 
-
-
-  return `/api/v1/github/repos/${owner}/${repo}/pulls`
-}
-
-export const createPr = async (owner: string,
-    repo: string,
-    githubCreatePrRequest: GithubCreatePrRequest, options?: Parameters<typeof customInstance>[1]): Promise<createPrResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const createPr = async (
+  owner: string,
+  repo: string,
+  githubCreatePrRequest: GithubCreatePrRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<createPrResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<createPrResponse>(getCreatePrUrl(owner,repo),
-  {
+  return customInstance<createPrResponse>(getCreatePrUrl(owner, repo), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(githubCreatePrRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(githubCreatePrRequest),
+  });
+};
 
 export type bindPrResponse200 = {
-  data: GithubBindPrResponse
-  status: 200
-}
+  data: GithubBindPrResponse;
+  status: 200;
+};
 
 export type bindPrResponse400 = {
-  data: ErrorBody
-  status: 400
-}
+  data: ErrorBody;
+  status: 400;
+};
 
 export type bindPrResponse404 = {
-  data: ErrorBody
-  status: 404
-}
+  data: ErrorBody;
+  status: 404;
+};
 
-export type bindPrResponseSuccess = (bindPrResponse200) & {
+export type bindPrResponseSuccess = bindPrResponse200 & {
   headers: Headers;
 };
 export type bindPrResponseError = (bindPrResponse400 | bindPrResponse404) & {
   headers: Headers;
 };
 
-export type bindPrResponse = (bindPrResponseSuccess | bindPrResponseError)
+export type bindPrResponse = bindPrResponseSuccess | bindPrResponseError;
 
-export const getBindPrUrl = (owner: string,
-    repo: string,
-    number: number,) => {
+export const getBindPrUrl = (owner: string, repo: string, number: number) => {
+  return `/api/v1/github/repos/${owner}/${repo}/pulls/${number}/bind`;
+};
 
-
-
-
-  return `/api/v1/github/repos/${owner}/${repo}/pulls/${number}/bind`
-}
-
-export const bindPr = async (owner: string,
-    repo: string,
-    number: number,
-    githubBindPrRequest: GithubBindPrRequest, options?: Parameters<typeof customInstance>[1]): Promise<bindPrResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const bindPr = async (
+  owner: string,
+  repo: string,
+  number: number,
+  githubBindPrRequest: GithubBindPrRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<bindPrResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<bindPrResponse>(getBindPrUrl(owner,repo,number),
-  {
+  return customInstance<bindPrResponse>(getBindPrUrl(owner, repo, number), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(githubBindPrRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(githubBindPrRequest),
+  });
+};
 
 export type replyToReviewCommentResponse200 = {
-  data: GithubCommentResponse
-  status: 200
-}
+  data: GithubCommentResponse;
+  status: 200;
+};
 
 export type replyToReviewCommentResponse400 = {
-  data: ErrorBody
-  status: 400
-}
+  data: ErrorBody;
+  status: 400;
+};
 
 export type replyToReviewCommentResponse404 = {
-  data: ErrorBody
-  status: 404
-}
+  data: ErrorBody;
+  status: 404;
+};
 
 export type replyToReviewCommentResponse502 = {
-  data: ErrorBody
-  status: 502
-}
-
-export type replyToReviewCommentResponseSuccess = (replyToReviewCommentResponse200) & {
-  headers: Headers;
-};
-export type replyToReviewCommentResponseError = (replyToReviewCommentResponse400 | replyToReviewCommentResponse404 | replyToReviewCommentResponse502) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 502;
 };
 
-export type replyToReviewCommentResponse = (replyToReviewCommentResponseSuccess | replyToReviewCommentResponseError)
+export type replyToReviewCommentResponseSuccess = replyToReviewCommentResponse200 & {
+  headers: Headers;
+};
+export type replyToReviewCommentResponseError = (
+  | replyToReviewCommentResponse400
+  | replyToReviewCommentResponse404
+  | replyToReviewCommentResponse502
+) & {
+  headers: Headers;
+};
 
-export const getReplyToReviewCommentUrl = (owner: string,
-    repo: string,
-    number: number,
-    commentId: number,) => {
+export type replyToReviewCommentResponse =
+  | replyToReviewCommentResponseSuccess
+  | replyToReviewCommentResponseError;
 
+export const getReplyToReviewCommentUrl = (
+  owner: string,
+  repo: string,
+  number: number,
+  commentId: number,
+) => {
+  return `/api/v1/github/repos/${owner}/${repo}/pulls/${number}/comments/${commentId}/replies`;
+};
 
-
-
-  return `/api/v1/github/repos/${owner}/${repo}/pulls/${number}/comments/${commentId}/replies`
-}
-
-export const replyToReviewComment = async (owner: string,
-    repo: string,
-    number: number,
-    commentId: number,
-    githubReplyRequest: GithubReplyRequest, options?: Parameters<typeof customInstance>[1]): Promise<replyToReviewCommentResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const replyToReviewComment = async (
+  owner: string,
+  repo: string,
+  number: number,
+  commentId: number,
+  githubReplyRequest: GithubReplyRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<replyToReviewCommentResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<replyToReviewCommentResponse>(getReplyToReviewCommentUrl(owner,repo,number,commentId),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(githubReplyRequest)
-  }
-);}
-
-
+  return customInstance<replyToReviewCommentResponse>(
+    getReplyToReviewCommentUrl(owner, repo, number, commentId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+      body: JSON.stringify(githubReplyRequest),
+    },
+  );
+};

@@ -9,4 +9,4 @@
 /**
  * @nullable
  */
-export type WorkspaceResponseEnvVars = {[key: string]: string} | null;
+export type WorkspaceResponseEnvVars = { [key: string]: string } | null;

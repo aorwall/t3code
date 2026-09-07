@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { SubagentStatus } from './subagentStatus.ts';
+import type { SubagentStatus } from "./subagentStatus.ts";
 
 /**
  * Derived aggregate metadata for a spawned subagent, carried on the `Agent`
@@ -15,15 +15,15 @@ import type { SubagentStatus } from './subagentStatus.ts';
  */
 export interface SubagentSummary {
   /**
-     * `COUNT(*)` of the subagent's rows (rows whose `parent_uuid` equals the
-     * `Agent` tool-use id).
-     * @minimum 0
-     */
+   * `COUNT(*)` of the subagent's rows (rows whose `parent_uuid` equals the
+   * `Agent` tool-use id).
+   * @minimum 0
+   */
   messageCount: number;
   status: SubagentStatus;
   /**
-     * `SUM(input_tokens + output_tokens)` across the subagent's assistant rows.
-     * @minimum 0
-     */
+   * `SUM(input_tokens + output_tokens)` across the subagent's assistant rows.
+   * @minimum 0
+   */
   tokens: number;
 }

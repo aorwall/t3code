@@ -14,9 +14,9 @@
  */
 export interface AdminResetPasswordRequest {
   /**
-     * Force a password change on next login. Defaults to `false`.
-     * @nullable
-     */
+   * Force a password change on next login. Defaults to `false`.
+   * @nullable
+   */
   mustChangePassword?: boolean | null;
   newPassword: string;
 }

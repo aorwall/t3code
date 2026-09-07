@@ -11,15 +11,14 @@
  *
  * These match the frontend `SandboxStatus` values.
  */
-export type SandboxStatus = typeof SandboxStatus[keyof typeof SandboxStatus];
-
+export type SandboxStatus = (typeof SandboxStatus)[keyof typeof SandboxStatus];
 
 export const SandboxStatus = {
-  not_created: 'not_created',
-  initializing: 'initializing',
-  ready: 'ready',
-  stopped: 'stopped',
-  removing: 'removing',
-  removed: 'removed',
-  error: 'error',
+  not_created: "not_created",
+  initializing: "initializing",
+  ready: "ready",
+  stopped: "stopped",
+  removing: "removing",
+  removed: "removed",
+  error: "error",
 } as const;

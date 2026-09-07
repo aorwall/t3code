@@ -5,19 +5,19 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { SlackConfig } from './slackConfig.ts';
+import type { SlackConfig } from "./slackConfig.ts";
 
 /**
  * Response shape for GET /api/v1/feature-flags.
  */
 export interface FeatureFlagsResponse {
   /**
-     * Whether the settings dialog offers to pair a device.
-     *
-     * Not an `FF_*` variable of its own: pairing is the bootstrap half of the
-     * T3 compatibility routes, and a code is worth nothing on a deployment
-     * that does not mount them. So it reports whether *they* are on.
-     */
+   * Whether the settings dialog offers to pair a device.
+   *
+   * Not an `FF_*` variable of its own: pairing is the bootstrap half of the
+   * T3 compatibility routes, and a code is worth nothing on a deployment
+   * that does not mount them. So it reports whether *they* are on.
+   */
   device_pairing: boolean;
   gitlab_enabled: boolean;
   netlify_publish: boolean;

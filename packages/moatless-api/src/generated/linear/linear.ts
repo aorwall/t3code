@@ -26,467 +26,475 @@ import type {
   LookupParams,
   MutateLabelParams,
   RelateIssueParams,
-  UpdateIssueParams
-} from '../model';
+  UpdateIssueParams,
+} from "../model";
 
-import { customInstance } from '../../customInstance.ts';
+import { customInstance } from "../../customInstance.ts";
 
 export type graphqlPassthroughResponse200 = {
-  data: GraphqlPassthrough200
-  status: 200
-}
+  data: GraphqlPassthrough200;
+  status: 200;
+};
 
-export type graphqlPassthroughResponseSuccess = (graphqlPassthroughResponse200) & {
+export type graphqlPassthroughResponseSuccess = graphqlPassthroughResponse200 & {
   headers: Headers;
 };
-;
 
-export type graphqlPassthroughResponse = (graphqlPassthroughResponseSuccess)
+export type graphqlPassthroughResponse = graphqlPassthroughResponseSuccess;
 
-export const getGraphqlPassthroughUrl = (params?: GraphqlPassthroughParams,) => {
+export const getGraphqlPassthroughUrl = (params?: GraphqlPassthroughParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/linear/graphql?${stringifiedParams}` : `/api/v1/linear/graphql`
-}
+  return stringifiedParams.length > 0
+    ? `/api/v1/linear/graphql?${stringifiedParams}`
+    : `/api/v1/linear/graphql`;
+};
 
-export const graphqlPassthrough = async (linearGraphqlRequest: LinearGraphqlRequest,
-    params?: GraphqlPassthroughParams, options?: Parameters<typeof customInstance>[1]): Promise<graphqlPassthroughResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const graphqlPassthrough = async (
+  linearGraphqlRequest: LinearGraphqlRequest,
+  params?: GraphqlPassthroughParams,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<graphqlPassthroughResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<graphqlPassthroughResponse>(getGraphqlPassthroughUrl(params),
-  {
+  return customInstance<graphqlPassthroughResponse>(getGraphqlPassthroughUrl(params), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(linearGraphqlRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(linearGraphqlRequest),
+  });
+};
 
 export type listIssuesResponse200 = {
-  data: LinearIssueListResponse
-  status: 200
-}
+  data: LinearIssueListResponse;
+  status: 200;
+};
 
 export type listIssuesResponse400 = {
-  data: ErrorBody
-  status: 400
-}
-
-export type listIssuesResponseSuccess = (listIssuesResponse200) & {
-  headers: Headers;
-};
-export type listIssuesResponseError = (listIssuesResponse400) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 400;
 };
 
-export type listIssuesResponse = (listIssuesResponseSuccess | listIssuesResponseError)
+export type listIssuesResponseSuccess = listIssuesResponse200 & {
+  headers: Headers;
+};
+export type listIssuesResponseError = listIssuesResponse400 & {
+  headers: Headers;
+};
 
-export const getListIssuesUrl = (params?: ListIssuesParams,) => {
+export type listIssuesResponse = listIssuesResponseSuccess | listIssuesResponseError;
+
+export const getListIssuesUrl = (params?: ListIssuesParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/linear/issues?${stringifiedParams}` : `/api/v1/linear/issues`
-}
+  return stringifiedParams.length > 0
+    ? `/api/v1/linear/issues?${stringifiedParams}`
+    : `/api/v1/linear/issues`;
+};
 
-export const listIssues = async (params?: ListIssuesParams, options?: Parameters<typeof customInstance>[1]): Promise<listIssuesResponse> => {
-
-  return customInstance<listIssuesResponse>(getListIssuesUrl(params),
-  {
+export const listIssues = async (
+  params?: ListIssuesParams,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<listIssuesResponse> => {
+  return customInstance<listIssuesResponse>(getListIssuesUrl(params), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type createIssueResponse200 = {
-  data: LinearIssueResponse
-  status: 200
-}
+  data: LinearIssueResponse;
+  status: 200;
+};
 
 export type createIssueResponse400 = {
-  data: ErrorBody
-  status: 400
-}
-
-export type createIssueResponseSuccess = (createIssueResponse200) & {
-  headers: Headers;
-};
-export type createIssueResponseError = (createIssueResponse400) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 400;
 };
 
-export type createIssueResponse = (createIssueResponseSuccess | createIssueResponseError)
+export type createIssueResponseSuccess = createIssueResponse200 & {
+  headers: Headers;
+};
+export type createIssueResponseError = createIssueResponse400 & {
+  headers: Headers;
+};
 
-export const getCreateIssueUrl = (params?: CreateIssueParams,) => {
+export type createIssueResponse = createIssueResponseSuccess | createIssueResponseError;
+
+export const getCreateIssueUrl = (params?: CreateIssueParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/linear/issues?${stringifiedParams}` : `/api/v1/linear/issues`
-}
+  return stringifiedParams.length > 0
+    ? `/api/v1/linear/issues?${stringifiedParams}`
+    : `/api/v1/linear/issues`;
+};
 
-export const createIssue = async (linearIssueCreateRequest: LinearIssueCreateRequest,
-    params?: CreateIssueParams, options?: Parameters<typeof customInstance>[1]): Promise<createIssueResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const createIssue = async (
+  linearIssueCreateRequest: LinearIssueCreateRequest,
+  params?: CreateIssueParams,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<createIssueResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<createIssueResponse>(getCreateIssueUrl(params),
-  {
+  return customInstance<createIssueResponse>(getCreateIssueUrl(params), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(linearIssueCreateRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(linearIssueCreateRequest),
+  });
+};
 
 export type getIssueResponse200 = {
-  data: LinearIssueResponse
-  status: 200
-}
+  data: LinearIssueResponse;
+  status: 200;
+};
 
 export type getIssueResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type getIssueResponseSuccess = (getIssueResponse200) & {
-  headers: Headers;
-};
-export type getIssueResponseError = (getIssueResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type getIssueResponse = (getIssueResponseSuccess | getIssueResponseError)
+export type getIssueResponseSuccess = getIssueResponse200 & {
+  headers: Headers;
+};
+export type getIssueResponseError = getIssueResponse404 & {
+  headers: Headers;
+};
 
-export const getGetIssueUrl = (id: string,
-    params?: GetIssueParams,) => {
+export type getIssueResponse = getIssueResponseSuccess | getIssueResponseError;
+
+export const getGetIssueUrl = (id: string, params?: GetIssueParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/linear/issues/${id}?${stringifiedParams}` : `/api/v1/linear/issues/${id}`
-}
+  return stringifiedParams.length > 0
+    ? `/api/v1/linear/issues/${id}?${stringifiedParams}`
+    : `/api/v1/linear/issues/${id}`;
+};
 
-export const getIssue = async (id: string,
-    params?: GetIssueParams, options?: Parameters<typeof customInstance>[1]): Promise<getIssueResponse> => {
-
-  return customInstance<getIssueResponse>(getGetIssueUrl(id,params),
-  {
+export const getIssue = async (
+  id: string,
+  params?: GetIssueParams,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<getIssueResponse> => {
+  return customInstance<getIssueResponse>(getGetIssueUrl(id, params), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type updateIssueResponse200 = {
-  data: LinearIssueResponse
-  status: 200
-}
+  data: LinearIssueResponse;
+  status: 200;
+};
 
 export type updateIssueResponse400 = {
-  data: ErrorBody
-  status: 400
-}
-
-export type updateIssueResponseSuccess = (updateIssueResponse200) & {
-  headers: Headers;
-};
-export type updateIssueResponseError = (updateIssueResponse400) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 400;
 };
 
-export type updateIssueResponse = (updateIssueResponseSuccess | updateIssueResponseError)
+export type updateIssueResponseSuccess = updateIssueResponse200 & {
+  headers: Headers;
+};
+export type updateIssueResponseError = updateIssueResponse400 & {
+  headers: Headers;
+};
 
-export const getUpdateIssueUrl = (id: string,
-    params?: UpdateIssueParams,) => {
+export type updateIssueResponse = updateIssueResponseSuccess | updateIssueResponseError;
+
+export const getUpdateIssueUrl = (id: string, params?: UpdateIssueParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/linear/issues/${id}?${stringifiedParams}` : `/api/v1/linear/issues/${id}`
-}
+  return stringifiedParams.length > 0
+    ? `/api/v1/linear/issues/${id}?${stringifiedParams}`
+    : `/api/v1/linear/issues/${id}`;
+};
 
-export const updateIssue = async (id: string,
-    linearIssueUpdateRequest: LinearIssueUpdateRequest,
-    params?: UpdateIssueParams, options?: Parameters<typeof customInstance>[1]): Promise<updateIssueResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const updateIssue = async (
+  id: string,
+  linearIssueUpdateRequest: LinearIssueUpdateRequest,
+  params?: UpdateIssueParams,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<updateIssueResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<updateIssueResponse>(getUpdateIssueUrl(id,params),
-  {
+  return customInstance<updateIssueResponse>(getUpdateIssueUrl(id, params), {
     ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(linearIssueUpdateRequest)
-  }
-);}
-
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(linearIssueUpdateRequest),
+  });
+};
 
 export type createCommentResponse200 = {
-  data: LinearIssueResponse
-  status: 200
-}
+  data: LinearIssueResponse;
+  status: 200;
+};
 
 export type createCommentResponse400 = {
-  data: ErrorBody
-  status: 400
-}
-
-export type createCommentResponseSuccess = (createCommentResponse200) & {
-  headers: Headers;
-};
-export type createCommentResponseError = (createCommentResponse400) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 400;
 };
 
-export type createCommentResponse = (createCommentResponseSuccess | createCommentResponseError)
+export type createCommentResponseSuccess = createCommentResponse200 & {
+  headers: Headers;
+};
+export type createCommentResponseError = createCommentResponse400 & {
+  headers: Headers;
+};
 
-export const getCreateCommentUrl = (id: string,
-    params?: CreateCommentParams,) => {
+export type createCommentResponse = createCommentResponseSuccess | createCommentResponseError;
+
+export const getCreateCommentUrl = (id: string, params?: CreateCommentParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/linear/issues/${id}/comments?${stringifiedParams}` : `/api/v1/linear/issues/${id}/comments`
-}
+  return stringifiedParams.length > 0
+    ? `/api/v1/linear/issues/${id}/comments?${stringifiedParams}`
+    : `/api/v1/linear/issues/${id}/comments`;
+};
 
-export const createComment = async (id: string,
-    linearCommentCreateRequest: LinearCommentCreateRequest,
-    params?: CreateCommentParams, options?: Parameters<typeof customInstance>[1]): Promise<createCommentResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const createComment = async (
+  id: string,
+  linearCommentCreateRequest: LinearCommentCreateRequest,
+  params?: CreateCommentParams,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<createCommentResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<createCommentResponse>(getCreateCommentUrl(id,params),
-  {
+  return customInstance<createCommentResponse>(getCreateCommentUrl(id, params), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(linearCommentCreateRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(linearCommentCreateRequest),
+  });
+};
 
 export type mutateLabelResponse200 = {
-  data: LinearOkResponse
-  status: 200
-}
+  data: LinearOkResponse;
+  status: 200;
+};
 
 export type mutateLabelResponse400 = {
-  data: ErrorBody
-  status: 400
-}
-
-export type mutateLabelResponseSuccess = (mutateLabelResponse200) & {
-  headers: Headers;
-};
-export type mutateLabelResponseError = (mutateLabelResponse400) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 400;
 };
 
-export type mutateLabelResponse = (mutateLabelResponseSuccess | mutateLabelResponseError)
+export type mutateLabelResponseSuccess = mutateLabelResponse200 & {
+  headers: Headers;
+};
+export type mutateLabelResponseError = mutateLabelResponse400 & {
+  headers: Headers;
+};
 
-export const getMutateLabelUrl = (id: string,
-    params?: MutateLabelParams,) => {
+export type mutateLabelResponse = mutateLabelResponseSuccess | mutateLabelResponseError;
+
+export const getMutateLabelUrl = (id: string, params?: MutateLabelParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/linear/issues/${id}/labels?${stringifiedParams}` : `/api/v1/linear/issues/${id}/labels`
-}
+  return stringifiedParams.length > 0
+    ? `/api/v1/linear/issues/${id}/labels?${stringifiedParams}`
+    : `/api/v1/linear/issues/${id}/labels`;
+};
 
-export const mutateLabel = async (id: string,
-    linearLabelMutationRequest: LinearLabelMutationRequest,
-    params?: MutateLabelParams, options?: Parameters<typeof customInstance>[1]): Promise<mutateLabelResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const mutateLabel = async (
+  id: string,
+  linearLabelMutationRequest: LinearLabelMutationRequest,
+  params?: MutateLabelParams,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<mutateLabelResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<mutateLabelResponse>(getMutateLabelUrl(id,params),
-  {
+  return customInstance<mutateLabelResponse>(getMutateLabelUrl(id, params), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(linearLabelMutationRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(linearLabelMutationRequest),
+  });
+};
 
 export type relateIssueResponse200 = {
-  data: LinearIssueResponse
-  status: 200
-}
+  data: LinearIssueResponse;
+  status: 200;
+};
 
 export type relateIssueResponse400 = {
-  data: ErrorBody
-  status: 400
-}
-
-export type relateIssueResponseSuccess = (relateIssueResponse200) & {
-  headers: Headers;
-};
-export type relateIssueResponseError = (relateIssueResponse400) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 400;
 };
 
-export type relateIssueResponse = (relateIssueResponseSuccess | relateIssueResponseError)
+export type relateIssueResponseSuccess = relateIssueResponse200 & {
+  headers: Headers;
+};
+export type relateIssueResponseError = relateIssueResponse400 & {
+  headers: Headers;
+};
 
-export const getRelateIssueUrl = (id: string,
-    params?: RelateIssueParams,) => {
+export type relateIssueResponse = relateIssueResponseSuccess | relateIssueResponseError;
+
+export const getRelateIssueUrl = (id: string, params?: RelateIssueParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/linear/issues/${id}/relations?${stringifiedParams}` : `/api/v1/linear/issues/${id}/relations`
-}
+  return stringifiedParams.length > 0
+    ? `/api/v1/linear/issues/${id}/relations?${stringifiedParams}`
+    : `/api/v1/linear/issues/${id}/relations`;
+};
 
-export const relateIssue = async (id: string,
-    linearIssueRelateRequest: LinearIssueRelateRequest,
-    params?: RelateIssueParams, options?: Parameters<typeof customInstance>[1]): Promise<relateIssueResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const relateIssue = async (
+  id: string,
+  linearIssueRelateRequest: LinearIssueRelateRequest,
+  params?: RelateIssueParams,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<relateIssueResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<relateIssueResponse>(getRelateIssueUrl(id,params),
-  {
+  return customInstance<relateIssueResponse>(getRelateIssueUrl(id, params), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(linearIssueRelateRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(linearIssueRelateRequest),
+  });
+};
 
 export type lookupResponse200 = {
-  data: LinearLookupResponse
-  status: 200
-}
+  data: LinearLookupResponse;
+  status: 200;
+};
 
 export type lookupResponse400 = {
-  data: ErrorBody
-  status: 400
-}
-
-export type lookupResponseSuccess = (lookupResponse200) & {
-  headers: Headers;
-};
-export type lookupResponseError = (lookupResponse400) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 400;
 };
 
-export type lookupResponse = (lookupResponseSuccess | lookupResponseError)
+export type lookupResponseSuccess = lookupResponse200 & {
+  headers: Headers;
+};
+export type lookupResponseError = lookupResponse400 & {
+  headers: Headers;
+};
 
-export const getLookupUrl = (params: LookupParams,) => {
+export type lookupResponse = lookupResponseSuccess | lookupResponseError;
+
+export const getLookupUrl = (params: LookupParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/linear/lookup?${stringifiedParams}` : `/api/v1/linear/lookup`
-}
+  return stringifiedParams.length > 0
+    ? `/api/v1/linear/lookup?${stringifiedParams}`
+    : `/api/v1/linear/lookup`;
+};
 
-export const lookup = async (params: LookupParams, options?: Parameters<typeof customInstance>[1]): Promise<lookupResponse> => {
-
-  return customInstance<lookupResponse>(getLookupUrl(params),
-  {
+export const lookup = async (
+  params: LookupParams,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<lookupResponse> => {
+  return customInstance<lookupResponse>(getLookupUrl(params), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
+    method: "GET",
+  });
+};

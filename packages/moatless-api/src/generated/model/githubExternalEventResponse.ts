@@ -11,8 +11,8 @@
  */
 export interface GithubExternalEventResponse {
   /**
-     * Whether the durable row landed. `false` means only this replica's
-     * in-memory note holds the event, so another replica may deliver the echo.
-     */
+   * Whether the durable row landed. `false` means only this replica's
+   * in-memory note holds the event, so another replica may deliver the echo.
+   */
   recorded: boolean;
 }

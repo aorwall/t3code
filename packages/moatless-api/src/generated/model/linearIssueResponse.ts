@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { LinearIssueResponseData } from './linearIssueResponseData.ts';
+import type { LinearIssueResponseData } from "./linearIssueResponseData.ts";
 
 /**
  * Common envelope for all typed responses. `data` is the raw Linear

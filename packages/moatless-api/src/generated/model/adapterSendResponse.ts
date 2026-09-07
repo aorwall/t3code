@@ -11,16 +11,16 @@
  */
 export interface AdapterSendResponse {
   /**
-     * ID of the binding created/updated by this send. Present only when
-     * `task_id` was provided on the request.
-     * @nullable
-     */
+   * ID of the binding created/updated by this send. Present only when
+   * `task_id` was provided on the request.
+   * @nullable
+   */
   bindingId?: string | null;
   /** Adapter-specific external message ID (e.g. Slack `ts`, Linear comment ID). */
   externalId: string;
   /**
-     * Binding `subject_kind` produced by the adapter (e.g. `slack_thread`,
-     * `linear_comment`). Surfaced so callers can correlate with bindings.
-     */
+   * Binding `subject_kind` produced by the adapter (e.g. `slack_thread`,
+   * `linear_comment`). Surfaced so callers can correlate with bindings.
+   */
   subjectKind: string;
 }

@@ -14,10 +14,9 @@
  * owner-managed. Task `visibility = 'public'` additionally grants
  * read/interact and control on tasks — never write.
  */
-export type Scope = typeof Scope[keyof typeof Scope];
-
+export type Scope = (typeof Scope)[keyof typeof Scope];
 
 export const Scope = {
-  global: 'global',
-  user: 'user',
+  global: "global",
+  user: "user",
 } as const;

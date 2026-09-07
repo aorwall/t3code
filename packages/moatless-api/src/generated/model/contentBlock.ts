@@ -5,44 +5,52 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ImageSource } from './imageSource.ts';
+import type { ImageSource } from "./imageSource.ts";
 
 /**
  * A content block within an API message.
  */
-export type ContentBlock = {
-  text: string;
-  type: 'text';
-} | {
-  id: string;
-  input: { [key: string]: unknown };
-  name: string;
-  type: 'tool_use';
-} | {
-  /** @nullable */
-  content?: { [key: string]: unknown } | null;
-  /** @nullable */
-  is_error?: boolean | null;
-  tool_use_id: string;
-  type: 'tool_result';
-} | {
-  signature: string;
-  thinking: string;
-  type: 'thinking';
-} | {
-  source: ImageSource;
-  type: 'image';
-} | {
-  id: string;
-  input: { [key: string]: unknown };
-  name: string;
-  type: 'server_tool_use';
-} | {
-  /** @nullable */
-  content?: { [key: string]: unknown } | null;
-  tool_use_id: string;
-  type: 'web_search_tool_result';
-} | {
-  data: string;
-  type: 'redacted_thinking';
-};
+export type ContentBlock =
+  | {
+      text: string;
+      type: "text";
+    }
+  | {
+      id: string;
+      input: { [key: string]: unknown };
+      name: string;
+      type: "tool_use";
+    }
+  | {
+      /** @nullable */
+      content?: { [key: string]: unknown } | null;
+      /** @nullable */
+      is_error?: boolean | null;
+      tool_use_id: string;
+      type: "tool_result";
+    }
+  | {
+      signature: string;
+      thinking: string;
+      type: "thinking";
+    }
+  | {
+      source: ImageSource;
+      type: "image";
+    }
+  | {
+      id: string;
+      input: { [key: string]: unknown };
+      name: string;
+      type: "server_tool_use";
+    }
+  | {
+      /** @nullable */
+      content?: { [key: string]: unknown } | null;
+      tool_use_id: string;
+      type: "web_search_tool_result";
+    }
+  | {
+      data: string;
+      type: "redacted_thinking";
+    };

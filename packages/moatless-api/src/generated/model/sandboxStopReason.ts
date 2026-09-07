@@ -9,13 +9,12 @@
 /**
  * Reason the persisted sandbox intent moved away from `running`.
  */
-export type SandboxStopReason = typeof SandboxStopReason[keyof typeof SandboxStopReason];
-
+export type SandboxStopReason = (typeof SandboxStopReason)[keyof typeof SandboxStopReason];
 
 export const SandboxStopReason = {
-  user: 'user',
-  idle_reaper: 'idle_reaper',
-  cleanup: 'cleanup',
-  system: 'system',
-  error: 'error',
+  user: "user",
+  idle_reaper: "idle_reaper",
+  cleanup: "cleanup",
+  system: "system",
+  error: "error",
 } as const;

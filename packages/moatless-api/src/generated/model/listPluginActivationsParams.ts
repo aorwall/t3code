@@ -7,12 +7,12 @@
  */
 
 export type ListPluginActivationsParams = {
-/**
- * Whose records; omit for your own
- */
-userId?: string;
-/**
- * Also include this Workspace's records
- */
-workspaceId?: string;
+  /**
+   * Whose records; omit for your own
+   */
+  userId?: string;
+  /**
+   * Also include this Workspace's records
+   */
+  workspaceId?: string;
 };

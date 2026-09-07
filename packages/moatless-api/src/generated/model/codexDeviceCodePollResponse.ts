@@ -6,15 +6,18 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type CodexDeviceCodePollResponse = {
-  status: 'pending';
-} | {
-  connected: boolean;
-  /** @nullable */
-  email?: string | null;
-  /** @nullable */
-  plan_type?: string | null;
-  status: 'success';
-} | {
-  status: 'expired';
-};
+export type CodexDeviceCodePollResponse =
+  | {
+      status: "pending";
+    }
+  | {
+      connected: boolean;
+      /** @nullable */
+      email?: string | null;
+      /** @nullable */
+      plan_type?: string | null;
+      status: "success";
+    }
+  | {
+      status: "expired";
+    };

@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { SecretMetadataResponse } from './secretMetadataResponse.ts';
+import type { SecretMetadataResponse } from "./secretMetadataResponse.ts";
 
 export interface SecretMutationResponse {
   secret: SecretMetadataResponse;

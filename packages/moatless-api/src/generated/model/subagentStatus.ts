@@ -10,11 +10,10 @@
  * Status of a spawned subagent, derived from the outer `Agent` `tool_result`:
  * present + `is_error` → `Error`; present → `Completed`; absent → `Running`.
  */
-export type SubagentStatus = typeof SubagentStatus[keyof typeof SubagentStatus];
-
+export type SubagentStatus = (typeof SubagentStatus)[keyof typeof SubagentStatus];
 
 export const SubagentStatus = {
-  running: 'running',
-  completed: 'completed',
-  error: 'error',
+  running: "running",
+  completed: "completed",
+  error: "error",
 } as const;

@@ -11,18 +11,18 @@
  */
 export interface LinearCommentCreateRequest {
   /**
-     * Force the parent issue into a reply target even when no binding exists
-     * yet. A comment on an already-bound issue refreshes its binding
-     * regardless; this flag covers a proactive comment on an unbound issue.
-     * Defaults to `false`. See [`LinearIssueCreateRequest::bind`].
-     * @nullable
-     */
+   * Force the parent issue into a reply target even when no binding exists
+   * yet. A comment on an already-bound issue refreshes its binding
+   * regardless; this flag covers a proactive comment on an unbound issue.
+   * Defaults to `false`. See [`LinearIssueCreateRequest::bind`].
+   * @nullable
+   */
   bind?: boolean | null;
   body: string;
   /**
-     * Task to associate the parent issue with. See
-     * [`LinearIssueCreateRequest::task_id`].
-     * @nullable
-     */
+   * Task to associate the parent issue with. See
+   * [`LinearIssueCreateRequest::task_id`].
+   * @nullable
+   */
   taskId?: string | null;
 }

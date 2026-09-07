@@ -9,10 +9,9 @@
 /**
  * Submitter of a feedback row — derived from auth context on the server.
  */
-export type FeedbackSource = typeof FeedbackSource[keyof typeof FeedbackSource];
-
+export type FeedbackSource = (typeof FeedbackSource)[keyof typeof FeedbackSource];
 
 export const FeedbackSource = {
-  user: 'user',
-  agent: 'agent',
+  user: "user",
+  agent: "agent",
 } as const;
