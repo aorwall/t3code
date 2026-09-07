@@ -497,7 +497,13 @@ const ProviderSetupRpcError = Schema.Union([
 const WsProviderConsumeResetCreditRpc = Rpc.make(WS_METHODS.providerConsumeResetCredit, {
   payload: ProviderConsumeResetCreditInput,
   success: ProviderConsumeResetCreditResult,
-  error: Schema.Union([ProviderSetupError, UsageLimitSourceError, EnvironmentAuthorizationError]),
+  // Fork: Moatless does not dispatch provider.consumeResetCredit. See gaps.md.
+  error: Schema.Union([
+    ProviderSetupError,
+    UsageLimitSourceError,
+    EnvironmentAuthorizationError,
+    UnsupportedMethodError,
+  ]),
 });
 
 const WsProviderAuthStartRpc = Rpc.make(WS_METHODS.providerAuthStart, {
@@ -626,7 +632,8 @@ const WsServerGetProcessDiagnosticsRpc = Rpc.make(WS_METHODS.serverGetProcessDia
 const WsServerGetHostResourcesRpc = Rpc.make(WS_METHODS.serverGetHostResources, {
   payload: Schema.Struct({}),
   success: HostResourcesSnapshot,
-  error: EnvironmentAuthorizationError,
+  // Fork: Moatless does not dispatch server.getHostResources. See gaps.md.
+  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
 });
 
 const WsServerGetProcessResourceHistoryRpc = Rpc.make(WS_METHODS.serverGetProcessResourceHistory, {
@@ -654,7 +661,7 @@ const WsServerRetryResourceTelemetryRpc = Rpc.make(WS_METHODS.serverRetryResourc
 const WsServerGetUsageSummaryRpc = Rpc.make(WS_METHODS.serverGetUsageSummary, {
   payload: UsageSummaryInput,
   success: UsageSummary,
-  error: Schema.Union([EnvironmentAuthorizationError, UsageReadError, UnsupportedMethodError]),
+  error: Schema.Union([EnvironmentAuthorizationError, UsageReadError]),
 });
 
 /**
