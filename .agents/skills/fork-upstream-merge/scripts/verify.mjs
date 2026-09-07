@@ -194,12 +194,22 @@ function workspacePackages() {
   return { names, withTests };
 }
 
-/** Every package label that produced output, whether it passed or failed. */
-function reportedPackages(output) {
+/**
+ * Every package whose suite ran to the end, passing or failing.
+ *
+ * Keyed off vitest's own closing `Test Files` line, not off any labeled line:
+ * `vp run -r test` kills the packages still running when one of them fails, so
+ * a package can print two hundred passing files and never reach its summary.
+ * Counting those as tested is a false green — on 2026-09-07 a desktop failure
+ * cut the web suite short and four failing web tests went unreported.
+ */
+const COMPLETION_LINE = /Test Files\s+\d|No test files found/;
+
+function completedPackages(output) {
   const seen = new Set();
   for (const line of output.split("\n")) {
     const match = LABEL_LINE.exec(line);
-    if (match) seen.add(match[1]);
+    if (match && COMPLETION_LINE.test(match[2])) seen.add(match[1]);
   }
   return seen;
 }
@@ -237,19 +247,19 @@ async function runTestStep(step, onlyPackage) {
   const [command, ...args] = step.argv;
   const { status, signal, output } = await runCapturing(command, args);
 
-  // `vp run -r test` does not always reach every package that declares a test
-  // script, and it exits 0 when it does not: a merge can pass this step with
-  // the fork's main surface never tested. The packages that reported are in the
-  // labeled output, so the ones that did not are knowable. Run those rather
-  // than only naming them — a step that reports green is claiming they ran.
+  // `vp run -r test` does not always finish every package that declares a test
+  // script, and it exits 0 when it skips one: a merge can pass this step with
+  // the fork's main surface never tested. The packages that finished printed a
+  // summary line, so the ones that did not are knowable. Run those rather than
+  // only naming them — a step that reports green is claiming they ran.
   const skipped = [...workspacePackages().withTests].filter(
-    (pkg) => !reportedPackages(output).has(pkg),
+    (pkg) => !completedPackages(output).has(pkg),
   );
   let skippedFailed = [];
   if (skipped.length > 0) {
     process.stdout.write(
-      `\n${yellow(`${skipped.length} package(s) declare a test script and did not run: ${skipped.join(", ")}`)}\n` +
-        `${dim("running each alone — `vp run -r test` exits 0 without them")}\n`,
+      `\n${yellow(`${skipped.length} package(s) declare a test script and did not finish: ${skipped.join(", ")}`)}\n` +
+        `${dim("running each alone — `vp run -r test` skips or truncates them")}\n`,
     );
     for (const pkg of skipped) {
       process.stdout.write(`\n${bold(cyan(`── skipped ${pkg}`))}\n`);
@@ -309,38 +319,43 @@ function summarize(results) {
 
     // Said before the pass/fail line below, because "green" from a run that
     // skipped a package is the one result worth distrusting.
+    const notes = [];
     if (result.skipped?.length > 0) {
-      const detail = [
-        `\`vp run -r test\` did not reach: ${result.skipped.join(", ")}`,
+      notes.push(
+        `\`vp run -r test\` did not finish: ${result.skipped.join(", ")}`,
         "Each was run alone instead. A green step without this line means every package ran.",
-      ];
-      if (result.skippedFailed.length > 0) {
-        section.fail(`${result.name} — skipped package(s) failed when run alone`, [
-          ...detail,
-          `Failing: ${result.skippedFailed.join(", ")}`,
-        ]);
-        continue;
-      }
-      section.warn(`${result.name} ${dim(took)} — ${result.skipped.length} package(s) were skipped`, detail);
-      continue;
+      );
+    }
+    const retried = result.retried ?? [];
+    const flaky = retried.filter((entry) => entry.passedAlone);
+    if (flaky.length > 0) {
+      notes.push(
+        `${flaky.map((entry) => entry.pkg).join(", ")} failed in the full run, passed in isolation.`,
+        "Not a merge regression, but worth a second look if it keeps recurring.",
+      );
     }
 
-    if (result.retried?.length > 0) {
-      const stillFailing = result.retried.filter((entry) => !entry.passedAlone);
-      const flaky = result.retried.filter((entry) => entry.passedAlone);
-      if (stillFailing.length === 0) {
-        section.warn(`${result.name} ${dim(took)} — flaky, passed alone`, [
-          `${flaky.map((entry) => entry.pkg).join(", ")} failed in the full run, passed in isolation.`,
-          "Not a merge regression, but worth a second look if it keeps recurring.",
-        ]);
-      } else {
-        section.fail(`${result.name} exited ${result.status} ${dim(took)}`, [
-          `Confirmed failing alone, not machine noise: ${stillFailing.map((entry) => entry.pkg).join(", ")}`,
-          ...(flaky.length > 0
-            ? [`Flaky (passed alone): ${flaky.map((entry) => entry.pkg).join(", ")}`]
-            : []),
-        ]);
-      }
+    // Both paths to a confirmed failure: a package that failed the full run and
+    // failed its retry, and a package that never finished the full run and
+    // failed when run alone. Reporting one list and returning hid a confirmed
+    // desktop failure behind a skipped-package failure on 2026-09-07.
+    const failing = [
+      ...retried.filter((entry) => !entry.passedAlone).map((entry) => entry.pkg),
+      ...(result.skippedFailed ?? []),
+    ];
+    if (failing.length > 0) {
+      section.fail(`${result.name} exited ${result.status || 1} ${dim(took)}`, [
+        ...notes,
+        `Confirmed failing alone, not machine noise: ${failing.join(", ")}`,
+      ]);
+      continue;
+    }
+    if (notes.length > 0) {
+      const headline =
+        result.skipped?.length > 0
+          ? `${result.skipped.length} package(s) needed a run of their own`
+          : "flaky, passed alone";
+      section.warn(`${result.name} ${dim(took)} — ${headline}`, notes);
       continue;
     }
     if (result.status === 0) {
