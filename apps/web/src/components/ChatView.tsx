@@ -3675,13 +3675,34 @@ export default function ChatView(props: ChatViewProps) {
       // created with no first message gets one only when a turn is sent, and no
       // turn is coming. The draft route navigates to the thread on its own.
       if (isLocalDraftThread) {
+        // Fork: a draft thread carries the project's default selection, or the
+        // no-provider placeholder when there is no default, and neither is the
+        // model the person picked in the composer. Resolve it the way the send
+        // path does: the host fixes a thread's agent at creation and refuses a
+        // later switch, so the create has to pin the agent the first message
+        // will ask for, and the placeholder's empty model is rejected outright.
+        const sendCtx = composerRef.current?.getSendContext();
+        const scriptModelSelection = sendCtx?.providerAvailable
+          ? createModelSelection(
+              sendCtx.selectedModelSelection.instanceId,
+              sendCtx.selectedModel || activeProject.defaultModelSelection?.model || DEFAULT_MODEL,
+              sendCtx.selectedModelSelection.options,
+            )
+          : activeProject.defaultModelSelection;
+        if (!scriptModelSelection?.model) {
+          setThreadError(
+            activeThreadId,
+            `Pick a model before running "${script.name}" — the thread it runs in needs one.`,
+          );
+          return;
+        }
         const createResult = await createThread({
           environmentId,
           input: {
             threadId: activeThreadId,
             projectId: activeProject.id,
             title: script.name,
-            modelSelection: activeThread.modelSelection,
+            modelSelection: scriptModelSelection,
             runtimeMode: activeThread.runtimeMode,
             interactionMode: activeThread.interactionMode,
             branch: activeThread.branch,
@@ -3875,6 +3896,7 @@ export default function ChatView(props: ChatViewProps) {
       // Fork: read by the draft create above.
       isLocalDraftThread,
       createThread,
+      composerRef,
     ],
   );
 
