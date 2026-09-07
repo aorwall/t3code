@@ -5,9 +5,9 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { AdapterKind } from './adapterKind.ts';
-import type { TaskBindingResponseDestinationConfig } from './taskBindingResponseDestinationConfig.ts';
-import type { TaskBindingResponseMetadata } from './taskBindingResponseMetadata.ts';
+import type { AdapterKind } from "./adapterKind.ts";
+import type { TaskBindingResponseDestinationConfig } from "./taskBindingResponseDestinationConfig.ts";
+import type { TaskBindingResponseMetadata } from "./taskBindingResponseMetadata.ts";
 
 /**
  * External adapter binding connected to a task.

@@ -11,9 +11,9 @@
  */
 export interface GithubBindPrResponse {
   /**
-     * Set when the task binding upsert succeeded.
-     * @nullable
-     */
+   * Set when the task binding upsert succeeded.
+   * @nullable
+   */
   bindingId?: string | null;
   htmlUrl: string;
   /** @minimum 0 */

@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { OutboundPresentation } from './outboundPresentation.ts';
+import type { OutboundPresentation } from "./outboundPresentation.ts";
 
 export interface SendTaskReplyRequest {
   /** @nullable */

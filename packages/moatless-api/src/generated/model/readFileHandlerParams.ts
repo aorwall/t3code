@@ -7,13 +7,13 @@
  */
 
 export type ReadFileHandlerParams = {
-/**
- * File path relative to workspace
- */
-path: string;
-/**
- * Include git change info (`old_content`, additions, deletions)
- * @nullable
- */
-changes?: boolean | null;
+  /**
+   * File path relative to workspace
+   */
+  path: string;
+  /**
+   * Include git change info (`old_content`, additions, deletions)
+   * @nullable
+   */
+  changes?: boolean | null;
 };

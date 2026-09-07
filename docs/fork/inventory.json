@@ -163,6 +163,14 @@
       "reason": "Upstream's client learns which threads exist from `orchestration.subscribeShell` and nowhere else, which is exact for `apps/server`, so it refuses a thread fetched by id while Moatless dispatches it. Same backwards derivation as `subtasks.list`.",
       "retiredWhen": "`apps/server` stops answering `threads.getShell` with `UnsupportedMethodError` — at which point delete this entry and let the DROP stand.",
       "see": "inventory `unlisted-thread-adoption`, and 'A thread outside the listing is a Moatless idea' in gaps.md"
+    },
+    {
+      "id": "pull-requests-summary-shared-union",
+      "method": "pullRequests.summary",
+      "direction": "DROP",
+      "reason": "Moatless dispatches `pullRequests.summary` and nothing else in the family, but the method shares `PullRequestRpcError` with `pullRequests.list`, `pullRequests.detail` and `pullRequests.activity`, which it does not dispatch. Splitting a private union off for one method costs more fork delta than an entry the client never receives.",
+      "retiredWhen": "Moatless dispatches the rest of the family, or `pullRequests.summary` takes an error union of its own — at which point delete this entry and let the DROP stand.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
     }
   ],
 
@@ -696,10 +704,11 @@
         "apps/web/src/components/ProjectScriptsControl.tsx",
         "apps/web/src/components/chat/ChatHeader.tsx",
         "apps/web/src/components/settings/ProjectSettingsPanel.tsx",
+        "apps/web/src/components/settings/ProjectActionsList.tsx",
         "apps/web/src/components/ChatView.tsx",
         "packages/contracts/src/orchestration.ts"
       ],
-      "mustSurvive": "A project's scripts can be edited only when the backend says so per workspace: a git-synced workspace owns its scripts in .moatless/workspaces.json and is projected read-only, a manual one is writable. That answer rides the wire as scriptsEditable on OrchestrationProject / OrchestrationProjectShell, threaded to ProjectScriptsControl and ProjectSettingsPanel as an `editable` prop that gates the per-script Edit button, the t3.json import items and the Add action. It is NOT a FEATURES flag — projectScriptEditing was deleted when the capability arrived, because the answer varies per deployment and per workspace. Running a script stays ungated: a read-only workspace still runs what it declares, and ProjectScriptsControl's no-primary-script branch returns null only when editing is also off. A merge that reintroduces FEATURES.projectScriptEditing or an always-on Add action has taken upstream's side back.",
+      "mustSurvive": "A project's scripts can be edited only when the backend says so per workspace: a git-synced workspace owns its scripts in .moatless/workspaces.json and is projected read-only, a manual one is writable. That answer rides the wire as scriptsEditable on OrchestrationProject / OrchestrationProjectShell, threaded to ProjectScriptsControl and ProjectSettingsPanel as an `editable` prop that gates the per-script Edit button, the t3.json import items and the Add action. Upstream extracted the row list into ProjectActionsList.tsx on 2026-09-07, so the Edit gate now lives there behind an `editable` prop that defaults to upstream's always-editable behavior; ProjectSettingsPanel passes scriptsEditable and also gates upstream's Reset button, which writes. It is NOT a FEATURES flag — projectScriptEditing was deleted when the capability arrived, because the answer varies per deployment and per workspace. Running a script stays ungated: a read-only workspace still runs what it declares, and ProjectScriptsControl's no-primary-script branch returns null only when editing is also off. A merge that reintroduces FEATURES.projectScriptEditing or an always-on Add action has taken upstream's side back.",
       "guard": {
         "symbol": "scriptsEditable",
         "files": [
@@ -713,10 +722,11 @@
       "name": "Project-script port field",
       "paths": [
         "apps/web/src/components/projectScriptEditor.tsx",
+        "apps/web/src/components/settings/ProjectActionsList.tsx",
         "apps/web/src/projectScripts.ts",
         "packages/contracts/src/orchestration.ts"
       ],
-      "mustSurvive": "The script editor sets a numeric Port, not upstream's free-text Preview URL: a script in a remote sandbox has no localhost to point at, so the host publishes the port and returns the real external URL when the script runs (scripts.run). ProjectScript carries port (1..65535); the editor's Port input replaces the Preview URL input and auto-open toggle, and buildProjectScript derives autoOpenPreview from the port's presence. previewUrl / autoOpenPreview stay on the contract for wire-compatibility but the fork's UI never writes a URL. A merge that restores the Preview URL input has dropped the port.",
+      "mustSurvive": "The script editor sets a numeric Port, not upstream's free-text Preview URL: a script in a remote sandbox has no localhost to point at, so the host publishes the port and returns the real external URL when the script runs (scripts.run). ProjectScript carries port (1..65535); the editor's Port input replaces the Preview URL input and auto-open toggle, and buildProjectScript derives autoOpenPreview from the port's presence. previewUrl / autoOpenPreview stay on the contract for wire-compatibility but the fork's UI never writes a URL. The row badge in ProjectActionsList.tsx reads `preview · :<port>` where upstream reads `preview · desktop only` off previewUrl. A merge that restores the Preview URL input has dropped the port.",
       "guard": {
         "symbol": "port",
         "files": ["apps/web/src/components/projectScriptEditor.tsx"]
@@ -841,7 +851,7 @@
       "id": "settings-browser-relocation",
       "name": "Browser-defaults settings relocated off /settings/integrations",
       "paths": ["apps/web/src/routes/settings.browser.tsx"],
-      "mustSurvive": "Upstream shipped its own /settings/integrations page on 2026-08-26 (embedded-surface preferences — browser default viewport, zoom, appearance, auto-show floating preview — rendered by IntegrationsSettingsPanel in components/settings/IntegrationsSettings.tsx) at the exact path the fork's Moatless admin Integrations page (moatless-admin-pages) already owned. Resolved by keeping settings.integrations.tsx as the fork's page and moving upstream's page, unmodified, to a new fork-only route at /settings/browser importing the same IntegrationsSettingsPanel. settingsSearch.ts's SettingsPath union, SETTINGS_SECTION_LABELS and the five browser-* SETTINGS_SEARCH_ITEMS, plus SettingsSidebarNav.tsx's icon map, point at /settings/browser instead of /settings/integrations for that panel. On the next merge, diff upstream's settings.integrations.tsx and IntegrationsSettings.tsx for changes and port them into settings.browser.tsx; the route file is otherwise the entire fork delta here."
+      "mustSurvive": "Upstream shipped its own /settings/integrations page on 2026-08-26 (embedded-surface preferences — browser default viewport, zoom, appearance, auto-show floating preview — rendered by IntegrationsSettingsPanel in components/settings/IntegrationsSettings.tsx) at the exact path the fork's Moatless admin Integrations page (moatless-admin-pages) already owned. Resolved by keeping settings.integrations.tsx as the fork's page and moving upstream's page, unmodified, to a new fork-only route at /settings/browser importing the same IntegrationsSettingsPanel. settingsSearch.ts's SettingsPath union, SETTINGS_SECTION_LABELS and every browser-* SETTINGS_SEARCH_ITEMS entry that IntegrationsSettings.tsx anchors, plus SettingsSidebarNav.tsx's icon map, point at /settings/browser instead of /settings/integrations for that panel. Any upstream search item added for that panel needs the same redirect, or the result lands on the fork's admin page and a non-admin viewer is redirected away: browser-profiles, browser-default-profile and browser-link-target arrived on later merges still pointing at /settings/integrations and were corrected on 2026-09-07. settingsSearch.test.ts asserts the route of several of these items, so a redirect made there without the matching test edit fails the web suite. agent-browser-access is the exception — upstream moved that setting to ProjectDefaultsSettings.tsx on /settings/projects on 2026-09-07, which the fork leaves unguarded, so the item points there unmodified. On the next merge, diff upstream's settings.integrations.tsx and IntegrationsSettings.tsx for changes and port them into settings.browser.tsx; the route file is otherwise the entire fork delta here."
     },
     {
       "id": "moatless-admin-nav",

@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { AllowedPrompt } from './allowedPrompt.ts';
+import type { AllowedPrompt } from "./allowedPrompt.ts";
 
 /**
  * Input payload for the `ExitPlanMode` tool.

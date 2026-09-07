@@ -5,8 +5,8 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { SubagentSummary } from './subagentSummary.ts';
-import type { UiContentBlockToolInput } from './uiContentBlockToolInput.ts';
+import type { SubagentSummary } from "./subagentSummary.ts";
+import type { UiContentBlockToolInput } from "./uiContentBlockToolInput.ts";
 
 /**
  * Content block within a message.

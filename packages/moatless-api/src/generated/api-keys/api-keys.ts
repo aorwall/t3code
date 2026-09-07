@@ -10,145 +10,138 @@ import type {
   ApiKeyListItem,
   CreateApiKeyRequest,
   ErrorBody,
-  MessageResponse
-} from '../model';
+  MessageResponse,
+} from "../model";
 
-import { customInstance } from '../../customInstance.ts';
+import { customInstance } from "../../customInstance.ts";
 
 export type listApiKeysHandlerResponse200 = {
-  data: ApiKeyListItem[]
-  status: 200
-}
+  data: ApiKeyListItem[];
+  status: 200;
+};
 
 export type listApiKeysHandlerResponse401 = {
-  data: ErrorBody
-  status: 401
-}
-
-export type listApiKeysHandlerResponseSuccess = (listApiKeysHandlerResponse200) & {
-  headers: Headers;
-};
-export type listApiKeysHandlerResponseError = (listApiKeysHandlerResponse401) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 401;
 };
 
-export type listApiKeysHandlerResponse = (listApiKeysHandlerResponseSuccess | listApiKeysHandlerResponseError)
+export type listApiKeysHandlerResponseSuccess = listApiKeysHandlerResponse200 & {
+  headers: Headers;
+};
+export type listApiKeysHandlerResponseError = listApiKeysHandlerResponse401 & {
+  headers: Headers;
+};
+
+export type listApiKeysHandlerResponse =
+  | listApiKeysHandlerResponseSuccess
+  | listApiKeysHandlerResponseError;
 
 export const getListApiKeysHandlerUrl = () => {
-
-
-
-
-  return `/api/v1/auth/api-keys`
-}
+  return `/api/v1/auth/api-keys`;
+};
 
 /**
  * @summary List all API keys for the authenticated user.
  */
-export const listApiKeysHandler = async ( options?: Parameters<typeof customInstance>[1]): Promise<listApiKeysHandlerResponse> => {
-
-  return customInstance<listApiKeysHandlerResponse>(getListApiKeysHandlerUrl(),
-  {
+export const listApiKeysHandler = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<listApiKeysHandlerResponse> => {
+  return customInstance<listApiKeysHandlerResponse>(getListApiKeysHandlerUrl(), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type createApiKeyHandlerResponse201 = {
-  data: ApiKeyCreateResponse
-  status: 201
-}
+  data: ApiKeyCreateResponse;
+  status: 201;
+};
 
 export type createApiKeyHandlerResponse401 = {
-  data: ErrorBody
-  status: 401
-}
-
-export type createApiKeyHandlerResponseSuccess = (createApiKeyHandlerResponse201) & {
-  headers: Headers;
-};
-export type createApiKeyHandlerResponseError = (createApiKeyHandlerResponse401) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 401;
 };
 
-export type createApiKeyHandlerResponse = (createApiKeyHandlerResponseSuccess | createApiKeyHandlerResponseError)
+export type createApiKeyHandlerResponseSuccess = createApiKeyHandlerResponse201 & {
+  headers: Headers;
+};
+export type createApiKeyHandlerResponseError = createApiKeyHandlerResponse401 & {
+  headers: Headers;
+};
+
+export type createApiKeyHandlerResponse =
+  | createApiKeyHandlerResponseSuccess
+  | createApiKeyHandlerResponseError;
 
 export const getCreateApiKeyHandlerUrl = () => {
-
-
-
-
-  return `/api/v1/auth/api-keys`
-}
+  return `/api/v1/auth/api-keys`;
+};
 
 /**
  * @summary Create a new API key for the authenticated user.
  */
-export const createApiKeyHandler = async (createApiKeyRequest: CreateApiKeyRequest, options?: Parameters<typeof customInstance>[1]): Promise<createApiKeyHandlerResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const createApiKeyHandler = async (
+  createApiKeyRequest: CreateApiKeyRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<createApiKeyHandlerResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<createApiKeyHandlerResponse>(getCreateApiKeyHandlerUrl(),
-  {
+  return customInstance<createApiKeyHandlerResponse>(getCreateApiKeyHandlerUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(createApiKeyRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(createApiKeyRequest),
+  });
+};
 
 export type revokeApiKeyHandlerResponse200 = {
-  data: MessageResponse
-  status: 200
-}
+  data: MessageResponse;
+  status: 200;
+};
 
 export type revokeApiKeyHandlerResponse401 = {
-  data: ErrorBody
-  status: 401
-}
+  data: ErrorBody;
+  status: 401;
+};
 
 export type revokeApiKeyHandlerResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type revokeApiKeyHandlerResponseSuccess = (revokeApiKeyHandlerResponse200) & {
-  headers: Headers;
-};
-export type revokeApiKeyHandlerResponseError = (revokeApiKeyHandlerResponse401 | revokeApiKeyHandlerResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type revokeApiKeyHandlerResponse = (revokeApiKeyHandlerResponseSuccess | revokeApiKeyHandlerResponseError)
+export type revokeApiKeyHandlerResponseSuccess = revokeApiKeyHandlerResponse200 & {
+  headers: Headers;
+};
+export type revokeApiKeyHandlerResponseError = (
+  | revokeApiKeyHandlerResponse401
+  | revokeApiKeyHandlerResponse404
+) & {
+  headers: Headers;
+};
 
-export const getRevokeApiKeyHandlerUrl = (keyId: string,) => {
+export type revokeApiKeyHandlerResponse =
+  | revokeApiKeyHandlerResponseSuccess
+  | revokeApiKeyHandlerResponseError;
 
-
-
-
-  return `/api/v1/auth/api-keys/${keyId}`
-}
+export const getRevokeApiKeyHandlerUrl = (keyId: string) => {
+  return `/api/v1/auth/api-keys/${keyId}`;
+};
 
 /**
  * @summary Revoke an API key by ID.
  */
-export const revokeApiKeyHandler = async (keyId: string, options?: Parameters<typeof customInstance>[1]): Promise<revokeApiKeyHandlerResponse> => {
-
-  return customInstance<revokeApiKeyHandlerResponse>(getRevokeApiKeyHandlerUrl(keyId),
-  {
+export const revokeApiKeyHandler = async (
+  keyId: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<revokeApiKeyHandlerResponse> => {
+  return customInstance<revokeApiKeyHandlerResponse>(getRevokeApiKeyHandlerUrl(keyId), {
     ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
+    method: "DELETE",
+  });
+};

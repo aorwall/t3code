@@ -13,9 +13,9 @@ export interface SendDmRequest {
   /** Provider to send through (e.g. "slack"). */
   provider: string;
   /**
-     * Optional task to associate the DM binding with.
-     * @nullable
-     */
+   * Optional task to associate the DM binding with.
+   * @nullable
+   */
   task_id?: string | null;
   /** Message text. */
   text: string;

@@ -5,14 +5,17 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { SaveLinearAdapterAppRequest } from './saveLinearAdapterAppRequest.ts';
-import type { SaveSlackAdapterAppRequest } from './saveSlackAdapterAppRequest.ts';
-import type { SaveTelegramAdapterAppRequest } from './saveTelegramAdapterAppRequest.ts';
+import type { SaveLinearAdapterAppRequest } from "./saveLinearAdapterAppRequest.ts";
+import type { SaveSlackAdapterAppRequest } from "./saveSlackAdapterAppRequest.ts";
+import type { SaveTelegramAdapterAppRequest } from "./saveTelegramAdapterAppRequest.ts";
 
-export type SaveAdapterAppRequest = SaveSlackAdapterAppRequest & {
-  adapterKind: 'slack';
-} | SaveTelegramAdapterAppRequest & {
-  adapterKind: 'telegram';
-} | SaveLinearAdapterAppRequest & {
-  adapterKind: 'linear';
-};
+export type SaveAdapterAppRequest =
+  | (SaveSlackAdapterAppRequest & {
+      adapterKind: "slack";
+    })
+  | (SaveTelegramAdapterAppRequest & {
+      adapterKind: "telegram";
+    })
+  | (SaveLinearAdapterAppRequest & {
+      adapterKind: "linear";
+    });

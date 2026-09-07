@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ImageSourceType } from './imageSourceType.ts';
+import type { ImageSourceType } from "./imageSourceType.ts";
 
 /**
  * Image source within a content block.

@@ -5,8 +5,8 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { Connection } from './connection.ts';
-import type { TaskStatus } from './taskStatus.ts';
+import type { Connection } from "./connection.ts";
+import type { TaskStatus } from "./taskStatus.ts";
 
 /**
  * One task and the external connections wired to it.
@@ -14,9 +14,9 @@ import type { TaskStatus } from './taskStatus.ts';
 export interface TaskConnectionRow {
   connections: Connection[];
   /**
-     * Display name of the task's creator (`None` when unresolved).
-     * @nullable
-     */
+   * Display name of the task's creator (`None` when unresolved).
+   * @nullable
+   */
   owner?: string | null;
   /** @nullable */
   repositoryName?: string | null;

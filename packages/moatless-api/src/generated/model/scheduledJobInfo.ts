@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ScheduledJobKind } from './scheduledJobKind.ts';
+import type { ScheduledJobKind } from "./scheduledJobKind.ts";
 
 /**
  * Snapshot of one scheduled job currently registered in the sandbox.

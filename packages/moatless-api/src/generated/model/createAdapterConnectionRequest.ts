@@ -5,9 +5,9 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { AdapterKind } from './adapterKind.ts';
-import type { CreateAdapterConnectionRequestTransportConfig } from './createAdapterConnectionRequestTransportConfig.ts';
-import type { Scope } from './scope.ts';
+import type { AdapterKind } from "./adapterKind.ts";
+import type { CreateAdapterConnectionRequestTransportConfig } from "./createAdapterConnectionRequestTransportConfig.ts";
+import type { Scope } from "./scope.ts";
 
 /**
  * Request body for `POST /api/v1/adapters/connections`.
@@ -16,26 +16,26 @@ export interface CreateAdapterConnectionRequest {
   /** Adapter implementation kind, such as `slack`, `github`, or `webhook`. */
   adapterKind: AdapterKind;
   /**
-     * Transport/auth style for this adapter, e.g. `bot_api`, `org_webhook`.
-     * @nullable
-     */
+   * Transport/auth style for this adapter, e.g. `bot_api`, `org_webhook`.
+   * @nullable
+   */
   connectionKind?: string | null;
   /** External account/workspace/org identifier for this connection. */
   externalAccountId: string;
   scope?: null | Scope;
   /**
-     * Optional human-readable name for the connection.
-     * @nullable
-     */
+   * Optional human-readable name for the connection.
+   * @nullable
+   */
   sourceName?: string | null;
   /**
-     * Optional transport-specific metadata.
-     * @nullable
-     */
+   * Optional transport-specific metadata.
+   * @nullable
+   */
   transportConfig?: CreateAdapterConnectionRequestTransportConfig;
   /**
-     * HMAC secret used to verify inbound webhooks for this workspace.
-     * @nullable
-     */
+   * HMAC secret used to verify inbound webhooks for this workspace.
+   * @nullable
+   */
   webhookSecret?: string | null;
 }

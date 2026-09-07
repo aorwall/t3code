@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ServerOverrideEntry } from './serverOverrideEntry.ts';
+import type { ServerOverrideEntry } from "./serverOverrideEntry.ts";
 
 /**
  * Every override in effect on a task. Servers with no override are omitted.

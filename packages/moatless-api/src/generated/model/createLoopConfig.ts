@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { RoutingMode } from './routingMode.ts';
+import type { RoutingMode } from "./routingMode.ts";
 
 export interface CreateLoopConfig {
   /** @nullable */

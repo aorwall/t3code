@@ -7,10 +7,10 @@
  */
 
 export type UpdateIssueParams = {
-/**
- * Override the default Linear connection. Required when the caller has
- * access to more than one Linear workspace.
- * @nullable
- */
-connectionId?: string | null;
+  /**
+   * Override the default Linear connection. Required when the caller has
+   * access to more than one Linear workspace.
+   * @nullable
+   */
+  connectionId?: string | null;
 };

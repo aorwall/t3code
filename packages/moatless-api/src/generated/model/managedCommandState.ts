@@ -9,12 +9,11 @@
 /**
  * Lifecycle of a command registered through `moat cmd`.
  */
-export type ManagedCommandState = typeof ManagedCommandState[keyof typeof ManagedCommandState];
-
+export type ManagedCommandState = (typeof ManagedCommandState)[keyof typeof ManagedCommandState];
 
 export const ManagedCommandState = {
-  running: 'running',
-  exited: 'exited',
-  timedOut: 'timedOut',
-  killed: 'killed',
+  running: "running",
+  exited: "exited",
+  timedOut: "timedOut",
+  killed: "killed",
 } as const;

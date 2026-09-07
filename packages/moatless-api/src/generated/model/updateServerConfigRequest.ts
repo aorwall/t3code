@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { UpdateServerConfigRequestEnv } from './updateServerConfigRequestEnv.ts';
+import type { UpdateServerConfigRequestEnv } from "./updateServerConfigRequestEnv.ts";
 
 /**
  * Update one preview server's live config.
@@ -16,34 +16,34 @@ import type { UpdateServerConfigRequestEnv } from './updateServerConfigRequestEn
  */
 export interface UpdateServerConfigRequest {
   /**
-     * Not applicable live — the image is the container's identity.
-     * @nullable
-     */
+   * Not applicable live — the image is the container's identity.
+   * @nullable
+   */
   dockerImage?: string | null;
   /**
-     * Env entries to set, merged into any existing override.
-     * @nullable
-     */
+   * Env entries to set, merged into any existing override.
+   * @nullable
+   */
   env?: UpdateServerConfigRequestEnv;
   /**
-     * Not applicable live — the port is wired into the Service and
-     * `IngressRoute` at provision time.
-     * @minimum 0
-     * @nullable
-     */
+   * Not applicable live — the port is wired into the Service and
+   * `IngressRoute` at provision time.
+   * @minimum 0
+   * @nullable
+   */
   port?: number | null;
   /** Restart the server so the change takes effect (default `true`). */
   restart?: boolean;
   /**
-     * Replaces the workspace's start command. Joined with `&&`, as at
-     * provision time.
-     * @nullable
-     */
+   * Replaces the workspace's start command. Joined with `&&`, as at
+   * provision time.
+   * @nullable
+   */
   startCommands?: string[] | null;
   /**
-     * Keys to remove from the server's environment. Also drops them from the
-     * override's `env`, so setting and unsetting the same key is coherent.
-     * @nullable
-     */
+   * Keys to remove from the server's environment. Also drops them from the
+   * override's `env`, so setting and unsetting the same key is coherent.
+   * @nullable
+   */
   unsetEnv?: string[] | null;
 }

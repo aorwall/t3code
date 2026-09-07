@@ -6,11 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type LoopExecutionState = typeof LoopExecutionState[keyof typeof LoopExecutionState];
-
+export type LoopExecutionState = (typeof LoopExecutionState)[keyof typeof LoopExecutionState];
 
 export const LoopExecutionState = {
-  awaiting_approval: 'awaiting_approval',
-  active: 'active',
-  paused: 'paused',
+  awaiting_approval: "awaiting_approval",
+  active: "active",
+  paused: "paused",
 } as const;

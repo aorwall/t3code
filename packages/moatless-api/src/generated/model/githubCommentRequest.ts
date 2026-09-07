@@ -13,9 +13,9 @@
 export interface GithubCommentRequest {
   body: string;
   /**
-     * Task to bind the PR/issue to and dedup the comment's webhook echo
-     * against. See [`GithubCreatePrRequest::task_id`].
-     * @nullable
-     */
+   * Task to bind the PR/issue to and dedup the comment's webhook echo
+   * against. See [`GithubCreatePrRequest::task_id`].
+   * @nullable
+   */
   taskId?: string | null;
 }

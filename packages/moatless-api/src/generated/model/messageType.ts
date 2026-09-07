@@ -9,13 +9,12 @@
 /**
  * Type of task message.
  */
-export type MessageType = typeof MessageType[keyof typeof MessageType];
-
+export type MessageType = (typeof MessageType)[keyof typeof MessageType];
 
 export const MessageType = {
-  assistant: 'assistant',
-  user: 'user',
-  system: 'system',
-  result: 'result',
-  error: 'error',
+  assistant: "assistant",
+  user: "user",
+  system: "system",
+  result: "result",
+  error: "error",
 } as const;

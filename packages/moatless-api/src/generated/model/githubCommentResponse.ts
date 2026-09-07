@@ -12,10 +12,10 @@
  */
 export interface GithubCommentResponse {
   /**
-     * Set only when the request included a `task_id` and the binding upsert
-     * succeeded.
-     * @nullable
-     */
+   * Set only when the request included a `task_id` and the binding upsert
+   * succeeded.
+   * @nullable
+   */
   bindingId?: string | null;
   htmlUrl: string;
   /** @minimum 0 */

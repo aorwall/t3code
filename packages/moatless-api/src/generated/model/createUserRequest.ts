@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { UserRole } from './userRole.ts';
+import type { UserRole } from "./userRole.ts";
 
 /**
  * POST /api/v1/users request.
@@ -23,32 +23,32 @@ import type { UserRole } from './userRole.ts';
  */
 export interface CreateUserRequest {
   /**
-     * Email address for a human user. Required when `isBot` is `false`.
-     * @nullable
-     */
+   * Email address for a human user. Required when `isBot` is `false`.
+   * @nullable
+   */
   email?: string | null;
   /**
-     * Registry key of a configured GitHub App (e.g. `"dev-bot"`). Required
-     * when `isBot` is `true`.
-     * @nullable
-     */
+   * Registry key of a configured GitHub App (e.g. `"dev-bot"`). Required
+   * when `isBot` is `true`.
+   * @nullable
+   */
   githubAppKey?: string | null;
   /** `true` for a GitHub App bot, `false` for a local password user. */
   isBot: boolean;
   /**
-     * Login handle for a local user. Required when `isBot` is `false`.
-     * @nullable
-     */
+   * Login handle for a local user. Required when `isBot` is `false`.
+   * @nullable
+   */
   login?: string | null;
   /**
-     * Force a password change on first login. Defaults to `false`.
-     * @nullable
-     */
+   * Force a password change on first login. Defaults to `false`.
+   * @nullable
+   */
   mustChangePassword?: boolean | null;
   /**
-     * Initial password for a local user. Required when `isBot` is `false`.
-     * @nullable
-     */
+   * Initial password for a local user. Required when `isBot` is `false`.
+   * @nullable
+   */
   password?: string | null;
   role?: null | UserRole;
 }

@@ -9,10 +9,9 @@
 /**
  * Task visibility level.
  */
-export type Visibility = typeof Visibility[keyof typeof Visibility];
-
+export type Visibility = (typeof Visibility)[keyof typeof Visibility];
 
 export const Visibility = {
-  public: 'public',
-  private: 'private',
+  public: "public",
+  private: "private",
 } as const;

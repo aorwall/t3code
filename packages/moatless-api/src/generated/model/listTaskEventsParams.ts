@@ -7,19 +7,19 @@
  */
 
 export type ListTaskEventsParams = {
-/**
- * Comma-separated event type filter (e.g., `?types=sandbox,server,agent`).
- * @nullable
- */
-types?: string | null;
-/**
- * Maximum number of events to return (default 500, max 5000).
- * @nullable
- */
-limit?: number | null;
-/**
- * Offset for pagination (default 0).
- * @nullable
- */
-offset?: number | null;
+  /**
+   * Comma-separated event type filter (e.g., `?types=sandbox,server,agent`).
+   * @nullable
+   */
+  types?: string | null;
+  /**
+   * Maximum number of events to return (default 500, max 5000).
+   * @nullable
+   */
+  limit?: number | null;
+  /**
+   * Offset for pagination (default 0).
+   * @nullable
+   */
+  offset?: number | null;
 };

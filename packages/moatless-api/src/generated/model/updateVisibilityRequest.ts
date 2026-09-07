@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { Visibility } from './visibility.ts';
+import type { Visibility } from "./visibility.ts";
 
 export interface UpdateVisibilityRequest {
   visibility: Visibility;

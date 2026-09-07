@@ -5,8 +5,8 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ResourceConfig } from './resourceConfig.ts';
-import type { ServerConfigEnvVars } from './serverConfigEnvVars.ts';
+import type { ResourceConfig } from "./resourceConfig.ts";
+import type { ServerConfigEnvVars } from "./serverConfigEnvVars.ts";
 
 /**
  * Server config entry.
@@ -15,9 +15,9 @@ export interface ServerConfig {
   autoReload?: boolean;
   default?: boolean;
   /**
-     * Per-server Docker image. Falls back to `sandbox_image` if not set.
-     * @nullable
-     */
+   * Per-server Docker image. Falls back to `sandbox_image` if not set.
+   * @nullable
+   */
   dockerImage?: string | null;
   enableInspector?: boolean;
   /** Per-server environment variables. */
@@ -26,16 +26,16 @@ export interface ServerConfig {
   label?: string | null;
   name: string;
   /**
-     * Absent until the backend allocates one on the next provision.
-     * @minimum 0
-     * @nullable
-     */
+   * Absent until the backend allocates one on the next provision.
+   * @minimum 0
+   * @nullable
+   */
   port?: number | null;
   resources?: null | ResourceConfig;
   startCommands?: string[];
   /**
-     * @minimum 0
-     * @nullable
-     */
+   * @minimum 0
+   * @nullable
+   */
   startupTimeoutSeconds?: number | null;
 }

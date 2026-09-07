@@ -12,12 +12,11 @@
  * row predating the column, or one whose submitter named none, carries
  * no category.
  */
-export type FeedbackCategory = typeof FeedbackCategory[keyof typeof FeedbackCategory];
-
+export type FeedbackCategory = (typeof FeedbackCategory)[keyof typeof FeedbackCategory];
 
 export const FeedbackCategory = {
-  environment: 'environment',
-  codebase: 'codebase',
-  instruction: 'instruction',
-  other: 'other',
+  environment: "environment",
+  codebase: "codebase",
+  instruction: "instruction",
+  other: "other",
 } as const;

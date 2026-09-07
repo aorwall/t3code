@@ -5,11 +5,11 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { CreateWorkspaceRequestEnvVars } from './createWorkspaceRequestEnvVars.ts';
-import type { ResourceConfig } from './resourceConfig.ts';
-import type { Scope } from './scope.ts';
-import type { ServerConfig } from './serverConfig.ts';
-import type { WorkspaceRepoInput } from './workspaceRepoInput.ts';
+import type { CreateWorkspaceRequestEnvVars } from "./createWorkspaceRequestEnvVars.ts";
+import type { ResourceConfig } from "./resourceConfig.ts";
+import type { Scope } from "./scope.ts";
+import type { ServerConfig } from "./serverConfig.ts";
+import type { WorkspaceRepoInput } from "./workspaceRepoInput.ts";
 
 export interface CreateWorkspaceRequest {
   /** @nullable */
@@ -27,10 +27,10 @@ export interface CreateWorkspaceRequest {
   repos?: WorkspaceRepoInput[];
   resources?: null | ResourceConfig;
   /**
-     * Identity every Task on this Workspace acts as on a git host. When set it
-     * outranks the Task's own owner.
-     * @nullable
-     */
+   * Identity every Task on this Workspace acts as on a git host. When set it
+   * outranks the Task's own owner.
+   * @nullable
+   */
   runAsUserId?: string | null;
   /** @nullable */
   sandboxServiceAccount?: string | null;

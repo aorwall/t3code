@@ -5,9 +5,9 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ContentOrigin } from './contentOrigin.ts';
-import type { FileTreeNodeDto } from './fileTreeNodeDto.ts';
-import type { GitSummaryDto } from './gitSummaryDto.ts';
+import type { ContentOrigin } from "./contentOrigin.ts";
+import type { FileTreeNodeDto } from "./fileTreeNodeDto.ts";
+import type { GitSummaryDto } from "./gitSummaryDto.ts";
 
 /**
  * File tree response with git change summary.

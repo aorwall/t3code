@@ -14,13 +14,13 @@
  * refreshed and written back against the connected user's own row, so a
  * workspace-level copy of either would go stale with nothing to rotate it.
  */
-export type WorkspaceCredentialProvider = typeof WorkspaceCredentialProvider[keyof typeof WorkspaceCredentialProvider];
-
+export type WorkspaceCredentialProvider =
+  (typeof WorkspaceCredentialProvider)[keyof typeof WorkspaceCredentialProvider];
 
 export const WorkspaceCredentialProvider = {
-  github: 'github',
-  gitlab: 'gitlab',
-  gitness: 'gitness',
-  openai: 'openai',
-  anthropic: 'anthropic',
+  github: "github",
+  gitlab: "gitlab",
+  gitness: "gitness",
+  openai: "openai",
+  anthropic: "anthropic",
 } as const;

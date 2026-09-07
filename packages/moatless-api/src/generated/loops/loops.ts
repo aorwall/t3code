@@ -13,403 +13,342 @@ import type {
   Loop,
   LoopRecentTaskItem,
   ResetGitLoopResponse,
-  UpdateLoopRequest
-} from '../model';
+  UpdateLoopRequest,
+} from "../model";
 
-import { customInstance } from '../../customInstance.ts';
+import { customInstance } from "../../customInstance.ts";
 
 export type listLoopsResponse200 = {
-  data: Loop[]
-  status: 200
-}
+  data: Loop[];
+  status: 200;
+};
 
-export type listLoopsResponseSuccess = (listLoopsResponse200) & {
+export type listLoopsResponseSuccess = listLoopsResponse200 & {
   headers: Headers;
 };
-;
 
-export type listLoopsResponse = (listLoopsResponseSuccess)
+export type listLoopsResponse = listLoopsResponseSuccess;
 
 export const getListLoopsUrl = () => {
+  return `/api/v1/loops`;
+};
 
-
-
-
-  return `/api/v1/loops`
-}
-
-export const listLoops = async ( options?: Parameters<typeof customInstance>[1]): Promise<listLoopsResponse> => {
-
-  return customInstance<listLoopsResponse>(getListLoopsUrl(),
-  {
+export const listLoops = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<listLoopsResponse> => {
+  return customInstance<listLoopsResponse>(getListLoopsUrl(), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type createLoopResponse200 = {
-  data: Loop
-  status: 200
-}
+  data: Loop;
+  status: 200;
+};
 
-export type createLoopResponseSuccess = (createLoopResponse200) & {
+export type createLoopResponseSuccess = createLoopResponse200 & {
   headers: Headers;
 };
-;
 
-export type createLoopResponse = (createLoopResponseSuccess)
+export type createLoopResponse = createLoopResponseSuccess;
 
 export const getCreateLoopUrl = () => {
+  return `/api/v1/loops`;
+};
 
-
-
-
-  return `/api/v1/loops`
-}
-
-export const createLoop = async (createLoopRequest: CreateLoopRequest, options?: Parameters<typeof customInstance>[1]): Promise<createLoopResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const createLoop = async (
+  createLoopRequest: CreateLoopRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<createLoopResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<createLoopResponse>(getCreateLoopUrl(),
-  {
+  return customInstance<createLoopResponse>(getCreateLoopUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(createLoopRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(createLoopRequest),
+  });
+};
 
 export type getLoopResponse200 = {
-  data: Loop
-  status: 200
-}
+  data: Loop;
+  status: 200;
+};
 
 export type getLoopResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type getLoopResponseSuccess = (getLoopResponse200) & {
-  headers: Headers;
-};
-export type getLoopResponseError = (getLoopResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type getLoopResponse = (getLoopResponseSuccess | getLoopResponseError)
+export type getLoopResponseSuccess = getLoopResponse200 & {
+  headers: Headers;
+};
+export type getLoopResponseError = getLoopResponse404 & {
+  headers: Headers;
+};
 
-export const getGetLoopUrl = (id: string,) => {
+export type getLoopResponse = getLoopResponseSuccess | getLoopResponseError;
 
+export const getGetLoopUrl = (id: string) => {
+  return `/api/v1/loops/${id}`;
+};
 
-
-
-  return `/api/v1/loops/${id}`
-}
-
-export const getLoop = async (id: string, options?: Parameters<typeof customInstance>[1]): Promise<getLoopResponse> => {
-
-  return customInstance<getLoopResponse>(getGetLoopUrl(id),
-  {
+export const getLoop = async (
+  id: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<getLoopResponse> => {
+  return customInstance<getLoopResponse>(getGetLoopUrl(id), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type updateLoopResponse200 = {
-  data: Loop
-  status: 200
-}
+  data: Loop;
+  status: 200;
+};
 
-export type updateLoopResponseSuccess = (updateLoopResponse200) & {
+export type updateLoopResponseSuccess = updateLoopResponse200 & {
   headers: Headers;
 };
-;
 
-export type updateLoopResponse = (updateLoopResponseSuccess)
+export type updateLoopResponse = updateLoopResponseSuccess;
 
-export const getUpdateLoopUrl = (id: string,) => {
+export const getUpdateLoopUrl = (id: string) => {
+  return `/api/v1/loops/${id}`;
+};
 
-
-
-
-  return `/api/v1/loops/${id}`
-}
-
-export const updateLoop = async (id: string,
-    updateLoopRequest: UpdateLoopRequest, options?: Parameters<typeof customInstance>[1]): Promise<updateLoopResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const updateLoop = async (
+  id: string,
+  updateLoopRequest: UpdateLoopRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<updateLoopResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<updateLoopResponse>(getUpdateLoopUrl(id),
-  {
+  return customInstance<updateLoopResponse>(getUpdateLoopUrl(id), {
     ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(updateLoopRequest)
-  }
-);}
-
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateLoopRequest),
+  });
+};
 
 export type deleteLoopResponse204 = {
-  data: void
-  status: 204
-}
+  data: void;
+  status: 204;
+};
 
 export type deleteLoopResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type deleteLoopResponseSuccess = (deleteLoopResponse204) & {
-  headers: Headers;
-};
-export type deleteLoopResponseError = (deleteLoopResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type deleteLoopResponse = (deleteLoopResponseSuccess | deleteLoopResponseError)
+export type deleteLoopResponseSuccess = deleteLoopResponse204 & {
+  headers: Headers;
+};
+export type deleteLoopResponseError = deleteLoopResponse404 & {
+  headers: Headers;
+};
 
-export const getDeleteLoopUrl = (id: string,) => {
+export type deleteLoopResponse = deleteLoopResponseSuccess | deleteLoopResponseError;
 
+export const getDeleteLoopUrl = (id: string) => {
+  return `/api/v1/loops/${id}`;
+};
 
-
-
-  return `/api/v1/loops/${id}`
-}
-
-export const deleteLoop = async (id: string, options?: Parameters<typeof customInstance>[1]): Promise<deleteLoopResponse> => {
-
-  return customInstance<deleteLoopResponse>(getDeleteLoopUrl(id),
-  {
+export const deleteLoop = async (
+  id: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<deleteLoopResponse> => {
+  return customInstance<deleteLoopResponse>(getDeleteLoopUrl(id), {
     ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
+    method: "DELETE",
+  });
+};
 
 export type activateLoopResponse200 = {
-  data: Loop
-  status: 200
-}
+  data: Loop;
+  status: 200;
+};
 
-export type activateLoopResponseSuccess = (activateLoopResponse200) & {
+export type activateLoopResponseSuccess = activateLoopResponse200 & {
   headers: Headers;
 };
-;
 
-export type activateLoopResponse = (activateLoopResponseSuccess)
+export type activateLoopResponse = activateLoopResponseSuccess;
 
-export const getActivateLoopUrl = (id: string,) => {
+export const getActivateLoopUrl = (id: string) => {
+  return `/api/v1/loops/${id}/activate`;
+};
 
-
-
-
-  return `/api/v1/loops/${id}/activate`
-}
-
-export const activateLoop = async (id: string,
-    activateLoopRequest: ActivateLoopRequest, options?: Parameters<typeof customInstance>[1]): Promise<activateLoopResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const activateLoop = async (
+  id: string,
+  activateLoopRequest: ActivateLoopRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<activateLoopResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<activateLoopResponse>(getActivateLoopUrl(id),
-  {
+  return customInstance<activateLoopResponse>(getActivateLoopUrl(id), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(activateLoopRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(activateLoopRequest),
+  });
+};
 
 export type overrideLoopResponse200 = {
-  data: Loop
-  status: 200
-}
+  data: Loop;
+  status: 200;
+};
 
-export type overrideLoopResponseSuccess = (overrideLoopResponse200) & {
+export type overrideLoopResponseSuccess = overrideLoopResponse200 & {
   headers: Headers;
 };
-;
 
-export type overrideLoopResponse = (overrideLoopResponseSuccess)
+export type overrideLoopResponse = overrideLoopResponseSuccess;
 
-export const getOverrideLoopUrl = (id: string,) => {
+export const getOverrideLoopUrl = (id: string) => {
+  return `/api/v1/loops/${id}/override`;
+};
 
-
-
-
-  return `/api/v1/loops/${id}/override`
-}
-
-export const overrideLoop = async (id: string, options?: Parameters<typeof customInstance>[1]): Promise<overrideLoopResponse> => {
-
-  return customInstance<overrideLoopResponse>(getOverrideLoopUrl(id),
-  {
+export const overrideLoop = async (
+  id: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<overrideLoopResponse> => {
+  return customInstance<overrideLoopResponse>(getOverrideLoopUrl(id), {
     ...options,
-    method: 'POST'
-
-
-  }
-);}
-
+    method: "POST",
+  });
+};
 
 export type pauseLoopResponse200 = {
-  data: Loop
-  status: 200
-}
+  data: Loop;
+  status: 200;
+};
 
-export type pauseLoopResponseSuccess = (pauseLoopResponse200) & {
+export type pauseLoopResponseSuccess = pauseLoopResponse200 & {
   headers: Headers;
 };
-;
 
-export type pauseLoopResponse = (pauseLoopResponseSuccess)
+export type pauseLoopResponse = pauseLoopResponseSuccess;
 
-export const getPauseLoopUrl = (id: string,) => {
+export const getPauseLoopUrl = (id: string) => {
+  return `/api/v1/loops/${id}/pause`;
+};
 
-
-
-
-  return `/api/v1/loops/${id}/pause`
-}
-
-export const pauseLoop = async (id: string, options?: Parameters<typeof customInstance>[1]): Promise<pauseLoopResponse> => {
-
-  return customInstance<pauseLoopResponse>(getPauseLoopUrl(id),
-  {
+export const pauseLoop = async (
+  id: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<pauseLoopResponse> => {
+  return customInstance<pauseLoopResponse>(getPauseLoopUrl(id), {
     ...options,
-    method: 'POST'
-
-
-  }
-);}
-
+    method: "POST",
+  });
+};
 
 export type resetGitLoopResponse200 = {
-  data: ResetGitLoopResponse
-  status: 200
-}
+  data: ResetGitLoopResponse;
+  status: 200;
+};
 
-export type resetGitLoopResponseSuccess = (resetGitLoopResponse200) & {
+export type resetGitLoopResponseSuccess = resetGitLoopResponse200 & {
   headers: Headers;
 };
-;
 
-export type resetGitLoopResponse = (resetGitLoopResponseSuccess)
+export type resetGitLoopResponse = resetGitLoopResponseSuccess;
 
-export const getResetGitLoopUrl = (id: string,) => {
+export const getResetGitLoopUrl = (id: string) => {
+  return `/api/v1/loops/${id}/reset-git`;
+};
 
-
-
-
-  return `/api/v1/loops/${id}/reset-git`
-}
-
-export const resetGitLoop = async (id: string, options?: Parameters<typeof customInstance>[1]): Promise<resetGitLoopResponse> => {
-
-  return customInstance<resetGitLoopResponse>(getResetGitLoopUrl(id),
-  {
+export const resetGitLoop = async (
+  id: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<resetGitLoopResponse> => {
+  return customInstance<resetGitLoopResponse>(getResetGitLoopUrl(id), {
     ...options,
-    method: 'POST'
-
-
-  }
-);}
-
+    method: "POST",
+  });
+};
 
 export type resumeLoopResponse200 = {
-  data: Loop
-  status: 200
-}
+  data: Loop;
+  status: 200;
+};
 
-export type resumeLoopResponseSuccess = (resumeLoopResponse200) & {
+export type resumeLoopResponseSuccess = resumeLoopResponse200 & {
   headers: Headers;
 };
-;
 
-export type resumeLoopResponse = (resumeLoopResponseSuccess)
+export type resumeLoopResponse = resumeLoopResponseSuccess;
 
-export const getResumeLoopUrl = (id: string,) => {
+export const getResumeLoopUrl = (id: string) => {
+  return `/api/v1/loops/${id}/resume`;
+};
 
-
-
-
-  return `/api/v1/loops/${id}/resume`
-}
-
-export const resumeLoop = async (id: string, options?: Parameters<typeof customInstance>[1]): Promise<resumeLoopResponse> => {
-
-  return customInstance<resumeLoopResponse>(getResumeLoopUrl(id),
-  {
+export const resumeLoop = async (
+  id: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<resumeLoopResponse> => {
+  return customInstance<resumeLoopResponse>(getResumeLoopUrl(id), {
     ...options,
-    method: 'POST'
-
-
-  }
-);}
-
+    method: "POST",
+  });
+};
 
 export type listLoopRecentTasksResponse200 = {
-  data: LoopRecentTaskItem[]
-  status: 200
-}
+  data: LoopRecentTaskItem[];
+  status: 200;
+};
 
-export type listLoopRecentTasksResponseSuccess = (listLoopRecentTasksResponse200) & {
+export type listLoopRecentTasksResponseSuccess = listLoopRecentTasksResponse200 & {
   headers: Headers;
 };
-;
 
-export type listLoopRecentTasksResponse = (listLoopRecentTasksResponseSuccess)
+export type listLoopRecentTasksResponse = listLoopRecentTasksResponseSuccess;
 
-export const getListLoopRecentTasksUrl = (id: string,
-    params?: ListLoopRecentTasksParams,) => {
+export const getListLoopRecentTasksUrl = (id: string, params?: ListLoopRecentTasksParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/loops/${id}/tasks?${stringifiedParams}` : `/api/v1/loops/${id}/tasks`
-}
+  return stringifiedParams.length > 0
+    ? `/api/v1/loops/${id}/tasks?${stringifiedParams}`
+    : `/api/v1/loops/${id}/tasks`;
+};
 
-export const listLoopRecentTasks = async (id: string,
-    params?: ListLoopRecentTasksParams, options?: Parameters<typeof customInstance>[1]): Promise<listLoopRecentTasksResponse> => {
-
-  return customInstance<listLoopRecentTasksResponse>(getListLoopRecentTasksUrl(id,params),
-  {
+export const listLoopRecentTasks = async (
+  id: string,
+  params?: ListLoopRecentTasksParams,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<listLoopRecentTasksResponse> => {
+  return customInstance<listLoopRecentTasksResponse>(getListLoopRecentTasksUrl(id, params), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
+    method: "GET",
+  });
+};

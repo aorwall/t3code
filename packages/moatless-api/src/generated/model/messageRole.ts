@@ -9,11 +9,10 @@
 /**
  * Role of the message sender.
  */
-export type MessageRole = typeof MessageRole[keyof typeof MessageRole];
-
+export type MessageRole = (typeof MessageRole)[keyof typeof MessageRole];
 
 export const MessageRole = {
-  user: 'user',
-  assistant: 'assistant',
-  system: 'system',
+  user: "user",
+  assistant: "assistant",
+  system: "system",
 } as const;

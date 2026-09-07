@@ -5,12 +5,12 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { SlackRichTextSection } from './slackRichTextSection.ts';
+import type { SlackRichTextSection } from "./slackRichTextSection.ts";
 
 /**
  * One `table` cell.
  */
 export type SlackTableCell = {
   elements: SlackRichTextSection[];
-  type: 'rich_text';
+  type: "rich_text";
 };

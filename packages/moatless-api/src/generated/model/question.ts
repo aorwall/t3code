@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { QuestionOption } from './questionOption.ts';
+import type { QuestionOption } from "./questionOption.ts";
 
 /**
  * A question presented to the user during agent interaction.

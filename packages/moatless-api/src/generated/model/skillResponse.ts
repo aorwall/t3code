@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { SkillSource } from './skillSource.ts';
+import type { SkillSource } from "./skillSource.ts";
 
 /**
  * Single skill discovered from a `.claude/skills/{name}/SKILL.md` file.

@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ManagedCommandState } from './managedCommandState.ts';
+import type { ManagedCommandState } from "./managedCommandState.ts";
 
 /**
  * A registered command, narrowed to what a status reader needs to say one is
@@ -25,10 +25,10 @@ export interface CommandSummary {
   /** When the sandbox kills it for outliving its deadline. */
   deadlineUnixMs: number;
   /**
-     * Set once the command reached a terminal state. 124 is a timeout kill,
-     * matching coreutils `timeout`.
-     * @nullable
-     */
+   * Set once the command reached a terminal state. 124 is a timeout kill,
+   * matching coreutils `timeout`.
+   * @nullable
+   */
   exitCode: number | null;
   id: string;
   /** Human label, defaulted by the sandbox to a prefix of the command line. */

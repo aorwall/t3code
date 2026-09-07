@@ -5,11 +5,11 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ResourceConfig } from './resourceConfig.ts';
-import type { Scope } from './scope.ts';
-import type { ServerConfig } from './serverConfig.ts';
-import type { WorkspaceRepoResponse } from './workspaceRepoResponse.ts';
-import type { WorkspaceResponseEnvVars } from './workspaceResponseEnvVars.ts';
+import type { ResourceConfig } from "./resourceConfig.ts";
+import type { Scope } from "./scope.ts";
+import type { ServerConfig } from "./serverConfig.ts";
+import type { WorkspaceRepoResponse } from "./workspaceRepoResponse.ts";
+import type { WorkspaceResponseEnvVars } from "./workspaceResponseEnvVars.ts";
 
 export interface WorkspaceResponse {
   /** @nullable */
@@ -17,10 +17,10 @@ export interface WorkspaceResponse {
   /** @nullable */
   createdBy?: string | null;
   /**
-     * Soft-deleted workspaces are normally hidden. Git-origin tombstones remain
-     * visible in admin so users can restore them from git without automatic
-     * sync recreating them behind their back.
-     */
+   * Soft-deleted workspaces are normally hidden. Git-origin tombstones remain
+   * visible in admin so users can restore them from git without automatic
+   * sync recreating them behind their back.
+   */
   deleted?: boolean;
   /** @nullable */
   description?: string | null;
@@ -41,10 +41,10 @@ export interface WorkspaceResponse {
   repos: WorkspaceRepoResponse[];
   resources?: null | ResourceConfig;
   /**
-     * Identity every Task on this Workspace acts as on a git host. When set it
-     * outranks the Task's own owner.
-     * @nullable
-     */
+   * Identity every Task on this Workspace acts as on a git host. When set it
+   * outranks the Task's own owner.
+   * @nullable
+   */
   runAsUserId?: string | null;
   /** @nullable */
   sandboxServiceAccount?: string | null;
@@ -54,27 +54,27 @@ export interface WorkspaceResponse {
   /** @nullable */
   setupCommands?: string[] | null;
   /**
-     * `manual` or `git`. Git-synced workspaces are read-only in the UI and
-     * write API — only a re-sync from git changes them.
-     */
+   * `manual` or `git`. Git-synced workspaces are read-only in the UI and
+   * write API — only a re-sync from git changes them.
+   */
   source?: string;
   /**
-     * Path to the config file within the source repository that declared this
-     * workspace (e.g. `.moatless/workspaces.json` or `.moatless/config.json`).
-     * Retained even after a manual override so the origin remains visible.
-     * @nullable
-     */
+   * Path to the config file within the source repository that declared this
+   * workspace (e.g. `.moatless/workspaces.json` or `.moatless/config.json`).
+   * Retained even after a manual override so the origin remains visible.
+   * @nullable
+   */
   sourceConfigPath?: string | null;
   /**
-     * The entry's stable key within the declaring file (its `key`, else the
-     * slugified name). Retained after an override, like the other provenance.
-     * @nullable
-     */
+   * The entry's stable key within the declaring file (its `key`, else the
+   * slugified name). Retained after an override, like the other provenance.
+   * @nullable
+   */
   sourceKey?: string | null;
   /**
-     * The repository whose git tree declared this workspace (`source == "git"`).
-     * @nullable
-     */
+   * The repository whose git tree declared this workspace (`source == "git"`).
+   * @nullable
+   */
   sourceRepositoryId?: string | null;
   /** Convenience flag derived from `source == "git"`. */
   syncedFromGit?: boolean;

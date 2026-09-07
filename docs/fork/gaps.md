@@ -156,15 +156,26 @@ what a person loses, which is the part the derivation cannot tell you:
   capability stays absent regardless, since answering one method out of the
   group is not the group. Closes when the backend reports
   `capabilities.pullRequests: true` and dispatches the rest.
-- **Usage summary** — `server.getUsageSummary`, new upstream in the 2026-08-12
-  merge, reading local provider transcript directories in
-  `apps/server/src/usage/`. The `/usage` route and its charts render against
-  whatever the RPC returns and have no local fallback on Moatless. Grown in the
-  2026-09-03 merge by `server.refreshUsageRates` (#9146-era usage-pricing work,
+- **Usage writes** — `server.refreshUsageRates` (#9146-era usage-pricing work,
   `apps/server/src/usage/usagePricing.ts`), which re-fetches provider price
-  tables on the machine the server runs on; it shares no error union with
-  `getUsageSummary`, so it carries `UnsupportedMethodError` directly. Both
-  resolve to a refusal on Moatless.
+  tables on the machine the server runs on, and `provider.consumeResetCredit`,
+  new upstream in the 2026-09-07 merge, which redeems a provider's usage-limit
+  reset credit through that provider's CLI. Reading is served — the backend
+  dispatches `server.getUsageSummary`, so the `/usage` route and its charts
+  render — and both writes resolve to a refusal. `useResetCredit` in
+  `apps/web/src/components/usage/UsageLimits.tsx` catches it and shows "Could
+  not use the reset credit." Closes if Moatless ever drives a provider CLI on
+  the client's behalf, which is the same condition as _Provider setup_ below.
+- **Host resource sampling** — `server.getHostResources`, new upstream in the
+  2026-09-07 merge, which samples a machine's CPU and memory
+  (`apps/server/src/resourceTelemetry/HostResources.ts`) so a client can route a
+  draft to the least loaded of several. `useLoadBalancedEnvironment` only mounts
+  for an unresolved automatic draft, so nothing polls until a user picks
+  automatic routing; on Moatless the read fails, `chooseLoadBalancedEnvironment`
+  selects nothing and the composer's control reads "Auto balance unavailable" —
+  a correct answer, not a broken button. Needs no fork gate. Closes when the
+  backend reports its sandbox host's CPU and memory, which is only worth doing
+  if a deployment ever offers a choice of machines.
 - **Provider setup** — the redesigned provider editor's authenticate-and-install
   flow: `provider.auth.start` / `.complete` / `.cancel` / `.logout` /
   `.subscribe` and `provider.install.start` / `.cancel` / `.subscribe` /
@@ -331,13 +342,22 @@ thread out of it, so nothing here needs to know about archiving.
 
 ### A command cannot be refused
 
-`orchestration.dispatchCommand` is one dispatched method carrying a union of 12
-command types — `thread.create`, `thread.archive`, `thread.delete`,
-`project.create`, `thread.pin`, `thread.settle`, `thread.snooze` and their
-inverses. The backend dispatches the method, so `UnsupportedMethodError` cannot
-say anything about the commands inside it: a client that sends `thread.delete`
-to a backend that does not implement it gets a generic runtime failure, after
-the user has already asked for the deletion.
+`orchestration.dispatchCommand` is one dispatched method carrying a union of 26
+command types (`DispatchableClientOrchestrationCommand` in
+`packages/contracts/src/orchestration.ts`) — `thread.create`, `thread.archive`,
+`thread.delete`, `project.create`, `thread.pin`, `thread.settle`,
+`thread.snooze` and their inverses. The backend dispatches the method, so
+`UnsupportedMethodError` cannot say anything about the commands inside it: a
+client that sends `thread.delete` to a backend that does not implement it gets a
+generic runtime failure, after the user has already asked for the deletion.
+
+The union grows every merge, and each new type inherits the same silence. The
+2026-09-07 merge added two: `thread.active.reorder`, which persists a manual
+order for the active thread list (upstream #9729), and
+`thread.user-input.dismiss`, which drops an async question without answering it
+(upstream #10431). Both are ordinary controls the client renders unconditionally
+— a sidebar drag and a Dismiss button — and both fail generically on a backend
+that does not implement them.
 
 This is the reason `threadDeletion` is a build flag and not a typed refusal, and
 it will be the reason for the next one too.
@@ -502,29 +522,36 @@ commit. This is a rule, not a repair: **land upstream with a merge commit.** A
 cherry-pick moves the code without moving the base, and every later merge pays
 for it.
 
-### `pnpm test` does not run the fork's product surface
+### `pnpm test` does not test every package
 
-`vp run -r test` picks up six packages — `moatless-api`, `contracts`,
-`effect-codex-app-server`, `effect-acp`, `shared` and `oxlint-plugin-t3code`.
-`apps/web` is not one of them, though it has a `test` script. So the command
-`verify.mjs` runs, and the command a contributor runs before pushing, skips the
-2 700-odd tests covering the client this fork actually ships.
+`vp run -r test` leaves packages out, and it exits 0 without them. On
+2026-09-07 it reached eleven and never started `t3` (`apps/server`), whose 293
+test files cover the whole backend this fork talks to. Which packages it drops
+changes between merges: it dropped `apps/web` through 2026-08-16.
 
-What it costs: a merge or a change that breaks a web test is green until
-someone runs `apps/web`'s suite by hand. The 2026-08-16 merge landed four
-broken web tests that `verify.mjs` reported nothing about.
+It also stops the packages still running as soon as one of them fails. That day
+a `@t3tools/desktop` failure truncated `apps/web` and `@t3tools/mobile` after
+each had reported hundreds of passing files and before either printed a
+summary. Four failing web tests went unreported.
+
+What it costs: a merge that breaks a test in a dropped or truncated package is
+green. The 2026-08-16 merge landed four broken web tests that `verify.mjs`
+reported nothing about.
 
 What holds it open: nothing fork-owned — root `package.json` has no fork delta,
-so this is upstream's task graph, not a fork decision. Until it is fixed
-upstream, run it explicitly:
+so this is upstream's task graph, not a fork decision. `verify.mjs` compensates
+rather than fixes. It reads which packages printed a closing `Test Files` line,
+runs every other package that declares a test script alone, and fails the step
+on the ones that fail alone. So run the check, not the raw command:
 
 ```bash
-cd apps/web && vp test run --project unit
+node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only test
 ```
 
-- **Closes when:** `pnpm test` includes `apps/web`, or `verify.mjs` runs the web
-  suite as a seventh check of its own.
-- **Then here:** delete this entry and the manual step from the merge procedure.
+- **Closes when:** `pnpm test` reaches every package that declares a test script
+  and lets the packages still running finish.
+- **Then here:** delete this entry, and delete `completedPackages` and the
+  alone-run loop from `verify.mjs`.
 
 ### The auth bootstrap test suite does not run
 

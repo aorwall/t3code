@@ -7,10 +7,6 @@
       "types": "./src/customInstance.ts",
       "import": "./src/customInstance.ts"
     },
-    "./generated": {
-      "types": "./src/generated/index.ts",
-      "import": "./src/generated/index.ts"
-    },
     "./generated/model": {
       "types": "./src/generated/model/index.ts",
       "import": "./src/generated/model/index.ts"

@@ -11,10 +11,9 @@
  * `moat` CLI, which deserializes `SessionResponse`) doesn't hard-fail against
  * a newer server; the backend never constructs it.
  */
-export type SetupRequirementId = typeof SetupRequirementId[keyof typeof SetupRequirementId];
-
+export type SetupRequirementId = (typeof SetupRequirementId)[keyof typeof SetupRequirementId];
 
 export const SetupRequirementId = {
-  github_token: 'github_token',
-  unknown: 'unknown',
+  github_token: "github_token",
+  unknown: "unknown",
 } as const;

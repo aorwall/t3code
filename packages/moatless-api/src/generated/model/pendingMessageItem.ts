@@ -5,8 +5,8 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { AgentMode } from './agentMode.ts';
-import type { MessageType } from './messageType.ts';
+import type { AgentMode } from "./agentMode.ts";
+import type { MessageType } from "./messageType.ts";
 
 /**
  * A pending message item (user message or result message).
@@ -14,9 +14,9 @@ import type { MessageType } from './messageType.ts';
 export interface PendingMessageItem {
   agentMode?: null | AgentMode;
   /**
-     * What the person wrote, as text.
-     * @nullable
-     */
+   * What the person wrote, as text.
+   * @nullable
+   */
   messageText?: string | null;
   messageType: MessageType;
   /** @nullable */

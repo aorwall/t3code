@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { UserRole } from './userRole.ts';
+import type { UserRole } from "./userRole.ts";
 
 /**
  * Body for PATCH /api/v1/users/{login}.

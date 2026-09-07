@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { SetupActionKind } from './setupActionKind.ts';
+import type { SetupActionKind } from "./setupActionKind.ts";
 
 /**
  * A remediation step the frontend can offer. `target` is machine-readable:

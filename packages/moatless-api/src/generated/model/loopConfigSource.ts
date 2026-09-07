@@ -9,10 +9,9 @@
 /**
  * Authority from which the current Loop configuration was loaded.
  */
-export type LoopConfigSource = typeof LoopConfigSource[keyof typeof LoopConfigSource];
-
+export type LoopConfigSource = (typeof LoopConfigSource)[keyof typeof LoopConfigSource];
 
 export const LoopConfigSource = {
-  git: 'git',
-  manual: 'manual',
+  git: "git",
+  manual: "manual",
 } as const;

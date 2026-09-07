@@ -5,8 +5,8 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ServerCapabilities } from './serverCapabilities.ts';
-import type { ServerStatus } from './serverStatus.ts';
+import type { ServerCapabilities } from "./serverCapabilities.ts";
+import type { ServerStatus } from "./serverStatus.ts";
 
 /**
  * Single server entry in the workspace status response

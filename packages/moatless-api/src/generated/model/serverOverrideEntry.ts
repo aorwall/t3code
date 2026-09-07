@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ServerOverride } from './serverOverride.ts';
+import type { ServerOverride } from "./serverOverride.ts";
 
 /**
  * One server's override as it currently exists on the workspace volume.
@@ -13,9 +13,9 @@ import type { ServerOverride } from './serverOverride.ts';
 export interface ServerOverrideEntry {
   configOverride: ServerOverride;
   /**
-     * The counter the sidecar watches; `0` means it has never been restarted.
-     * @minimum 0
-     */
+   * The counter the sidecar watches; `0` means it has never been restarted.
+   * @minimum 0
+   */
   generation: number;
   serverName: string;
 }

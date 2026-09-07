@@ -11,11 +11,10 @@
  * which says what the note is about. A submitter never sets it: a row is
  * written `Open` and only a reader working the inbox moves it.
  */
-export type FeedbackStatus = typeof FeedbackStatus[keyof typeof FeedbackStatus];
-
+export type FeedbackStatus = (typeof FeedbackStatus)[keyof typeof FeedbackStatus];
 
 export const FeedbackStatus = {
-  open: 'open',
-  fixed: 'fixed',
-  not_relevant: 'not_relevant',
+  open: "open",
+  fixed: "fixed",
+  not_relevant: "not_relevant",
 } as const;

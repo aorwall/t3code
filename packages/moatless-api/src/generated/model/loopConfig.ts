@@ -5,16 +5,16 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { RoutingMode } from './routingMode.ts';
+import type { RoutingMode } from "./routingMode.ts";
 
 export interface LoopConfig {
   agentType: string;
   /**
-     * Per-Loop inactivity TTL in days. `None` means "inherit the global
-     * default" (`TASK_INACTIVE_TIMEOUT_DAYS`). Flows into `tasks.inactive_ttl_days`
-     * when this Loop spawns a task.
-     * @nullable
-     */
+   * Per-Loop inactivity TTL in days. `None` means "inherit the global
+   * default" (`TASK_INACTIVE_TIMEOUT_DAYS`). Flows into `tasks.inactive_ttl_days`
+   * when this Loop spawns a task.
+   * @nullable
+   */
   inactiveTtlDays?: number | null;
   /** @nullable */
   ongoingTaskId?: string | null;

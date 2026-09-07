@@ -9,13 +9,12 @@
 /**
  * Task sub-types.
  */
-export type TaskSubType = typeof TaskSubType[keyof typeof TaskSubType];
-
+export type TaskSubType = (typeof TaskSubType)[keyof typeof TaskSubType];
 
 export const TaskSubType = {
-  created: 'created',
-  open: 'open',
-  closed: 'closed',
-  updated: 'updated',
-  metadataupdated: 'metadata.updated',
+  created: "created",
+  open: "open",
+  closed: "closed",
+  updated: "updated",
+  metadataupdated: "metadata.updated",
 } as const;

@@ -7,14 +7,14 @@
  */
 
 export type FileTreeHandlerParams = {
-/**
- * Root path relative to workspace (default ".")
- * @nullable
- */
-path?: string | null;
-/**
- * Walk subdirectories (default false: only direct children of `path`)
- * @nullable
- */
-recursive?: boolean | null;
+  /**
+   * Root path relative to workspace (default ".")
+   * @nullable
+   */
+  path?: string | null;
+  /**
+   * Walk subdirectories (default false: only direct children of `path`)
+   * @nullable
+   */
+  recursive?: boolean | null;
 };

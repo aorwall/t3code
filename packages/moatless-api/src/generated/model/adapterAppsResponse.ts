@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { AdapterAppSummary } from './adapterAppSummary.ts';
+import type { AdapterAppSummary } from "./adapterAppSummary.ts";
 
 export interface AdapterAppsResponse {
   apps: AdapterAppSummary[];

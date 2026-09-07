@@ -12,381 +12,360 @@ import type {
   GetBranchesParams,
   RepositoryResponse,
   SyncConfigResponse,
-  UpdateRepositoryRequest
-} from '../model';
+  UpdateRepositoryRequest,
+} from "../model";
 
-import { customInstance } from '../../customInstance.ts';
+import { customInstance } from "../../customInstance.ts";
 
 export type listRepositoriesResponse200 = {
-  data: RepositoryResponse[]
-  status: 200
-}
+  data: RepositoryResponse[];
+  status: 200;
+};
 
-export type listRepositoriesResponseSuccess = (listRepositoriesResponse200) & {
+export type listRepositoriesResponseSuccess = listRepositoriesResponse200 & {
   headers: Headers;
 };
-;
 
-export type listRepositoriesResponse = (listRepositoriesResponseSuccess)
+export type listRepositoriesResponse = listRepositoriesResponseSuccess;
 
 export const getListRepositoriesUrl = () => {
-
-
-
-
-  return `/api/v1/repositories`
-}
+  return `/api/v1/repositories`;
+};
 
 /**
  * @summary List all repositories for the current user.
  */
-export const listRepositories = async ( options?: Parameters<typeof customInstance>[1]): Promise<listRepositoriesResponse> => {
-
-  return customInstance<listRepositoriesResponse>(getListRepositoriesUrl(),
-  {
+export const listRepositories = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<listRepositoriesResponse> => {
+  return customInstance<listRepositoriesResponse>(getListRepositoriesUrl(), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type createRepositoryResponse201 = {
-  data: RepositoryResponse
-  status: 201
-}
+  data: RepositoryResponse;
+  status: 201;
+};
 
 export type createRepositoryResponse409 = {
-  data: ErrorBody
-  status: 409
-}
-
-export type createRepositoryResponseSuccess = (createRepositoryResponse201) & {
-  headers: Headers;
-};
-export type createRepositoryResponseError = (createRepositoryResponse409) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 409;
 };
 
-export type createRepositoryResponse = (createRepositoryResponseSuccess | createRepositoryResponseError)
+export type createRepositoryResponseSuccess = createRepositoryResponse201 & {
+  headers: Headers;
+};
+export type createRepositoryResponseError = createRepositoryResponse409 & {
+  headers: Headers;
+};
+
+export type createRepositoryResponse =
+  | createRepositoryResponseSuccess
+  | createRepositoryResponseError;
 
 export const getCreateRepositoryUrl = () => {
-
-
-
-
-  return `/api/v1/repositories`
-}
+  return `/api/v1/repositories`;
+};
 
 /**
  * @summary Create a new repository.
  */
-export const createRepository = async (createRepositoryRequest: CreateRepositoryRequest, options?: Parameters<typeof customInstance>[1]): Promise<createRepositoryResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const createRepository = async (
+  createRepositoryRequest: CreateRepositoryRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<createRepositoryResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<createRepositoryResponse>(getCreateRepositoryUrl(),
-  {
+  return customInstance<createRepositoryResponse>(getCreateRepositoryUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(createRepositoryRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(createRepositoryRequest),
+  });
+};
 
 export type getRepositoryResponse200 = {
-  data: RepositoryResponse
-  status: 200
-}
+  data: RepositoryResponse;
+  status: 200;
+};
 
 export type getRepositoryResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type getRepositoryResponseSuccess = (getRepositoryResponse200) & {
-  headers: Headers;
-};
-export type getRepositoryResponseError = (getRepositoryResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type getRepositoryResponse = (getRepositoryResponseSuccess | getRepositoryResponseError)
+export type getRepositoryResponseSuccess = getRepositoryResponse200 & {
+  headers: Headers;
+};
+export type getRepositoryResponseError = getRepositoryResponse404 & {
+  headers: Headers;
+};
 
-export const getGetRepositoryUrl = (repositoryId: string,) => {
+export type getRepositoryResponse = getRepositoryResponseSuccess | getRepositoryResponseError;
 
-
-
-
-  return `/api/v1/repositories/${repositoryId}`
-}
+export const getGetRepositoryUrl = (repositoryId: string) => {
+  return `/api/v1/repositories/${repositoryId}`;
+};
 
 /**
  * @summary Get a repository by ID.
  */
-export const getRepository = async (repositoryId: string, options?: Parameters<typeof customInstance>[1]): Promise<getRepositoryResponse> => {
-
-  return customInstance<getRepositoryResponse>(getGetRepositoryUrl(repositoryId),
-  {
+export const getRepository = async (
+  repositoryId: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<getRepositoryResponse> => {
+  return customInstance<getRepositoryResponse>(getGetRepositoryUrl(repositoryId), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type updateRepositoryResponse200 = {
-  data: RepositoryResponse
-  status: 200
-}
+  data: RepositoryResponse;
+  status: 200;
+};
 
 export type updateRepositoryResponse404 = {
-  data: ErrorBody
-  status: 404
-}
+  data: ErrorBody;
+  status: 404;
+};
 
 export type updateRepositoryResponse409 = {
-  data: ErrorBody
-  status: 409
-}
-
-export type updateRepositoryResponseSuccess = (updateRepositoryResponse200) & {
-  headers: Headers;
-};
-export type updateRepositoryResponseError = (updateRepositoryResponse404 | updateRepositoryResponse409) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 409;
 };
 
-export type updateRepositoryResponse = (updateRepositoryResponseSuccess | updateRepositoryResponseError)
+export type updateRepositoryResponseSuccess = updateRepositoryResponse200 & {
+  headers: Headers;
+};
+export type updateRepositoryResponseError = (
+  | updateRepositoryResponse404
+  | updateRepositoryResponse409
+) & {
+  headers: Headers;
+};
 
-export const getUpdateRepositoryUrl = (repositoryId: string,) => {
+export type updateRepositoryResponse =
+  | updateRepositoryResponseSuccess
+  | updateRepositoryResponseError;
 
-
-
-
-  return `/api/v1/repositories/${repositoryId}`
-}
+export const getUpdateRepositoryUrl = (repositoryId: string) => {
+  return `/api/v1/repositories/${repositoryId}`;
+};
 
 /**
  * @summary Update a repository by ID.
  */
-export const updateRepository = async (repositoryId: string,
-    updateRepositoryRequest: UpdateRepositoryRequest, options?: Parameters<typeof customInstance>[1]): Promise<updateRepositoryResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const updateRepository = async (
+  repositoryId: string,
+  updateRepositoryRequest: UpdateRepositoryRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<updateRepositoryResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<updateRepositoryResponse>(getUpdateRepositoryUrl(repositoryId),
-  {
+  return customInstance<updateRepositoryResponse>(getUpdateRepositoryUrl(repositoryId), {
     ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(updateRepositoryRequest)
-  }
-);}
-
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateRepositoryRequest),
+  });
+};
 
 export type deleteRepositoryResponse204 = {
-  data: void
-  status: 204
-}
+  data: void;
+  status: 204;
+};
 
 export type deleteRepositoryResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type deleteRepositoryResponseSuccess = (deleteRepositoryResponse204) & {
-  headers: Headers;
-};
-export type deleteRepositoryResponseError = (deleteRepositoryResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type deleteRepositoryResponse = (deleteRepositoryResponseSuccess | deleteRepositoryResponseError)
+export type deleteRepositoryResponseSuccess = deleteRepositoryResponse204 & {
+  headers: Headers;
+};
+export type deleteRepositoryResponseError = deleteRepositoryResponse404 & {
+  headers: Headers;
+};
 
-export const getDeleteRepositoryUrl = (repositoryId: string,) => {
+export type deleteRepositoryResponse =
+  | deleteRepositoryResponseSuccess
+  | deleteRepositoryResponseError;
 
-
-
-
-  return `/api/v1/repositories/${repositoryId}`
-}
+export const getDeleteRepositoryUrl = (repositoryId: string) => {
+  return `/api/v1/repositories/${repositoryId}`;
+};
 
 /**
  * @summary Delete a repository by ID (soft delete).
  */
-export const deleteRepository = async (repositoryId: string, options?: Parameters<typeof customInstance>[1]): Promise<deleteRepositoryResponse> => {
-
-  return customInstance<deleteRepositoryResponse>(getDeleteRepositoryUrl(repositoryId),
-  {
+export const deleteRepository = async (
+  repositoryId: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<deleteRepositoryResponse> => {
+  return customInstance<deleteRepositoryResponse>(getDeleteRepositoryUrl(repositoryId), {
     ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
+    method: "DELETE",
+  });
+};
 
 export type getBranchesResponse200 = {
-  data: BranchListResponse
-  status: 200
-}
+  data: BranchListResponse;
+  status: 200;
+};
 
 export type getBranchesResponse400 = {
-  data: ErrorBody
-  status: 400
-}
+  data: ErrorBody;
+  status: 400;
+};
 
 export type getBranchesResponse403 = {
-  data: ErrorBody
-  status: 403
-}
+  data: ErrorBody;
+  status: 403;
+};
 
 export type getBranchesResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type getBranchesResponseSuccess = (getBranchesResponse200) & {
-  headers: Headers;
-};
-export type getBranchesResponseError = (getBranchesResponse400 | getBranchesResponse403 | getBranchesResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type getBranchesResponse = (getBranchesResponseSuccess | getBranchesResponseError)
+export type getBranchesResponseSuccess = getBranchesResponse200 & {
+  headers: Headers;
+};
+export type getBranchesResponseError = (
+  | getBranchesResponse400
+  | getBranchesResponse403
+  | getBranchesResponse404
+) & {
+  headers: Headers;
+};
 
-export const getGetBranchesUrl = (repositoryId: string,
-    params?: GetBranchesParams,) => {
+export type getBranchesResponse = getBranchesResponseSuccess | getBranchesResponseError;
+
+export const getGetBranchesUrl = (repositoryId: string, params?: GetBranchesParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/repositories/${repositoryId}/branches?${stringifiedParams}` : `/api/v1/repositories/${repositoryId}/branches`
-}
+  return stringifiedParams.length > 0
+    ? `/api/v1/repositories/${repositoryId}/branches?${stringifiedParams}`
+    : `/api/v1/repositories/${repositoryId}/branches`;
+};
 
 /**
  * @summary Get branches for a repository.
  */
-export const getBranches = async (repositoryId: string,
-    params?: GetBranchesParams, options?: Parameters<typeof customInstance>[1]): Promise<getBranchesResponse> => {
-
-  return customInstance<getBranchesResponse>(getGetBranchesUrl(repositoryId,params),
-  {
+export const getBranches = async (
+  repositoryId: string,
+  params?: GetBranchesParams,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<getBranchesResponse> => {
+  return customInstance<getBranchesResponse>(getGetBranchesUrl(repositoryId, params), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type convertToTemplateResponse200 = {
-  data: RepositoryResponse
-  status: 200
-}
+  data: RepositoryResponse;
+  status: 200;
+};
 
 export type convertToTemplateResponse400 = {
-  data: ErrorBody
-  status: 400
-}
+  data: ErrorBody;
+  status: 400;
+};
 
 export type convertToTemplateResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type convertToTemplateResponseSuccess = (convertToTemplateResponse200) & {
-  headers: Headers;
-};
-export type convertToTemplateResponseError = (convertToTemplateResponse400 | convertToTemplateResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type convertToTemplateResponse = (convertToTemplateResponseSuccess | convertToTemplateResponseError)
+export type convertToTemplateResponseSuccess = convertToTemplateResponse200 & {
+  headers: Headers;
+};
+export type convertToTemplateResponseError = (
+  | convertToTemplateResponse400
+  | convertToTemplateResponse404
+) & {
+  headers: Headers;
+};
 
-export const getConvertToTemplateUrl = (repositoryId: string,) => {
+export type convertToTemplateResponse =
+  | convertToTemplateResponseSuccess
+  | convertToTemplateResponseError;
 
-
-
-
-  return `/api/v1/repositories/${repositoryId}/convert-to-template`
-}
+export const getConvertToTemplateUrl = (repositoryId: string) => {
+  return `/api/v1/repositories/${repositoryId}/convert-to-template`;
+};
 
 /**
  * @summary Convert a remote repository to a template.
  */
-export const convertToTemplate = async (repositoryId: string, options?: Parameters<typeof customInstance>[1]): Promise<convertToTemplateResponse> => {
-
-  return customInstance<convertToTemplateResponse>(getConvertToTemplateUrl(repositoryId),
-  {
+export const convertToTemplate = async (
+  repositoryId: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<convertToTemplateResponse> => {
+  return customInstance<convertToTemplateResponse>(getConvertToTemplateUrl(repositoryId), {
     ...options,
-    method: 'POST'
-
-
-  }
-);}
-
+    method: "POST",
+  });
+};
 
 export type syncConfigResponse200 = {
-  data: SyncConfigResponse
-  status: 200
-}
+  data: SyncConfigResponse;
+  status: 200;
+};
 
 export type syncConfigResponse400 = {
-  data: ErrorBody
-  status: 400
-}
+  data: ErrorBody;
+  status: 400;
+};
 
 export type syncConfigResponse404 = {
-  data: ErrorBody
-  status: 404
-}
+  data: ErrorBody;
+  status: 404;
+};
 
-export type syncConfigResponseSuccess = (syncConfigResponse200) & {
+export type syncConfigResponseSuccess = syncConfigResponse200 & {
   headers: Headers;
 };
 export type syncConfigResponseError = (syncConfigResponse400 | syncConfigResponse404) & {
   headers: Headers;
 };
 
-export type syncConfigResponse = (syncConfigResponseSuccess | syncConfigResponseError)
+export type syncConfigResponse = syncConfigResponseSuccess | syncConfigResponseError;
 
-export const getSyncConfigUrl = (repositoryId: string,) => {
+export const getSyncConfigUrl = (repositoryId: string) => {
+  return `/api/v1/repositories/${repositoryId}/sync-config`;
+};
 
-
-
-
-  return `/api/v1/repositories/${repositoryId}/sync-config`
-}
-
-export const syncConfig = async (repositoryId: string, options?: Parameters<typeof customInstance>[1]): Promise<syncConfigResponse> => {
-
-  return customInstance<syncConfigResponse>(getSyncConfigUrl(repositoryId),
-  {
+export const syncConfig = async (
+  repositoryId: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<syncConfigResponse> => {
+  return customInstance<syncConfigResponse>(getSyncConfigUrl(repositoryId), {
     ...options,
-    method: 'POST'
-
-
-  }
-);}
-
-
+    method: "POST",
+  });
+};

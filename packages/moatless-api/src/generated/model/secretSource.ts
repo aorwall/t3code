@@ -9,10 +9,9 @@
 /**
  * Where a secret value is stored.
  */
-export type SecretSource = typeof SecretSource[keyof typeof SecretSource];
-
+export type SecretSource = (typeof SecretSource)[keyof typeof SecretSource];
 
 export const SecretSource = {
-  inline_encrypted: 'inline_encrypted',
-  external_ref: 'external_ref',
+  inline_encrypted: "inline_encrypted",
+  external_ref: "external_ref",
 } as const;

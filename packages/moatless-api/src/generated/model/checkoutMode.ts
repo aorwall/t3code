@@ -9,10 +9,9 @@
 /**
  * How a task's checkout relates to other members of the same Sandbox.
  */
-export type CheckoutMode = typeof CheckoutMode[keyof typeof CheckoutMode];
-
+export type CheckoutMode = (typeof CheckoutMode)[keyof typeof CheckoutMode];
 
 export const CheckoutMode = {
-  shared: 'shared',
-  isolated: 'isolated',
+  shared: "shared",
+  isolated: "isolated",
 } as const;

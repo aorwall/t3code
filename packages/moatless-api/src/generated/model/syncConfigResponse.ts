@@ -5,9 +5,9 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { LoopSyncSummary } from './loopSyncSummary.ts';
-import type { RepositoryResponse } from './repositoryResponse.ts';
-import type { WorkspaceSyncSummary } from './workspaceSyncSummary.ts';
+import type { LoopSyncSummary } from "./loopSyncSummary.ts";
+import type { RepositoryResponse } from "./repositoryResponse.ts";
+import type { WorkspaceSyncSummary } from "./workspaceSyncSummary.ts";
 
 /**
  * Response for `POST /api/v1/repositories/{id}/sync-config`.

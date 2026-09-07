@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { GitHubAppOption } from './gitHubAppOption.ts';
+import type { GitHubAppOption } from "./gitHubAppOption.ts";
 
 export interface GitHubAppsResponse {
   apps: GitHubAppOption[];

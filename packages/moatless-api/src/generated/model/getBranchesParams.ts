@@ -7,11 +7,11 @@
  */
 
 export type GetBranchesParams = {
-/**
- * List on behalf of this workspace, so a repository only the workspace's
- * pinned credential can reach still answers. Omitted, the listing is made
- * as the caller's own identity.
- * @nullable
- */
-workspaceId?: string | null;
+  /**
+   * List on behalf of this workspace, so a repository only the workspace's
+   * pinned credential can reach still answers. Omitted, the listing is made
+   * as the caller's own identity.
+   * @nullable
+   */
+  workspaceId?: string | null;
 };

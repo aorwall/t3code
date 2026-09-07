@@ -5,19 +5,21 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { SlackTextStyle } from './slackTextStyle.ts';
+import type { SlackTextStyle } from "./slackTextStyle.ts";
 
 /**
  * A leaf inside a rich-text section.
  */
-export type SlackRichTextElement = {
-  style?: null | SlackTextStyle;
-  text: string;
-  type: 'text';
-} | {
-  style?: null | SlackTextStyle;
-  /** @nullable */
-  text?: string | null;
-  type: 'link';
-  url: string;
-};
+export type SlackRichTextElement =
+  | {
+      style?: null | SlackTextStyle;
+      text: string;
+      type: "text";
+    }
+  | {
+      style?: null | SlackTextStyle;
+      /** @nullable */
+      text?: string | null;
+      type: "link";
+      url: string;
+    };

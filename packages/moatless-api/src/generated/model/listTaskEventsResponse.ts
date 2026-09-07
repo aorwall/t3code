@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { TaskEventResponse } from './taskEventResponse.ts';
+import type { TaskEventResponse } from "./taskEventResponse.ts";
 
 /**
  * Response for listing task events.

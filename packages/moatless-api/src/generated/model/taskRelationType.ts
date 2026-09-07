@@ -16,11 +16,10 @@
  * parent's conversation, because a fork is often the work that continued
  * and nobody is waiting on its result.
  */
-export type TaskRelationType = typeof TaskRelationType[keyof typeof TaskRelationType];
-
+export type TaskRelationType = (typeof TaskRelationType)[keyof typeof TaskRelationType];
 
 export const TaskRelationType = {
-  created_by: 'created_by',
-  related_to: 'related_to',
-  forked_from: 'forked_from',
+  created_by: "created_by",
+  related_to: "related_to",
+  forked_from: "forked_from",
 } as const;

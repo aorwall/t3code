@@ -10,12 +10,11 @@
  * Linear's `IssueRelationType`. `Blocks` is directional — the issue named in
  * the path blocks `related_issue`.
  */
-export type LinearRelationType = typeof LinearRelationType[keyof typeof LinearRelationType];
-
+export type LinearRelationType = (typeof LinearRelationType)[keyof typeof LinearRelationType];
 
 export const LinearRelationType = {
-  related: 'related',
-  duplicate: 'duplicate',
-  blocks: 'blocks',
-  similar: 'similar',
+  related: "related",
+  duplicate: "duplicate",
+  blocks: "blocks",
+  similar: "similar",
 } as const;

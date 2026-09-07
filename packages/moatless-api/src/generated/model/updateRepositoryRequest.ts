@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { Scope } from './scope.ts';
+import type { Scope } from "./scope.ts";
 
 export interface UpdateRepositoryRequest {
   /** @nullable */

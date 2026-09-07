@@ -1,7 +1,8 @@
 import { normalizeSearchText } from "~/lib/utils";
 
 /**
- * Filtering an administration list by what its rows say.
+ * Fork-only file (Moatless administration, `moatless-admin-pages` in the
+ * inventory). Filtering an administration list by what its rows say.
  *
  * One function for all of them because the three lists differ only in which
  * text a row shows, and that is the part worth stating per list. Everything

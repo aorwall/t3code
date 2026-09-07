@@ -5,16 +5,16 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { GithubExternalEventSubject } from './githubExternalEventSubject.ts';
+import type { GithubExternalEventSubject } from "./githubExternalEventSubject.ts";
 
 /**
  * `POST /api/v1/github/external-events` — record an event this Task made.
  */
 export interface GithubExternalEventRequest {
   /**
-     * `owner/repo` the event happened in.
-     * @nullable
-     */
+   * `owner/repo` the event happened in.
+   * @nullable
+   */
   sourceName?: string | null;
   subject: GithubExternalEventSubject;
   /** Task the event belongs to. */

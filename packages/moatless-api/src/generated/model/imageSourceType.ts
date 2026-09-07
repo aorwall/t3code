@@ -9,11 +9,10 @@
 /**
  * Type of image source.
  */
-export type ImageSourceType = typeof ImageSourceType[keyof typeof ImageSourceType];
-
+export type ImageSourceType = (typeof ImageSourceType)[keyof typeof ImageSourceType];
 
 export const ImageSourceType = {
-  base64: 'base64',
-  url: 'url',
-  unknown: 'unknown',
+  base64: "base64",
+  url: "url",
+  unknown: "unknown",
 } as const;

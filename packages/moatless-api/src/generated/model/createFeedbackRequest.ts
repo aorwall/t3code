@@ -5,8 +5,8 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { FeedbackCategory } from './feedbackCategory.ts';
-import type { FeedbackSurface } from './feedbackSurface.ts';
+import type { FeedbackCategory } from "./feedbackCategory.ts";
+import type { FeedbackSurface } from "./feedbackSurface.ts";
 
 /**
  * Request body for `POST /api/v1/feedback`.

@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { FeedbackResponse } from './feedbackResponse.ts';
+import type { FeedbackResponse } from "./feedbackResponse.ts";
 
 /**
  * Response wrapper for `GET /api/v1/tasks/{task_id}/feedback`.

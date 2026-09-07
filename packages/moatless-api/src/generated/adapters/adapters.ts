@@ -13,373 +13,331 @@ import type {
   ErrorBody,
   TelegramWebhookBody,
   WebhookAccepted,
-  WebhookPayload
-} from '../model';
+  WebhookPayload,
+} from "../model";
 
-import { customInstance } from '../../customInstance.ts';
+import { customInstance } from "../../customInstance.ts";
 
 export type listAdaptersResponse200 = {
-  data: string[]
-  status: 200
-}
+  data: string[];
+  status: 200;
+};
 
-export type listAdaptersResponseSuccess = (listAdaptersResponse200) & {
+export type listAdaptersResponseSuccess = listAdaptersResponse200 & {
   headers: Headers;
 };
-;
 
-export type listAdaptersResponse = (listAdaptersResponseSuccess)
+export type listAdaptersResponse = listAdaptersResponseSuccess;
 
 export const getListAdaptersUrl = () => {
+  return `/api/v1/adapters`;
+};
 
-
-
-
-  return `/api/v1/adapters`
-}
-
-export const listAdapters = async ( options?: Parameters<typeof customInstance>[1]): Promise<listAdaptersResponse> => {
-
-  return customInstance<listAdaptersResponse>(getListAdaptersUrl(),
-  {
+export const listAdapters = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<listAdaptersResponse> => {
+  return customInstance<listAdaptersResponse>(getListAdaptersUrl(), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type listAdapterConnectionsResponse200 = {
-  data: AdapterConnectionResponse[]
-  status: 200
-}
+  data: AdapterConnectionResponse[];
+  status: 200;
+};
 
-export type listAdapterConnectionsResponseSuccess = (listAdapterConnectionsResponse200) & {
+export type listAdapterConnectionsResponseSuccess = listAdapterConnectionsResponse200 & {
   headers: Headers;
 };
-;
 
-export type listAdapterConnectionsResponse = (listAdapterConnectionsResponseSuccess)
+export type listAdapterConnectionsResponse = listAdapterConnectionsResponseSuccess;
 
 export const getListAdapterConnectionsUrl = () => {
+  return `/api/v1/adapters/connections`;
+};
 
-
-
-
-  return `/api/v1/adapters/connections`
-}
-
-export const listAdapterConnections = async ( options?: Parameters<typeof customInstance>[1]): Promise<listAdapterConnectionsResponse> => {
-
-  return customInstance<listAdapterConnectionsResponse>(getListAdapterConnectionsUrl(),
-  {
+export const listAdapterConnections = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<listAdapterConnectionsResponse> => {
+  return customInstance<listAdapterConnectionsResponse>(getListAdapterConnectionsUrl(), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export type createAdapterConnectionResponse200 = {
-  data: AdapterConnectionResponse
-  status: 200
-}
+  data: AdapterConnectionResponse;
+  status: 200;
+};
 
-export type createAdapterConnectionResponseSuccess = (createAdapterConnectionResponse200) & {
+export type createAdapterConnectionResponseSuccess = createAdapterConnectionResponse200 & {
   headers: Headers;
 };
-;
 
-export type createAdapterConnectionResponse = (createAdapterConnectionResponseSuccess)
+export type createAdapterConnectionResponse = createAdapterConnectionResponseSuccess;
 
 export const getCreateAdapterConnectionUrl = () => {
+  return `/api/v1/adapters/connections`;
+};
 
-
-
-
-  return `/api/v1/adapters/connections`
-}
-
-export const createAdapterConnection = async (createAdapterConnectionRequest: CreateAdapterConnectionRequest, options?: Parameters<typeof customInstance>[1]): Promise<createAdapterConnectionResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const createAdapterConnection = async (
+  createAdapterConnectionRequest: CreateAdapterConnectionRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<createAdapterConnectionResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<createAdapterConnectionResponse>(getCreateAdapterConnectionUrl(),
-  {
+  return customInstance<createAdapterConnectionResponse>(getCreateAdapterConnectionUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(createAdapterConnectionRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(createAdapterConnectionRequest),
+  });
+};
 
 export type deleteAdapterConnectionResponse204 = {
-  data: void
-  status: 204
-}
+  data: void;
+  status: 204;
+};
 
 export type deleteAdapterConnectionResponse404 = {
-  data: ErrorBody
-  status: 404
-}
-
-export type deleteAdapterConnectionResponseSuccess = (deleteAdapterConnectionResponse204) & {
-  headers: Headers;
-};
-export type deleteAdapterConnectionResponseError = (deleteAdapterConnectionResponse404) & {
-  headers: Headers;
+  data: ErrorBody;
+  status: 404;
 };
 
-export type deleteAdapterConnectionResponse = (deleteAdapterConnectionResponseSuccess | deleteAdapterConnectionResponseError)
+export type deleteAdapterConnectionResponseSuccess = deleteAdapterConnectionResponse204 & {
+  headers: Headers;
+};
+export type deleteAdapterConnectionResponseError = deleteAdapterConnectionResponse404 & {
+  headers: Headers;
+};
 
-export const getDeleteAdapterConnectionUrl = (id: string,) => {
+export type deleteAdapterConnectionResponse =
+  | deleteAdapterConnectionResponseSuccess
+  | deleteAdapterConnectionResponseError;
 
+export const getDeleteAdapterConnectionUrl = (id: string) => {
+  return `/api/v1/adapters/connections/${id}`;
+};
 
-
-
-  return `/api/v1/adapters/connections/${id}`
-}
-
-export const deleteAdapterConnection = async (id: string, options?: Parameters<typeof customInstance>[1]): Promise<deleteAdapterConnectionResponse> => {
-
-  return customInstance<deleteAdapterConnectionResponse>(getDeleteAdapterConnectionUrl(id),
-  {
+export const deleteAdapterConnection = async (
+  id: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<deleteAdapterConnectionResponse> => {
+  return customInstance<deleteAdapterConnectionResponse>(getDeleteAdapterConnectionUrl(id), {
     ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
+    method: "DELETE",
+  });
+};
 
 export type githubWebhookResponse200 = {
-  data: void
-  status: 200
-}
+  data: void;
+  status: 200;
+};
 
-export type githubWebhookResponseSuccess = (githubWebhookResponse200) & {
+export type githubWebhookResponseSuccess = githubWebhookResponse200 & {
   headers: Headers;
 };
-;
 
-export type githubWebhookResponse = (githubWebhookResponseSuccess)
+export type githubWebhookResponse = githubWebhookResponseSuccess;
 
 export const getGithubWebhookUrl = () => {
+  return `/api/v1/adapters/github/webhook`;
+};
 
-
-
-
-  return `/api/v1/adapters/github/webhook`
-}
-
-export const githubWebhook = async (githubWebhookBody: string, options?: Parameters<typeof customInstance>[1]): Promise<githubWebhookResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const githubWebhook = async (
+  githubWebhookBody: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<githubWebhookResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<githubWebhookResponse>(getGithubWebhookUrl(),
-  {
+  return customInstance<githubWebhookResponse>(getGithubWebhookUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain', ...getHeaders(options?.headers) },
-    body: githubWebhookBody
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "text/plain", ...getHeaders(options?.headers) },
+    body: githubWebhookBody,
+  });
+};
 
 export type linearWebhookResponse200 = {
-  data: void
-  status: 200
-}
+  data: void;
+  status: 200;
+};
 
-export type linearWebhookResponseSuccess = (linearWebhookResponse200) & {
+export type linearWebhookResponseSuccess = linearWebhookResponse200 & {
   headers: Headers;
 };
-;
 
-export type linearWebhookResponse = (linearWebhookResponseSuccess)
+export type linearWebhookResponse = linearWebhookResponseSuccess;
 
 export const getLinearWebhookUrl = () => {
+  return `/api/v1/adapters/linear/webhook`;
+};
 
-
-
-
-  return `/api/v1/adapters/linear/webhook`
-}
-
-export const linearWebhook = async (linearWebhookBody: string, options?: Parameters<typeof customInstance>[1]): Promise<linearWebhookResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const linearWebhook = async (
+  linearWebhookBody: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<linearWebhookResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<linearWebhookResponse>(getLinearWebhookUrl(),
-  {
+  return customInstance<linearWebhookResponse>(getLinearWebhookUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain', ...getHeaders(options?.headers) },
-    body: linearWebhookBody
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "text/plain", ...getHeaders(options?.headers) },
+    body: linearWebhookBody,
+  });
+};
 
 export type adapterSendResponse200 = {
-  data: AdapterSendResponse
-  status: 200
-}
+  data: AdapterSendResponse;
+  status: 200;
+};
 
 export type adapterSendResponse400 = {
-  data: ErrorBody
-  status: 400
-}
+  data: ErrorBody;
+  status: 400;
+};
 
 export type adapterSendResponse404 = {
-  data: ErrorBody
-  status: 404
-}
+  data: ErrorBody;
+  status: 404;
+};
 
-export type adapterSendResponseSuccess = (adapterSendResponse200) & {
+export type adapterSendResponseSuccess = adapterSendResponse200 & {
   headers: Headers;
 };
 export type adapterSendResponseError = (adapterSendResponse400 | adapterSendResponse404) & {
   headers: Headers;
 };
 
-export type adapterSendResponse = (adapterSendResponseSuccess | adapterSendResponseError)
+export type adapterSendResponse = adapterSendResponseSuccess | adapterSendResponseError;
 
 export const getAdapterSendUrl = () => {
+  return `/api/v1/adapters/send`;
+};
 
-
-
-
-  return `/api/v1/adapters/send`
-}
-
-export const adapterSend = async (adapterSendRequest: AdapterSendRequest, options?: Parameters<typeof customInstance>[1]): Promise<adapterSendResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const adapterSend = async (
+  adapterSendRequest: AdapterSendRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<adapterSendResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<adapterSendResponse>(getAdapterSendUrl(),
-  {
+  return customInstance<adapterSendResponse>(getAdapterSendUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(adapterSendRequest)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(adapterSendRequest),
+  });
+};
 
 export type slackWebhookResponse200 = {
-  data: void
-  status: 200
-}
+  data: void;
+  status: 200;
+};
 
-export type slackWebhookResponseSuccess = (slackWebhookResponse200) & {
+export type slackWebhookResponseSuccess = slackWebhookResponse200 & {
   headers: Headers;
 };
-;
 
-export type slackWebhookResponse = (slackWebhookResponseSuccess)
+export type slackWebhookResponse = slackWebhookResponseSuccess;
 
 export const getSlackWebhookUrl = () => {
+  return `/api/v1/adapters/slack/webhook`;
+};
 
-
-
-
-  return `/api/v1/adapters/slack/webhook`
-}
-
-export const slackWebhook = async (slackWebhookBody: string, options?: Parameters<typeof customInstance>[1]): Promise<slackWebhookResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const slackWebhook = async (
+  slackWebhookBody: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<slackWebhookResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<slackWebhookResponse>(getSlackWebhookUrl(),
-  {
+  return customInstance<slackWebhookResponse>(getSlackWebhookUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain', ...getHeaders(options?.headers) },
-    body: slackWebhookBody
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "text/plain", ...getHeaders(options?.headers) },
+    body: slackWebhookBody,
+  });
+};
 
 export type telegramWebhookResponse200 = {
-  data: void
-  status: 200
-}
+  data: void;
+  status: 200;
+};
 
-export type telegramWebhookResponseSuccess = (telegramWebhookResponse200) & {
+export type telegramWebhookResponseSuccess = telegramWebhookResponse200 & {
   headers: Headers;
 };
-;
 
-export type telegramWebhookResponse = (telegramWebhookResponseSuccess)
+export type telegramWebhookResponse = telegramWebhookResponseSuccess;
 
 export const getTelegramWebhookUrl = () => {
+  return `/api/v1/adapters/telegram/webhook`;
+};
 
-
-
-
-  return `/api/v1/adapters/telegram/webhook`
-}
-
-export const telegramWebhook = async (telegramWebhookBody: TelegramWebhookBody, options?: Parameters<typeof customInstance>[1]): Promise<telegramWebhookResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const telegramWebhook = async (
+  telegramWebhookBody: TelegramWebhookBody,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<telegramWebhookResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<telegramWebhookResponse>(getTelegramWebhookUrl(),
-  {
+  return customInstance<telegramWebhookResponse>(getTelegramWebhookUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(telegramWebhookBody)
-  }
-);}
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(telegramWebhookBody),
+  });
+};
 
 export type webhookInboundResponse200 = {
-  data: WebhookAccepted
-  status: 200
-}
+  data: WebhookAccepted;
+  status: 200;
+};
 
-export type webhookInboundResponseSuccess = (webhookInboundResponse200) & {
+export type webhookInboundResponseSuccess = webhookInboundResponse200 & {
   headers: Headers;
 };
-;
 
-export type webhookInboundResponse = (webhookInboundResponseSuccess)
+export type webhookInboundResponse = webhookInboundResponseSuccess;
 
-export const getWebhookInboundUrl = (loopId: string,) => {
-
-
-
-
-  return `/api/v1/adapters/webhook/${loopId}`
-}
+export const getWebhookInboundUrl = (loopId: string) => {
+  return `/api/v1/adapters/webhook/${loopId}`;
+};
 
 /**
  * Everything the caller is answered with is decided before any routing runs:
@@ -394,22 +352,23 @@ export const getWebhookInboundUrl = (loopId: string,) => {
  * then terminates the durable delivery without creating a Task.
  * @summary Take durable ownership of one inbound webhook delivery.
  */
-export const webhookInbound = async (loopId: string,
-    webhookPayload: WebhookPayload, options?: Parameters<typeof customInstance>[1]): Promise<webhookInboundResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const webhookInbound = async (
+  loopId: string,
+  webhookPayload: WebhookPayload,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<webhookInboundResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customInstance<webhookInboundResponse>(getWebhookInboundUrl(loopId),
-  {
+  return customInstance<webhookInboundResponse>(getWebhookInboundUrl(loopId), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(webhookPayload)
-  }
-);}
-
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(webhookPayload),
+  });
+};

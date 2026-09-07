@@ -5,10 +5,10 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { CreateLoopConfig } from './createLoopConfig.ts';
-import type { CreateLoopSource } from './createLoopSource.ts';
-import type { LoopKind } from './loopKind.ts';
-import type { Scope } from './scope.ts';
+import type { CreateLoopConfig } from "./createLoopConfig.ts";
+import type { CreateLoopSource } from "./createLoopSource.ts";
+import type { LoopKind } from "./loopKind.ts";
+import type { Scope } from "./scope.ts";
 
 export interface CreateLoopRequest {
   /** @nullable */

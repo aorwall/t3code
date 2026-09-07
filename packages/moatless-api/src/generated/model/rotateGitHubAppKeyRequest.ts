@@ -8,8 +8,8 @@
 
 export interface RotateGitHubAppKeyRequest {
   /**
-     * The replacement signing key. Proved before the stored one is replaced,
-     * so a bad key leaves the App exactly as it was.
-     */
+   * The replacement signing key. Proved before the stored one is replaced,
+   * so a bad key leaves the App exactly as it was.
+   */
   privateKeyPem: string;
 }

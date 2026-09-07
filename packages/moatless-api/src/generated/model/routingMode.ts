@@ -9,10 +9,9 @@
 /**
  * Loop routing mode for message-to-task mapping.
  */
-export type RoutingMode = typeof RoutingMode[keyof typeof RoutingMode];
-
+export type RoutingMode = (typeof RoutingMode)[keyof typeof RoutingMode];
 
 export const RoutingMode = {
-  ongoing: 'ongoing',
-  by_subject: 'by_subject',
+  ongoing: "ongoing",
+  by_subject: "by_subject",
 } as const;

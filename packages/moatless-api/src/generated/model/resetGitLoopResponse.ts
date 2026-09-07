@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { Loop } from './loop.ts';
+import type { Loop } from "./loop.ts";
 
 export interface ResetGitLoopResponse {
   /** @nullable */

@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { AgentMode } from './agentMode.ts';
+import type { AgentMode } from "./agentMode.ts";
 
 /**
  * Branch a Task off another Task at one of its completed turns.
@@ -17,29 +17,29 @@ import type { AgentMode } from './agentMode.ts';
 export interface ForkTaskRequest {
   agentMode?: null | AgentMode;
   /**
-     * The source Task's turn the copy stops after. Omit to cut after its
-     * newest turn that reached a terminal status.
-     * @nullable
-     */
+   * The source Task's turn the copy stops after. Omit to cut after its
+   * newest turn that reached a terminal status.
+   * @nullable
+   */
   atTurn?: number | null;
   /**
-     * Reasoning effort for the first turn, in the agent's own vocabulary.
-     * @nullable
-     */
+   * Reasoning effort for the first turn, in the agent's own vocabulary.
+   * @nullable
+   */
   effort?: string | null;
   /**
-     * The fork's own first message — what to try instead. Omit to create the
-     * fork idle, and send to it later.
-     * @nullable
-     */
+   * The fork's own first message — what to try instead. Omit to create the
+   * fork idle, and send to it later.
+   * @nullable
+   */
   message?: string | null;
   /** @nullable */
   model?: string | null;
   /**
-     * Join the source Task's Sandbox on its shared checkout instead of
-     * provisioning one from a copy of its workspace archive.
-     * @nullable
-     */
+   * Join the source Task's Sandbox on its shared checkout instead of
+   * provisioning one from a copy of its workspace archive.
+   * @nullable
+   */
   sameSandbox?: boolean | null;
   /** Skills to activate for the first turn. */
   skills?: string[];

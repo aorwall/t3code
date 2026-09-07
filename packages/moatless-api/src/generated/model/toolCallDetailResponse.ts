@@ -5,8 +5,8 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ToolCallDetailResponseToolInput } from './toolCallDetailResponseToolInput.ts';
-import type { ToolCallDetailResponseTypedResult } from './toolCallDetailResponseTypedResult.ts';
+import type { ToolCallDetailResponseToolInput } from "./toolCallDetailResponseToolInput.ts";
+import type { ToolCallDetailResponseTypedResult } from "./toolCallDetailResponseTypedResult.ts";
 
 /**
  * Full tool-call detail returned on demand (when a tool call is expanded).

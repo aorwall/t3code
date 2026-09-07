@@ -11,11 +11,11 @@
  * "never configured": a `secret_ref` row whose secret is gone is `Broken`,
  * and telling that user to "connect GitHub" would be wrong.
  */
-export type SetupRequirementStatus = typeof SetupRequirementStatus[keyof typeof SetupRequirementStatus];
-
+export type SetupRequirementStatus =
+  (typeof SetupRequirementStatus)[keyof typeof SetupRequirementStatus];
 
 export const SetupRequirementStatus = {
-  satisfied: 'satisfied',
-  missing: 'missing',
-  broken: 'broken',
+  satisfied: "satisfied",
+  missing: "missing",
+  broken: "broken",
 } as const;

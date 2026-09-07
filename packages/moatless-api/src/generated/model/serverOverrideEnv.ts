@@ -9,4 +9,4 @@
 /**
  * Env entries exported after `server.env`, so they win over it.
  */
-export type ServerOverrideEnv = {[key: string]: string};
+export type ServerOverrideEnv = { [key: string]: string };

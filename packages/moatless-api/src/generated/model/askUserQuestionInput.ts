@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { Question } from './question.ts';
+import type { Question } from "./question.ts";
 
 /**
  * Input payload for the `AskUserQuestion` tool.

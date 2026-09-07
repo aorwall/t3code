@@ -5,21 +5,21 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { FeedbackResponse } from './feedbackResponse.ts';
+import type { FeedbackResponse } from "./feedbackResponse.ts";
 
 /**
  * One row of `GET /api/v1/feedback`: the feedback flattened together with the
  * task context that makes a cross-task listing readable without a second call.
  */
-export type FeedbackListItem = FeedbackResponse & ({
+export type FeedbackListItem = FeedbackResponse & {
   repositoryId: string;
   /**
-     * `None` when the repository row was deleted.
-     * @nullable
-     */
+   * `None` when the repository row was deleted.
+   * @nullable
+   */
   repositoryName?: string | null;
   /** `Task.name`, falling back to the first line of its description. */
   taskTitle: string;
   /** @nullable */
   workspaceId?: string | null;
-});
+};

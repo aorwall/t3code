@@ -9,11 +9,10 @@
 /**
  * Persisted application intent for a task's sandbox lifecycle.
  */
-export type SandboxDesiredState = typeof SandboxDesiredState[keyof typeof SandboxDesiredState];
-
+export type SandboxDesiredState = (typeof SandboxDesiredState)[keyof typeof SandboxDesiredState];
 
 export const SandboxDesiredState = {
-  running: 'running',
-  stopped: 'stopped',
-  removed: 'removed',
+  running: "running",
+  stopped: "stopped",
+  removed: "removed",
 } as const;

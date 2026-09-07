@@ -5,9 +5,9 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ApiMessage } from './apiMessage.ts';
-import type { AssistantMessageApiError } from './assistantMessageApiError.ts';
-import type { AssistantMessageError } from './assistantMessageError.ts';
+import type { ApiMessage } from "./apiMessage.ts";
+import type { AssistantMessageApiError } from "./assistantMessageApiError.ts";
+import type { AssistantMessageError } from "./assistantMessageError.ts";
 
 /**
  * A complete assistant turn message.

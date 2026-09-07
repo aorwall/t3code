@@ -7,14 +7,14 @@
  */
 
 export type ListFilesHandlerParams = {
-/**
- * Path relative to workspace (default ".")
- * @nullable
- */
-path?: string | null;
-/**
- * List files recursively
- * @nullable
- */
-recursive?: boolean | null;
+  /**
+   * Path relative to workspace (default ".")
+   * @nullable
+   */
+  path?: string | null;
+  /**
+   * List files recursively
+   * @nullable
+   */
+  recursive?: boolean | null;
 };

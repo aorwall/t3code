@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ServerSnapshot } from './serverSnapshot.ts';
+import type { ServerSnapshot } from "./serverSnapshot.ts";
 
 /**
  * Server status response proxied from sandbox pod.

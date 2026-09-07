@@ -7,9 +7,9 @@
  */
 
 export type ListLoopRecentTasksParams = {
-/**
- * Max items, default 10, cap 50
- * @minimum 0
- */
-limit?: number;
+  /**
+   * Max items, default 10, cap 50
+   * @minimum 0
+   */
+  limit?: number;
 };

@@ -7,16 +7,16 @@
  */
 
 export type GetMessagesParams = {
-/**
- * Strip heavy fields for summary view
- */
-summary?: boolean;
-/**
- * Return only rows strictly older than this id
- */
-before_id?: number;
-/**
- * Page size (default 50, max 200)
- */
-limit?: number;
+  /**
+   * Strip heavy fields for summary view
+   */
+  summary?: boolean;
+  /**
+   * Return only rows strictly older than this id
+   */
+  before_id?: number;
+  /**
+   * Page size (default 50, max 200)
+   */
+  limit?: number;
 };

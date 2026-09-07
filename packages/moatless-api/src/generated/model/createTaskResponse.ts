@@ -5,8 +5,8 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { TaskResponse } from './taskResponse.ts';
-import type { TaskStatus } from './taskStatus.ts';
+import type { TaskResponse } from "./taskResponse.ts";
+import type { TaskStatus } from "./taskStatus.ts";
 
 export interface CreateTaskResponse {
   status: TaskStatus;

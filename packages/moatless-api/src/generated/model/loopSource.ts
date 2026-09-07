@@ -5,8 +5,8 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ManualSource } from './manualSource.ts';
-import type { Schedule } from './schedule.ts';
-import type { Subscription } from './subscription.ts';
+import type { ManualSource } from "./manualSource.ts";
+import type { Schedule } from "./schedule.ts";
+import type { Subscription } from "./subscription.ts";
 
 export type LoopSource = Subscription | Schedule | ManualSource;

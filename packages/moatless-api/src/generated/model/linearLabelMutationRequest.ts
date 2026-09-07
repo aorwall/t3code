@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { LinearLabelOp } from './linearLabelOp.ts';
+import type { LinearLabelOp } from "./linearLabelOp.ts";
 
 /**
  * `POST /api/v1/linear/issues/:id/labels` — non-destructive add/remove.

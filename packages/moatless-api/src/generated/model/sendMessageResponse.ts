@@ -10,10 +10,10 @@ export interface SendMessageResponse {
   status: string;
   timestamp: string;
   /**
-     * Persisted `uuid` of the user Message, so the client can reconcile its
-     * optimistic entry with the later `message.upsert`. `None` on the
-     * tool-response branch, which produces no single user Message.
-     * @nullable
-     */
+   * Persisted `uuid` of the user Message, so the client can reconcile its
+   * optimistic entry with the later `message.upsert`. `None` on the
+   * tool-response branch, which produces no single user Message.
+   * @nullable
+   */
   uuid?: string | null;
 }

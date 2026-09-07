@@ -9,10 +9,9 @@
 /**
  * Role assigned to a user.
  */
-export type UserRole = typeof UserRole[keyof typeof UserRole];
-
+export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
 export const UserRole = {
-  user: 'user',
-  admin: 'admin',
+  user: "user",
+  admin: "admin",
 } as const;

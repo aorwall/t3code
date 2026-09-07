@@ -5,10 +5,10 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { PermissionDenial } from './permissionDenial.ts';
-import type { ResultSuccessModelUsage } from './resultSuccessModelUsage.ts';
-import type { ResultSuccessStructuredOutput } from './resultSuccessStructuredOutput.ts';
-import type { Usage } from './usage.ts';
+import type { PermissionDenial } from "./permissionDenial.ts";
+import type { ResultSuccessModelUsage } from "./resultSuccessModelUsage.ts";
+import type { ResultSuccessStructuredOutput } from "./resultSuccessStructuredOutput.ts";
+import type { Usage } from "./usage.ts";
 
 /**
  * Successful result.

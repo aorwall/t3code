@@ -9,11 +9,10 @@
 /**
  * Task lifecycle status.
  */
-export type TaskStatus = typeof TaskStatus[keyof typeof TaskStatus];
-
+export type TaskStatus = (typeof TaskStatus)[keyof typeof TaskStatus];
 
 export const TaskStatus = {
-  open: 'open',
-  closed: 'closed',
-  error: 'error',
+  open: "open",
+  closed: "closed",
+  error: "error",
 } as const;

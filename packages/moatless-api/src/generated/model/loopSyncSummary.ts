@@ -5,34 +5,34 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { LoopSyncSkip } from './loopSyncSkip.ts';
-import type { LoopSyncWarning } from './loopSyncWarning.ts';
+import type { LoopSyncSkip } from "./loopSyncSkip.ts";
+import type { LoopSyncWarning } from "./loopSyncWarning.ts";
 
 /**
  * Summary of reconciling a repo's `.moatless/loops/` into Loop tables.
  */
 export interface LoopSyncSummary {
   /**
-     * Loops inserted.
-     * @minimum 0
-     */
+   * Loops inserted.
+   * @minimum 0
+   */
   created: number;
   /**
-     * Manual overrides or deletion tombstones preserved during repository sync.
-     * @minimum 0
-     */
+   * Manual overrides or deletion tombstones preserved during repository sync.
+   * @minimum 0
+   */
   overridesSkipped: number;
   /**
-     * Loops removed because their directory is gone.
-     * @minimum 0
-     */
+   * Loops removed because their directory is gone.
+   * @minimum 0
+   */
   removed: number;
   /** Loops that were present but not synced, with reasons. */
   skipped: LoopSyncSkip[];
   /**
-     * Existing Loops updated in place.
-     * @minimum 0
-     */
+   * Existing Loops updated in place.
+   * @minimum 0
+   */
   updated: number;
   /** Non-fatal authoring warnings, including ignored Git authority fields. */
   warnings: LoopSyncWarning[];

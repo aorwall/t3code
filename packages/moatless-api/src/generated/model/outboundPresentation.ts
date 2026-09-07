@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { SlackBlock } from './slackBlock.ts';
+import type { SlackBlock } from "./slackBlock.ts";
 
 /**
  * Adapter-native rich rendering of an outbound message body.
@@ -18,5 +18,5 @@ import type { SlackBlock } from './slackBlock.ts';
  */
 export type OutboundPresentation = {
   blocks: SlackBlock[];
-  kind: 'slack';
+  kind: "slack";
 };

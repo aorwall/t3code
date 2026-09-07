@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { ActivationReach } from './activationReach.ts';
+import type { ActivationReach } from "./activationReach.ts";
 
 /**
  * One stored activation record.
@@ -15,22 +15,22 @@ export interface ActivationResponse {
   always: boolean;
   enabled: boolean;
   /**
-     * Whether the skills this record decides frontload into every fresh agent
-     * session.
-     */
+   * Whether the skills this record decides frontload into every fresh agent
+   * session.
+   */
   frontload: boolean;
   pluginId: string;
   reach: ActivationReach;
   /** @nullable */
   skillName?: string | null;
   /**
-     * Whose record this is. Absent for the deployment-wide default.
-     * @nullable
-     */
+   * Whose record this is. Absent for the deployment-wide default.
+   * @nullable
+   */
   userId?: string | null;
   /**
-     * Which Workspace's record this is. Absent for every other reach.
-     * @nullable
-     */
+   * Which Workspace's record this is. Absent for every other reach.
+   * @nullable
+   */
   workspaceId?: string | null;
 }

@@ -6,10 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type LinearLabelOp = typeof LinearLabelOp[keyof typeof LinearLabelOp];
-
+export type LinearLabelOp = (typeof LinearLabelOp)[keyof typeof LinearLabelOp];
 
 export const LinearLabelOp = {
-  add: 'add',
-  remove: 'remove',
+  add: "add",
+  remove: "remove",
 } as const;

@@ -11,9 +11,9 @@
  */
 export interface CreateApiKeyRequest {
   /**
-     * @minimum 0
-     * @nullable
-     */
+   * @minimum 0
+   * @nullable
+   */
   expiresInDays?: number | null;
   name: string;
   /** @nullable */

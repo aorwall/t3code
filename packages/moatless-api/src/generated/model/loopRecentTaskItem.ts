@@ -5,8 +5,8 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { LoopRecentTaskSummary } from './loopRecentTaskSummary.ts';
-import type { TaskBindingResponse } from './taskBindingResponse.ts';
+import type { LoopRecentTaskSummary } from "./loopRecentTaskSummary.ts";
+import type { TaskBindingResponse } from "./taskBindingResponse.ts";
 
 export interface LoopRecentTaskItem {
   binding?: null | TaskBindingResponse;

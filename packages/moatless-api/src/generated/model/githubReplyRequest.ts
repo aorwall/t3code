@@ -13,9 +13,9 @@
 export interface GithubReplyRequest {
   body: string;
   /**
-     * Task to bind the PR to and dedup the reply's webhook echo against.
-     * See [`GithubCreatePrRequest::task_id`].
-     * @nullable
-     */
+   * Task to bind the PR to and dedup the reply's webhook echo against.
+   * See [`GithubCreatePrRequest::task_id`].
+   * @nullable
+   */
   taskId?: string | null;
 }

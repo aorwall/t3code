@@ -21,10 +21,10 @@ export interface LinearIssueUpdateRequest {
   /** @nullable */
   estimate?: number | null;
   /**
-     * Parent issue identifier or UUID. Pass `"null"` (literal string) or
-     * the JSON `null` value to clear the parent.
-     * @nullable
-     */
+   * Parent issue identifier or UUID. Pass `"null"` (literal string) or
+   * the JSON `null` value to clear the parent.
+   * @nullable
+   */
   parent?: string | null;
   /** @nullable */
   priority?: number | null;

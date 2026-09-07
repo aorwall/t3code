@@ -11,9 +11,9 @@
  */
 export interface CreatePairingCodeRequest {
   /**
-     * What to call the device being paired. Becomes the name of the API key
-     * the exchange mints, which is how it is recognized and revoked later.
-     * @nullable
-     */
+   * What to call the device being paired. Becomes the name of the API key
+   * the exchange mints, which is how it is recognized and revoked later.
+   * @nullable
+   */
   label?: string | null;
 }

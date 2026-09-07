@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { SkillResponse } from './skillResponse.ts';
+import type { SkillResponse } from "./skillResponse.ts";
 
 /**
  * Response body for `GET /api/v1/repositories/{repository_id}/skills`.
