@@ -28,6 +28,66 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-07 — merged upstream to 8b2838e0, project defaults + two more refusals
+
+- Upstream: `8b2838e0e` from base `b438447f6` (`141` commits).
+- Landed: `563` files from `git diff --stat HEAD^1 HEAD` against `563` in the
+  upstream range (`b438447f6..HEAD^2`); fork delta `720` files from
+  `git diff --stat HEAD^2 HEAD`. Exact match, so there is no gap to explain.
+- Conflicts: 14 files, resolved by concern; the merge commit message names each.
+  Two are worth carrying forward. Upstream extracted the project action rows into
+  `ProjectActionsList.tsx`, so the fork's Edit gate now rides an `editable` prop
+  that defaults to upstream's always-editable behavior. Upstream also moved the
+  `agent-browser-access` setting onto its new `/settings/projects` page, so
+  `settingsSearch.ts` points that item there and drops a fork delta.
+- **A clean merge is not proof the fork still compiles.** Upstream deleted
+  `ClientTracingLive` as unused (#10225) and `apps/web/src/lib/runtime.ts` still
+  installs it, so git merged both files without a marker and the typecheck failed
+  four ways. Restored with a Fork comment. Read what upstream deleted against
+  what the fork imports.
+- Sweep: 7 owned-concern hits, all upstream server code this fork does not run —
+  three `apps/marketing` images plus `AgentSessionJson.ts`, `HostResources.ts`,
+  `cliproxyApi.ts` and its test. No action.
+- Tripwires: failed on `.github/workflows/windows-tests.yml`, an inherited
+  workflow that had become active again. Disabled it; green after.
+- Unsupported methods: the backend moved its dispatch from
+  `crates/t3code/src/lib.rs` to `crates/t3code/src/rpc/dispatch.rs`, and every arm
+  there is a one-line call into a handler below the match. The script read the old
+  path and reported `0 dispatched methods`, then read the new one and called
+  `vcs.switchRef` a DROP because the refusal had moved out of the arm. It now
+  tries both paths and follows an arm two calls deep. Reports 0 ADD, 0 DROP,
+  2 KEEP.
+- Contract: `provider.consumeResetCredit` and `server.getHostResources` gained
+  `UnsupportedMethodError`; `server.getUsageSummary` lost it, which closes the
+  item the previous entry left known-open. `pullRequests.summary` is a fourth
+  `unsupportedMethodExceptions` entry rather than a union of its own.
+- Fixed here and pre-existing, none of it upstream's doing: three `browser-*`
+  search items still routed to the fork's admin `/settings/integrations`;
+  `moatless/listSearch.ts` carried no fork-only declaration; `pnpm fmt:check`
+  failed on 294 files, 293 of them orval output, now formatted by an
+  `afterAllFilesWrite` hook in `orval.config.ts`; and `@t3tools/moatless-api`
+  exported `./generated`, a barrel that is never checked in.
+- **A green test step can hide a suite that never finished.** `vp run -r test`
+  kills the packages still running when one of them fails, and `verify.mjs`
+  counted any package with labeled output as tested. A `@t3tools/desktop`
+  failure truncated `apps/web` and `@t3tools/mobile`, and four failing web tests
+  went unreported. The check now keys on the closing `Test Files` line and runs
+  every unfinished package alone. Its summary also named one class of failure
+  and returned, hiding the other; both are on one line now.
+- Verification: `inventory-check.mjs` clean. `verify.mjs` green on seven checks;
+  `test` is red on one package. `@t3tools/desktop`'s `bundled libsecret helper`
+  shells out to `pkg-config` for `libsecret-1`, which this sandbox does not have
+  — the machine, not the merge. It fails the same way on its retry alone, which
+  is why the step stays red. Everything else passes: `apps/web` 369 files, `t3`
+  291, `@t3tools/mobile` 149, `t3code-relay` 27, `@t3tools/client-runtime` 71.
+  The earlier `apps/web` and `t3` failures are gone. Two were the `browser-*`
+  redirect above, missing from `settingsSearch.test.ts`. The other three were
+  timeouts under load, in `fileEditorHighlight.test.ts` and
+  `AcpJsonRpcConnection.test.ts`, and both files pass when their package runs
+  alone.
+- `spec:check` cannot run in a sandbox: it needs a sibling `moatless` checkout or
+  a deployment URL and has neither.
+
 ### 2026-09-06 — merged upstream to b438447f, agent-session import + PR-refresh stream refuse
 
 - Upstream: `b438447f6` from base `36c4e9cf5` (`395` commits).
