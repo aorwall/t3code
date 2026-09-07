@@ -147,8 +147,10 @@ what a person loses, which is the part the derivation cannot tell you:
   `capabilities.pullRequests`, which decodes to unsupported when a deployment's
   handshake omits it, so the whole surface (sidebar tab, right-panel surface,
   `/pull-requests` route, and now the push-refresh path) already stays off on
-  Moatless. `pullRequests.summary` is the exception and is served, because a
-  thread carrying a `linkedPullRequest` reference has to be able to resolve it;
+  Moatless. `pullRequests.summary` is the exception and is served, because every
+  bound reference a surface names resolves its state and title through it — a
+  thread's own `linkedPullRequest`, and each row of the fork's pull request
+  menus (`apps/web/src/fork/PullRequestMenuItem.tsx`);
   the capability stays absent regardless, since answering one method out of the
   group is not the group. Closes when the backend reports
   `capabilities.pullRequests: true` and dispatches the rest.

@@ -90,6 +90,7 @@ import {
 import { useThread } from "~/state/entities";
 import { useEnvironmentQuery } from "~/state/query";
 // Fork: the git menu lists every pull request the Task is bound to.
+import { ForkPullRequestMenuItem } from "~/fork/PullRequestMenuItem";
 import { forkPullRequestKey, forkPullRequestMenuRows } from "~/fork/threadPullRequest";
 import { serverEnvironment } from "~/state/server";
 import { sourceControlEnvironment } from "~/state/sourceControl";
@@ -1811,15 +1812,14 @@ export default function GitActionsControl({
               {/* Fork: one row per pull request the Task is bound to, in place
                   of the single row above — see fork/threadPullRequest.ts. */}
               {forkPullRequestMenuItems.map((pullRequest) => (
-                <MenuItem
+                <ForkPullRequestMenuItem
                   key={forkPullRequestKey(pullRequest)}
-                  onClick={() => {
+                  environmentId={activeEnvironmentId}
+                  pullRequest={pullRequest}
+                  onOpen={() => {
                     void openLink(pullRequest.url);
                   }}
-                >
-                  <GitActionItemIcon icon="pr" SourceControlIcon={SourceControlIcon} />
-                  {`View ${changeRequestTerminology.shortLabel} #${pullRequest.number}`}
-                </MenuItem>
+                />
               ))}
               {canPublishRepository ? (
                 <MenuItem

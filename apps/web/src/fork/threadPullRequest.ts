@@ -73,6 +73,32 @@ export function forkAdditionalPullRequests(
   return all.filter((pullRequest) => pullRequest.number !== shown.number);
 }
 
+/**
+ * The repository segment a pill names, out of an `owner/repo`.
+ *
+ * The owner is dropped because every pull request a Task is bound to comes from
+ * the Task's own repositories, and the composer row has one line to spend. A
+ * menu row, which has two, names the whole thing.
+ */
+export function forkPullRequestRepoLabel(repository: string): string {
+  return repository.slice(repository.lastIndexOf("/") + 1);
+}
+
+/**
+ * The repository of the pull request on screen, or `null`.
+ *
+ * `git.status.pr` carries a number and no repository, so the repository it
+ * belongs to is read off the bound list by matching that number — the same
+ * match [`forkAdditionalPullRequests`] makes to decide what is left over.
+ */
+export function forkShownPullRequestRepository(
+  all: readonly ThreadLinkedPullRequest[],
+  shown: { readonly number: number } | null | undefined,
+): string | null {
+  if (shown == null) return null;
+  return all.find((pullRequest) => pullRequest.number === shown.number)?.repository ?? null;
+}
+
 /** Identity of one bound pull request, for React keys and comparisons. */
 export function forkPullRequestKey(pullRequest: ThreadLinkedPullRequest): string {
   return `${pullRequest.repository}#${pullRequest.number}`;

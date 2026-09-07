@@ -49,11 +49,14 @@ import {
   shouldIncludeBranchPickerItem,
 } from "./BranchToolbar.logic";
 import { ChangeRequestStatusIcon, prStatusIndicator } from "./ThreadStatusIndicators";
-import { Menu, MenuItem, MenuPopup, MenuTrigger } from "./ui/menu";
+import { Menu, MenuPopup, MenuTrigger } from "./ui/menu";
 // Fork: the pill's pull requests come from the Task's bindings, not its branch.
+import { ForkPullRequestMenuItem } from "../fork/PullRequestMenuItem";
 import {
   forkAdditionalPullRequests,
   forkPullRequestKey,
+  forkPullRequestRepoLabel,
+  forkShownPullRequestRepository,
   forkThreadPullRequests,
   resolveForkThreadPr,
 } from "../fork/threadPullRequest";
@@ -630,14 +633,22 @@ export function BranchToolbarBranchSelector({
   // upstream's branch match cannot gate it here.
   const branchPr = resolveForkThreadPr(branchStatusQuery.data ?? null);
   const branchPrStatus = prStatusIndicator(branchPr, branchStatusQuery.data?.sourceControlProvider);
+  // Fork: the Task's bound pull requests. The pill names one of them, and the
+  // list is also where that one's repository comes from — the status snapshot
+  // carries a number and no repository.
+  const branchPrs = forkThreadPullRequests(serverThread);
+  const branchPrRepository = forkShownPullRequestRepository(branchPrs, branchPr);
   // Action-oriented tooltip (the pill opens the PR), distinct from the sidebar's
   // state-description tooltip.
+  // Fork: it names the repository in full, and the title, because the pill has
+  // room for the repository's last segment and a truncated title only. A draft
+  // reports its state as `open`, so `isDraft` is what tells the two apart.
   const branchPrTooltip = branchPr
-    ? `Open ${sourceControlPresentation.terminology.singular} #${branchPr.number} (${branchPr.state})`
+    ? `Open ${branchPrRepository ?? sourceControlPresentation.terminology.singular} #${branchPr.number} (${branchPr.state === "open" && branchPr.isDraft === true ? "draft" : branchPr.state}): ${branchPr.title}`
     : "";
   // Fork: the Task's other bound pull requests. The pill opens the one it names
   // when this is empty and offers a menu when it is not.
-  const otherBranchPrs = forkAdditionalPullRequests(forkThreadPullRequests(serverThread), branchPr);
+  const otherBranchPrs = forkAdditionalPullRequests(branchPrs, branchPr);
   const openPrLink = useOpenPrLink(threadRef);
 
   function renderPickerItem(itemValue: string, index: number) {
@@ -750,7 +761,10 @@ export function BranchToolbarBranchSelector({
                   aria-label={branchPrTooltip}
                   onClick={(event) => openPrLink(event, branchPrStatus.url)}
                   className={cn(
-                    "inline-flex shrink-0 items-center gap-0.5 rounded px-1 py-0.5 text-[11px] font-medium tabular-nums transition-colors hover:bg-muted/60",
+                    // Fork: the pill carries a repository and a title beside the
+                    // number now, so it may shrink rather than hold every
+                    // character — the branch trigger beside it keeps its label.
+                    "inline-flex min-w-0 items-center gap-0.5 rounded px-1 py-0.5 text-[11px] font-medium tabular-nums transition-colors hover:bg-muted/60",
                     branchPrStatus.colorClass,
                   )}
                 />
@@ -761,15 +775,30 @@ export function BranchToolbarBranchSelector({
                 isDraft={branchPr.isDraft}
                 className="size-3"
               />
+              {/* Fork: `repo #123 · title`. Everything but the icon still
+                  collapses in the composer's compact mode. */}
               <span
                 data-composer-label
-                className="min-w-0 max-w-12 overflow-hidden group-data-[compact]/composer-context:max-w-0"
+                className="min-w-0 max-w-[15rem] overflow-hidden group-data-[compact]/composer-context:max-w-0"
               >
                 <span
                   data-composer-label-motion
-                  className="block w-full min-w-0 max-w-12 origin-left truncate transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.32,0.72,0,1)] group-data-[compact]/composer-context:[transform:translateX(-0.25rem)_scaleX(0.95)] group-data-[compact]/composer-context:opacity-0 motion-reduce:transform-none motion-reduce:transition-opacity"
+                  className="flex w-full min-w-0 max-w-[15rem] origin-left items-baseline gap-1 transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.32,0.72,0,1)] group-data-[compact]/composer-context:[transform:translateX(-0.25rem)_scaleX(0.95)] group-data-[compact]/composer-context:opacity-0 motion-reduce:transform-none motion-reduce:transition-opacity"
                 >
-                  #{branchPr.number}
+                  {branchPrRepository === null ? null : (
+                    <span className="min-w-0 shrink truncate font-normal text-muted-foreground/80">
+                      {forkPullRequestRepoLabel(branchPrRepository)}
+                    </span>
+                  )}
+                  {/* The number never truncates: it is what names the pull
+                      request when the room runs out. */}
+                  <span className="shrink-0">#{branchPr.number}</span>
+                  <span aria-hidden className="shrink-0 text-muted-foreground/50">
+                    ·
+                  </span>
+                  <span className="min-w-0 shrink truncate font-normal text-muted-foreground/70">
+                    {branchPr.title}
+                  </span>
                 </span>
               </span>
             </TooltipTrigger>
@@ -793,18 +822,14 @@ export function BranchToolbarBranchSelector({
             >
               +{otherBranchPrs.length}
             </MenuTrigger>
-            <MenuPopup align="start" side="top">
+            <MenuPopup align="start" side="top" className="min-w-[16rem]">
               {otherBranchPrs.map((pullRequest) => (
-                <MenuItem
+                <ForkPullRequestMenuItem
                   key={forkPullRequestKey(pullRequest)}
-                  onClick={(event) => openPrLink(event, pullRequest.url)}
-                >
-                  {/* Fork: a bound pull request carries no state, so the
-                      provider's own icon rather than a status one — a status
-                      icon here would have to invent "open". */}
-                  <SourceControlIcon className="size-3.5" />
-                  {`View ${sourceControlPresentation.terminology.shortLabel} #${pullRequest.number}`}
-                </MenuItem>
+                  environmentId={environmentId}
+                  pullRequest={pullRequest}
+                  onOpen={(event) => openPrLink(event, pullRequest.url)}
+                />
               ))}
             </MenuPopup>
           </Menu>

@@ -5,6 +5,8 @@ import {
   forkAdditionalPullRequests,
   forkPullRequestKey,
   forkPullRequestMenuRows,
+  forkPullRequestRepoLabel,
+  forkShownPullRequestRepository,
   forkThreadPullRequests,
   resolveForkThreadPr,
 } from "./threadPullRequest";
@@ -102,6 +104,30 @@ describe("forkPullRequestMenuRows", () => {
   it("keeps upstream's single row for one or none", () => {
     expect(forkPullRequestMenuRows({ linkedPullRequests: [FIRST] })).toEqual([]);
     expect(forkPullRequestMenuRows(null)).toEqual([]);
+  });
+});
+
+describe("forkPullRequestRepoLabel", () => {
+  it("drops the owner", () => {
+    expect(forkPullRequestRepoLabel("acme/web")).toBe("web");
+  });
+
+  it("keeps the last segment of a nested path, and a bare name as it stands", () => {
+    expect(forkPullRequestRepoLabel("acme/group/web")).toBe("web");
+    expect(forkPullRequestRepoLabel("web")).toBe("web");
+  });
+});
+
+describe("forkShownPullRequestRepository", () => {
+  it("reads the repository off the bound list by number", () => {
+    expect(forkShownPullRequestRepository([FIRST, SECOND], { number: SECOND.number })).toBe(
+      "acme/web",
+    );
+  });
+
+  it("reports nothing for a number the list does not carry, or nothing on screen", () => {
+    expect(forkShownPullRequestRepository([FIRST], { number: SECOND.number })).toBeNull();
+    expect(forkShownPullRequestRepository([FIRST], null)).toBeNull();
   });
 });
 
