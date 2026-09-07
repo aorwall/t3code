@@ -869,6 +869,13 @@ const ThreadCreateCommand = Schema.Struct({
   worktreePath: Schema.NullOr(TrimmedNonEmptyString),
   createdAt: IsoDateTime,
   historyImport: Schema.optional(Schema.Literal(true)),
+  /**
+   * Fork addition (Moatless). Ask the host to start the thread's environment as
+   * part of the create. A thread created with no first message otherwise waits
+   * for one before it gets an environment, which is too late for a client that
+   * created the thread in order to run a project script in it.
+   */
+  provision: Schema.optional(Schema.Literal(true)),
 });
 
 const ThreadDeleteCommand = Schema.Struct({

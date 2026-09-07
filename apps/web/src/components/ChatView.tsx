@@ -3668,7 +3668,41 @@ export default function ChatView(props: ChatViewProps) {
         rememberAsLastInvoked?: boolean;
       },
     ) => {
+      // Fork: `!activeThread`, which the draft branch below reads.
       if (!activeThreadId || !activeProject || !activeThread) return;
+      // Fork: a draft has no host thread for the script to run in. Create it
+      // under the draft's own id and ask for the environment, because a thread
+      // created with no first message gets one only when a turn is sent, and no
+      // turn is coming. The draft route navigates to the thread on its own.
+      if (isLocalDraftThread) {
+        const createResult = await createThread({
+          environmentId,
+          input: {
+            threadId: activeThreadId,
+            projectId: activeProject.id,
+            title: script.name,
+            modelSelection: activeThread.modelSelection,
+            runtimeMode: activeThread.runtimeMode,
+            interactionMode: activeThread.interactionMode,
+            branch: activeThread.branch,
+            worktreePath: activeThread.worktreePath,
+            createdAt: activeThread.createdAt,
+            provision: true,
+          },
+        });
+        if (createResult._tag === "Failure") {
+          if (!isAtomCommandInterrupted(createResult)) {
+            const error = squashAtomCommandFailure(createResult);
+            setThreadError(
+              activeThreadId,
+              error instanceof Error
+                ? error.message
+                : `Failed to create a thread to run "${script.name}" in.`,
+            );
+          }
+          return;
+        }
+      }
       if (options?.rememberAsLastInvoked !== false) {
         setLastInvokedScriptByProjectId((current) => {
           if (current[activeProject.id] === script.id) return current;
@@ -3838,6 +3872,9 @@ export default function ChatView(props: ChatViewProps) {
       startSandboxForScript,
       addBrowserSurface,
       openPreview,
+      // Fork: read by the draft create above.
+      isLocalDraftThread,
+      createThread,
     ],
   );
 
