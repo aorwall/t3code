@@ -8,7 +8,7 @@
  * Contract side: every `Rpc.make(WS_METHODS.x, …)` / `Rpc.make(ORCHESTRATION_WS_METHODS.x, …)`
  * in packages/contracts/src/rpc.ts, resolved through the method maps to wire strings.
  * Backend side: the `"method.name" =>` arms of the frame dispatch in soaplabs/moatless
- * (crates/t3code/src/lib.rs), read over the API since a sandbox has no checkout.
+ * (crates/t3code/src/rpc/dispatch.rs), read over the API since a sandbox has no checkout.
  *
  * Both directions are findings. A method the backend has started serving keeps a
  * union entry that can never fire; a method it has stopped serving loses the typed
@@ -37,7 +37,17 @@ import {
 
 const RPC_PATH = "packages/contracts/src/rpc.ts";
 const ORCHESTRATION_PATH = "packages/contracts/src/orchestration.ts";
-const BACKEND_API = "repos/soaplabs/moatless/contents/crates/t3code/src/lib.rs";
+/**
+ * The dispatch has moved once already — it was inline in `lib.rs` until the
+ * backend split `rpc/` into its own module on 2026-09-07. A read that finds the
+ * file but no arms reports "0 dispatched methods", which reads as "the backend
+ * serves nothing" and turns every union entry into a finding. Try each known
+ * location and take the first that actually holds arms.
+ */
+const BACKEND_APIS = [
+  "repos/soaplabs/moatless/contents/crates/t3code/src/rpc/dispatch.rs",
+  "repos/soaplabs/moatless/contents/crates/t3code/src/lib.rs",
+];
 
 const read = (relative) => NodeFS.readFileSync(NodePath.resolve(REPO_ROOT, relative), "utf8");
 
@@ -107,17 +117,63 @@ function parseContract() {
   return methods;
 }
 
-function parseBackend() {
-  let raw = "";
-  for (const cmd of [["moat", "gh"], ["gh"]]) {
-    raw = sh(cmd[0], [...cmd.slice(1), "api", BACKEND_API, "--jq", ".content"], {
-      allowFailure: true,
-    });
-    if (raw) break;
+/** The `{ … }` after an offset, brace-balanced, or "" when the offset opens none. */
+function balancedBlock(source, from) {
+  const open = source.indexOf("{", from);
+  if (open === -1) return "";
+  let depth = 0;
+  for (let index = open; index < source.length; index += 1) {
+    if (source[index] === "{") depth += 1;
+    else if (source[index] === "}") {
+      depth -= 1;
+      if (depth === 0) return source.slice(open, index + 1);
+    }
   }
-  if (!raw) return null;
+  return source.slice(open);
+}
 
-  const source = Buffer.from(raw, "base64").toString("utf8");
+/** A match arm's right-hand side: the rest of its line, or its block when it opens one. */
+function armBody(source, afterArrow) {
+  const lineEnd = source.indexOf("\n", afterArrow);
+  const line = source.slice(afterArrow, lineEnd === -1 ? source.length : lineEnd);
+  return /\{\s*$/.test(line) ? balancedBlock(source, afterArrow) : line;
+}
+
+/** True when the code, or a function it calls, can return `unsupported_exit`. */
+function refusesInside(source, code, depth, seen) {
+  if (code.includes("unsupported_exit")) return true;
+  if (depth === 0) return false;
+  for (const call of code.matchAll(/([a-z_][a-z0-9_]*)\s*\(/gi)) {
+    const name = call[1];
+    if (seen.has(name)) continue;
+    seen.add(name);
+    const declaration = source.match(new RegExp(`fn\\s+${name}\\s*[(<]`));
+    if (!declaration) continue;
+    const body = balancedBlock(source, declaration.index + declaration[0].length);
+    if (refusesInside(source, body, depth - 1, seen)) return true;
+  }
+  return false;
+}
+
+function parseBackend() {
+  let source = "";
+  for (const api of BACKEND_APIS) {
+    let raw = "";
+    for (const cmd of [["moat", "gh"], ["gh"]]) {
+      raw = sh(cmd[0], [...cmd.slice(1), "api", api, "--jq", ".content"], {
+        allowFailure: true,
+      });
+      if (raw) break;
+    }
+    if (!raw) continue;
+    const decoded = Buffer.from(raw, "base64").toString("utf8");
+    if (/"[a-zA-Z._]+"\s*=>/.test(decoded)) {
+      source = decoded;
+      break;
+    }
+  }
+  if (!source) return null;
+
   const dispatched = new Set();
   for (const match of source.matchAll(/"([a-zA-Z._]+)"\s*=>/g)) {
     // `"on" =>` is a match arm on a different enum, not a wire method.
@@ -126,17 +182,21 @@ function parseBackend() {
 
   /**
    * An arm that can still return `unsupported_exit` refuses conditionally, so
-   * its union member has to stay. Scope each arm from its own `"name" =>` to the
-   * next one and look inside.
+   * its union member has to stay.
+   *
+   * Reading the arm alone stopped being enough when the backend split `rpc/` out
+   * on 2026-09-07: every arm is now a one-line call and the refusal sits in the
+   * handler below the match. So read the arm, then follow the functions it calls.
+   * Two levels, same file only. A false KEEP costs a report nobody acts on; a
+   * false DROP costs the typed refusal a client has to decode.
    */
-  const arms = [...source.matchAll(/"([a-zA-Z._]+)"\s*=>/g)];
   const conditional = new Set();
-  for (const [index, arm] of arms.entries()) {
-    const start = arm.index;
-    const end = index + 1 < arms.length ? arms[index + 1].index : source.length;
-    if (source.slice(start, end).includes("unsupported_exit")) conditional.add(arm[1]);
+  for (const arm of source.matchAll(/"([a-zA-Z._]+)"\s*=>/g)) {
+    if (arm[1] === "on") continue;
+    if (refusesInside(source, armBody(source, arm.index + arm[0].length), 2, new Set())) {
+      conditional.add(arm[1]);
+    }
   }
-  conditional.delete("on");
   return { dispatched, conditional };
 }
 
