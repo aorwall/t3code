@@ -225,10 +225,11 @@ describe("searchSettings", () => {
     expect(result).not.toHaveProperty("targetId");
   });
 
-  it("routes where links open to integrations", () => {
+  it("routes where links open to the browser settings section", () => {
     expect(searchSettings("open links in")[0]).toMatchObject({
       id: "browser-link-target",
-      to: "/settings/integrations",
+      // Fork: the panel is mounted at /settings/browser, not /settings/integrations.
+      to: "/settings/browser",
     });
     expect(searchSettings("external links")[0]).toMatchObject({ id: "browser-link-target" });
   });
@@ -236,7 +237,8 @@ describe("searchSettings", () => {
   it("finds the default browser profile action in the profiles list", () => {
     expect(searchSettings("default profile")[0]).toMatchObject({
       id: "browser-default-profile",
-      to: "/settings/integrations",
+      // Fork: the panel is mounted at /settings/browser, not /settings/integrations.
+      to: "/settings/browser",
       targetId: "browser-profiles",
     });
   });

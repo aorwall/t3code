@@ -409,13 +409,15 @@ export const SETTINGS_SEARCH_ITEMS = [
   {
     id: "browser-profiles",
     title: "Browser profiles",
-    to: "/settings/integrations",
+    // Fork: routed to /settings/browser, not upstream's /settings/integrations.
+    to: "/settings/browser",
     targetId: "browser",
   },
   {
     id: "browser-default-profile",
     title: "Default browser profile",
-    to: "/settings/integrations",
+    // Fork: routed to /settings/browser, not upstream's /settings/integrations.
+    to: "/settings/browser",
     targetId: "browser-profiles",
   },
   {
@@ -448,7 +450,8 @@ export const SETTINGS_SEARCH_ITEMS = [
   {
     id: "browser-link-target",
     title: "Open links in",
-    to: "/settings/integrations",
+    // Fork: routed to /settings/browser, not upstream's /settings/integrations.
+    to: "/settings/browser",
     searchTerms: ["links default browser in-app browser external open"],
   },
   {
