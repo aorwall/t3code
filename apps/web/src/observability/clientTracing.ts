@@ -41,6 +41,20 @@ export interface ClientTracingConfig {
   readonly exportIntervalMs?: number;
 }
 
+/**
+ * Fork: upstream deleted this layer as unused on 2026-08-27 (#10225). The fork
+ * still installs it in `lib/runtime.ts`, because a Moatless deployment exports
+ * client spans and the delegate above is what carries them.
+ */
+export const ClientTracingLive = Layer.succeed(
+  Tracer.Tracer,
+  Tracer.make({
+    span(options) {
+      return activeDelegate?.span(options) ?? new Tracer.NativeSpan(options);
+    },
+  }),
+);
+
 export function configureClientTracing(config: ClientTracingConfig = {}): Promise<void> {
   if (config.exportIntervalMs === undefined && activeConfigKey !== null) {
     return pendingConfiguration;
