@@ -3,6 +3,8 @@ import { describe, expect, it } from "vite-plus/test";
 
 import {
   forkAdditionalPullRequests,
+  forkInlinePullRequestSummary,
+  forkLeadingPullRequestState,
   forkPullRequestKey,
   forkPullRequestMenuRows,
   forkPullRequestRepoLabel,
@@ -17,6 +19,23 @@ function linked(repository: string, number: number): ThreadLinkedPullRequest {
     repository,
     number,
     url: `https://github.com/${repository}/pull/${number}`,
+  } as ThreadLinkedPullRequest;
+}
+
+/** The status group a refreshed binding puts on a thread row. */
+function fetched(
+  pullRequest: ThreadLinkedPullRequest,
+  state: "open" | "merged" | "closed",
+  isDraft = false,
+): ThreadLinkedPullRequest {
+  return {
+    ...pullRequest,
+    title: `Ship ${pullRequest.number}`,
+    state,
+    isDraft,
+    headBranch: `feature/${pullRequest.number}`,
+    baseBranch: "main",
+    updatedAt: "2026-02-03T04:05:06.000Z",
   } as ThreadLinkedPullRequest;
 }
 
@@ -128,6 +147,64 @@ describe("forkShownPullRequestRepository", () => {
   it("reports nothing for a number the list does not carry, or nothing on screen", () => {
     expect(forkShownPullRequestRepository([FIRST], { number: SECOND.number })).toBeNull();
     expect(forkShownPullRequestRepository([FIRST], null)).toBeNull();
+  });
+});
+
+describe("forkInlinePullRequestSummary", () => {
+  it("reads a refreshed binding as a summary, sparing the surface a summary call", () => {
+    expect(forkInlinePullRequestSummary(fetched(SECOND, "open", true))).toEqual({
+      provider: "github",
+      projectId: "ws-a",
+      repository: "acme/web",
+      number: 42,
+      url: "https://github.com/acme/web/pull/42",
+      title: "Ship 42",
+      state: "open",
+      isDraft: true,
+      headBranch: "feature/42",
+      baseBranch: "main",
+      updatedAt: "2026-02-03T04:05:06.000Z",
+    });
+  });
+
+  it("reports nothing for a binding whose status has never been fetched", () => {
+    expect(forkInlinePullRequestSummary(FIRST)).toBeNull();
+  });
+});
+
+describe("forkLeadingPullRequestState", () => {
+  it("prefers an open pull request over a draft, a merged one and a closed one", () => {
+    expect(
+      forkLeadingPullRequestState([
+        fetched(linked("acme/web", 9), "closed"),
+        fetched(linked("acme/web", 8), "merged"),
+        fetched(linked("acme/web", 7), "open", true),
+        fetched(linked("acme/api", 1), "open"),
+      ]),
+    ).toEqual({ state: "open", isDraft: false });
+  });
+
+  it("prefers a draft over anything settled", () => {
+    expect(
+      forkLeadingPullRequestState([
+        fetched(linked("acme/web", 9), "merged"),
+        fetched(linked("acme/web", 7), "open", true),
+      ]),
+    ).toEqual({ state: "open", isDraft: true });
+  });
+
+  it("ignores a binding whose status has never been fetched", () => {
+    expect(
+      forkLeadingPullRequestState([
+        linked("acme/web", 99),
+        fetched(linked("acme/web", 9), "merged"),
+      ]),
+    ).toEqual({ state: "merged", isDraft: false });
+  });
+
+  it("reports nothing when no binding it covers has been refreshed", () => {
+    expect(forkLeadingPullRequestState([FIRST, SECOND])).toBeNull();
+    expect(forkLeadingPullRequestState([])).toBeNull();
   });
 });
 

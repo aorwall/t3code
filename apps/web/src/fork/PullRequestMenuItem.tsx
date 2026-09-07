@@ -1,14 +1,14 @@
 /**
  * Fork-only. One menu row for a pull request a Moatless Task is bound to.
  *
- * A `ThreadLinkedPullRequest` carries a repository, a number and a URL, and no
- * title or state — so a row built from it alone can only say "View PR #7", and
- * two of those tell a reader nothing about which one they want. The state and
- * the title are read here per row, through `pullRequests.summary`, which is the
- * same call the sidebar already makes for a thread's primary pull request.
+ * A row built from a repository, a number and a URL alone can only say "View PR
+ * #7", and two of those tell a reader nothing about which one they want. The
+ * title and the state come from {@link useLinkedThreadPullRequest}, which reads
+ * them off the thread row for a binding whose status has been fetched and falls
+ * back to `pullRequests.summary` for one that has not.
  *
- * The rows mount when the menu opens, so that call is paid on open rather than
- * on every render of the composer.
+ * The rows mount when the menu opens, so that fallback is paid on open rather
+ * than on every render of the composer.
  */
 import type { EnvironmentId, ThreadLinkedPullRequest } from "@t3tools/contracts";
 import type { MouseEvent as ReactMouseEvent } from "react";

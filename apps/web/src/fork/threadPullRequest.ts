@@ -16,7 +16,12 @@
  *
  * A Task can be bound to several, which is why the surfaces read a list.
  */
-import type { ThreadLinkedPullRequest, VcsStatusResult } from "@t3tools/contracts";
+import type {
+  PullRequestState,
+  PullRequestSummary,
+  ThreadLinkedPullRequest,
+  VcsStatusResult,
+} from "@t3tools/contracts";
 
 /** Stable identity so a surface can key and compare rows without a summary. */
 const EMPTY: readonly ThreadLinkedPullRequest[] = [];
@@ -44,9 +49,8 @@ export function resolveForkThreadPr(
  * Every pull request a thread is bound to, primary first.
  *
  * The server orders the list and the primary is its first element, so nothing
- * here re-decides it: the states that choice was made from are not on the wire.
- * A server too old to send the list still sends `linkedPullRequest`, which then
- * stands in as a list of one.
+ * here re-decides it. A server too old to send the list still sends
+ * `linkedPullRequest`, which then stands in as a list of one.
  */
 export function forkThreadPullRequests(
   thread: ForkThreadPullRequestSource | null | undefined,
@@ -61,9 +65,9 @@ export function forkThreadPullRequests(
  * The bound pull requests a surface is not already showing.
  *
  * Compared against what is on screen rather than sliced off the front: the
- * displayed one carries a state and comes from the status snapshot, the list
- * carries none and comes from the thread, and the two are refreshed
- * independently. Slicing would report one too few for as long as they disagree.
+ * displayed one comes from the status snapshot and the list comes from the
+ * thread, and the two are refreshed independently. Slicing would report one too
+ * few for as long as they disagree about which pull request leads.
  */
 export function forkAdditionalPullRequests(
   all: readonly ThreadLinkedPullRequest[],
@@ -97,6 +101,73 @@ export function forkShownPullRequestRepository(
 ): string | null {
   if (shown == null) return null;
   return all.find((pullRequest) => pullRequest.number === shown.number)?.repository ?? null;
+}
+
+/**
+ * The summary a bound pull request already carries, or `null` when its binding
+ * has never been refreshed.
+ *
+ * A thread row reports a refreshed binding's status inline, so a surface that
+ * has one needs no `pullRequests.summary` of its own; `null` is what sends it
+ * to that call, which is also what fetches the status this reads next time.
+ *
+ * The provider is `github` because a bound pull request comes from a GitHub
+ * binding — no other adapter writes one.
+ */
+export function forkInlinePullRequestSummary(
+  pullRequest: ThreadLinkedPullRequest,
+): PullRequestSummary | null {
+  const { title, state, headBranch, baseBranch, updatedAt } = pullRequest;
+  if (
+    title === undefined ||
+    state === undefined ||
+    headBranch === undefined ||
+    baseBranch === undefined ||
+    updatedAt === undefined
+  ) {
+    return null;
+  }
+  return {
+    provider: "github",
+    projectId: pullRequest.projectId,
+    repository: pullRequest.repository,
+    number: pullRequest.number,
+    url: pullRequest.url,
+    title,
+    state,
+    isDraft: pullRequest.isDraft,
+    headBranch,
+    baseBranch,
+    updatedAt,
+  };
+}
+
+/** Least to most important, so a higher index wins. A binding with no state ranks below all four. */
+const STATE_PRIORITY = ["closed", "merged", "draft", "open"] as const;
+
+/**
+ * The state a group of pull requests is summarized by, or `null` when none of
+ * them carries one.
+ *
+ * An open pull request outranks a draft, which outranks a merged one, which
+ * outranks a closed one: the ranking is what still needs a reader's attention,
+ * and a draft does not yet.
+ */
+export function forkLeadingPullRequestState(
+  pullRequests: readonly ThreadLinkedPullRequest[],
+): { readonly state: PullRequestState; readonly isDraft: boolean } | null {
+  let leading: ThreadLinkedPullRequest | null = null;
+  for (const pullRequest of pullRequests) {
+    if (leading === null || rank(pullRequest) > rank(leading)) leading = pullRequest;
+  }
+  if (leading?.state === undefined) return null;
+  return { state: leading.state, isDraft: leading.isDraft === true };
+}
+
+/** Where one pull request sits in [`STATE_PRIORITY`]. */
+function rank(pullRequest: ThreadLinkedPullRequest): number {
+  if (pullRequest.state === undefined) return -1;
+  return STATE_PRIORITY.indexOf(pullRequest.isDraft === true ? "draft" : pullRequest.state);
 }
 
 /** Identity of one bound pull request, for React keys and comparisons. */

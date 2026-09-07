@@ -13,6 +13,8 @@ import {
 import { Atom } from "effect/unstable/reactivity";
 import { FolderGit2Icon, TerminalIcon } from "lucide-react";
 import { useMemo } from "react";
+// Fork: a bound pull request's status travels on the thread row.
+import { forkInlinePullRequestSummary } from "../fork/threadPullRequest";
 import { appAtomRegistry } from "../rpc/atomRegistry";
 import { useEnvironment, usePrimaryEnvironmentId } from "../state/environments";
 import { EnvironmentMachineIcon } from "./EnvironmentMachineIcon";
@@ -55,8 +57,16 @@ export function useLinkedThreadPullRequest(
   environmentId: EnvironmentId | null,
   linkedPullRequest: ThreadLinkedPullRequest | null | undefined,
 ): LinkedThreadPullRequestStatus | null {
+  // Fork: against Moatless a thread row carries a refreshed binding's status,
+  // so every surface that names a pull request paints in its first frame. The
+  // query is what a binding whose status has never been fetched still needs —
+  // and answering it is what fetches that status.
+  const inline = useMemo(
+    () => (linkedPullRequest == null ? null : forkInlinePullRequestSummary(linkedPullRequest)),
+    [linkedPullRequest],
+  );
   const queried = useEnvironmentQuery(
-    environmentId === null || linkedPullRequest == null
+    environmentId === null || linkedPullRequest == null || inline !== null
       ? null
       : linkedPullRequestDetailAtom({
           environmentId,
@@ -67,7 +77,12 @@ export function useLinkedThreadPullRequest(
           },
         }),
   ).data;
-  const detail = useSharedPullRequestSummary(environmentId, linkedPullRequest ?? null, queried);
+  const detail = useSharedPullRequestSummary(
+    environmentId,
+    linkedPullRequest ?? null,
+    // Fork: the inline summary, when the row carried one.
+    queried ?? inline,
+  );
 
   return useMemo(
     () =>

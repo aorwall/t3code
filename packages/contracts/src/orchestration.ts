@@ -24,6 +24,8 @@ import {
   TurnId,
 } from "./baseSchemas.ts";
 import { ProviderInstanceId } from "./providerInstance.ts";
+// Fork: `ThreadLinkedPullRequest` reports a bound pull request's state.
+import { PullRequestState } from "./pullRequest.ts";
 
 export const ORCHESTRATION_WS_METHODS = {
   dispatchCommand: "orchestration.dispatchCommand",
@@ -523,6 +525,18 @@ export const ThreadLinkedPullRequest = Schema.Struct({
   repository: TrimmedNonEmptyString,
   number: PositiveInt,
   url: TrimmedNonEmptyString,
+  // Fork: the status a Moatless binding already recorded, named as
+  // `PullRequestSummary` names it so a surface reads one vocabulary. The six
+  // travel together — one refresh writes all of them — and are absent together
+  // for a binding whose status has never been fetched, which is what leaves
+  // `pullRequests.summary` the read that fetches it. An upstream server sends
+  // none of them.
+  title: Schema.optional(TrimmedNonEmptyString),
+  state: Schema.optional(PullRequestState),
+  isDraft: Schema.optional(Schema.Boolean),
+  headBranch: Schema.optional(TrimmedNonEmptyString),
+  baseBranch: Schema.optional(TrimmedNonEmptyString),
+  updatedAt: Schema.optional(IsoDateTime),
 });
 export type ThreadLinkedPullRequest = typeof ThreadLinkedPullRequest.Type;
 

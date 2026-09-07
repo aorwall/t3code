@@ -49,11 +49,14 @@ import {
   shouldIncludeBranchPickerItem,
 } from "./BranchToolbar.logic";
 import { ChangeRequestStatusIcon, prStatusIndicator } from "./ThreadStatusIndicators";
+// Fork: `+N` takes the same ink every other pull-request surface uses.
+import { resolvePullRequestState } from "./pullRequest/pullRequestPresentation";
 import { Menu, MenuPopup, MenuTrigger } from "./ui/menu";
 // Fork: the pill's pull requests come from the Task's bindings, not its branch.
 import { ForkPullRequestMenuItem } from "../fork/PullRequestMenuItem";
 import {
   forkAdditionalPullRequests,
+  forkLeadingPullRequestState,
   forkPullRequestKey,
   forkPullRequestRepoLabel,
   forkShownPullRequestRepository,
@@ -649,6 +652,14 @@ export function BranchToolbarBranchSelector({
   // Fork: the Task's other bound pull requests. The pill opens the one it names
   // when this is empty and offers a menu when it is not.
   const otherBranchPrs = forkAdditionalPullRequests(branchPrs, branchPr);
+  // Fork: `+N` wears the ink of the most important pull request it hides, so a
+  // Task with an open one still reads as open with the pill on a merged one.
+  // `null` while no binding it covers has had its status fetched.
+  const otherBranchPrsLeadingState = forkLeadingPullRequestState(otherBranchPrs);
+  const otherBranchPrsTone =
+    otherBranchPrsLeadingState === null
+      ? null
+      : resolvePullRequestState(otherBranchPrsLeadingState).toneClassName;
   const openPrLink = useOpenPrLink(threadRef);
 
   function renderPickerItem(itemValue: string, index: number) {
@@ -775,24 +786,25 @@ export function BranchToolbarBranchSelector({
                 isDraft={branchPr.isDraft}
                 className="size-3"
               />
-              {/* Fork: `repo #123 · title`. Everything but the icon still
+              {/* Fork: `#123 repo · title`. Everything but the icon still
                   collapses in the composer's compact mode. */}
               <span
                 data-composer-label
-                className="min-w-0 max-w-[15rem] overflow-hidden group-data-[compact]/composer-context:max-w-0"
+                className="min-w-0 max-w-[18rem] overflow-hidden group-data-[compact]/composer-context:max-w-0"
               >
                 <span
                   data-composer-label-motion
-                  className="flex w-full min-w-0 max-w-[15rem] origin-left items-baseline gap-1 transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.32,0.72,0,1)] group-data-[compact]/composer-context:[transform:translateX(-0.25rem)_scaleX(0.95)] group-data-[compact]/composer-context:opacity-0 motion-reduce:transform-none motion-reduce:transition-opacity"
+                  className="flex w-full min-w-0 max-w-[18rem] origin-left items-baseline gap-1 transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.32,0.72,0,1)] group-data-[compact]/composer-context:[transform:translateX(-0.25rem)_scaleX(0.95)] group-data-[compact]/composer-context:opacity-0 motion-reduce:transform-none motion-reduce:transition-opacity"
                 >
+                  {/* Neither the number nor the repository truncates: together
+                      they name the pull request, and the title is what the room
+                      runs out on. */}
+                  <span className="shrink-0">#{branchPr.number}</span>
                   {branchPrRepository === null ? null : (
-                    <span className="min-w-0 shrink truncate font-normal text-muted-foreground/80">
+                    <span className="shrink-0 font-normal text-muted-foreground/80">
                       {forkPullRequestRepoLabel(branchPrRepository)}
                     </span>
                   )}
-                  {/* The number never truncates: it is what names the pull
-                      request when the room runs out. */}
-                  <span className="shrink-0">#{branchPr.number}</span>
                   <span aria-hidden className="shrink-0 text-muted-foreground/50">
                     ·
                   </span>
@@ -806,7 +818,8 @@ export function BranchToolbarBranchSelector({
           </Tooltip>
         ) : null}
         {/* Fork: the pill names one pull request, so the Task's others get a
-            counter of their own rather than a second pill each. */}
+            counter of their own rather than a second pill each, toned by the
+            most important of them. */}
         {otherBranchPrs.length > 0 ? (
           <Menu>
             <MenuTrigger
@@ -816,7 +829,10 @@ export function BranchToolbarBranchSelector({
                   aria-label={`Show ${otherBranchPrs.length} more ${
                     sourceControlPresentation.terminology.singular
                   }${otherBranchPrs.length === 1 ? "" : "s"}`}
-                  className="inline-flex shrink-0 items-center rounded px-1 py-0.5 font-medium text-[11px] text-muted-foreground/70 tabular-nums transition-colors hover:bg-muted/60 hover:text-foreground/80"
+                  className={cn(
+                    "inline-flex shrink-0 items-center rounded px-1 py-0.5 font-medium text-[11px] tabular-nums transition-colors hover:bg-muted/60 hover:text-foreground/80",
+                    otherBranchPrsTone ?? "text-muted-foreground/70",
+                  )}
                 />
               }
             >
