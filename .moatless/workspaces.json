@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "workspaces": [
+    {
+      "key": "t3code-fork",
+      "name": "T3 Code Fork",
+      "description": "Agent sandbox for the soaplabs/t3code fork — merges, builds and tests. No dev server or preview.",
+      "repos": [
+        { "url": "https://github.com/soaplabs/t3code.git", "primary": true }
+      ],
+      "codeExecution": {
+        "setupCommands": ["corepack enable && corepack prepare pnpm@11.10.0 --activate"]
+      },
+      "resources": {
+        "requests": { "cpu": "100m", "memory": "512Mi" },
+        "limits": { "cpu": "4", "memory": "12Gi" },
+        "storage": "20Gi"
+      },
+      "servers": []
+    }
+  ]
+}

@@ -424,7 +424,7 @@
       "id": "fork-only-loops",
       "paths": [".moatless/**"],
       "verdict": "ours",
-      "note": "Moatless loop definitions. Upstream has no .moatless/ and runs its automation as GitHub workflows."
+      "note": "Moatless loop and workspace definitions. Upstream has no .moatless/ and runs its automation as GitHub workflows."
     },
     {
       "id": "ci-workflow",
@@ -493,8 +493,8 @@
     {
       "id": "moatless-loops",
       "name": "Moatless loops",
-      "paths": [".moatless/loops/**"],
-      "mustSurvive": "Fork-only. .moatless/loops/upstream-merge/LOOP.md is what schedules this merge, and `moat repos sync-config` reconciles it from the default branch. Moatless keys a synced loop on the directory name, so renaming the directory creates a second loop and orphans the one an administrator activated."
+      "paths": [".moatless/loops/**", ".moatless/workspaces.json"],
+      "mustSurvive": "Fork-only. .moatless/loops/upstream-merge/LOOP.md is what schedules this merge, and `moat repos sync-config` reconciles both files from the default branch. Moatless keys a synced loop on the directory name, so renaming the directory creates a second loop and orphans the one an administrator activated. The loop's `workspace:` names the `T3 Code Fork` entry in .moatless/workspaces.json by its display name, so renaming that entry skips the loop on the next sync."
     },
     {
       "id": "hosted-env-contract",
