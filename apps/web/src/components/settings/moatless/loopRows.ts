@@ -143,6 +143,28 @@ export function loopNeedsApproval(loop: Loop): boolean {
 }
 
 /**
+ * Whether the detail page offers a run-as change, and whether saving one starts
+ * the Loop.
+ *
+ * `activate` is the only write that sets the run-as user, and it also sets
+ * `active`, so a paused Loop resumes on save and the form has to say so before
+ * somebody presses the button. A Loop `awaiting_approval` is left out because
+ * the approval dialog is already this form, and a deleted one is left out
+ * because `activate` refuses it.
+ */
+export interface LoopRunAsEdit {
+  readonly isOffered: boolean;
+  readonly resumes: boolean;
+}
+
+export function loopRunAsEdit(loop: Loop): LoopRunAsEdit {
+  if (loop.deleted || loop.executionState === "awaiting_approval") {
+    return { isOffered: false, resumes: false };
+  }
+  return { isOffered: true, resumes: loop.executionState !== "active" };
+}
+
+/**
  * The list split into the Loops waiting on a decision and the rest, each side
  * keeping the order it arrived in — so a caller sorts and filters once and the
  * two sections cannot disagree about either.

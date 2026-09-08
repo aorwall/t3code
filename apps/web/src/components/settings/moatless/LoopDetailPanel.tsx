@@ -11,7 +11,7 @@ import {
   resumeLoop,
   updateLoop,
 } from "@t3tools/moatless-api/generated/loops/loops";
-import type { Loop, RoutingMode } from "@t3tools/moatless-api/generated/model";
+import type { Loop, RoutingMode, UserListItem } from "@t3tools/moatless-api/generated/model";
 
 import { useMoatlessCommand, useMoatlessQuery } from "../../../moatless/query";
 import { useDirtyForm } from "../../../moatless/useDirtyForm";
@@ -44,6 +44,7 @@ import {
   isScheduleSource,
   isSubscriptionSource,
   loopProvenance,
+  loopRunAsEdit,
   loopSourceSummary,
   loopStateLabel,
   routingModeLabel,
@@ -101,6 +102,9 @@ function LoopDetail({ loop }: { readonly loop: Loop }) {
     <>
       {provenance.isLocked || provenance.isOverridden ? <GitProvenanceNotice loop={loop} /> : null}
       <LifecycleSection loop={loop} isLocked={provenance.isLocked} />
+      {loopRunAsEdit(loop).isOffered ? (
+        <IdentitySection loop={loop} isLocked={provenance.isLocked} />
+      ) : null}
       <GeneralSection loop={loop} isLocked={provenance.isLocked} />
       <ConfigurationSection loop={loop} isLocked={provenance.isLocked} />
       <SourceSection loop={loop} isLocked={provenance.isLocked} />
@@ -246,14 +250,11 @@ function ActivateLoopDialog({
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
 }) {
-  const users = useMoatlessQuery(usersQuery);
   const [runAsUserId, setRunAsUserId] = useState(loop.config.runAsUserId ?? "");
   const activate = useMoatlessCommand<string, Loop>(
     (userId) => activateLoop(loop.id, { runAsUserId: userId }),
     { invalidates: ["loops"] },
   );
-
-  const humans = (users.data?.users ?? []).filter((user) => !user.isBot);
 
   async function submit() {
     if (runAsUserId.length === 0) return;
@@ -278,18 +279,7 @@ function ActivateLoopDialog({
         </DialogHeader>
         <DialogPanel className="px-6 pb-5">
           <span className="mb-1.5 block text-xs font-medium text-foreground">Run as</span>
-          <Select value={runAsUserId} onValueChange={(value) => setRunAsUserId(value ?? "")}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a user" />
-            </SelectTrigger>
-            <SelectContent>
-              {humans.map((user) => (
-                <SelectItem key={user.id} value={user.id}>
-                  {user.name?.trim() || user.login}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <RunAsUserSelect value={runAsUserId} onValueChange={setRunAsUserId} />
           {activate.error ? (
             <p className="mt-2 text-[13px] text-destructive-foreground">{activate.error.message}</p>
           ) : null}
@@ -309,6 +299,95 @@ function ActivateLoopDialog({
       </DialogPopup>
     </Dialog>
   );
+}
+
+/**
+ * Whose identity the Loop's tasks run as, after approval.
+ *
+ * The select is deliberately not `disabled={isLocked}` like every other field
+ * on this page. Git never declares a run-as user: sync warns on `runAsUserId`
+ * in `LOOP.md`, ignores it, and carries the stored one across a re-sync. So
+ * naming one is a local decision, and it must not cost the git link.
+ */
+function IdentitySection({ loop, isLocked }: { readonly loop: Loop; readonly isLocked: boolean }) {
+  const form = useDirtyForm({ runAsUserId: loop.config.runAsUserId ?? "" });
+  const save = useMoatlessCommand<{ runAsUserId: string }, Loop>(
+    (values) => activateLoop(loop.id, { runAsUserId: values.runAsUserId }),
+    { invalidates: ["loops"] },
+  );
+
+  const { resumes } = loopRunAsEdit(loop);
+
+  return (
+    <SettingsSection id="loop-identity" title="Identity">
+      <div className={cn(ITEM_ROW_CLASSNAME, "space-y-2")}>
+        <span className="mb-1.5 block text-xs font-medium text-foreground">Run as</span>
+        <RunAsUserSelect
+          value={form.values.runAsUserId}
+          onValueChange={(value) => form.setField("runAsUserId", value)}
+        />
+        <p className="text-[13px] leading-[1.45] text-muted-foreground/80">
+          Every task this loop starts runs as this user.
+          {isLocked ? " Git does not declare the run-as user, so it stays editable here." : ""}
+          {resumes ? " This loop is paused, and saving resumes it." : ""}
+        </p>
+        {save.error ? (
+          <p className="text-[13px] text-destructive-foreground">{save.error.message}</p>
+        ) : null}
+      </div>
+      <SaveBar
+        isDirty={form.isDirty}
+        isSaving={save.isRunning}
+        canSave={form.values.runAsUserId.length > 0}
+        saveLabel={resumes ? "Save & resume" : "Save"}
+        onDiscard={form.reset}
+        onSave={() => void save.run(form.values)}
+      />
+    </SettingsSection>
+  );
+}
+
+/**
+ * The run-as picker, shared by the approval dialog and the Identity form so the
+ * two cannot offer different people.
+ *
+ * Bot users are listed deliberately: running a Loop as a GitHub App's bot user
+ * is what attributes the commits, pull requests and comments its tasks make to
+ * that app.
+ */
+function RunAsUserSelect({
+  value,
+  onValueChange,
+}: {
+  readonly value: string;
+  readonly onValueChange: (value: string) => void;
+}) {
+  const users = useMoatlessQuery(usersQuery);
+  const rows = users.data?.users ?? [];
+  const selected = rows.find((user) => user.id === value);
+  // Falls back to the raw id so a Loop that has a run-as user never reads as
+  // having none while the directory is still loading, or when it fails.
+  const label = selected ? runAsUserLabel(selected) : value || undefined;
+
+  return (
+    <Select value={value} onValueChange={(next) => onValueChange(next ?? "")}>
+      <SelectTrigger aria-label="Run as">
+        <SelectValue placeholder="Select a user">{label}</SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {rows.map((user) => (
+          <SelectItem key={user.id} value={user.id}>
+            {runAsUserLabel(user)}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function runAsUserLabel(user: UserListItem): string {
+  const name = user.name?.trim() || user.login;
+  return user.isBot ? `${name} (bot)` : name;
 }
 
 function GeneralSection({ loop, isLocked }: { readonly loop: Loop; readonly isLocked: boolean }) {
@@ -674,12 +753,15 @@ function SaveBar({
   isDirty,
   isSaving,
   canSave,
+  saveLabel = "Save",
   onDiscard,
   onSave,
 }: {
   readonly isDirty: boolean;
   readonly isSaving: boolean;
   readonly canSave: boolean;
+  /** Names the side effect where saving has one, as on a paused Loop. */
+  readonly saveLabel?: string;
   readonly onDiscard: () => void;
   readonly onSave: () => void;
 }) {
@@ -692,7 +774,7 @@ function SaveBar({
       </Button>
       <Button size="sm" onClick={onSave} disabled={isSaving || !canSave}>
         {isSaving ? <LoaderIcon className="animate-spin" /> : null}
-        Save
+        {saveLabel}
       </Button>
     </div>
   );

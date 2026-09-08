@@ -10,6 +10,7 @@ import {
   loopKindLabel,
   loopNeedsApproval,
   loopProvenance,
+  loopRunAsEdit,
   loopSourceSummary,
   loopStateLabel,
   partitionLoopsByApproval,
@@ -122,6 +123,32 @@ describe("loopProvenance", () => {
     const provenance = loopProvenance(loop());
     expect(provenance.isLocked).toBe(false);
     expect(provenance.isOverridden).toBe(false);
+  });
+});
+
+describe("loopRunAsEdit", () => {
+  it("changes the user on an active Loop and leaves it running", () => {
+    expect(loopRunAsEdit(loop({ executionState: "active", active: true }))).toEqual({
+      isOffered: true,
+      resumes: false,
+    });
+  });
+
+  it("reports that saving on a paused Loop resumes it", () => {
+    expect(loopRunAsEdit(loop({ executionState: "paused" }))).toEqual({
+      isOffered: true,
+      resumes: true,
+    });
+  });
+
+  it("leaves a Loop awaiting approval to the approval dialog", () => {
+    expect(loopRunAsEdit(loop({ executionState: "awaiting_approval" })).isOffered).toBe(false);
+  });
+
+  it("offers nothing on a deleted Loop, which the backend refuses to activate", () => {
+    expect(
+      loopRunAsEdit(loop({ executionState: "active", active: true, deleted: true })).isOffered,
+    ).toBe(false);
   });
 });
 
