@@ -421,6 +421,12 @@
       "note": "Fork-only workflows."
     },
     {
+      "id": "fork-only-loops",
+      "paths": [".moatless/**"],
+      "verdict": "ours",
+      "note": "Moatless loop definitions. Upstream has no .moatless/ and runs its automation as GitHub workflows."
+    },
+    {
       "id": "ci-workflow",
       "paths": [".github/workflows/ci.yml"],
       "verdict": "converged",
@@ -483,6 +489,12 @@
         ".plans/completed/moatless-admin-in-t3.md"
       ],
       "mustSurvive": "Keep ours. Only those four plans are ours; upstream owns the rest of .plans/**, and only fork-upstream-merge and test-moatless-web are ours under .agents/skills/."
+    },
+    {
+      "id": "moatless-loops",
+      "name": "Moatless loops",
+      "paths": [".moatless/loops/**"],
+      "mustSurvive": "Fork-only. .moatless/loops/upstream-merge/LOOP.md is what schedules this merge, and `moat repos sync-config` reconciles it from the default branch. Moatless keys a synced loop on the directory name, so renaming the directory creates a second loop and orphans the one an administrator activated."
     },
     {
       "id": "hosted-env-contract",
