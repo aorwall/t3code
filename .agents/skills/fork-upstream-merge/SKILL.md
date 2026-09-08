@@ -224,7 +224,10 @@ there were no relevant hits.
 
 ### 2. Merge and resolve
 
+Merge on a dated branch, which is what the PR comes from:
+
 ```bash
+git switch -c merge/upstream-$(date -u +%Y-%m-%d)
 git merge upstream/main
 ```
 
@@ -389,7 +392,15 @@ Re-run one check after a fix with `--only <name>`.
 
 The test step outruns the ten-minute limit a shell call gets, which turns the
 last step of a merge into a background job and a polling loop that an
-interruption loses. Run it a package at a time instead:
+interruption loses. In a Moatless sandbox, hand the whole pass to `moat cmd run`
+instead. The sandbox owns the process and wakes you when it exits:
+
+```bash
+moat cmd run "node .agents/skills/fork-upstream-merge/scripts/verify.mjs"
+```
+
+Read the outcome back with `moat cmd logs <id>`, and do not poll it. Where that
+CLI is absent, run the test step a package at a time:
 
 ```bash
 node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only test --package @t3tools/web
@@ -440,7 +451,8 @@ firing so it gets deleted rather than accumulating.
 4. Append a compact dated tracker entry with upstream head/base, the two file
    counts from step 2, conflict decisions, owned-surface sweep decisions, and
    verification. Link the gaps entry rather than restating it.
-5. Put the feature classification in the PR body or PR summary. Include
+5. Title the PR `chore: merge upstream t3code to <short-sha>`, with no scope.
+   Put the feature classification in the PR body or PR summary. Include
    `Usable as-is`, `Unsupported in Moatless / needs implementation`, and
    `Backend behavior to consider reproducing in Moatless`, even when a list is
    empty.
