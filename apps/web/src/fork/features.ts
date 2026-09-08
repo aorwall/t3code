@@ -122,6 +122,19 @@ export const FEATURES = {
    * pick a base ref for a worktree nobody cuts.
    */
   worktreeSelection: false,
+  /**
+   * The browser's "Recently used" list: the URLs a thread's preview has opened,
+   * offered above the preview servers in an empty browser tab. The history is
+   * keyed by project and every thread of that project reads it, while a thread
+   * server's URL names the sandbox of the task that raised it
+   * (`https://task--5733.…`). So one thread's entries point every other thread
+   * at a sandbox it does not own, and at a host that stops with that task. The
+   * preview servers listed under it follow the thread instead.
+   *
+   * The store behind the list still records a visit and its title. This gates
+   * the surface, not the writes.
+   */
+  browserHistory: false,
 } satisfies Record<string, boolean>;
 
 export type FeatureName = keyof typeof FEATURES;

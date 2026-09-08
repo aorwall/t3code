@@ -885,6 +885,16 @@
         "apps/web/package.json"
       ],
       "mustSurvive": "A ```mermaid fence in a chat message is drawn as a diagram rather than highlighted as source. The whole delta in upstream's ChatMarkdown.tsx is two imports and one early return above upstream's own return in the `pre` renderer; the diagram sits inside upstream's MarkdownCodeBlock so the header, the language label and the copy button stay upstream's and copy still copies the mermaid source. The fence falls back to that same highlighted source in every case the diagram is not there — while the message streams, while mermaid loads, when mermaid cannot parse the source, and when someone asks for the source back — so a mermaid fence never renders worse than upstream renders it. Four properties are load-bearing and easy to lose in a rewrite: mermaid is imported lazily, because it is around a megabyte and nobody who never sees a diagram should pay for it; renders are serialized, because `initialize` sets the theme globally; rendered SVG is cached and read during the first render, because the message list is virtualized and a scrolled-back diagram would otherwise flash its source; and `securityLevel` is `strict`, because the source is model-written and arrives over the wire."
+    },
+    {
+      "id": "browser-history-gate",
+      "name": "Recently used gate in the browser empty state",
+      "paths": ["apps/web/src/components/preview/PreviewView.tsx", "apps/web/src/fork/features.ts"],
+      "mustSurvive": "The browser's empty state never offers a \"Recently used\" URL. Browser history is keyed by project and read by every thread of that project, while a thread server's URL names the sandbox of the task that raised it (https://task--5733.…), so one thread's entries point every other thread at a sandbox it does not own and at a host that stops with that task. One additive FEATURES.browserHistory gate on the recentEntries prop PreviewView hands PreviewEmptyState. The gate sits at that call site rather than inside PreviewEmptyState deliberately: the component and upstream's three recents tests in PreviewEmptyState.test.tsx stay at zero delta, and the fork hands it an empty list instead. browserHistoryStore still records visits and titles, and PreviewView's title effect still reads useThreadRecentHistory — this gates the surface, not the writes. Drop the flag and the gate once a recorded entry can name a page a second thread of the project can reach.",
+      "guard": {
+        "symbol": "FEATURES.browserHistory",
+        "files": ["apps/web/src/components/preview/PreviewView.tsx"]
+      }
     }
   ],
 

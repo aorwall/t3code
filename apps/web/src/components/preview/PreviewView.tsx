@@ -84,6 +84,8 @@ import {
   stopBrowserRecording,
   useActiveBrowserRecordingTabIds,
 } from "~/browser/browserRecording";
+// Fork: the surface gate that keeps the "Recently used" list out of this build.
+import { FEATURES } from "~/fork/features";
 import { stackedThreadToast, toastManager } from "~/components/ui/toast";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip";
 
@@ -947,7 +949,9 @@ export function PreviewView({
         {showEmptyState ? (
           <PreviewEmptyState
             threadRef={threadRef}
-            recentEntries={recentHistoryEntries}
+            // Fork: FEATURES.browserHistory off — the empty state offers this
+            // thread's preview servers and never the project's URL history.
+            recentEntries={FEATURES.browserHistory ? recentHistoryEntries : []}
             onRemoveRecent={(url) => removeUrlForThread(threadRef, url)}
             onOpenUrl={(next) => void handleOpenServerUrl(next)}
           />
