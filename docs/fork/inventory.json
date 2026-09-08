@@ -762,8 +762,12 @@
     {
       "id": "server-update-banner-gate",
       "name": "Server-update banner gate",
-      "paths": ["apps/web/src/components/ChatView.tsx", "apps/web/src/fork/features.ts"],
-      "mustSurvive": "The composer never offers to run T3's self-update: the Moatless server does not implement server.updateServer, so the offer and its npx t3 command would point at a command that cannot run. One additive FEATURES.serverUpdateBanner gate on upstream's composer-banner line. Holds open the Desktop and host lifecycle gap. Drop the flag and gate once the backend serves server.updateServer.",
+      "paths": [
+        "apps/web/src/components/ChatView.tsx",
+        "apps/web/src/components/chat/useAutoBalanceUpdateBanner.tsx",
+        "apps/web/src/fork/features.ts"
+      ],
+      "mustSurvive": "The composer never offers to run T3's self-update: the Moatless server does not implement server.updateServer, so the offer and its npx t3 command would point at a command that cannot run. Upstream reaches that offer by two routes and each carries one additive FEATURES.serverUpdateBanner gate in ChatView.tsx: the single-machine composer-banner condition, and the autoUpdateEnvironments memo that feeds useAutoBalanceUpdateBanner. Count the gates every merge — upstream added the second route in #10596, and a gate on one route alone still shows the offer on the other. Holds open the Desktop and host lifecycle gap. Drop the flag and both gates once the backend serves server.updateServer.",
       "guard": {
         "symbol": "FEATURES.serverUpdateBanner",
         "files": ["apps/web/src/components/ChatView.tsx"]
@@ -820,7 +824,7 @@
         "apps/web/src/components/settings/SettingsPanels.tsx",
         "apps/web/src/components/settings/ProviderSettingsPanel.tsx"
       ],
-      "mustSurvive": "Re-apply route guard and nav/search filtering. General, Appearance, and Providers stay visible except the server-backed add-provider-instance affordance, which lives in ProviderSettingsPanel.tsx since upstream extracted it on 2026-08-08."
+      "mustSurvive": "Re-apply route guard and nav/search filtering. General, Appearance, and Providers stay visible except the server-backed add-provider-instance affordance, which lives in ProviderSettingsPanel.tsx since upstream extracted it on 2026-08-08. Every settings page whose controls drive `window.desktopBridge` is listed in FEATURE_BY_SETTINGS_PATH: upstream renders such a page with an \"unavailable\" notice rather than hiding it, and a hosted build must not list the section at all. `/settings/snap-shot` joined that list when upstream added window capture in #8103."
     },
     {
       "id": "moatless-rest-client",

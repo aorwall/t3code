@@ -135,6 +135,16 @@ export const FEATURES = {
    * the surface, not the writes.
    */
   browserHistory: false,
+  /**
+   * The SnapShots settings page, which configures T3's cross-platform window
+   * capture: a global shortcut grabs the foreground window and hands the image,
+   * and optionally the window's accessibility text, to the composer. Every
+   * control on it drives `window.desktopBridge`, which a browser tab does not
+   * have. Upstream renders the page with an "unavailable" notice instead of
+   * hiding it, so without this gate a hosted build lists a sidebar section and
+   * six searchable rows for a feature it can never run.
+   */
+  snapShots: false,
 } satisfies Record<string, boolean>;
 
 export type FeatureName = keyof typeof FEATURES;
@@ -153,6 +163,7 @@ export type FeatureName = keyof typeof FEATURES;
  */
 export const FEATURE_BY_SETTINGS_PATH: Readonly<Record<string, FeatureName>> = {
   "/settings/keybindings": "serverAdministration",
+  "/settings/snap-shot": "snapShots",
   "/settings/providers": "serverAdministration",
   "/settings/source-control": "projectManagement",
   "/settings/connections": "connections",

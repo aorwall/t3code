@@ -20,6 +20,7 @@ import { Route as ChatIndexRouteImport } from './routes/_chat.index'
 import { Route as SettingsWorkspacesRouteImport } from './routes/settings.workspaces'
 import { Route as SettingsUsersRouteImport } from './routes/settings.users'
 import { Route as SettingsSourceControlRouteImport } from './routes/settings.source-control'
+import { Route as SettingsSnapShotRouteImport } from './routes/settings.snap-shot'
 import { Route as SettingsSkillsRouteImport } from './routes/settings.skills'
 import { Route as SettingsSecretsRouteImport } from './routes/settings.secrets'
 import { Route as SettingsProvidersRouteImport } from './routes/settings.providers'
@@ -97,6 +98,11 @@ const SettingsUsersRoute = SettingsUsersRouteImport.update({
 const SettingsSourceControlRoute = SettingsSourceControlRouteImport.update({
   id: '/source-control',
   path: '/source-control',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsSnapShotRoute = SettingsSnapShotRouteImport.update({
+  id: '/snap-shot',
+  path: '/snap-shot',
   getParentRoute: () => SettingsRoute,
 } as any)
 const SettingsSkillsRoute = SettingsSkillsRouteImport.update({
@@ -248,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/settings/providers': typeof SettingsProvidersRoute
   '/settings/secrets': typeof SettingsSecretsRoute
   '/settings/skills': typeof SettingsSkillsRoute
+  '/settings/snap-shot': typeof SettingsSnapShotRoute
   '/settings/source-control': typeof SettingsSourceControlRoute
   '/settings/users': typeof SettingsUsersRoute
   '/settings/workspaces': typeof SettingsWorkspacesRoute
@@ -283,6 +290,7 @@ export interface FileRoutesByTo {
   '/settings/providers': typeof SettingsProvidersRoute
   '/settings/secrets': typeof SettingsSecretsRoute
   '/settings/skills': typeof SettingsSkillsRoute
+  '/settings/snap-shot': typeof SettingsSnapShotRoute
   '/settings/source-control': typeof SettingsSourceControlRoute
   '/settings/users': typeof SettingsUsersRoute
   '/settings/workspaces': typeof SettingsWorkspacesRoute
@@ -321,6 +329,7 @@ export interface FileRoutesById {
   '/settings/providers': typeof SettingsProvidersRoute
   '/settings/secrets': typeof SettingsSecretsRoute
   '/settings/skills': typeof SettingsSkillsRoute
+  '/settings/snap-shot': typeof SettingsSnapShotRoute
   '/settings/source-control': typeof SettingsSourceControlRoute
   '/settings/users': typeof SettingsUsersRoute
   '/settings/workspaces': typeof SettingsWorkspacesRoute
@@ -360,6 +369,7 @@ export interface FileRouteTypes {
     | '/settings/providers'
     | '/settings/secrets'
     | '/settings/skills'
+    | '/settings/snap-shot'
     | '/settings/source-control'
     | '/settings/users'
     | '/settings/workspaces'
@@ -395,6 +405,7 @@ export interface FileRouteTypes {
     | '/settings/providers'
     | '/settings/secrets'
     | '/settings/skills'
+    | '/settings/snap-shot'
     | '/settings/source-control'
     | '/settings/users'
     | '/settings/workspaces'
@@ -432,6 +443,7 @@ export interface FileRouteTypes {
     | '/settings/providers'
     | '/settings/secrets'
     | '/settings/skills'
+    | '/settings/snap-shot'
     | '/settings/source-control'
     | '/settings/users'
     | '/settings/workspaces'
@@ -534,6 +546,13 @@ declare module '@tanstack/react-router' {
       path: '/source-control'
       fullPath: '/settings/source-control'
       preLoaderRoute: typeof SettingsSourceControlRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/snap-shot': {
+      id: '/settings/snap-shot'
+      path: '/snap-shot'
+      fullPath: '/settings/snap-shot'
+      preLoaderRoute: typeof SettingsSnapShotRouteImport
       parentRoute: typeof SettingsRoute
     }
     '/settings/skills': {
@@ -738,6 +757,7 @@ interface SettingsRouteChildren {
   SettingsProvidersRoute: typeof SettingsProvidersRoute
   SettingsSecretsRoute: typeof SettingsSecretsRoute
   SettingsSkillsRoute: typeof SettingsSkillsRoute
+  SettingsSnapShotRoute: typeof SettingsSnapShotRoute
   SettingsSourceControlRoute: typeof SettingsSourceControlRoute
   SettingsUsersRoute: typeof SettingsUsersRoute
   SettingsWorkspacesRoute: typeof SettingsWorkspacesRoute
@@ -763,6 +783,7 @@ const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsProvidersRoute: SettingsProvidersRoute,
   SettingsSecretsRoute: SettingsSecretsRoute,
   SettingsSkillsRoute: SettingsSkillsRoute,
+  SettingsSnapShotRoute: SettingsSnapShotRoute,
   SettingsSourceControlRoute: SettingsSourceControlRoute,
   SettingsUsersRoute: SettingsUsersRoute,
   SettingsWorkspacesRoute: SettingsWorkspacesRoute,

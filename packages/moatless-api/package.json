@@ -19,7 +19,7 @@
   "scripts": {
     "generate": "orval",
     "spec:check": "node scripts/checkSpecFreshness.mjs",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "vp test run"
   },
   "devDependencies": {

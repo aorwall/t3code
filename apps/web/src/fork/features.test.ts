@@ -15,6 +15,7 @@ import connectionsRouteSource from "../routes/settings.connections.tsx?raw";
 import diagnosticsRouteSource from "../routes/settings.diagnostics.tsx?raw";
 import keybindingsRouteSource from "../routes/settings.keybindings.tsx?raw";
 import providersRouteSource from "../routes/settings.providers.tsx?raw";
+import snapShotRouteSource from "../routes/settings.snap-shot.tsx?raw";
 import sourceControlRouteSource from "../routes/settings.source-control.tsx?raw";
 import {
   FEATURE_BY_PALETTE_ACTION,
@@ -26,6 +27,7 @@ import {
 
 const ROUTE_SOURCES: Readonly<Record<string, string>> = {
   "/settings/keybindings": keybindingsRouteSource,
+  "/settings/snap-shot": snapShotRouteSource,
   "/settings/providers": providersRouteSource,
   "/settings/source-control": sourceControlRouteSource,
   "/settings/connections": connectionsRouteSource,

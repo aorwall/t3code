@@ -28,6 +28,50 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-08 — merged upstream to a37c6640, TypeScript 7 + a second route to the update banner
+
+- Upstream: `a37c66406` from base `8b2838e0e` (`43` commits).
+- Landed: `343` files from `git diff --stat HEAD^1 HEAD` against `343` in the
+  upstream range (`8b2838e0e..HEAD^2`); fork delta `723` files from
+  `git diff --stat HEAD^2 HEAD`. Exact match, so there is no gap to explain.
+- Conflicts: 5 files. `pnpm-lock.yaml` `theirs` then `vp i`; `routeTree.gen.ts`
+  regenerated with `regen-route-tree.mjs`; `SettingsSidebarNav.tsx` and
+  `settingsSearch.test.ts` were additive collisions, both sides kept. The fifth
+  is the one to carry forward, below.
+- **A gate that survives its conflict can still stop covering the surface.**
+  Upstream's #10596 split the composer's server-update banner into two routes:
+  the single-machine condition the fork already gates, and a new
+  `useAutoBalanceUpdateBanner` fed by an `autoUpdateEnvironments` memo. The
+  conflict was on the first line only, so resolving it correctly still left the
+  auto-balance route ungated and the offer reachable. `FEATURES.serverUpdateBanner`
+  now carries two gates in `ChatView.tsx` and
+  [its inventory row](./inventory.json) says to count them. Read what upstream
+  added beside the line that conflicted, not just the line.
+- **A new upstream settings page needs a gate even when it degrades politely.**
+  #8103 added `/settings/snap-shot` for desktop window capture. Every control
+  drives `window.desktopBridge`, and upstream renders an "unavailable" notice
+  rather than hiding the page, so a hosted build listed a sidebar section and six
+  searchable rows for a feature it cannot run. Gated with `FEATURES.snapShots`;
+  `features.test.ts` catches a gated path with no route source and did.
+- `packages/moatless-api` still ran `tsgo --noEmit` after upstream replaced
+  `@typescript/native-preview` with TypeScript 7.0.2 everywhere it owns. The
+  binary is gone after install, so typecheck failed to find it. Now `tsc`.
+- `duplicate-adds.mjs` now skips `pnpm-lock.yaml`. It reported `iconv-lite: 0.6.3`
+  as taken twice; `d3-dsv` and `encoding` each declare it, and the lockfile is
+  `theirs` plus `vp i` by policy, so nothing in it is ever resolved by hand.
+- Sweep: 4 owned-concern hits, all false positives on `session`/`pair` — three
+  `apps/desktop/src/snapShot` files from #8103 and
+  `packages/contracts/src/agentSessions.test.ts`, which covers the project-import
+  scan schema and not auth. Taken as upstream. The snapShot files are the desktop
+  half of the surface gated above.
+- Unsupported methods: 0 ADD, 0 DROP, 2 KEEP, 4 known exceptions. `#10572` added
+  four preview-recording error types and no new method, so no union changed.
+- Verification: `verify.mjs` green except `@t3tools/desktop`, which fails to
+  compile `browser-secret-native.test.mjs` because the sandbox has no
+  `libsecret-1` — 1283 tests pass, 0 fail. New entry in [gaps](./gaps.md).
+  `t3` failed `GrokAdapter.test.ts` once under parallel load and passes 42/42
+  alone on a file byte-identical to upstream.
+
 ### 2026-09-07 — merged upstream to 8b2838e0, project defaults + two more refusals
 
 - Upstream: `8b2838e0e` from base `b438447f6` (`141` commits).
