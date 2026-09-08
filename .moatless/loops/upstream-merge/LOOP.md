@@ -30,21 +30,18 @@ moat gh pr list -R soaplabs/t3code --state open --json number,title,headRefName 
   --jq '.[] | select(.headRefName | startswith("merge/upstream-"))'
 ```
 
-When one is open, say so in one line and stop. A second merge from the same base
-drops the first one's resolutions, and a person still has to review both.
+When one is open, say so in one line and stop.
 
 When `preflight.mjs` reports no new upstream commits, say so in one line and
 stop. Nothing to merge is a normal result.
 
 ## Decide, never ask
 
-Nobody watches a 04:00 schedule, so a run that stops for an answer stops until a
-person finds it. Resolve each conflict with the verdict `preflight.mjs` printed
-for it, and finish the run.
+Resolve each conflict with the verdict `preflight.mjs` printed for it, and
+finish the run.
 
 When a `decide` conflict has no answer you can defend from the inventory, or a
 verification failure has no fix you can make, push the branch and open the PR
-with `--draft`. Name what is unresolved in the body. A merge redone from scratch
-is the most expensive outcome here.
+with `--draft`. Name what is unresolved in the body.
 
 Do not merge the PR.
