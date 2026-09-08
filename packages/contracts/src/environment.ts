@@ -151,6 +151,11 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
       cannot tell a thread that is mid-build from one with nothing left to do,
       and shows no command rows at all. */
   sandboxCommands: Schema.optionalKey(Schema.Boolean),
+  /** Fork: server serves sandbox.detail and the four controls the sandbox
+      panel drives — restart, redeploy, cleanup, setIdleTimeout. Absent on
+      servers that serve the lifecycle status alone, where the panel would have
+      nothing to show and no control to offer, so clients do not open it. */
+  sandboxDetail: Schema.optionalKey(Schema.Boolean),
   /** Server can durably mark running provider turns before a self-update and
       continue them after the replacement process starts. */
   serverUpdateThreadContinuation: Schema.optionalKey(Schema.Boolean),

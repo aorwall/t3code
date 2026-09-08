@@ -2743,6 +2743,41 @@ const makeWsRpcLayer = (
             Effect.succeed({ sandboxStatus: "not_created" as const }),
             { "rpc.aggregate": "sandbox" },
           ),
+        // Fork: the sandbox panel's read and the four controls it drives. This
+        // server declares no `sandboxDetail` capability, so no client opens the
+        // panel here; these answer the same never-created sandbox the lifecycle
+        // methods above do, and the detail read omits every runtime-sourced key
+        // because there is no runtime to have published one.
+        [WS_METHODS.sandboxDetail]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.sandboxDetail,
+            Effect.succeed({ desiredState: "stopped" as const, idleTimeoutMinutes: 0 }),
+            { "rpc.aggregate": "sandbox" },
+          ),
+        [WS_METHODS.sandboxRestart]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.sandboxRestart,
+            Effect.succeed({ sandboxStatus: "not_created" as const }),
+            { "rpc.aggregate": "sandbox" },
+          ),
+        [WS_METHODS.sandboxRedeploy]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.sandboxRedeploy,
+            Effect.succeed({ sandboxStatus: "not_created" as const }),
+            { "rpc.aggregate": "sandbox" },
+          ),
+        [WS_METHODS.sandboxCleanup]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.sandboxCleanup,
+            Effect.succeed({ sandboxStatus: "not_created" as const }),
+            { "rpc.aggregate": "sandbox" },
+          ),
+        [WS_METHODS.sandboxSetIdleTimeout]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.sandboxSetIdleTimeout,
+            Effect.succeed({ idleTimeoutMinutes: 0 }),
+            { "rpc.aggregate": "sandbox" },
+          ),
         // Fork: a subtask is a thread another thread created, which needs a
         // backend with a task tree. This server's only child is a subagent, so
         // it answers honestly with UnsupportedMethodError rather than with an
@@ -2796,6 +2831,10 @@ const makeWsRpcLayer = (
         // here. Silent rather than an error, like the server-status twin below.
         [WS_METHODS.sandboxSubscribeStatus]: (_input) =>
           observeRpcStream(WS_METHODS.sandboxSubscribeStatus, Stream.never, {
+            "rpc.aggregate": "sandbox",
+          }),
+        [WS_METHODS.sandboxSubscribeDetail]: (_input) =>
+          observeRpcStream(WS_METHODS.sandboxSubscribeDetail, Stream.never, {
             "rpc.aggregate": "sandbox",
           }),
         [WS_METHODS.subscribeServerStatus]: (_input) =>

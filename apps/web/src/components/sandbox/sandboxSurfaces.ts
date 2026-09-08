@@ -25,11 +25,15 @@ import type { RightPanelKind } from "~/rightPanelStore";
  * when no sandbox is running. A kind absent from here needs the sandbox, which
  * is the safe default: a new surface is a window onto the live workspace until
  * someone says otherwise.
+ *
+ * `sandbox` is the one surface that must stay open precisely when the sandbox
+ * is down: it is where the person starts one.
  */
 const SANDBOX_INDEPENDENT_KINDS: ReadonlySet<RightPanelKind> = new Set<RightPanelKind>([
   "agents",
   "files",
   "file",
+  "sandbox",
 ]);
 
 export function surfaceNeedsSandbox(kind: RightPanelKind): boolean {

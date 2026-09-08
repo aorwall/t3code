@@ -53,8 +53,10 @@ export type EnvironmentSubscriptionRpcTag =
   | typeof WS_METHODS.subscribeDiscoveredLocalServers
   | typeof WS_METHODS.subscribeServerStatus
   | typeof WS_METHODS.serversSubscribeLogs
-  // Fork: sandbox lifecycle push, a fork-only surface.
+  // Fork: sandbox lifecycle push and the sandbox panel's detail push, both
+  // fork-only surfaces.
   | typeof WS_METHODS.sandboxSubscribeStatus
+  | typeof WS_METHODS.sandboxSubscribeDetail
   | typeof WS_METHODS.subscribeResourceTelemetry
   | typeof WS_METHODS.pullRequestsSubscribeRefreshes
   | typeof WS_METHODS.previewAutomationConnect

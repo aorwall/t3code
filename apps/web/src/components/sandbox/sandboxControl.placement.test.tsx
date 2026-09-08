@@ -1,12 +1,15 @@
 /**
- * Fork-only: where the right panel puts the sandbox status control.
+ * Fork-only: where the right panel puts the sandbox status indicator.
  *
- * The control is a fork element inside an upstream component, and its home is a
- * placement rather than a symbol — nothing type-checks that it renders in the
+ * The indicator is a fork element inside an upstream component, and its home is
+ * a placement rather than a symbol — nothing type-checks that it renders in the
  * panel body instead of the tab bar, where it used to sit and where upstream's
  * layout toggles now live. A merge that carries the fork's `sandboxControl`
  * hunk back into the tab bar row compiles and passes every other test, and the
  * terminal-drawer button quietly loses its corner again.
+ *
+ * The indicator rides the entry that opens the Sandbox surface, so these also
+ * pin that the entry exists and that the disabled state offers the way to it.
  */
 import type { PreviewSessionSnapshot } from "@t3tools/contracts";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -27,6 +30,7 @@ function render(options: {
   surfaceDisabled: boolean;
   surfaces?: readonly RightPanelSurface[];
   activeSurfaceId?: string | null;
+  onAddSandbox?: (() => void) | undefined;
 }) {
   return renderToStaticMarkup(
     <RightPanelTabs
@@ -51,6 +55,7 @@ function render(options: {
       onAddDiff={() => undefined}
       onAddFiles={() => undefined}
       onAddAgents={() => undefined}
+      onAddSandbox={"onAddSandbox" in options ? options.onAddSandbox : () => undefined}
       liveAgentCount={0}
       browserAvailable
       terminalAvailable
@@ -74,14 +79,21 @@ function region(markup: string): "tab-bar" | "body" | "absent" {
   return marker > markup.indexOf(BODY_BOUNDARY) ? "body" : "tab-bar";
 }
 
-describe("the sandbox status control", () => {
-  it("sits with the launcher's surface cards, not in the tab bar", () => {
+describe("the sandbox status indicator", () => {
+  it("rides the launcher card that opens the sandbox surface", () => {
     const markup = render({ surfaceDisabled: false });
     expect(markup).toContain("Open a surface");
+    expect(markup).toContain("Inspect and control this thread&#x27;s sandbox.");
     expect(region(markup)).toBe("body");
   });
 
-  it("follows the disabled state, which is the only way back to a sandbox", () => {
+  it("is absent where no sandbox owns the panel, which is upstream's case", () => {
+    const markup = render({ surfaceDisabled: false, onAddSandbox: undefined });
+    expect(markup).toContain("Open a surface");
+    expect(region(markup)).toBe("absent");
+  });
+
+  it("leaves the disabled state a way into the sandbox surface", () => {
     // A stopped sandbox stands the disabled state up only in front of a surface
     // that needs the workspace; the diff tab is one, so this is where it shows.
     const markup = render({
@@ -90,12 +102,12 @@ describe("the sandbox status control", () => {
       activeSurfaceId: DIFF_SURFACE.id,
     });
     expect(markup).toContain("Sandbox required");
-    expect(region(markup)).toBe("body");
+    expect(markup).toContain("Open sandbox");
   });
 
   it("keeps the launcher open when the sandbox is down and nothing is active", () => {
     // The point of the change: a stopped sandbox no longer curtains the panel,
-    // so the surfaces it does not own — Agents — stay one keystroke away.
+    // so the surfaces it does not own — Agents, Sandbox — stay one keystroke away.
     const markup = render({ surfaceDisabled: true });
     expect(markup).toContain("Open a surface");
     expect(markup).not.toContain("Sandbox required");

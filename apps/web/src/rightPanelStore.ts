@@ -27,6 +27,8 @@ const RIGHT_PANEL_KINDS = [
   "terminal",
   "pull-request",
   "agents",
+  // Fork: the thread's sandbox. Upstream threads run on the host and have none.
+  "sandbox",
 ] as const;
 export type RightPanelKind = (typeof RIGHT_PANEL_KINDS)[number];
 
@@ -72,7 +74,9 @@ export type RightPanelSurface =
       number: number;
       url?: string;
     }
-  | { id: "agents"; kind: "agents" };
+  | { id: "agents"; kind: "agents" }
+  // Fork: the thread's sandbox.
+  | { id: "sandbox"; kind: "sandbox" };
 
 const RIGHT_PANEL_STORAGE_KEY = "t3code:right-panel-state:v2";
 // v9 removed the "plan" surface kind (plans render inline in the transcript).
@@ -173,6 +177,9 @@ const singletonSurface = (
       return { id: "files", kind };
     case "agents":
       return { id: "agents", kind };
+    // Fork: the thread's sandbox.
+    case "sandbox":
+      return { id: "sandbox", kind };
   }
 };
 

@@ -71,6 +71,10 @@ export const SandboxStatusResult = Schema.Struct({
   /** Absent whenever the environment is not up, so it is `optionalKey` rather
       than nullable — a `null` would fail the decode of the whole result. */
   agentStatus: Schema.optionalKey(SandboxAgentStatus),
+  /** Fork: why the sandbox is where it is, when the runtime said. Absent for
+      the same reason `agentStatus` is, and the sandbox panel's Status section
+      is the only thing that renders it. */
+  sandboxError: Schema.optionalKey(Schema.String),
   /** The commands registered through `moat cmd`, running and recently
       finished. Absent — not `[]` — when none are registered or the server
       predates `capabilities.sandboxCommands`, so a client reads its presence

@@ -1,19 +1,19 @@
 /**
  * Fork-only: what the right panel shows while the thread's sandbox is down.
  *
- * The surfaces all run inside that sandbox, so this stands in for the launcher
- * and carries the same status control the launcher does — the way back up is
- * where the explanation is, not in the panel's top bar.
+ * The surfaces all run inside that sandbox, so this stands in for the launcher:
+ * it says what is wrong, and it opens the one surface that can fix it.
  */
 import { LockKeyholeIcon } from "lucide-react";
-import type { ReactNode } from "react";
+
+import { Button } from "../ui/button";
 
 export function RightPanelDisabledState({
   reason,
-  control,
+  onOpenSandbox,
 }: {
   readonly reason: string;
-  readonly control?: ReactNode;
+  readonly onOpenSandbox?: (() => void) | undefined;
 }) {
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center p-6">
@@ -23,7 +23,11 @@ export function RightPanelDisabledState({
         </span>
         <h3 className="text-sm font-medium text-foreground">Sandbox required</h3>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{reason}</p>
-        {control ? <div className="mt-4">{control}</div> : null}
+        {onOpenSandbox ? (
+          <Button className="mt-4" size="sm" variant="outline" onClick={onOpenSandbox}>
+            Open sandbox
+          </Button>
+        ) : null}
       </div>
     </div>
   );

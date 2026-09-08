@@ -153,6 +153,15 @@ export const RPC_REQUIRED_SCOPES = {
   [WS_METHODS.sandboxSubscribeStatus]: AuthOrchestrationReadScope,
   [WS_METHODS.sandboxStart]: AuthOrchestrationOperateScope,
   [WS_METHODS.sandboxStop]: AuthOrchestrationOperateScope,
+  // Fork: the sandbox panel's read and its push, reads like the status beside
+  // them, and the four controls it drives, which move the sandbox like start
+  // and stop do.
+  [WS_METHODS.sandboxDetail]: AuthOrchestrationReadScope,
+  [WS_METHODS.sandboxSubscribeDetail]: AuthOrchestrationReadScope,
+  [WS_METHODS.sandboxRestart]: AuthOrchestrationOperateScope,
+  [WS_METHODS.sandboxRedeploy]: AuthOrchestrationOperateScope,
+  [WS_METHODS.sandboxCleanup]: AuthOrchestrationOperateScope,
+  [WS_METHODS.sandboxSetIdleTimeout]: AuthOrchestrationOperateScope,
   [WS_METHODS.subscribeServerStatus]: AuthOrchestrationReadScope,
   [WS_METHODS.serversSubscribeLogs]: AuthOrchestrationReadScope,
   [WS_METHODS.subscribeServerConfig]: AuthOrchestrationReadScope,

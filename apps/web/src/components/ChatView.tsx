@@ -200,6 +200,8 @@ import { PullRequestsUnavailableState } from "./pullRequest/PullRequestsUnavaila
 // Fork: the sandbox wrapper stands in for upstream's RightPanelTabs.
 import { SandboxedRightPanelTabs as RightPanelTabs } from "./SandboxedRightPanelTabs";
 // Fork: an in-thread banner for `moat cmd` commands running behind an ended turn.
+// Fork: the right panel's Sandbox surface.
+import { SandboxPanel } from "./sandbox/SandboxPanel";
 import { useSandboxCommandsBanner } from "./sandbox/useSandboxCommandsBanner";
 import { AgentsPanel } from "./AgentsPanel";
 import {
@@ -4261,6 +4263,11 @@ export default function ChatView(props: ChatViewProps) {
     if (!activeThreadRef) return;
     useRightPanelStore.getState().open(activeThreadRef, "agents");
   }, [activeThreadRef]);
+  // Fork: the thread's sandbox, opened like any other surface.
+  const addSandboxSurface = useCallback(() => {
+    if (!activeThreadRef) return;
+    useRightPanelStore.getState().open(activeThreadRef, "sandbox");
+  }, [activeThreadRef]);
   const openFileSurface = useCallback(
     (relativePath: string) => {
       if (!activeThreadRef || !activeProject) return;
@@ -8253,6 +8260,10 @@ export default function ChatView(props: ChatViewProps) {
         environmentId={activeThreadRef?.environmentId ?? null}
         threadId={activeThreadRef?.threadId ?? null}
       />
+    ) : // Fork: the thread's sandbox. Rendered only with a thread ref, because
+    // every read the panel makes is scoped to one.
+    renderedRightPanelSurface?.kind === "sandbox" && activeThreadRef ? (
+      <SandboxPanel threadRef={activeThreadRef} />
     ) : (renderedRightPanelSurface?.kind === "files" ||
         renderedRightPanelSurface?.kind === "file") &&
       ((activeProject && activeWorkspaceRoot) ||
@@ -8814,6 +8825,8 @@ export default function ChatView(props: ChatViewProps) {
           onAddFiles={addFilesSurface}
           onAddPullRequest={addPullRequestSurface}
           onAddAgents={addAgentsSurface}
+          // Fork: the thread's sandbox.
+          onAddSandbox={addSandboxSurface}
           browserAvailable={isPreviewSupportedInRuntime()}
           terminalAvailable={activeProject !== null}
           diffAvailable={isServerThread && isGitRepo}
@@ -8866,6 +8879,8 @@ export default function ChatView(props: ChatViewProps) {
             onAddFiles={addFilesSurface}
             onAddPullRequest={addPullRequestSurface}
             onAddAgents={addAgentsSurface}
+            // Fork: the thread's sandbox.
+            onAddSandbox={addSandboxSurface}
             browserAvailable={isPreviewSupportedInRuntime()}
             terminalAvailable={activeProject !== null}
             diffAvailable={isServerThread && isGitRepo}

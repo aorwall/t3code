@@ -8,6 +8,8 @@ import type {
 import { getTerminalLabel } from "@t3tools/shared/terminalLabels";
 import {
   Bot,
+  // Fork: the sandbox surface's icon.
+  Box as BoxIcon,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -115,6 +117,8 @@ interface RightPanelTabsProps {
   onAddFiles: () => void;
   onAddPullRequest: () => void;
   onAddAgents: () => void;
+  /** Fork: opens the sandbox surface. */
+  onAddSandbox?: (() => void) | undefined;
   browserAvailable: boolean;
   terminalAvailable: boolean;
   diffAvailable: boolean;
@@ -126,6 +130,8 @@ interface RightPanelTabsProps {
   liveAgentCount: number;
   surfaceDisabled?: boolean | undefined;
   surfaceDisabledReason?: string | undefined;
+  /** Fork: the thread's sandbox status, shown on the entry that opens the
+      surface explaining it. Absent where no sandbox owns this panel. */
   sandboxControl?: ReactNode;
   children: ReactNode;
 }
@@ -315,6 +321,8 @@ function RightPanelEmptyState(props: {
   onAddFiles: () => void;
   onAddPullRequest: () => void;
   onAddAgents: () => void;
+  /** Fork: opens the sandbox surface. */
+  onAddSandbox?: (() => void) | undefined;
   browserAvailable: boolean;
   terminalAvailable: boolean;
   diffAvailable: boolean;
@@ -322,7 +330,8 @@ function RightPanelEmptyState(props: {
   pullRequestAvailable: boolean;
   agentsAvailable: boolean;
   liveAgentCount: number;
-  /** Fork: the thread's sandbox status and its start/stop button. */
+  /** Fork: the thread's sandbox status, shown on the entry that opens the
+      surface explaining it. Absent where no sandbox owns this panel. */
   sandboxControl?: ReactNode;
   /**
    * Fork: applies the thread's sandbox gate to a card. The same function the
@@ -342,7 +351,7 @@ function RightPanelEmptyState(props: {
       disabledReason: reason,
     }));
 
-  const actions = [
+  const baseActions = [
     {
       label: "Browser",
       description: "Open a local app or URL.",
@@ -398,6 +407,23 @@ function RightPanelEmptyState(props: {
       badgeCount: props.liveAgentCount,
     },
   ] as const;
+
+  // Fork: the sandbox the other surfaces run in. Ungated, because it is where a
+  // stopped one is started. Absent where no sandbox owns this panel, which is
+  // upstream's case.
+  const sandboxAction = props.onAddSandbox
+    ? {
+        label: "Sandbox",
+        description: "Inspect and control this thread's sandbox.",
+        icon: BoxIcon,
+        shortcut: "S",
+        available: true,
+        disabledReason: "",
+        onClick: props.onAddSandbox,
+        badgeCount: 0,
+      }
+    : null;
+  const actions = [...baseActions, ...(sandboxAction ? [sandboxAction] : [])];
 
   type SurfaceAction = (typeof actions)[number];
 
@@ -540,6 +566,9 @@ function RightPanelEmptyState(props: {
                   <span className="flex items-center gap-2 pe-8">
                     {actionIcon(action)}
                     <span className="font-medium text-sm">{action.label}</span>
+                    {/* Fork: the sandbox's state, said on the card that opens the
+                        surface explaining it. */}
+                    {action.label === "Sandbox" ? props.sandboxControl : null}
                   </span>
                   <span className="mt-1.5 text-muted-foreground text-xs leading-relaxed">
                     {action.description}
@@ -602,10 +631,6 @@ function RightPanelEmptyState(props: {
             ),
           )}
         </div>
-        {/* Fork: the sandbox the surfaces run in, said where they are opened. */}
-        {props.sandboxControl ? (
-          <div className="mt-3 flex justify-center">{props.sandboxControl}</div>
-        ) : null}
       </div>
     </div>
   );
@@ -635,6 +660,9 @@ function surfaceTitle(
       return `#${surface.number}`;
     case "agents":
       return "Agents";
+    // Fork: the thread's sandbox.
+    case "sandbox":
+      return "Sandbox";
     case "preview": {
       const snapshot = surface.resourceId ? sessions[surface.resourceId] : null;
       if (!snapshot || snapshot.navStatus._tag === "Idle") return "Browser";
@@ -722,6 +750,9 @@ function SurfaceIcon({
       );
     case "agents":
       return <Bot className="size-3 shrink-0" />;
+    // Fork: the thread's sandbox.
+    case "sandbox":
+      return <BoxIcon className="size-3 shrink-0" />;
   }
 }
 
@@ -824,7 +855,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
     });
   }, []);
 
-  const addSurfaceActions = [
+  const baseAddSurfaceActions = [
     {
       label: "Browser",
       icon: Globe2,
@@ -872,6 +903,24 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
       onClick: props.onAddAgents,
     },
   ] as const;
+
+  // Fork: the sandbox the other surfaces run in. Ungated, because it is where a
+  // stopped one is started. Absent where no sandbox owns this panel.
+  const addSurfaceActions = [
+    ...baseAddSurfaceActions,
+    ...(props.onAddSandbox
+      ? [
+          {
+            label: "Sandbox",
+            icon: BoxIcon,
+            shortcut: "S",
+            available: true,
+            disabledReason: "",
+            onClick: props.onAddSandbox,
+          },
+        ]
+      : []),
+  ];
 
   const handleAddSurfaceMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     const action = surfaceShortcutActionForKey(addSurfaceActions, event.nativeEvent);
@@ -1242,6 +1291,9 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
                       >
                         <Icon />
                         {action.label}
+                        {/* Fork: the sandbox's state, said on the row that opens
+                            the surface explaining it. */}
+                        {action.label === "Sandbox" ? props.sandboxControl : null}
                       </SurfaceMenuItem>
                     );
                   })}
@@ -1311,8 +1363,10 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
         */}
         {props.activeSurfaceId === null ? (
           <RightPanelEmptyState
-            // Fork: the sandbox pill lives with the launcher, not in the top bar.
+            // Fork: the sandbox pill rides the card that opens the sandbox
+            // surface, not the top bar.
             sandboxControl={props.sandboxControl}
+            onAddSandbox={props.onAddSandbox}
             sandboxGate={sandboxGate}
             onAddBrowser={props.onAddBrowser}
             onAddBrowserInProfile={props.onAddBrowserInProfile}
@@ -1331,7 +1385,10 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             liveAgentCount={props.liveAgentCount}
           />
         ) : activeSurfaceNeedsSandbox ? (
-          <RightPanelDisabledState reason={surfaceDisabledReason} control={props.sandboxControl} />
+          <RightPanelDisabledState
+            reason={surfaceDisabledReason}
+            onOpenSandbox={props.onAddSandbox}
+          />
         ) : (
           props.children
         )}

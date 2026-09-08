@@ -30,3 +30,30 @@ export function formatElapsed(startedAtUnixMs: number, nowMs: number): string {
   const hours = Math.floor(minutes / 60);
   return `${hours}h${minutes % 60 > 0 ? ` ${minutes % 60}m` : ""}`;
 }
+
+/**
+ * What a settled command's row says under its label.
+ *
+ * The sandbox panel lists finished commands as well as running ones — a build
+ * that exited 1 while nobody was looking is the answer to "why is this thread
+ * stuck" — so unlike the badge it has to render the terminal states too.
+ */
+export function commandStateLabel(command: CommandSummary): string {
+  switch (command.state) {
+    case "running":
+      return "Running";
+    case "exited":
+      return command.exitCode === null || command.exitCode === 0
+        ? "Finished"
+        : `Failed with exit ${command.exitCode}`;
+    case "timedOut":
+      return "Killed at its deadline";
+    case "killed":
+      return "Killed";
+  }
+}
+
+/** Whether the command ended in a way someone should look at. */
+export function commandEndedBadly(command: CommandSummary): boolean {
+  return command.state !== "running" && command.exitCode !== 0;
+}

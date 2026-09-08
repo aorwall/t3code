@@ -21,14 +21,9 @@ export function SandboxedRightPanelTabs({ threadRef, ...props }: SandboxedRightP
       surfaceDisabled={sandboxAvailability.surfaceDisabled}
       surfaceDisabledReason={sandboxAvailability.surfaceDisabledReason}
       sandboxControl={
-        <SandboxStatusControl
-          threadRef={threadRef}
-          status={sandboxAvailability.status}
-          // The control follows the panel body: the launcher wants the status
-          // spelled out beside its surface cards, while the disabled state has
-          // already said what is wrong above it and needs only the way out.
-          compact={sandboxAvailability.surfaceDisabled}
-        />
+        // Compact: both hosts are the entry that opens the sandbox surface, and
+        // that entry already carries the word "Sandbox". Only the state is new.
+        <SandboxStatusControl status={sandboxAvailability.status} compact />
       }
     />
   );

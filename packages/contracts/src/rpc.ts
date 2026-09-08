@@ -233,6 +233,17 @@ import {
   SandboxStopInput,
   SandboxStopResult,
 } from "./sandbox.ts";
+// Fork: the sandbox panel's wider read and the controls it drives.
+import {
+  SandboxCleanupInput,
+  SandboxDetailInput,
+  SandboxDetailResult,
+  SandboxDetailSubscribeInput,
+  SandboxRedeployInput,
+  SandboxRestartInput,
+  SandboxSetIdleTimeoutInput,
+  SandboxSetIdleTimeoutResult,
+} from "./sandboxDetail.ts";
 import {
   ServerLogLine,
   ServerLogsSubscribeInput,
@@ -354,6 +365,13 @@ export const WS_METHODS = {
   sandboxSubscribeStatus: "sandbox.subscribeStatus",
   sandboxStart: "sandbox.start",
   sandboxStop: "sandbox.stop",
+  // Fork: the sandbox panel's read, its push, and the four controls it drives.
+  sandboxDetail: "sandbox.detail",
+  sandboxSubscribeDetail: "sandbox.subscribeDetail",
+  sandboxRestart: "sandbox.restart",
+  sandboxRedeploy: "sandbox.redeploy",
+  sandboxCleanup: "sandbox.cleanup",
+  sandboxSetIdleTimeout: "sandbox.setIdleTimeout",
 
   // Server meta
   serverProbe: "server.probe",
@@ -1308,6 +1326,64 @@ export const WsSandboxStopRpc = Rpc.make(WS_METHODS.sandboxStop, {
   error: EnvironmentAuthorizationError,
 });
 
+/** Fork: the sandbox panel's read. See the `SandboxDetail` module doc. */
+export const WsSandboxDetailRpc = Rpc.make(WS_METHODS.sandboxDetail, {
+  payload: SandboxDetailInput,
+  success: SandboxDetailResult,
+  error: EnvironmentAuthorizationError,
+});
+
+/**
+ * Fork: the same read, pushed while the panel is open.
+ *
+ * A tenth the rate of `sandbox.subscribeDetail`'s sibling on the indicator: the
+ * containers and events behind it move on the scale of a pod restart, not of a
+ * status poll. Silence means nothing moved, as it does on every subscription
+ * here.
+ */
+export const WsSandboxSubscribeDetailRpc = Rpc.make(WS_METHODS.sandboxSubscribeDetail, {
+  payload: SandboxDetailSubscribeInput,
+  success: SandboxDetailResult,
+  error: EnvironmentAuthorizationError,
+  stream: true,
+});
+
+/**
+ * Fork: replace the pod, keeping the deployment and the workspace.
+ *
+ * These three answer with lifecycle status and not with detail, because none of
+ * them has moved the sandbox yet when it returns — they record the intent, and
+ * the panel's subscription reports what came of it.
+ */
+export const WsSandboxRestartRpc = Rpc.make(WS_METHODS.sandboxRestart, {
+  payload: SandboxRestartInput,
+  success: SandboxStatusResult,
+  error: EnvironmentAuthorizationError,
+});
+
+/** Fork: rebuild the deployment from current repository config, keeping the
+    workspace. See [`WsSandboxRestartRpc`] for why the answer is a status. */
+export const WsSandboxRedeployRpc = Rpc.make(WS_METHODS.sandboxRedeploy, {
+  payload: SandboxRedeployInput,
+  success: SandboxStatusResult,
+  error: EnvironmentAuthorizationError,
+});
+
+/** Fork: remove the sandbox and delete its archives. Gated on write, not
+    control: this is a change the thread's owner would have to undo. */
+export const WsSandboxCleanupRpc = Rpc.make(WS_METHODS.sandboxCleanup, {
+  payload: SandboxCleanupInput,
+  success: SandboxStatusResult,
+  error: EnvironmentAuthorizationError,
+});
+
+/** Fork: set how long the sandbox may sit idle before the reaper stops it. */
+export const WsSandboxSetIdleTimeoutRpc = Rpc.make(WS_METHODS.sandboxSetIdleTimeout, {
+  payload: SandboxSetIdleTimeoutInput,
+  success: SandboxSetIdleTimeoutResult,
+  error: EnvironmentAuthorizationError,
+});
+
 /**
  * Pushes a whole list whenever it changes. An idle subscription is silent,
  * so the absence of a message means nothing moved rather than nothing is known.
@@ -1588,6 +1664,13 @@ export const WsRpcGroup = RpcGroup.make(
   WsSandboxSubscribeStatusRpc,
   WsSandboxStartRpc,
   WsSandboxStopRpc,
+  // Fork: the sandbox panel's read, its push, and the four controls it drives.
+  WsSandboxDetailRpc,
+  WsSandboxSubscribeDetailRpc,
+  WsSandboxRestartRpc,
+  WsSandboxRedeployRpc,
+  WsSandboxCleanupRpc,
+  WsSandboxSetIdleTimeoutRpc,
   WsSubscribeServerStatusRpc,
   WsServersSubscribeLogsRpc,
   WsSubscribeDiscoveredLocalServersRpc,

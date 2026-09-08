@@ -54,5 +54,41 @@ export function createSandboxEnvironmentAtoms<R, E>(
       label: "environment-data:sandbox:stop",
       tag: WS_METHODS.sandboxStop,
     }),
+    /**
+     * Fork: the sandbox panel's wider read, for a server without
+     * `sandboxDetail` push. It polls for the same reason `status` does.
+     */
+    detail: createEnvironmentRpcQueryAtomFamily(runtime, {
+      label: "environment-data:sandbox:detail",
+      tag: WS_METHODS.sandboxDetail,
+      staleTimeMs: 10_000,
+      refreshIntervalMs: 10_000,
+    }),
+    /**
+     * Fork: the same read, pushed. Preferred over `detail` wherever the server
+     * advertises it; see `statusStream`.
+     */
+    detailStream: createEnvironmentRpcSubscriptionAtomFamily(runtime, {
+      label: "environment-data:sandbox:detail-stream",
+      tag: WS_METHODS.sandboxSubscribeDetail,
+    }),
+    // Fork: the four controls the sandbox panel drives. Each answers with
+    // lifecycle status, so the panel refreshes its own read afterwards.
+    restart: createEnvironmentRpcCommand(runtime, {
+      label: "environment-data:sandbox:restart",
+      tag: WS_METHODS.sandboxRestart,
+    }),
+    redeploy: createEnvironmentRpcCommand(runtime, {
+      label: "environment-data:sandbox:redeploy",
+      tag: WS_METHODS.sandboxRedeploy,
+    }),
+    cleanup: createEnvironmentRpcCommand(runtime, {
+      label: "environment-data:sandbox:cleanup",
+      tag: WS_METHODS.sandboxCleanup,
+    }),
+    setIdleTimeout: createEnvironmentRpcCommand(runtime, {
+      label: "environment-data:sandbox:set-idle-timeout",
+      tag: WS_METHODS.sandboxSetIdleTimeout,
+    }),
   };
 }
