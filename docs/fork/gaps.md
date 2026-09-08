@@ -213,7 +213,24 @@ what a person loses, which is the part the derivation cannot tell you:
   work. Holds open `FEATURES.serverUpdateBanner` (2026-08-11), which drops the
   composer's "Server update available" banner and its `npx t3` command: the
   Moatless server does not implement `server.updateServer`, so the offer would
-  point at a command that cannot run.
+  point at a command that cannot run. Upstream reaches that banner by two routes
+  since #10596, so the flag now carries two gates in `ChatView.tsx` — the
+  single-machine condition and the `autoUpdateEnvironments` memo behind
+  `useAutoBalanceUpdateBanner`. Count both when the flag is dropped.
+- **Window capture** — the SnapShots settings page, new upstream in #8103. A
+  global shortcut grabs the foreground window and hands the image, and
+  optionally the window's accessibility text, to the composer. Every control
+  drives `window.desktopBridge`, which a browser tab does not have, so this is
+  upstream's desktop product and **not** a fork target. Upstream renders the
+  page with an "unavailable" notice rather than hiding it, which is why a gate
+  is needed at all: without one a hosted build lists a sidebar section and six
+  searchable rows for a feature it can never run. Holds open `FEATURES.snapShots`
+  and the `/settings/snap-shot` entry in `FEATURE_BY_SETTINGS_PATH`
+  (`apps/web/src/fork/features.ts`). Closes when upstream marks the six
+  `snap-shot-*` rows in `settingsSearch.ts` `desktopOnly: true`, the way it
+  already marks its other desktop rows — check with
+  `git grep -A6 'id: "snap-shot-' apps/web/src/components/settings/settingsSearch.ts`.
+  Delete the flag and the path entry when it does.
 
 - **Check:** run `unsupported-methods.mjs` rather than reading this list. Where
   the two sides come from is _Deriving the unsupported set_ in the inventory.
@@ -589,6 +606,25 @@ about it on every command.
 - **Check:** run the file on Node 24. It passes.
 - **Then here:** nothing to delete — this is a version mismatch, not fork code.
   Listed so the next reader does not chase it as a merge regression.
+
+### The desktop suite needs libsecret, which the sandbox does not have
+
+`apps/desktop/scripts/browser-secret-native.test.mjs` fails with
+`Command failed: pkg-config --cflags --libs libsecret-1`. The test compiles the
+bundled `t3-browser-secret` helper, which reads Chromium's cookie keys from the
+Linux keyring, and the sandbox image ships neither `libsecret-1` nor its
+pkg-config file. The file is byte-identical to upstream and predates every merge
+that has hit it, so `verify.mjs` reports `@t3tools/desktop` failing alone on a
+clean tree.
+
+Nothing here is a fork target: `electron-desktop` in `inventory.json` says the
+desktop app is kept in tree and is not a compliance target.
+
+- **Check:** `pkg-config --exists libsecret-1`. Installing `libsecret-1-dev`
+  makes the suite green.
+- **Then here:** nothing to delete — this is a missing system library, not fork
+  code. Listed so the next merge does not chase it as a regression, and so a
+  reader knows `@t3tools/desktop` is expected red until the image carries it.
 
 ### The full suite needs a raised heap
 

@@ -61,6 +61,16 @@ function counts(content) {
 }
 
 /**
+ * Generated files nobody resolves by hand.
+ *
+ * `pnpm-lock.yaml` is `theirs` by path policy and then rewritten by `vp i`, so a
+ * repeated line in it is pnpm's output rather than a resolution. It repeats a
+ * dependency line for every package that declares that dependency, which
+ * satisfies "once on each side, twice in the merge" while being correct.
+ */
+const GENERATED = new Set(["pnpm-lock.yaml"]);
+
+/**
  * The merged content: the working tree mid-merge, the merge commit's own blob
  * once it is committed. Reading the working tree is what lets this run before
  * the commit, while a fix is still just an edit.
@@ -118,7 +128,7 @@ export function runDuplicateAddsCheck(report, commit = null) {
   // is about to resolve by hand anyway; the ones worth reporting are the ones
   // git already resolved silently.
   const unresolved = new Set(lines(git(["diff", "--name-only", "--diff-filter=U"])));
-  const both = bothChanged.filter((path) => !unresolved.has(path));
+  const both = bothChanged.filter((path) => !unresolved.has(path) && !GENERATED.has(path));
 
   const duplicates = findDuplicates(sides, both);
   const scanned =
