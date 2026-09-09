@@ -89,6 +89,21 @@ RUN MOATLESS_BASE_URL="${MOATLESS_BASE_URL}" \
 # production is worth avoiding even though nothing here registers it.
 RUN rm -f apps/web/dist/mockServiceWorker.js
 
+# CSP hashes for the scripts index.html runs inline — today just the theme boot
+# script upstream uses to paint the stored theme before React mounts. Derived
+# from the built file so an upstream edit to that script cannot leave a stale
+# literal behind in docker/nginx.conf.
+RUN <<EOT node
+import { createHash } from "node:crypto";
+import { readFileSync, writeFileSync } from "node:fs";
+
+const html = readFileSync("apps/web/dist/index.html", "utf8");
+const hashes = [...html.matchAll(/<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(
+  ([, body]) => "'sha256-" + createHash("sha256").update(body, "utf8").digest("base64") + "'",
+);
+writeFileSync("/csp-inline-script-hashes", hashes.join(" "));
+EOT
+
 # ---------------------------------------------------------------------------
 # Runtime
 # ---------------------------------------------------------------------------
@@ -112,6 +127,7 @@ RUN echo "OS security refresh: ${APK_SECURITY_REFRESH}" \
 COPY docker/nginx.conf /tmp/default.conf.template
 COPY docker/nginx-security-headers.conf /etc/nginx/security-headers.conf
 COPY --from=builder /src/apps/web/dist /usr/share/nginx/html
+COPY --from=builder /csp-inline-script-hashes /tmp/csp-inline-script-hashes
 
 # CSP frame-src value, substituted into the config below. The web build's
 # preview is a cross-origin iframe, so 'self' alone blocks it; `https:` is the
@@ -126,10 +142,12 @@ ARG CSP_FRAME_SRC="https:"
 # place the nginx config is executed before it reaches a cluster. The
 # single-name envsubst filter keeps nginx's own $vars ($uri, $request_method,
 # $csp, …) literal.
-RUN CSP_FRAME_SRC="${CSP_FRAME_SRC}" envsubst '${CSP_FRAME_SRC}' \
+RUN CSP_FRAME_SRC="${CSP_FRAME_SRC}" \
+    CSP_INLINE_SCRIPT_HASHES="$(cat /tmp/csp-inline-script-hashes)" \
+    envsubst '${CSP_FRAME_SRC} ${CSP_INLINE_SCRIPT_HASHES}' \
         < /tmp/default.conf.template \
         > /etc/nginx/conf.d/default.conf \
-    && rm -f /tmp/default.conf.template \
+    && rm -f /tmp/default.conf.template /tmp/csp-inline-script-hashes \
     && nginx -t
 
 ARG SOURCE_COMMIT=unknown
