@@ -8,7 +8,7 @@ import type {
   CreateLoopSource,
   Loop,
   LoopKind,
-  RepositoryResponse,
+  WorkspaceResponse,
 } from "@t3tools/moatless-api/generated/model";
 
 import { useMoatlessCommand, useMoatlessQuery } from "../../../moatless/query";
@@ -37,7 +37,7 @@ import {
   partitionLoopsByApproval,
 } from "./loopRows";
 import { SectionEmpty, SectionError, SectionPending } from "./MoatlessSectionState";
-import { loopsQuery, repositoriesQuery } from "./queries";
+import { loopsQuery, workspacesQuery } from "./queries";
 import { SectionCount, SectionSearch } from "./SectionSearch";
 import { cn } from "~/lib/utils";
 
@@ -178,7 +178,7 @@ const CREATE_KINDS: readonly {
 
 /**
  * Creating a Loop asks for the least that makes a valid one: a name, the
- * repository its tasks run in, and — for a schedule — when it fires. Everything
+ * workspace its tasks run in, and — for a schedule — when it fires. Everything
  * else, including routing, prompt and lifecycle, is edited on the Loop's page.
  *
  * Subscription loops are not created here: they need a live integration
@@ -192,10 +192,10 @@ function CreateLoopDialog({
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
 }) {
-  const repositories = useMoatlessQuery(repositoriesQuery);
+  const workspaces = useMoatlessQuery(workspacesQuery);
   const [kind, setKind] = useState<Extract<LoopKind, "schedule" | "manual">>("schedule");
   const [name, setName] = useState("");
-  const [repositoryId, setRepositoryId] = useState("");
+  const [workspaceId, setWorkspaceId] = useState("");
   const [cronExpression, setCronExpression] = useState("");
   const [messageTemplate, setMessageTemplate] = useState("");
 
@@ -206,12 +206,12 @@ function CreateLoopDialog({
   const trimmedName = name.trim();
   const scheduleReady =
     kind !== "schedule" || (cronExpression.trim().length > 0 && messageTemplate.trim().length > 0);
-  const canSubmit = trimmedName.length > 0 && repositoryId.length > 0 && scheduleReady;
+  const canSubmit = trimmedName.length > 0 && workspaceId.length > 0 && scheduleReady;
 
   function resetFields() {
     setKind("schedule");
     setName("");
-    setRepositoryId("");
+    setWorkspaceId("");
     setCronExpression("");
     setMessageTemplate("");
     create.reset();
@@ -231,7 +231,7 @@ function CreateLoopDialog({
       name: trimmedName,
       kind,
       active: false,
-      config: { repositoryId, routingMode: "by_subject", agentType: "claude-code", tagIds: [] },
+      config: { workspaceId, routingMode: "by_subject", agentType: "claude-code", tagIds: [] },
       source,
     });
     if (created !== null) {
@@ -240,7 +240,7 @@ function CreateLoopDialog({
     }
   }
 
-  const catalog: RepositoryResponse[] = repositories.data ?? [];
+  const catalog: WorkspaceResponse[] = workspaces.data ?? [];
 
   return (
     <Dialog
@@ -295,20 +295,20 @@ function CreateLoopDialog({
           </div>
 
           <div>
-            <span className="mb-1.5 block text-xs font-medium text-foreground">Repository</span>
-            <Select value={repositoryId} onValueChange={(value) => setRepositoryId(value ?? "")}>
+            <span className="mb-1.5 block text-xs font-medium text-foreground">Workspace</span>
+            <Select value={workspaceId} onValueChange={(value) => setWorkspaceId(value ?? "")}>
               <SelectTrigger>
-                <SelectValue placeholder="Select repository">
-                  {repositoryId
-                    ? (catalog.find((repository) => repository.id === repositoryId)?.name ??
-                      repositoryId)
+                <SelectValue placeholder="Select workspace">
+                  {workspaceId
+                    ? (catalog.find((workspace) => workspace.id === workspaceId)?.name ??
+                      workspaceId)
                     : undefined}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {catalog.map((repository) => (
-                  <SelectItem key={repository.id} value={repository.id ?? ""}>
-                    {repository.name}
+                {catalog.map((workspace) => (
+                  <SelectItem key={workspace.id} value={workspace.id ?? ""}>
+                    {workspace.name}
                   </SelectItem>
                 ))}
               </SelectContent>

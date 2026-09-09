@@ -11,7 +11,9 @@ import { usePrimarySessionState } from "~/environments/primary";
 import { primaryServerConfigAtom } from "~/state/server";
 import { isWslSettingsRowVisible } from "./ConnectionsSettings.logic";
 import { isProviderSettingsEnvironmentAvailable } from "./ProviderSettingsPanel.logic";
+import { featureFlagsQuery } from "./moatless/queries";
 import { filterAvailableSettingsSearchItems } from "./settingsSearch";
+import { useMoatlessQuery } from "~/moatless/query";
 
 export function useAvailableSettingsSearchItems() {
   const primaryEnvironmentId = usePrimaryEnvironmentId();
@@ -19,6 +21,9 @@ export function useAvailableSettingsSearchItems() {
   const primarySessionState = usePrimarySessionState();
   const primaryServerConfig = useAtomValue(primaryServerConfigAtom);
   const desktopWsl = useEnvironmentQuery(isElectron ? desktopWslStateAtom : null);
+  // Fork: the Account page's Forgejo section only exists where the Moatless
+  // deployment runs Forgejo. Shared with the panel through one cache entry.
+  const { data: moatlessFeatures } = useMoatlessQuery(featureFlagsQuery);
   const canManageLocalBackend =
     isElectron ||
     ((primarySessionState.data?.authenticated &&
@@ -43,12 +48,15 @@ export function useAvailableSettingsSearchItems() {
         }),
         hasThreadAutoSettlement:
           primaryServerConfig?.environment.capabilities.threadAutoSettlement === true,
+        // Fork: see the Forgejo read above.
+        forgejoEnabled: moatlessFeatures?.forgejo_enabled === true,
       }),
     [
       canManageLocalBackend,
       desktopWsl.data,
       desktopWsl.error,
       environments,
+      moatlessFeatures,
       primaryEnvironmentId,
       primaryServerConfig,
     ],

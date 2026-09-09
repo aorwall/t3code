@@ -13,7 +13,7 @@ import type { ContentSource } from "./contentSource.ts";
 export interface ContentOrigin {
   source: ContentSource;
   /**
-   * When the mirror this came from was stored, RFC 3339. Absent for
+   * When the snapshot this came from was written, RFC 3339. Absent for
    * [`ContentSource::Sandbox`], whose answer is current by construction.
    * @nullable
    */

@@ -11,6 +11,7 @@ import type {
   CreateUserRequest,
   CreateUserResponse,
   ErrorBody,
+  ListUsersHandlerParams,
   MessageResponse,
   SendDmRequest,
   SendDmResponse,
@@ -43,17 +44,28 @@ export type listUsersHandlerResponse =
   | listUsersHandlerResponseSuccess
   | listUsersHandlerResponseError;
 
-export const getListUsersHandlerUrl = () => {
-  return `/api/v1/users`;
+export const getListUsersHandlerUrl = (params?: ListUsersHandlerParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/users?${stringifiedParams}` : `/api/v1/users`;
 };
 
 /**
- * @summary List all registered users.
+ * @summary List the user directory.
  */
 export const listUsersHandler = async (
+  params?: ListUsersHandlerParams,
   options?: Parameters<typeof customInstance>[1],
 ): Promise<listUsersHandlerResponse> => {
-  return customInstance<listUsersHandlerResponse>(getListUsersHandlerUrl(), {
+  return customInstance<listUsersHandlerResponse>(getListUsersHandlerUrl(params), {
     ...options,
     method: "GET",
   });
@@ -130,8 +142,19 @@ export const createUserHandler = async (
   ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
   return customInstance<createUserHandlerResponse>(getCreateUserHandlerUrl(), {
     ...options,
@@ -182,7 +205,7 @@ export const getUpdateUserHandlerUrl = (login: string) => {
 
 /**
  * A user may update their own profile; updating another user requires the
- * admin role. Backs the `moat user <login> set-email` CLI command so emails
+ * admin role. Backs the `moat user set-email <login>` CLI command so emails
  * can be corrected without direct DB access. Only the fields present in the
  * body are changed.
  * @summary Update a user's profile (name and/or email).
@@ -197,8 +220,19 @@ export const updateUserHandler = async (
   ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
   return customInstance<updateUserHandlerResponse>(getUpdateUserHandlerUrl(login), {
     ...options,
@@ -246,8 +280,19 @@ export const sendUserDm = async (
   ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
   return customInstance<sendUserDmResponse>(getSendUserDmUrl(login), {
     ...options,
@@ -316,8 +361,19 @@ export const adminResetPasswordHandler = async (
   ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
   return customInstance<adminResetPasswordHandlerResponse>(getAdminResetPasswordHandlerUrl(login), {
     ...options,
@@ -437,8 +493,19 @@ export const setUserProviderIdHandler = async (
   ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
   return customInstance<setUserProviderIdHandlerResponse>(
     getSetUserProviderIdHandlerUrl(login, provider),

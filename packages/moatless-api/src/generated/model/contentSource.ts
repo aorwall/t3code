@@ -9,7 +9,7 @@
 /**
  * Which copy of the workspace answered a file read.
  *
- * A stopped sandbox is still readable, out of the S3 mirror
+ * A stopped sandbox is still readable, out of the stored workspace
  * (`sandbox-control::workspace_snapshot`), so a caller has to be able to tell
  * live content from content that stopped changing when the pod did.
  */

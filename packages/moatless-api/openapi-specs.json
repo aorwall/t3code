@@ -1345,6 +1345,133 @@
         }
       }
     },
+    "/api/v1/admin/forgejo-instances": {
+      "get": {
+        "tags": ["app-administration"],
+        "operationId": "admin_list_forgejo_instances",
+        "responses": {
+          "200": {
+            "description": "Registered instances",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForgejoInstancesResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Admin only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/forgejo-instances/{host}": {
+      "put": {
+        "tags": ["app-administration"],
+        "operationId": "admin_register_forgejo_instance",
+        "parameters": [
+          {
+            "name": "host",
+            "in": "path",
+            "description": "The instance's hostname",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterForgejoInstanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Application registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForgejoInstanceSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The application cannot be stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Admin only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["app-administration"],
+        "operationId": "admin_remove_forgejo_instance",
+        "parameters": [
+          {
+            "name": "host",
+            "in": "path",
+            "description": "The instance's hostname",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Application removed"
+          },
+          "403": {
+            "description": "Admin only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No application is registered for that host",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/settings/adapter-apps": {
       "get": {
         "tags": ["app-administration"],
@@ -3285,7 +3412,16 @@
           {
             "name": "assignee",
             "in": "query",
-            "description": "Assignee email, display name, `me`, or UUID.",
+            "description": "Assignee to filter on, resolved like\n[`LinearIssueCreateRequest::assignee`].",
+            "required": false,
+            "schema": {
+              "type": ["string", "null"]
+            }
+          },
+          {
+            "name": "delegate",
+            "in": "query",
+            "description": "Delegate to filter on, resolved like\n[`LinearIssueCreateRequest::assignee`]. An issue delegated to an app\nagent has no `assignee`, so filtering on assignee alone misses it.",
             "required": false,
             "schema": {
               "type": ["string", "null"]
@@ -3688,6 +3824,15 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "team",
+            "in": "query",
+            "description": "Team key (`SP`), name, or UUID. A state, label or project name is only\nunique within a team, so without this the match is whichever team Linear\nreturns first. Ignored for `user` and `team`, which are workspace-wide.",
+            "required": false,
+            "schema": {
+              "type": ["string", "null"]
             }
           },
           {
@@ -5566,6 +5711,157 @@
           },
           "502": {
             "description": "Codex OAuth provider error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/forgejo/config": {
+      "get": {
+        "tags": ["git-host-access"],
+        "operationId": "get_forgejo_config",
+        "parameters": [
+          {
+            "name": "host",
+            "in": "query",
+            "description": "The instance, as a host or a URL. Only its host is kept.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Forgejo config for one instance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForgejoProviderTokenStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["git-host-access"],
+        "operationId": "delete_forgejo_config",
+        "parameters": [
+          {
+            "name": "host",
+            "in": "query",
+            "description": "The instance, as a host or a URL. Only its host is kept.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Instance disconnected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForgejoProviderTokenStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/forgejo/pat": {
+      "put": {
+        "tags": ["git-host-access"],
+        "operationId": "save_forgejo_pat",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveForgejoProviderTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "PAT saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForgejoProviderTokenStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The instance rejected the token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["git-host-access"],
+        "operationId": "delete_forgejo_pat_override",
+        "parameters": [
+          {
+            "name": "host",
+            "in": "query",
+            "description": "The instance, as a host or a URL. Only its host is kept.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PAT override removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForgejoProviderTokenStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No OAuth credential was preserved",
             "content": {
               "application/json": {
                 "schema": {
@@ -7613,8 +7909,19 @@
     "/api/v1/users": {
       "get": {
         "tags": ["users"],
-        "summary": "List all registered users.",
+        "summary": "List the user directory.",
         "operationId": "list_users_handler",
+        "parameters": [
+          {
+            "name": "includeDisabled",
+            "in": "query",
+            "description": "Include disabled accounts",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "List of users",
@@ -7721,7 +8028,7 @@
       "patch": {
         "tags": ["users"],
         "summary": "Update a user's profile (name and/or email).",
-        "description": "A user may update their own profile; updating another user requires the\nadmin role. Backs the `moat user <login> set-email` CLI command so emails\ncan be corrected without direct DB access. Only the fields present in the\nbody are changed.",
+        "description": "A user may update their own profile; updating another user requires the\nadmin role. Backs the `moat user set-email <login>` CLI command so emails\ncan be corrected without direct DB access. Only the fields present in the\nbody are changed.",
         "operationId": "update_user_handler",
         "parameters": [
           {
@@ -9132,6 +9439,17 @@
                 "$ref": "#/components/schemas/UserRole"
               }
             ]
+          },
+          "status": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UserStatus",
+                "description": "Admin-only, like `role`."
+              }
+            ]
           }
         }
       },
@@ -9924,13 +10242,13 @@
           },
           "syncedAt": {
             "type": ["string", "null"],
-            "description": "When the mirror this came from was stored, RFC 3339. Absent for\n[`ContentSource::Sandbox`], whose answer is current by construction."
+            "description": "When the snapshot this came from was written, RFC 3339. Absent for\n[`ContentSource::Sandbox`], whose answer is current by construction."
           }
         }
       },
       "ContentSource": {
         "type": "string",
-        "description": "Which copy of the workspace answered a file read.\n\nA stopped sandbox is still readable, out of the S3 mirror\n(`sandbox-control::workspace_snapshot`), so a caller has to be able to tell\nlive content from content that stopped changing when the pod did.",
+        "description": "Which copy of the workspace answered a file read.\n\nA stopped sandbox is still readable, out of the stored workspace\n(`sandbox-control::workspace_snapshot`), so a caller has to be able to tell\nlive content from content that stopped changing when the pod did.",
         "enum": ["sandbox", "snapshot"]
       },
       "CreateAdapterConnectionRequest": {
@@ -10031,7 +10349,7 @@
       },
       "CreateLoopConfig": {
         "type": "object",
-        "required": ["repositoryId", "routingMode"],
+        "required": ["workspaceId", "routingMode"],
         "properties": {
           "agentType": {
             "type": ["string", "null"]
@@ -10040,14 +10358,15 @@
             "type": ["integer", "null"],
             "format": "int32"
           },
+          "model": {
+            "type": ["string", "null"],
+            "description": "See [`LoopConfig::model`]."
+          },
           "ongoingTaskId": {
             "type": ["string", "null"]
           },
           "prompt": {
             "type": ["string", "null"]
-          },
-          "repositoryId": {
-            "type": "string"
           },
           "routingMode": {
             "$ref": "#/components/schemas/RoutingMode"
@@ -10069,6 +10388,10 @@
           },
           "taskName": {
             "type": ["string", "null"]
+          },
+          "workspaceId": {
+            "type": "string",
+            "description": "See [`LoopConfig::workspace_id`]."
           }
         }
       },
@@ -10333,7 +10656,7 @@
           },
           "repositoryId": {
             "type": ["string", "null"],
-            "description": "The repository to run the task against. Optional when `workspace_id` is\nsupplied — the workspace's primary repository is used instead. At least\none of `repository_id` / `workspace_id` is required."
+            "description": "Ignored: the workspace's primary placement is the repository the task\nruns against. Accepted so a caller that still sends it is not rejected."
           },
           "runAsUserId": {
             "type": ["string", "null"],
@@ -10352,7 +10675,7 @@
           },
           "workspaceId": {
             "type": ["string", "null"],
-            "description": "Explicit workspace to run the task in. When set, its repositories drive\nthe task (workspace wins over `repository_id`). When unset, the task\nderives the repository's deterministic shadow workspace, keeping the\nsingle-repo path unchanged."
+            "description": "The workspace to run the task in, which drives the task's repositories.\nWhen unset, `parent_task_id`'s workspace is used; a request with neither\nis a bad request."
           }
         }
       },
@@ -10623,12 +10946,17 @@
           "show_codex_settings",
           "show_model_selector",
           "gitlab_enabled",
+          "forgejo_enabled",
           "device_pairing"
         ],
         "properties": {
           "device_pairing": {
             "type": "boolean",
             "description": "Whether the settings dialog offers to pair a device.\n\nNot an `FF_*` variable of its own: pairing is the bootstrap half of the\nT3 compatibility routes, and a code is worth nothing on a deployment\nthat does not mount them. So it reports whether *they* are on."
+          },
+          "forgejo_enabled": {
+            "type": "boolean",
+            "description": "Whether the deployment offers Forgejo instances, connections and repos."
           },
           "gitlab_enabled": {
             "type": "boolean"
@@ -10904,6 +11232,58 @@
           "following": {
             "type": "boolean",
             "description": "Whether the requesting user follows the task after the operation."
+          }
+        }
+      },
+      "ForgejoInstanceSummary": {
+        "type": "object",
+        "required": ["host", "clientId", "updatedAt"],
+        "properties": {
+          "clientId": {
+            "type": "string"
+          },
+          "host": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        }
+      },
+      "ForgejoInstancesResponse": {
+        "type": "object",
+        "required": ["instances"],
+        "properties": {
+          "instances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForgejoInstanceSummary"
+            }
+          }
+        }
+      },
+      "ForgejoProviderTokenStatusResponse": {
+        "type": "object",
+        "description": "One person's connection to one Forgejo instance.\n\nThere is no `login`, unlike every sibling here: a `read:repository` personal\naccess token cannot reach Forgejo's `user` endpoint, so validating one\nlearns only that it works. A screen names the `host`.",
+        "required": ["host", "connected", "hasPatOverride", "oauthAvailable"],
+        "properties": {
+          "authMethod": {
+            "type": ["string", "null"],
+            "description": "How the stored credential resolves: `secret_ref` for a personal access\ntoken held in the secret store, `forgejo_oauth` for an OAuth2 credential."
+          },
+          "connected": {
+            "type": "boolean"
+          },
+          "hasPatOverride": {
+            "type": "boolean",
+            "description": "Whether a personal access token is standing in front of an OAuth\ncredential that `DELETE /settings/forgejo/{host}/pat` can put back."
+          },
+          "host": {
+            "type": "string"
+          },
+          "oauthAvailable": {
+            "type": "boolean",
+            "description": "Whether this instance has a registered OAuth2 application. False leaves\na personal access token as the only way to connect."
           }
         }
       },
@@ -11462,7 +11842,7 @@
         "properties": {
           "assignee": {
             "type": ["string", "null"],
-            "description": "Assignee email, display name, or UUID. `\"me\"` resolves to the\nauthenticated agent (the workspace OAuth viewer)."
+            "description": "Assignee: a Moatless login, an email, a display name, or a UUID. `\"me\"`\nresolves to the authenticated agent (the workspace OAuth viewer). A\nMoatless login resolves through the Linear user id stored for that user\n(`moat user set-provider-id <login> --provider linear --id <uuid>`), and\noutranks an email or display-name match.\n\nOmitted on create, this defaults to the caller — their stored Linear\nid, or their moat email matched against Linear's members. Both missing\nleaves the issue unassigned.\n\nLinear rejects an app user here and routes it to `delegate` instead:\npass an app agent as [`Self::delegate`] so the read-back is meaningful."
           },
           "bind": {
             "type": ["boolean", "null"],
@@ -11471,6 +11851,10 @@
           "cycle": {
             "type": ["string", "null"],
             "description": "Cycle number (`42`) or `\"active\"`."
+          },
+          "delegate": {
+            "type": ["string", "null"],
+            "description": "App agent to delegate the issue to. Resolved like [`Self::assignee`].\nDelegation is how Linear hands work to an app agent while a human keeps\nthe `assignee` slot."
           },
           "description": {
             "type": ["string", "null"]
@@ -11506,7 +11890,7 @@
           },
           "reporter": {
             "type": ["string", "null"],
-            "description": "Real Linear user to record as the issue reporter. Accepts email,\ndisplay name, UUID, or \"me\". Added as a subscriber and mentioned in\nthe description (Linear has no settable creator/reporter field)."
+            "description": "Real Linear user to record as the issue reporter. Resolved like\n[`Self::assignee`]. Added as a subscriber and mentioned in the\ndescription (Linear has no settable creator/reporter field)."
           },
           "state": {
             "type": ["string", "null"],
@@ -11574,10 +11958,15 @@
         "description": "`PATCH /api/v1/linear/issues/:id` — update an issue.",
         "properties": {
           "assignee": {
-            "type": ["string", "null"]
+            "type": ["string", "null"],
+            "description": "See [`LinearIssueCreateRequest::assignee`]. Pass `\"null\"` to unassign."
           },
           "cycle": {
             "type": ["string", "null"]
+          },
+          "delegate": {
+            "type": ["string", "null"],
+            "description": "See [`LinearIssueCreateRequest::delegate`]. Pass `\"null\"` to undelegate."
           },
           "description": {
             "type": ["string", "null"]
@@ -11872,7 +12261,7 @@
       },
       "LoopConfig": {
         "type": "object",
-        "required": ["repositoryId", "routingMode", "tagIds", "skills", "agentType"],
+        "required": ["workspaceId", "routingMode", "tagIds", "skills", "agentType"],
         "properties": {
           "agentType": {
             "type": "string"
@@ -11882,14 +12271,15 @@
             "format": "int32",
             "description": "Per-Loop inactivity TTL in days. `None` means \"inherit the global\ndefault\" (`TASK_INACTIVE_TIMEOUT_DAYS`). Flows into `tasks.inactive_ttl_days`\nwhen this Loop spawns a task."
           },
+          "model": {
+            "type": ["string", "null"],
+            "description": "Model the spawned Tasks run on, from the `agent_type` entry's catalog\nmodels. `None` means \"inherit the platform default the sandbox resolves\nfor `agent_type`\". Flows into `tasks.model` when this Loop spawns a task."
+          },
           "ongoingTaskId": {
             "type": ["string", "null"]
           },
           "prompt": {
             "type": ["string", "null"]
-          },
-          "repositoryId": {
-            "type": "string"
           },
           "routingMode": {
             "$ref": "#/components/schemas/RoutingMode"
@@ -11912,6 +12302,10 @@
           },
           "taskName": {
             "type": ["string", "null"]
+          },
+          "workspaceId": {
+            "type": "string",
+            "description": "The Workspace every task this Loop spawns runs in. Its primary placement\nis the repository those tasks run against."
           }
         }
       },
@@ -12312,7 +12706,7 @@
             }
           }
         ],
-        "description": "Adapter-native rich rendering of an outbound message body.\n\n[`OutboundReply::text`] stays mandatory and portable: every adapter sends it,\nSlack uses it for the notification, and the binding layer records it as the\ntask-timeline entry. A presentation is the optional richer form, for the\nadapters that have one. An adapter ignores a presentation addressed to\nanother kind, the way Slack already ignores `footer`."
+        "description": "Adapter-native rich rendering of an outbound message body.\n\nThe portable reply text stays mandatory and portable: every adapter sends it,\nSlack uses it for the notification, and the binding layer records it as the\ntask-timeline entry. A presentation is the optional richer form, for the\nadapters that have one. An adapter ignores a presentation addressed to\nanother kind, the way Slack already ignores `footer`."
       },
       "PaginationResponse": {
         "type": "object",
@@ -12592,6 +12986,19 @@
           }
         }
       },
+      "RegisterForgejoInstanceRequest": {
+        "type": "object",
+        "required": ["clientId", "clientSecret"],
+        "properties": {
+          "clientId": {
+            "type": "string"
+          },
+          "clientSecret": {
+            "type": "string",
+            "description": "Sealed under the instance row's id before it is stored, and never\nreturned by any read path afterwards."
+          }
+        }
+      },
       "RegisterGitHubAppRequest": {
         "type": "object",
         "required": ["githubAppKey", "appId", "privateKeyPem"],
@@ -12705,7 +13112,7 @@
       "RepositoryProvider": {
         "type": "string",
         "description": "Git hosting provider.",
-        "enum": ["github", "gitlab", "gitness"]
+        "enum": ["github", "gitlab", "gitness", "forgejo"]
       },
       "RepositoryResponse": {
         "type": "object",
@@ -13264,6 +13671,20 @@
         "properties": {
           "authJson": {
             "type": "string"
+          }
+        }
+      },
+      "SaveForgejoProviderTokenRequest": {
+        "type": "object",
+        "required": ["baseUrl", "token"],
+        "properties": {
+          "baseUrl": {
+            "type": "string",
+            "description": "The instance, as a host or a URL. Only its host is kept."
+          },
+          "token": {
+            "type": "string",
+            "description": "A Forgejo personal access token must name its scopes, and this one needs\n`read:repository` to clone and `write:repository` to push."
           }
         }
       },
@@ -13861,11 +14282,11 @@
       },
       "ServerOverride": {
         "type": "object",
-        "description": "A live override of one preview server's start command and env.\n\nWhole-state, not a delta: callers always send the complete set to the\nsandbox, which never merges.",
+        "description": "A live override of one preview server's start command and env.\nCallers send the complete state; the sandbox replaces it without merging.",
         "properties": {
           "env": {
             "type": "object",
-            "description": "Env entries exported after `server.env`, so they win over it.",
+            "description": "Applied after the configured server environment, so these values win.",
             "additionalProperties": {
               "type": "string"
             },
@@ -13875,14 +14296,14 @@
           },
           "startCommand": {
             "type": ["string", "null"],
-            "description": "Replaces the server's configured start command. `None` = use the\nworkspace's."
+            "description": "Replaces the configured start command; `None` uses the workspace command."
           },
           "unsetEnv": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "Keys to remove — the only way to drop a variable the container spec\ninjected, since sourcing an env file can add but never remove."
+            "description": "Removes variables injected through the container spec; sourcing an env file cannot unset them."
           }
         }
       },
@@ -15087,7 +15508,7 @@
           },
           "workspaceId": {
             "type": ["string", "null"],
-            "description": "Workspace the task runs in. Every task has one — the insert resolves the\nrepository's shadow workspace when the creating request named none, and\npre-workspace tasks were backfilled the same way — so this is only\n`None` for a response built without reading the persisted row."
+            "description": "Workspace the task runs in. Every task has one, so this is only `None`\nfor a response built without reading the persisted row."
           },
           "workspaceName": {
             "type": ["string", "null"],
@@ -15590,13 +16011,14 @@
             "type": ["integer", "null"],
             "format": "int32"
           },
+          "model": {
+            "type": ["string", "null"],
+            "description": "See [`LoopConfig::model`]. `Some(None)` clears the override."
+          },
           "ongoingTaskId": {
             "type": ["string", "null"]
           },
           "prompt": {
-            "type": ["string", "null"]
-          },
-          "repositoryId": {
             "type": ["string", "null"]
           },
           "routingMode": {
@@ -15623,6 +16045,10 @@
           },
           "taskName": {
             "type": ["string", "null"]
+          },
+          "workspaceId": {
+            "type": ["string", "null"],
+            "description": "See [`LoopConfig::workspace_id`]."
           }
         }
       },
@@ -16024,7 +16450,16 @@
       "UserListItem": {
         "type": "object",
         "description": "Single item in GET /api/v1/users list.",
-        "required": ["id", "login", "provider", "role", "createdAt", "lastLoginAt", "isBot"],
+        "required": [
+          "id",
+          "login",
+          "provider",
+          "role",
+          "createdAt",
+          "lastLoginAt",
+          "isBot",
+          "status"
+        ],
         "properties": {
           "avatarUrl": {
             "type": ["string", "null"]
@@ -16056,6 +16491,9 @@
           },
           "role": {
             "$ref": "#/components/schemas/UserRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/UserStatus"
           }
         }
       },
@@ -16092,6 +16530,11 @@
         "type": "string",
         "description": "Role assigned to a user.",
         "enum": ["user", "admin"]
+      },
+      "UserStatus": {
+        "type": "string",
+        "description": "Whether a user may sign in and be routed work.",
+        "enum": ["active", "disabled"]
       },
       "ValidateSecretsRequest": {
         "type": "object",
@@ -16193,7 +16636,7 @@
           },
           "threadId": {
             "type": ["string", "null"],
-            "description": "Thread ID for routing (maps to `thread_id` in [`InboundMessage`])."
+            "description": "Thread ID for routing."
           },
           "userId": {
             "type": ["string", "null"],
@@ -16204,7 +16647,7 @@
       "WorkspaceCredentialProvider": {
         "type": "string",
         "description": "A provider whose credential can be pinned to a Workspace.\n\nOnly providers whose sandbox credential is a single static environment\nvariable are here. Codex (`CODEX_AUTH_JSON`) and the Claude OAuth token are\nrefreshed and written back against the connected user's own row, so a\nworkspace-level copy of either would go stale with nothing to rotate it.",
-        "enum": ["github", "gitlab", "gitness", "openai", "anthropic"]
+        "enum": ["github", "gitlab", "gitness", "forgejo", "openai", "anthropic"]
       },
       "WorkspaceCredentialResponse": {
         "type": "object",
@@ -16392,7 +16835,7 @@
           },
           "sourceConfigPath": {
             "type": ["string", "null"],
-            "description": "Path to the config file within the source repository that declared this\nworkspace (e.g. `.moatless/workspaces.json` or `.moatless/config.json`).\nRetained even after a manual override so the origin remains visible."
+            "description": "Path to the config file within the source repository that declared this\nworkspace (`.moatless/workspaces.json`). Retained even after a manual\noverride so the origin remains visible."
           },
           "sourceKey": {
             "type": ["string", "null"],
@@ -16533,7 +16976,7 @@
     },
     {
       "name": "git-host-access",
-      "description": "GitHub and Gitness provider-token access"
+      "description": "GitHub, Gitness and Forgejo provider-token access"
     },
     {
       "name": "agent-harness-access",
@@ -16541,7 +16984,7 @@
     },
     {
       "name": "app-administration",
-      "description": "Adapter and GitHub App administration"
+      "description": "Adapter, GitHub App and Forgejo instance administration"
     },
     {
       "name": "adapters",

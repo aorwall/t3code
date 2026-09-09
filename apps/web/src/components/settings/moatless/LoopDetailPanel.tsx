@@ -49,14 +49,14 @@ import {
   loopStateLabel,
   routingModeLabel,
 } from "./loopRows";
-import { loopQuery, repositoriesQuery, usersQuery } from "./queries";
+import { loopQuery, usersQuery, workspacesQuery } from "./queries";
 import { cn } from "~/lib/utils";
 
 const ROUTING_MODES: readonly RoutingMode[] = ["by_subject", "ongoing"];
 
 /**
  * One Loop: what it is called, what it runs, where it listens, and whether it
- * is running. Read from a single query; the repository catalog and user
+ * is running. Read from a single query; the workspace catalog and user
  * directory are read alongside only where a field needs a name for an id, and
  * neither blocks the page.
  */
@@ -435,9 +435,9 @@ function ConfigurationSection({
   readonly loop: Loop;
   readonly isLocked: boolean;
 }) {
-  const catalog = useMoatlessQuery(repositoriesQuery);
+  const catalog = useMoatlessQuery(workspacesQuery);
   const form = useDirtyForm({
-    repositoryId: loop.config.repositoryId,
+    workspaceId: loop.config.workspaceId,
     routingMode: loop.config.routingMode,
     taskName: loop.config.taskName ?? "",
     agentType: loop.config.agentType,
@@ -447,7 +447,7 @@ function ConfigurationSection({
     (values) =>
       updateLoop(loop.id, {
         config: {
-          repositoryId: values.repositoryId,
+          workspaceId: values.workspaceId,
           routingMode: values.routingMode,
           taskName: values.taskName.trim() || null,
           agentType: values.agentType.trim() || "claude-code",
@@ -457,30 +457,30 @@ function ConfigurationSection({
     { invalidates: ["loops"] },
   );
 
-  const repositories = catalog.data ?? [];
+  const workspaces = catalog.data ?? [];
 
   return (
     <SettingsSection id="loop-configuration" title="Configuration">
       <div className={cn(ITEM_ROW_CLASSNAME, "space-y-4")}>
         <div>
-          <span className="mb-1.5 block text-xs font-medium text-foreground">Repository</span>
+          <span className="mb-1.5 block text-xs font-medium text-foreground">Workspace</span>
           <Select
-            value={form.values.repositoryId}
-            onValueChange={(value) => form.setField("repositoryId", value ?? "")}
+            value={form.values.workspaceId}
+            onValueChange={(value) => form.setField("workspaceId", value ?? "")}
             disabled={isLocked}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select repository">
-                {form.values.repositoryId
-                  ? (repositories.find((repository) => repository.id === form.values.repositoryId)
-                      ?.name ?? form.values.repositoryId)
+              <SelectValue placeholder="Select workspace">
+                {form.values.workspaceId
+                  ? (workspaces.find((workspace) => workspace.id === form.values.workspaceId)
+                      ?.name ?? form.values.workspaceId)
                   : undefined}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {repositories.map((repository) => (
-                <SelectItem key={repository.id} value={repository.id ?? ""}>
-                  {repository.name}
+              {workspaces.map((workspace) => (
+                <SelectItem key={workspace.id} value={workspace.id ?? ""}>
+                  {workspace.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -555,7 +555,7 @@ function ConfigurationSection({
       <SaveBar
         isDirty={form.isDirty && !isLocked}
         isSaving={save.isRunning}
-        canSave={form.values.repositoryId.length > 0}
+        canSave={form.values.workspaceId.length > 0}
         onDiscard={form.reset}
         onSave={() => void save.run(form.values)}
       />

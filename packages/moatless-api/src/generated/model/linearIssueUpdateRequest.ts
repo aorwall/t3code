@@ -10,10 +10,18 @@
  * `PATCH /api/v1/linear/issues/:id` — update an issue.
  */
 export interface LinearIssueUpdateRequest {
-  /** @nullable */
+  /**
+   * See [`LinearIssueCreateRequest::assignee`]. Pass `"null"` to unassign.
+   * @nullable
+   */
   assignee?: string | null;
   /** @nullable */
   cycle?: string | null;
+  /**
+   * See [`LinearIssueCreateRequest::delegate`]. Pass `"null"` to undelegate.
+   * @nullable
+   */
+  delegate?: string | null;
   /** @nullable */
   description?: string | null;
   /** @nullable */

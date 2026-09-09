@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-/**
- * Applied after the configured server environment, so these values win.
- */
-export type ServerOverrideEnv = { [key: string]: string };
+export type DeleteForgejoConfigParams = {
+  /**
+   * The instance, as a host or a URL. Only its host is kept.
+   */
+  host: string;
+};

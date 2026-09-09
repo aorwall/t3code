@@ -13,6 +13,13 @@ export type LookupParams = {
   kind: string;
   name: string;
   /**
+   * Team key (`SP`), name, or UUID. A state, label or project name is only
+   * unique within a team, so without this the match is whichever team Linear
+   * returns first. Ignored for `user` and `team`, which are workspace-wide.
+   * @nullable
+   */
+  team?: string | null;
+  /**
    * Override the default Linear connection. Required when the caller has
    * access to more than one Linear workspace.
    * @nullable

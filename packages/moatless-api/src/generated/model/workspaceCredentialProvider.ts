@@ -21,6 +21,7 @@ export const WorkspaceCredentialProvider = {
   github: "github",
   gitlab: "gitlab",
   gitness: "gitness",
+  forgejo: "forgejo",
   openai: "openai",
   anthropic: "anthropic",
 } as const;

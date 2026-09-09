@@ -19,6 +19,8 @@ export interface FeatureFlagsResponse {
    * that does not mount them. So it reports whether *they* are on.
    */
   device_pairing: boolean;
+  /** Whether the deployment offers Forgejo instances, connections and repos. */
+  forgejo_enabled: boolean;
   gitlab_enabled: boolean;
   netlify_publish: boolean;
   show_claude_settings: boolean;

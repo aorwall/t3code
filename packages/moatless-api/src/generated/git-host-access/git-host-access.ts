@@ -6,14 +6,214 @@
  * OpenAPI spec version: 0.1.0
  */
 import type {
+  DeleteForgejoConfigParams,
+  DeleteForgejoPatOverrideParams,
   ErrorBody,
+  ForgejoProviderTokenStatusResponse,
+  GetForgejoConfigParams,
   GitHubProviderTokenStatusResponse,
   GitnessProviderTokenStatusResponse,
+  SaveForgejoProviderTokenRequest,
   SaveGitHubProviderTokenRequest,
   SaveGitnessProviderTokenRequest,
 } from "../model";
 
 import { customInstance } from "../../customInstance.ts";
+
+export type getForgejoConfigResponse200 = {
+  data: ForgejoProviderTokenStatusResponse;
+  status: 200;
+};
+
+export type getForgejoConfigResponse401 = {
+  data: ErrorBody;
+  status: 401;
+};
+
+export type getForgejoConfigResponseSuccess = getForgejoConfigResponse200 & {
+  headers: Headers;
+};
+export type getForgejoConfigResponseError = getForgejoConfigResponse401 & {
+  headers: Headers;
+};
+
+export type getForgejoConfigResponse =
+  | getForgejoConfigResponseSuccess
+  | getForgejoConfigResponseError;
+
+export const getGetForgejoConfigUrl = (params: GetForgejoConfigParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/settings/forgejo/config?${stringifiedParams}`
+    : `/api/v1/settings/forgejo/config`;
+};
+
+export const getForgejoConfig = async (
+  params: GetForgejoConfigParams,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<getForgejoConfigResponse> => {
+  return customInstance<getForgejoConfigResponse>(getGetForgejoConfigUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export type deleteForgejoConfigResponse200 = {
+  data: ForgejoProviderTokenStatusResponse;
+  status: 200;
+};
+
+export type deleteForgejoConfigResponse401 = {
+  data: ErrorBody;
+  status: 401;
+};
+
+export type deleteForgejoConfigResponseSuccess = deleteForgejoConfigResponse200 & {
+  headers: Headers;
+};
+export type deleteForgejoConfigResponseError = deleteForgejoConfigResponse401 & {
+  headers: Headers;
+};
+
+export type deleteForgejoConfigResponse =
+  | deleteForgejoConfigResponseSuccess
+  | deleteForgejoConfigResponseError;
+
+export const getDeleteForgejoConfigUrl = (params: DeleteForgejoConfigParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/settings/forgejo/config?${stringifiedParams}`
+    : `/api/v1/settings/forgejo/config`;
+};
+
+export const deleteForgejoConfig = async (
+  params: DeleteForgejoConfigParams,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<deleteForgejoConfigResponse> => {
+  return customInstance<deleteForgejoConfigResponse>(getDeleteForgejoConfigUrl(params), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export type saveForgejoPatResponse200 = {
+  data: ForgejoProviderTokenStatusResponse;
+  status: 200;
+};
+
+export type saveForgejoPatResponse400 = {
+  data: ErrorBody;
+  status: 400;
+};
+
+export type saveForgejoPatResponseSuccess = saveForgejoPatResponse200 & {
+  headers: Headers;
+};
+export type saveForgejoPatResponseError = saveForgejoPatResponse400 & {
+  headers: Headers;
+};
+
+export type saveForgejoPatResponse = saveForgejoPatResponseSuccess | saveForgejoPatResponseError;
+
+export const getSaveForgejoPatUrl = () => {
+  return `/api/v1/settings/forgejo/pat`;
+};
+
+export const saveForgejoPat = async (
+  saveForgejoProviderTokenRequest: SaveForgejoProviderTokenRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<saveForgejoPatResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customInstance<saveForgejoPatResponse>(getSaveForgejoPatUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(saveForgejoProviderTokenRequest),
+  });
+};
+
+export type deleteForgejoPatOverrideResponse200 = {
+  data: ForgejoProviderTokenStatusResponse;
+  status: 200;
+};
+
+export type deleteForgejoPatOverrideResponse400 = {
+  data: ErrorBody;
+  status: 400;
+};
+
+export type deleteForgejoPatOverrideResponseSuccess = deleteForgejoPatOverrideResponse200 & {
+  headers: Headers;
+};
+export type deleteForgejoPatOverrideResponseError = deleteForgejoPatOverrideResponse400 & {
+  headers: Headers;
+};
+
+export type deleteForgejoPatOverrideResponse =
+  | deleteForgejoPatOverrideResponseSuccess
+  | deleteForgejoPatOverrideResponseError;
+
+export const getDeleteForgejoPatOverrideUrl = (params: DeleteForgejoPatOverrideParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/settings/forgejo/pat?${stringifiedParams}`
+    : `/api/v1/settings/forgejo/pat`;
+};
+
+export const deleteForgejoPatOverride = async (
+  params: DeleteForgejoPatOverrideParams,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<deleteForgejoPatOverrideResponse> => {
+  return customInstance<deleteForgejoPatOverrideResponse>(getDeleteForgejoPatOverrideUrl(params), {
+    ...options,
+    method: "DELETE",
+  });
+};
 
 export type getGithubConfigResponse200 = {
   data: GitHubProviderTokenStatusResponse;
@@ -113,8 +313,19 @@ export const saveGithubPat = async (
   ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
   return customInstance<saveGithubPatResponse>(getSaveGithubPatUrl(), {
     ...options,
@@ -266,8 +477,19 @@ export const saveGitnessPat = async (
   ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
   return customInstance<saveGitnessPatResponse>(getSaveGitnessPatUrl(), {
     ...options,

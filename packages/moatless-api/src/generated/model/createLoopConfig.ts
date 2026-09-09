@@ -12,11 +12,15 @@ export interface CreateLoopConfig {
   agentType?: string | null;
   /** @nullable */
   inactiveTtlDays?: number | null;
+  /**
+   * See [`LoopConfig::model`].
+   * @nullable
+   */
+  model?: string | null;
   /** @nullable */
   ongoingTaskId?: string | null;
   /** @nullable */
   prompt?: string | null;
-  repositoryId: string;
   routingMode: RoutingMode;
   /** @nullable */
   runAsUserId?: string | null;
@@ -26,4 +30,6 @@ export interface CreateLoopConfig {
   tagIds?: string[] | null;
   /** @nullable */
   taskName?: string | null;
+  /** See [`LoopConfig::workspace_id`]. */
+  workspaceId: string;
 }

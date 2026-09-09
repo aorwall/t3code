@@ -75,6 +75,10 @@ export interface SettingsSearchItem {
   readonly localBackendManagementOnly?: boolean;
   readonly wslAvailableOnly?: boolean;
   readonly requiresThreadAutoSettlement?: boolean;
+  // Fork: the Account page draws its Forgejo section only where the Moatless
+  // deployment runs Forgejo, so a result for it would otherwise land on an
+  // anchor that is not there.
+  readonly forgejoEnabledOnly?: boolean;
 }
 
 export interface SettingsSearchAvailability {
@@ -84,6 +88,8 @@ export interface SettingsSearchAvailability {
   readonly canManageLocalBackend: boolean;
   readonly isWslSettingsRowVisible: boolean;
   readonly hasThreadAutoSettlement: boolean;
+  // Fork: what the Moatless backend reports in its `forgejo_enabled` flag.
+  readonly forgejoEnabled: boolean;
 }
 
 /**
@@ -691,7 +697,7 @@ export const SETTINGS_SEARCH_ITEMS = [
     title: "Users",
     to: "/settings/users",
   },
-  // Fork: the Account page's three sections, which the panel anchors to by
+  // Fork: the Account page's four sections, which the panel anchors to by
   // these ids. Last in the catalog rather than first so they lose index
   // tie-breaks: "git" should still reach upstream's git settings, and anyone
   // after this page types "github", which matches nothing else.
@@ -700,6 +706,13 @@ export const SETTINGS_SEARCH_ITEMS = [
     title: "GitHub access",
     to: "/settings/account",
     searchTerms: ["github app connect personal access token pat repositories"],
+  },
+  {
+    id: "account-forgejo",
+    title: "Forgejo access",
+    to: "/settings/account",
+    searchTerms: ["forgejo gitea self-hosted instance connect personal access token pat"],
+    forgejoEnabledOnly: true,
   },
   {
     id: "account-claude",
@@ -743,7 +756,9 @@ export function filterAvailableSettingsSearchItems(
       (!item.providerSettingsOnly || availability.hasProviderSettingsEnvironment) &&
       (!item.localBackendManagementOnly || availability.canManageLocalBackend) &&
       (!item.wslAvailableOnly || availability.isWslSettingsRowVisible) &&
-      (!item.requiresThreadAutoSettlement || availability.hasThreadAutoSettlement),
+      (!item.requiresThreadAutoSettlement || availability.hasThreadAutoSettlement) &&
+      // Fork: see forgejoEnabledOnly above.
+      (!item.forgejoEnabledOnly || availability.forgejoEnabled),
   );
 }
 

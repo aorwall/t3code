@@ -9,8 +9,11 @@ import type {
   AdapterAppSummary,
   AdapterAppsResponse,
   ErrorBody,
+  ForgejoInstanceSummary,
+  ForgejoInstancesResponse,
   GitHubAppRegistrationResponse,
   GitHubAppsResponse,
+  RegisterForgejoInstanceRequest,
   RegisterGitHubAppRequest,
   RemoveGitHubAppResponse,
   RotateGitHubAppKeyRequest,
@@ -18,6 +21,155 @@ import type {
 } from "../model";
 
 import { customInstance } from "../../customInstance.ts";
+
+export type adminListForgejoInstancesResponse200 = {
+  data: ForgejoInstancesResponse;
+  status: 200;
+};
+
+export type adminListForgejoInstancesResponse403 = {
+  data: ErrorBody;
+  status: 403;
+};
+
+export type adminListForgejoInstancesResponseSuccess = adminListForgejoInstancesResponse200 & {
+  headers: Headers;
+};
+export type adminListForgejoInstancesResponseError = adminListForgejoInstancesResponse403 & {
+  headers: Headers;
+};
+
+export type adminListForgejoInstancesResponse =
+  | adminListForgejoInstancesResponseSuccess
+  | adminListForgejoInstancesResponseError;
+
+export const getAdminListForgejoInstancesUrl = () => {
+  return `/api/v1/admin/forgejo-instances`;
+};
+
+export const adminListForgejoInstances = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<adminListForgejoInstancesResponse> => {
+  return customInstance<adminListForgejoInstancesResponse>(getAdminListForgejoInstancesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export type adminRegisterForgejoInstanceResponse200 = {
+  data: ForgejoInstanceSummary;
+  status: 200;
+};
+
+export type adminRegisterForgejoInstanceResponse400 = {
+  data: ErrorBody;
+  status: 400;
+};
+
+export type adminRegisterForgejoInstanceResponse403 = {
+  data: ErrorBody;
+  status: 403;
+};
+
+export type adminRegisterForgejoInstanceResponseSuccess =
+  adminRegisterForgejoInstanceResponse200 & {
+    headers: Headers;
+  };
+export type adminRegisterForgejoInstanceResponseError = (
+  | adminRegisterForgejoInstanceResponse400
+  | adminRegisterForgejoInstanceResponse403
+) & {
+  headers: Headers;
+};
+
+export type adminRegisterForgejoInstanceResponse =
+  | adminRegisterForgejoInstanceResponseSuccess
+  | adminRegisterForgejoInstanceResponseError;
+
+export const getAdminRegisterForgejoInstanceUrl = (host: string) => {
+  return `/api/v1/admin/forgejo-instances/${host}`;
+};
+
+export const adminRegisterForgejoInstance = async (
+  host: string,
+  registerForgejoInstanceRequest: RegisterForgejoInstanceRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<adminRegisterForgejoInstanceResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customInstance<adminRegisterForgejoInstanceResponse>(
+    getAdminRegisterForgejoInstanceUrl(host),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+      body: JSON.stringify(registerForgejoInstanceRequest),
+    },
+  );
+};
+
+export type adminRemoveForgejoInstanceResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type adminRemoveForgejoInstanceResponse403 = {
+  data: ErrorBody;
+  status: 403;
+};
+
+export type adminRemoveForgejoInstanceResponse404 = {
+  data: ErrorBody;
+  status: 404;
+};
+
+export type adminRemoveForgejoInstanceResponseSuccess = adminRemoveForgejoInstanceResponse204 & {
+  headers: Headers;
+};
+export type adminRemoveForgejoInstanceResponseError = (
+  | adminRemoveForgejoInstanceResponse403
+  | adminRemoveForgejoInstanceResponse404
+) & {
+  headers: Headers;
+};
+
+export type adminRemoveForgejoInstanceResponse =
+  | adminRemoveForgejoInstanceResponseSuccess
+  | adminRemoveForgejoInstanceResponseError;
+
+export const getAdminRemoveForgejoInstanceUrl = (host: string) => {
+  return `/api/v1/admin/forgejo-instances/${host}`;
+};
+
+export const adminRemoveForgejoInstance = async (
+  host: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<adminRemoveForgejoInstanceResponse> => {
+  return customInstance<adminRemoveForgejoInstanceResponse>(
+    getAdminRemoveForgejoInstanceUrl(host),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
 
 export type adminListAdapterAppsResponse200 = {
   data: AdapterAppsResponse;
@@ -111,8 +263,19 @@ export const adminSaveAdapterApp = async (
   ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
   return customInstance<adminSaveAdapterAppResponse>(
     getAdminSaveAdapterAppUrl(adapterKind, appKey),
@@ -274,8 +437,19 @@ export const adminRegisterGithubApp = async (
   ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
   return customInstance<adminRegisterGithubAppResponse>(getAdminRegisterGithubAppUrl(), {
     ...options,
@@ -389,8 +563,19 @@ export const adminRotateGithubAppKey = async (
   ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
   return customInstance<adminRotateGithubAppKeyResponse>(
     getAdminRotateGithubAppKeyUrl(githubAppKey),

@@ -9,6 +9,7 @@ function user(overrides: Partial<UserListItem>): UserListItem {
     id: "u_1",
     login: "someone",
     role: "user",
+    status: "active",
     provider: "github",
     isBot: false,
     createdAt: "2026-01-01T00:00:00Z",

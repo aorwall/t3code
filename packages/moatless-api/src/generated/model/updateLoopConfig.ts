@@ -12,12 +12,15 @@ export interface UpdateLoopConfig {
   agentType?: string | null;
   /** @nullable */
   inactiveTtlDays?: number | null;
+  /**
+   * See [`LoopConfig::model`]. `Some(None)` clears the override.
+   * @nullable
+   */
+  model?: string | null;
   /** @nullable */
   ongoingTaskId?: string | null;
   /** @nullable */
   prompt?: string | null;
-  /** @nullable */
-  repositoryId?: string | null;
   routingMode?: null | RoutingMode;
   /** @nullable */
   skills?: string[] | null;
@@ -25,4 +28,9 @@ export interface UpdateLoopConfig {
   tagIds?: string[] | null;
   /** @nullable */
   taskName?: string | null;
+  /**
+   * See [`LoopConfig::workspace_id`].
+   * @nullable
+   */
+  workspaceId?: string | null;
 }

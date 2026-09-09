@@ -112,10 +112,8 @@ export interface TaskResponse {
   vibe?: boolean | null;
   visibility: Visibility;
   /**
-   * Workspace the task runs in. Every task has one — the insert resolves the
-   * repository's shadow workspace when the creating request named none, and
-   * pre-workspace tasks were backfilled the same way — so this is only
-   * `None` for a response built without reading the persisted row.
+   * Workspace the task runs in. Every task has one, so this is only `None`
+   * for a response built without reading the persisted row.
    * @nullable
    */
   workspaceId?: string | null;

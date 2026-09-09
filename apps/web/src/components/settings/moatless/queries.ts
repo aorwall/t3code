@@ -14,7 +14,11 @@ import {
   adminListGithubApps,
 } from "@t3tools/moatless-api/generated/app-administration/app-administration";
 import { getCodexConfig } from "@t3tools/moatless-api/generated/agent-harness-access/agent-harness-access";
-import { getGithubConfig } from "@t3tools/moatless-api/generated/git-host-access/git-host-access";
+import { getFeatureFlags } from "@t3tools/moatless-api/generated/feature-flags/feature-flags";
+import {
+  getForgejoConfig,
+  getGithubConfig,
+} from "@t3tools/moatless-api/generated/git-host-access/git-host-access";
 import { listRepositories } from "@t3tools/moatless-api/generated/repositories/repositories";
 import { listSecrets } from "@t3tools/moatless-api/generated/secrets/secrets";
 import { listUsersHandler } from "@t3tools/moatless-api/generated/users/users";
@@ -28,6 +32,8 @@ import type {
   AdapterConnectionResponse,
   CodexAgentHarnessCredentialStatusResponse,
   EffectivePluginResponse,
+  FeatureFlagsResponse,
+  ForgejoProviderTokenStatusResponse,
   GitHubAppsResponse,
   GitHubProviderTokenStatusResponse,
   Loop,
@@ -109,6 +115,34 @@ export const githubAccessQuery = moatlessQuery<GitHubProviderTokenStatusResponse
 export const codexAccessQuery = moatlessQuery<CodexAgentHarnessCredentialStatusResponse>(
   "account/codex",
   () => getCodexConfig(),
+);
+
+/**
+ * The viewer's credential for one Forgejo instance, keyed by host.
+ *
+ * Per host because Forgejo is self-hosted and each instance is connected
+ * separately, so one person can hold a different credential on each. Under
+ * `account/forgejo`, so a write to any of them refreshes every one — the backend
+ * resolves them from one credential store, and a host that reads stale here is
+ * a host the page reports the wrong state for.
+ *
+ * A function rather than a constant because the key carries the host; safe to
+ * call during render, since the key decides the atom.
+ */
+export function forgejoAccessQuery(host: string) {
+  return moatlessQuery<ForgejoProviderTokenStatusResponse>(`account/forgejo/${host}`, () =>
+    getForgejoConfig({ host }),
+  );
+}
+
+/**
+ * What this deployment offers, which decides whether a surface is drawn at all.
+ *
+ * Its own namespace and never invalidated by a write: the flags come from the
+ * backend's own environment, and nothing this client does changes them.
+ */
+export const featureFlagsQuery = moatlessQuery<FeatureFlagsResponse>("feature-flags", () =>
+  getFeatureFlags(),
 );
 
 /**

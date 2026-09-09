@@ -9,22 +9,16 @@ import type { ServerOverrideEnv } from "./serverOverrideEnv.ts";
 
 /**
  * A live override of one preview server's start command and env.
- *
- * Whole-state, not a delta: callers always send the complete set to the
- * sandbox, which never merges.
+ * Callers send the complete state; the sandbox replaces it without merging.
  */
 export interface ServerOverride {
-  /** Env entries exported after `server.env`, so they win over it. */
+  /** Applied after the configured server environment, so these values win. */
   env?: ServerOverrideEnv;
   /**
-   * Replaces the server's configured start command. `None` = use the
-   * workspace's.
+   * Replaces the configured start command; `None` uses the workspace command.
    * @nullable
    */
   startCommand?: string | null;
-  /**
-   * Keys to remove — the only way to drop a variable the container spec
-   * injected, since sourcing an env file can add but never remove.
-   */
+  /** Removes variables injected through the container spec; sourcing an env file cannot unset them. */
   unsetEnv?: string[];
 }

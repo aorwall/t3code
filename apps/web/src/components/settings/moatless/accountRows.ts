@@ -13,6 +13,8 @@ import type {
   SecretMetadataResponse,
 } from "@t3tools/moatless-api/generated/model";
 
+import { FORGEJO_HOST_PARAM } from "./forgejoRows";
+
 /** Env var the sandbox reads to authenticate Claude Code. */
 export const CLAUDE_TOKEN_SECRET_KEY = "CLAUDE_CODE_OAUTH_TOKEN";
 
@@ -183,10 +185,20 @@ export function githubConnectOutcome(search: string): GithubConnectOutcome | nul
   }
 }
 
-/** The same URL with the outcome stripped, so a reload does not re-announce it. */
+/**
+ * The same URL with everything a connect flow added stripped, so a reload does
+ * not re-announce it.
+ *
+ * Every provider's parameters go at once, and each section reads the ones it
+ * needs while rendering — before any of these effects run. A section that
+ * stripped only its own would leave another's behind in the return URL it
+ * builds, and that one would announce itself on the next connect.
+ */
 export function withoutConnectOutcome(url: string): string {
   const parsed = new URL(url);
   parsed.searchParams.delete("githubConnect");
+  parsed.searchParams.delete("forgejoConnect");
+  parsed.searchParams.delete(FORGEJO_HOST_PARAM);
   return `${parsed.pathname}${parsed.search}${parsed.hash}`;
 }
 

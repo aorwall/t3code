@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-/**
- * Applied after the configured server environment, so these values win.
- */
-export type ServerOverrideEnv = { [key: string]: string };
+export type ListUsersHandlerParams = {
+  /**
+   * Include disabled accounts
+   */
+  includeDisabled?: boolean;
+};

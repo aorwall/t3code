@@ -18,7 +18,7 @@ import {
 
 const CONFIG: LoopConfig = {
   agentType: "claude-code",
-  repositoryId: "repo_1",
+  workspaceId: "ws_1",
   routingMode: "by_subject",
   skills: [],
   tagIds: [],

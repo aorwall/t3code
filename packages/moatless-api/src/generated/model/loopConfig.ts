@@ -16,11 +16,17 @@ export interface LoopConfig {
    * @nullable
    */
   inactiveTtlDays?: number | null;
+  /**
+   * Model the spawned Tasks run on, from the `agent_type` entry's catalog
+   * models. `None` means "inherit the platform default the sandbox resolves
+   * for `agent_type`". Flows into `tasks.model` when this Loop spawns a task.
+   * @nullable
+   */
+  model?: string | null;
   /** @nullable */
   ongoingTaskId?: string | null;
   /** @nullable */
   prompt?: string | null;
-  repositoryId: string;
   routingMode: RoutingMode;
   /** @nullable */
   runAsUserId?: string | null;
@@ -29,4 +35,9 @@ export interface LoopConfig {
   tagIds: string[];
   /** @nullable */
   taskName?: string | null;
+  /**
+   * The Workspace every task this Loop spawns runs in. Its primary placement
+   * is the repository those tasks run against.
+   */
+  workspaceId: string;
 }

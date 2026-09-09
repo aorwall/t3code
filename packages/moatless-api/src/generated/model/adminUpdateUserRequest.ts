@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { UserRole } from "./userRole.ts";
+import type { UserStatus } from "./userStatus.ts";
 
 /**
  * Body for PATCH /api/v1/users/{login}.
@@ -19,4 +20,5 @@ export interface AdminUpdateUserRequest {
   /** @nullable */
   name?: string | null;
   role?: null | UserRole;
+  status?: null | UserStatus;
 }

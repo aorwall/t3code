@@ -10,7 +10,7 @@ import type { SlackBlock } from "./slackBlock.ts";
 /**
  * Adapter-native rich rendering of an outbound message body.
  *
- * [`OutboundReply::text`] stays mandatory and portable: every adapter sends it,
+ * The portable reply text stays mandatory and portable: every adapter sends it,
  * Slack uses it for the notification, and the binding layer records it as the
  * task-timeline entry. A presentation is the optional richer form, for the
  * adapters that have one. An adapter ignores a presentation addressed to

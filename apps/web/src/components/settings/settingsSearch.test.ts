@@ -153,6 +153,8 @@ describe("searchSettings", () => {
       canManageLocalBackend: false,
       isWslSettingsRowVisible: false,
       hasThreadAutoSettlement: false,
+      // Fork: gates the Account page's Forgejo section.
+      forgejoEnabled: false,
     });
 
     const gatedIds = new Set<string>([
@@ -169,6 +171,8 @@ describe("searchSettings", () => {
       "auto-settle-inactive-threads",
       "auto-settle-merged-threads",
       "days-before-auto-settle",
+      // Fork: the Account page's Forgejo section.
+      "account-forgejo",
     ]);
     expect(available.map((item) => item.id).filter((id) => gatedIds.has(id))).toEqual([]);
   });
@@ -181,6 +185,8 @@ describe("searchSettings", () => {
       canManageLocalBackend: false,
       isWslSettingsRowVisible: false,
       hasThreadAutoSettlement: true,
+      // Fork: gates the Account page's Forgejo section.
+      forgejoEnabled: false,
     });
 
     expect(searchSettings("auto-settle", available).map((item) => item.id)).toEqual([

@@ -40,7 +40,7 @@ export interface WebhookPayload {
   /** Message text (required). */
   text: string;
   /**
-   * Thread ID for routing (maps to `thread_id` in [`InboundMessage`]).
+   * Thread ID for routing.
    * @nullable
    */
   threadId?: string | null;

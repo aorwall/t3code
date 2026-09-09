@@ -172,6 +172,16 @@ describe("withoutConnectOutcome", () => {
       withoutConnectOutcome("https://t3.example/settings/account?tab=git&githubConnect=connected"),
     ).toBe("/settings/account?tab=git");
   });
+
+  it("strips every provider's parameters, not just the one being connected", () => {
+    // The return URL a section builds is the URL every other section's
+    // parameters would otherwise ride back in on.
+    expect(
+      withoutConnectOutcome(
+        "https://t3.example/settings/account?forgejoConnect=denied&forgejoHost=git.example.com",
+      ),
+    ).toBe("/settings/account");
+  });
 });
 
 describe("claudeTokenSecret", () => {

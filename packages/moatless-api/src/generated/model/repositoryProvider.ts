@@ -15,4 +15,5 @@ export const RepositoryProvider = {
   github: "github",
   gitlab: "gitlab",
   gitness: "gitness",
+  forgejo: "forgejo",
 } as const;

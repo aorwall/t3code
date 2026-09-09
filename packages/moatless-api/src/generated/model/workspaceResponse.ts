@@ -60,8 +60,8 @@ export interface WorkspaceResponse {
   source?: string;
   /**
    * Path to the config file within the source repository that declared this
-   * workspace (e.g. `.moatless/workspaces.json` or `.moatless/config.json`).
-   * Retained even after a manual override so the origin remains visible.
+   * workspace (`.moatless/workspaces.json`). Retained even after a manual
+   * override so the origin remains visible.
    * @nullable
    */
   sourceConfigPath?: string | null;
