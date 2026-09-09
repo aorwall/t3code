@@ -105,17 +105,6 @@ export function buildThreadActionMenuItems(
               },
         ]
       : []),
-    // Fork: the label is the only indicator of the current level — a sidebar
-    // row shows no badge — so it names the level the click moves to, not the
-    // one the thread is on. It sits in the lifecycle group so upstream's
-    // copy / project-settings / archive tail keeps its order.
-    ...(state.supports.visibility
-      ? [
-          state.isPublic
-            ? { id: "make-private" as const, label: "Make private", icon: "lock" }
-            : { id: "make-public" as const, label: "Make public", icon: "globe" },
-        ]
-      : []),
     { id: "rename", label: "Rename thread", icon: "pencil", separatorBefore: true },
     ...(state.supports.titleRegeneration
       ? [
@@ -147,12 +136,33 @@ export function buildThreadActionMenuItems(
     // (stays visible in the Settled shelf) and Delete (clears history for
     // good), so it sits beside Delete without borrowing its destructive
     // styling.
+    // Fork: the label is the only indicator of the current level — a sidebar
+    // row shows no badge — so it names the level the click moves to, not the
+    // one the thread is on. It opens the archive group, so it carries that
+    // group's separator and `archive` gives it up while the item is present.
+    ...(state.supports.visibility
+      ? [
+          state.isPublic
+            ? {
+                id: "make-private" as const,
+                label: "Make private",
+                icon: "lock",
+                separatorBefore: true,
+              }
+            : {
+                id: "make-public" as const,
+                label: "Make public",
+                icon: "globe",
+                separatorBefore: true,
+              },
+        ]
+      : []),
     {
       id: "archive",
       label: "Archive thread",
       icon: "archive",
       disabled: state.isRunning,
-      separatorBefore: true,
+      separatorBefore: !state.supports.visibility,
     },
     // Fork: the Moatless backend does not serve thread deletion — see
     // FEATURES.threadDeletion. Archiving keeps the conversation; deleting it

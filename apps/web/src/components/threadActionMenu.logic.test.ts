@@ -60,7 +60,9 @@ describe("buildThreadActionMenuItems", () => {
       label: "Project settings",
       icon: "settings",
     });
-    expect(items[copyIndex + 2]?.id).toBe("archive");
+    // Fork: the visibility item opens the archive group, so it is what follows
+    // project-settings when the environment supports it.
+    expect(items.slice(copyIndex + 2).map((item) => item.id)).toEqual(["make-public", "archive"]);
   });
 
   it("includes branch items only for threads with a branch", () => {
@@ -100,7 +102,9 @@ describe("buildThreadActionMenuItems", () => {
     const archiveItem = items.at(-1);
     expect(archiveItem?.id).toBe("archive");
     expect(archiveItem?.icon).toBe("archive");
-    expect(archiveItem?.separatorBefore).toBe(true);
+    // Fork: the visibility item above it carries the group separator here.
+    expect(archiveItem?.separatorBefore).toBe(false);
+    expect(items.at(-2)?.separatorBefore).toBe(true);
     expect(archiveItem?.destructive).toBeFalsy();
     expect(items.map((item) => item.id)).not.toContain("delete");
   });
@@ -155,11 +159,18 @@ describe("buildThreadActionMenuItems", () => {
     expect(withoutVisibility).not.toContain("make-private");
   });
 
-  // Fork: the item sits in the lifecycle group so upstream's tail keeps its
-  // order — see the project-settings test above.
-  it("keeps visibility above the rename separator", () => {
+  // Fork: the item opens the archive group, so the group's separator moves to
+  // it and has to return to `archive` when the environment cannot support it.
+  it("opens the archive group with the visibility item", () => {
     const items = buildThreadActionMenuItems(baseState);
     const visibilityIndex = items.findIndex((item) => item.id === "make-public");
-    expect(items[visibilityIndex + 1]?.id).toBe("rename");
+    expect(items[visibilityIndex]?.separatorBefore).toBe(true);
+    expect(items[visibilityIndex + 1]?.id).toBe("archive");
+
+    const withoutVisibility = buildThreadActionMenuItems({
+      ...baseState,
+      supports: { ...baseState.supports, visibility: false },
+    });
+    expect(withoutVisibility.find((item) => item.id === "archive")?.separatorBefore).toBe(true);
   });
 });

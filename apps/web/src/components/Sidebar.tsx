@@ -4085,26 +4085,6 @@ export default function Sidebar() {
           case "unpin":
             attemptUnpin(threadRef);
             return;
-          // Fork: the confirmation before going public lives in
-          // `confirmAndSetThreadVisibility`, shared with the chat header menu.
-          case "make-public":
-          case "make-private": {
-            const result = await confirmAndSetThreadVisibility(
-              threadRef,
-              clicked.value === "make-public" ? "public" : "private",
-            );
-            if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
-              const error = squashAtomCommandFailure(result);
-              toastManager.add(
-                stackedThreadToast({
-                  type: "error",
-                  title: "Failed to change thread visibility",
-                  description: error instanceof Error ? error.message : "An error occurred.",
-                }),
-              );
-            }
-            return;
-          }
           case "rename":
             startThreadRename(threadRef, thread.title);
             return;
@@ -4150,6 +4130,26 @@ export default function Sidebar() {
           case "copy-thread-id":
             copyThreadIdToClipboard(thread.id, { threadId: thread.id });
             return;
+          // Fork: the confirmation before going public lives in
+          // `confirmAndSetThreadVisibility`, shared with the chat header menu.
+          case "make-public":
+          case "make-private": {
+            const result = await confirmAndSetThreadVisibility(
+              threadRef,
+              clicked.value === "make-public" ? "public" : "private",
+            );
+            if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
+              const error = squashAtomCommandFailure(result);
+              toastManager.add(
+                stackedThreadToast({
+                  type: "error",
+                  title: "Failed to change thread visibility",
+                  description: error instanceof Error ? error.message : "An error occurred.",
+                }),
+              );
+            }
+            return;
+          }
           case "archive": {
             if (confirmThreadArchive) {
               const confirmed = await settlePromise(() =>

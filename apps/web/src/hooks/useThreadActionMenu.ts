@@ -247,18 +247,6 @@ export function useThreadActionMenu(input: {
             await reportFailure("Failed to unpin thread", () => confirmAndUnpinThread(threadRef));
             return;
           }
-          // Fork: the confirmation before going public lives in
-          // `confirmAndSetThreadVisibility`, shared with the sidebar.
-          case "make-public":
-            await reportFailure("Failed to make thread public", () =>
-              confirmAndSetThreadVisibility(threadRef, "public"),
-            );
-            return;
-          case "make-private":
-            await reportFailure("Failed to make thread private", () =>
-              confirmAndSetThreadVisibility(threadRef, "private"),
-            );
-            return;
           case "rename":
             onStartRename();
             return;
@@ -296,6 +284,18 @@ export function useThreadActionMenu(input: {
             return;
           case "copy-thread-id":
             copyThreadIdToClipboard(thread.id, { threadId: thread.id });
+            return;
+          // Fork: the confirmation before going public lives in
+          // `confirmAndSetThreadVisibility`, shared with the sidebar.
+          case "make-public":
+            await reportFailure("Failed to make thread public", () =>
+              confirmAndSetThreadVisibility(threadRef, "public"),
+            );
+            return;
+          case "make-private":
+            await reportFailure("Failed to make thread private", () =>
+              confirmAndSetThreadVisibility(threadRef, "private"),
+            );
             return;
           case "archive": {
             if (confirmThreadArchive) {
