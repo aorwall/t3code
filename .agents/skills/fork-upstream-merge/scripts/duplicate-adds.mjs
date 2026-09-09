@@ -48,13 +48,25 @@ import {
  * while being exactly correct. Every real duplicated add — an import, a const,
  * a catalog entry — names something, so requiring a word character costs
  * nothing and drops the whole false-positive class.
+ *
+ * A bare JSX attribute is skipped for the same reason one level up. `target="_blank"`
+ * or `size="sm"` alone on a line names a prop, not a block: unrelated elements
+ * carry the same prop by design, so a fork `<a>` in one component and an
+ * upstream `<a>` in another satisfy the same "once on each side, twice in the
+ * merge" test while both being correct — which is exactly what the 2026-09-09
+ * merge hit. The duplicate this would otherwise catch, one element given the
+ * same prop twice, is a duplicate-attribute error that lint and typecheck both
+ * reject on their own, so nothing is lost by not reporting it here.
  */
+const BARE_JSX_ATTRIBUTE = /^[A-Za-z_][\w:.-]*=(?:"[^"]*"|'[^']*'|\{[^{}]*\})$/;
+
 function counts(content) {
   const tally = new Map();
   if (content === null) return null;
   for (const line of content) {
     const key = line.trim();
     if (key === "" || !/\w/.test(key)) continue;
+    if (BARE_JSX_ATTRIBUTE.test(key)) continue;
     tally.set(key, (tally.get(key) ?? 0) + 1);
   }
   return tally;

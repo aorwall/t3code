@@ -287,14 +287,14 @@ export const AuthAccessStreamPairingLinkRemovedEvent = Schema.Struct({
 export type AuthAccessStreamPairingLinkRemovedEvent =
   typeof AuthAccessStreamPairingLinkRemovedEvent.Type;
 
-export class AuthAccessStreamError extends Schema.TaggedErrorClass<AuthAccessStreamError>()(
+export class AuthAccessStreamError extends Schema.TaggedError<AuthAccessStreamError>()(
   "AuthAccessStreamError",
   {
     message: Schema.String,
   },
 ) {}
 
-export class EnvironmentAuthorizationError extends Schema.TaggedErrorClass<EnvironmentAuthorizationError>()(
+export class EnvironmentAuthorizationError extends Schema.TaggedError<EnvironmentAuthorizationError>()(
   "EnvironmentAuthorizationError",
   {
     message: Schema.String,
@@ -320,7 +320,7 @@ export class EnvironmentAuthorizationError extends Schema.TaggedErrorClass<Envir
  * `method` is carried alongside the message so a caller can tell which of
  * several fanned-out calls came back absent without reading the message text.
  */
-export class UnsupportedMethodError extends Schema.TaggedErrorClass<UnsupportedMethodError>()(
+export class UnsupportedMethodError extends Schema.TaggedError<UnsupportedMethodError>()(
   "UnsupportedMethodError",
   {
     method: Schema.String,
