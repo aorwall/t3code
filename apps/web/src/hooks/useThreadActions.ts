@@ -747,9 +747,11 @@ export function useThreadActions() {
     [unsnoozeThreadMutation],
   );
 
-  // Fork: going public puts the thread in reach of everyone, so it confirms
-  // first; going private takes reach away and needs no confirmation. The level
-  // is sent whole rather than toggled, so the caller decides the target and two
+  // Fork: public is not read-only on Moatless — `ScopeContext::can_control`
+  // treats it as the whole of the control grant, so a public thread hands every
+  // signed-in viewer its turns, terminal, scripts and sandbox. That is what the
+  // confirmation has to say, and why only this direction confirms. The level is
+  // sent whole rather than toggled, so the caller decides the target and two
   // clients cannot flip each other's write.
   const confirmAndSetThreadVisibility = useCallback(
     async (target: ScopedThreadRef, visibility: ThreadVisibility) => {
@@ -770,7 +772,7 @@ export function useThreadActions() {
           localApi.dialogs.confirm(
             [
               `Make thread "${title}" public?`,
-              "Anyone who can reach this server will be able to read its conversation.",
+              "Anyone signed in will be able to read it, send turns, open its terminal, run its scripts, and start or stop its sandbox.",
             ].join("\n"),
           ),
         );
