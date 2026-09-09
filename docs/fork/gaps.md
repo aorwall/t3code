@@ -43,10 +43,28 @@ not report is every boolean added since that handshake was written —
 `threadPinning` (upstream, 2026-08-06), `threadPinReorder` (upstream,
 2026-08-08), `threadTitleRegeneration`, `serverSelfUpdate`,
 `serverSelfUpdateProgress` and `agentActivityPublishing` (upstream,
-2026-08-16) — so each of those surfaces is
+2026-08-16), and `questionAttachments` (upstream, 2026-09-08) — so each of those
+surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
 statement from the deployment. That is correct for the ones the backend does not
 implement and stale the day it does.
+
+`questionAttachments` is the newest and the cheapest to close: it gates only
+whether a user may attach files to an answer to an agent's async question
+(`apps/web/src/questionAttachments.ts`, read at `ChatView.tsx`'s
+`attachmentEnvironmentConfig`, and `QuestionAttachments.tsx` on mobile). Absent,
+the answer composer drops its attach control and the text-only answer path is
+unchanged, so nothing breaks — a user simply cannot send a screenshot back to a
+question that asked for one.
+
+A sibling record has the same shape one level down. `ServerProvider` grew a
+`reportsContextWindow` flag (upstream, 2026-09-08,
+`apps/server/src/provider/providerSnapshot.ts`), which upstream's own Claude and
+Codex providers set true so the composer footer reserves space for the
+context-window meter instead of reflowing when the first reading arrives.
+Moatless builds its own provider descriptors, so until it sets the flag the
+footer keeps the pre-reservation layout — cosmetic, and fixed by one boolean per
+provider that actually reports a context window.
 
 Two keys it reports are not in the contract at all — `userInputResponse` and
 `sandboxDiagnostics`, both fork-invented in `crates/t3code/src/lib.rs`. They are
@@ -154,8 +172,15 @@ what a person loses, which is the part the derivation cannot tell you:
   fork's pull request menus (`apps/web/src/fork/PullRequestMenuItem.tsx`) —
   resolves them through this call, which is also what performs that refresh. The
   capability stays absent regardless, since answering one method out of the
-  group is not the group. Closes when the backend reports
-  `capabilities.pullRequests: true` and dispatches the rest.
+  group is not the group. Grown once more in this merge by per-project and
+  last-used **merge-method defaults** (upstream, 2026-09-08): a
+  `pullRequestMergeMethodOverrides` client setting plus a project-level default
+  that preselect merge/squash/rebase in the PR detail panel's merge control
+  (`apps/web/src/components/pullRequest/PullRequestDetailPanel.tsx`, the
+  project field in `ProjectSettingsPanel.tsx`). The setting is client-side and
+  survives, but it preselects a control on a panel the capability already keeps
+  off, so it changes nothing on Moatless until the group is served. Closes when
+  the backend reports `capabilities.pullRequests: true` and dispatches the rest.
 - **Usage writes** — `server.refreshUsageRates` (#9146-era usage-pricing work,
   `apps/server/src/usage/usagePricing.ts`), which re-fetches provider price
   tables on the machine the server runs on, and `provider.consumeResetCredit`,
@@ -205,6 +230,10 @@ what a person loses, which is the part the derivation cannot tell you:
   broken button. Closes if Moatless ever wants to relay this itself, which is
   unlikely: the feedback is addressed to OpenAI, not to the workspace.
 - **Preview automation** — `previewAutomation.connect`, `focusHost`, `respond`.
+  The MCP side of the same surface grew a `save` argument on `preview_snapshot`
+  (upstream, 2026-09-08, `apps/server/src/mcp/toolkits/preview/tools.ts`) that
+  writes the screenshot to disk for the agent to re-read. It rides this surface
+  and closes with it.
 - **Desktop and host lifecycle** — `server.updateServer`,
   `updateServerWithProgress`, `commitDesktopUpdate`, `getBackgroundPolicy`,
   `subscribeBackgroundPolicy`, `reportHostPowerState`, `cloud.installRelayClient`,
@@ -448,6 +477,34 @@ thread takes effect at once rather than waiting for the wake time.
   and settles a snoozed thread immediately.
 - **Then here:** nothing to delete — this one is behaviour to reproduce, not a
   placeholder to remove.
+
+### Session and event-replay fixes upstream made to its own runtime
+
+Two upstream server fixes landed on 2026-09-08 that the fork cannot use, because
+Moatless owns both surfaces itself. Neither is a placeholder here — there is
+nothing in this repository holding them open — so they are recorded only so the
+next person to touch the Moatless runtime knows the answer was already worked
+out upstream.
+
+- **A completed turn should get a full idle window before its provider session
+  is reaped.** Upstream's `ProviderSessionReaper` now measures idle time from the
+  later of the binding's last-seen timestamp and the thread's session
+  `updatedAt`, so a turn that ran longer than the idle timeout is not reaped the
+  moment it settles (`apps/server/src/provider/Layers/ProviderSessionReaper.ts`,
+  #10689). Relevant to Moatless exactly if it reaps provider CLI sessions on an
+  idle timer of its own; a reap mid-flight or immediately after a long turn is
+  the symptom.
+- **Event replay should release each page as it is consumed.** Upstream replaced
+  a recursive `Stream.flatMap` chain — which retained every page it had already
+  yielded for the life of the stream — with `Stream.paginate`
+  (`apps/server/src/persistence/Layers/OrchestrationEventStore.ts`, #10777). The
+  failure mode is memory growth proportional to a thread's whole event history,
+  which only shows up on long threads.
+
+- **Closes when:** the Moatless backend's session reaper reads the later of the
+  two timestamps, and its thread/session event replay releases consumed pages.
+- **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
+  Strike this entry once both are confirmed in the backend.
 
 ## This fork
 

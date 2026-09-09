@@ -1326,11 +1326,21 @@ export const WsSandboxStopRpc = Rpc.make(WS_METHODS.sandboxStop, {
   error: EnvironmentAuthorizationError,
 });
 
-/** Fork: the sandbox panel's read. See the `SandboxDetail` module doc. */
+/**
+ * Fork: the sandbox panel's read. See the `SandboxDetail` module doc.
+ *
+ * Declared with `UnsupportedMethodError` because Moatless dispatches
+ * `sandbox.subscribeDetail` and not this one-shot sibling. The panel prefers the
+ * push and only polls this as the fallback for a server without it, so the
+ * refusal is reachable exactly when a deployment reports
+ * `capabilities.sandboxDetail` while serving only the stream — and a client that
+ * could not decode it would report a stopped panel as an unexpected server
+ * error.
+ */
 export const WsSandboxDetailRpc = Rpc.make(WS_METHODS.sandboxDetail, {
   payload: SandboxDetailInput,
   success: SandboxDetailResult,
-  error: EnvironmentAuthorizationError,
+  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
 });
 
 /**

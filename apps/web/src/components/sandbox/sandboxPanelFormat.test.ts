@@ -86,9 +86,9 @@ describe("containerReason", () => {
   });
 
   it("uses the waiting reason alone when there is no previous run", () => {
-    expect(containerReason(container({ state: "waiting", waitingReason: "ImagePullBackOff" }))).toBe(
-      "ImagePullBackOff",
-    );
+    expect(
+      containerReason(container({ state: "waiting", waitingReason: "ImagePullBackOff" })),
+    ).toBe("ImagePullBackOff");
   });
 
   it("falls back to the terminated reason, then to the previous one", () => {
@@ -164,7 +164,9 @@ describe("formatIdleTimeout", () => {
 
 describe("shortImageRef", () => {
   it("keeps the part a redeploy changes", () => {
-    expect(shortImageRef("ghcr.io/soaplabs/moatless-sandbox:v2.1.0")).toBe("moatless-sandbox:v2.1.0");
+    expect(shortImageRef("ghcr.io/soaplabs/moatless-sandbox:v2.1.0")).toBe(
+      "moatless-sandbox:v2.1.0",
+    );
     expect(shortImageRef("moatless-sandbox:latest")).toBe("moatless-sandbox:latest");
   });
 });

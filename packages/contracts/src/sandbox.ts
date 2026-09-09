@@ -105,7 +105,7 @@ export type SandboxStatusSubscribeInput = typeof SandboxStatusSubscribeInput.Typ
  * they wanted, and `sandbox.start` plus a wait is the whole remedy. Reporting
  * the sentence instead would make every caller re-derive that from prose.
  */
-export class SandboxNotRunningError extends Schema.TaggedErrorClass<SandboxNotRunningError>()(
+export class SandboxNotRunningError extends Schema.TaggedError<SandboxNotRunningError>()(
   "SandboxNotRunningError",
   {
     threadId: Schema.String,

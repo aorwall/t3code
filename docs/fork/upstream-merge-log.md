@@ -28,6 +28,72 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-09 — merged upstream to 2a303535, question attachments + an Effect rename that hid in three fork-only classes
+
+- Upstream: `2a3035353` from base `a37c66406` (`53` commits).
+- Landed: `12175` files from `git diff --stat HEAD^1 HEAD` against `12170` in the
+  upstream range (`a37c66406..HEAD^2`); fork delta `730` files from
+  `git diff --stat HEAD^2 HEAD`. The gap is both ways and both sides are
+  accounted for. One file is in the range and not landed —
+  `apps/server/src/cli/pair.ts`, which the fork deletes on purpose and which the
+  tripwire confirms is still deleted. Six are landed and not in the range: the
+  fixes amended into the merge commit, listed in the bullets below.
+- Conflicts: 7 files. `pnpm-lock.yaml` `theirs` then `vp i`. `ChatComposer.tsx`
+  both hunks `theirs` — the fork comment there documented `maxFileAttachmentBytes`,
+  which upstream now owns itself. `DraftHeroHeadline.tsx` and
+  `_chat.$environmentId.$threadId.tsx` were import-block collisions where both
+  sides' imports are used; kept both. `ChatView.tsx` was additive on both sides
+  in its first hunk (fork's fork-thread block, upstream's `pendingSidebarFileDrops`
+  effect) and `theirs` in its second. `SettingsSidebarNav.tsx` is the one to read,
+  below. No route file was added, deleted or renamed, so `routeTree.gen.ts` did
+  not need regenerating.
+- **Upstream deleting the machinery a fork decision hangs off is not the same as
+  reverting the decision.** Upstream removed the settings sub-section nav wholesale
+  — `settingsSectionVisibility.ts` no longer exists there — and the conflict
+  presented as the fork's admin split colliding with that removal. Taking either
+  side whole was wrong: the removal is upstream's and belongs, but the fork's
+  Administration group answers a Moatless concept upstream has none of. Kept the
+  removal and rebuilt the split on top of it, extracting `renderNavItem` so both
+  groups render identical rows.
+- **A dependency rename reaches fork-only declarations that no conflict will ever
+  mark.** Upstream's Effect bump (`4.0.0-beta.103` → `rc.112`) renamed
+  `Schema.TaggedErrorClass` to `Schema.TaggedError`. Upstream renamed its own two
+  occurrences in `contracts/src/auth.ts`, so those merged clean; the fork's three
+  — `UnsupportedMethodError` in `auth.ts:323`, `SandboxNotRunningError` in
+  `sandbox.ts:108`, one in `web/src/environments/primary/auth.ts:157` — had no
+  upstream counterpart, so git carried them through untouched and typecheck failed
+  with ~40 cascading `TS2740`s in `rpc.ts` behind one `TS2551`. When upstream bumps
+  a dependency it renames API for, grep the fork's own uses of that API; a clean
+  merge says nothing about them.
+- `duplicate-adds.mjs` reported `target="_blank"` in `MessagesTimeline.tsx`. Both
+  parents have it once, on two unrelated anchors — the fork's `MessageOriginIcon`
+  and upstream's new question-attachment link. The script now skips a bare JSX
+  attribute on its own line for the same reason it already skips punctuation: the
+  duplicate it would otherwise catch is a duplicate-attribute error lint and
+  typecheck both reject anyway.
+- Sweep: 3 owned-concern hits, all `infra/relay/src/agentActivity/`, matching on
+  `relay` alone. They belong to the decided-out `cloud-relay-connect` concern and
+  no fork app code imports them (`git grep` over `apps/ packages/` is empty).
+  Taken as upstream, no inventory entry.
+- Unsupported methods: 1 ADD, 0 DROP, 2 KEEP, 4 known exceptions. The ADD is
+  `sandbox.detail`, and it is **pre-existing drift, not merge-introduced** —
+  confirmed by re-running the derivation on `HEAD^1`. Applied anyway, since the
+  derivation is a finding in either direction.
+- `vp fmt` reformatted `apps/web/src/components/sandbox/sandboxPanelFormat.ts` and
+  its test, neither of which this merge touched. Upstream's formatter config
+  changed and these are fork-owned files that had never been run through the new
+  line width; the diff is signature re-wrapping only.
+- Verification: `verify.mjs` green on seven checks. `test` is red on
+  `@t3tools/desktop` alone, the standing `libsecret-1` gap already in
+  [gaps](./gaps.md) — 1289 tests pass, 1 suite fails to compile. Four packages
+  did not finish under `vp run -r test` and all four pass alone (`@t3tools/web`
+  383 files, `t3` 293, `@t3tools/mobile` 155, `t3code-relay` 28), so that is
+  parallel load and not the merge. The suite needs
+  `NODE_OPTIONS=--max-old-space-size=8192`, as gaps says.
+- `vp i` after verification floats a transitive `js-yaml` `4.2.0` → `4.3.1` in the
+  lockfile that has nothing to do with this merge. Reverted before the amend.
+  Check `pnpm-lock.yaml` before every `--amend`, not just the first.
+
 ### 2026-09-08 — merged upstream to a37c6640, TypeScript 7 + a second route to the update banner
 
 - Upstream: `a37c66406` from base `8b2838e0e` (`43` commits).

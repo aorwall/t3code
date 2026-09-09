@@ -25,9 +25,7 @@ export type SandboxAction = "start" | "stop" | "restart" | "redeploy" | "cleanup
  * available for a sandbox that is stopped — that is the state someone reaches
  * before deciding they are finished with the thread.
  */
-export function sandboxActionsFor(
-  status: SandboxRuntimeStatus | null,
-): ReadonlySet<SandboxAction> {
+export function sandboxActionsFor(status: SandboxRuntimeStatus | null): ReadonlySet<SandboxAction> {
   switch (status) {
     case "ready":
       return new Set<SandboxAction>(["stop", "restart", "redeploy", "cleanup"]);
@@ -113,9 +111,10 @@ export function formatMemory(mb: number | null): string {
  * A sum over the containers that did report would understate the pod, so a
  * partial answer is treated as no answer.
  */
-export function totalContainerResources(
-  containers: ReadonlyArray<SandboxContainerInfo>,
-): { readonly cpuMillicores: number | null; readonly memoryMb: number | null } {
+export function totalContainerResources(containers: ReadonlyArray<SandboxContainerInfo>): {
+  readonly cpuMillicores: number | null;
+  readonly memoryMb: number | null;
+} {
   const sum = (pick: (container: SandboxContainerInfo) => number | null) =>
     containers.length > 0 && containers.every((container) => pick(container) !== null)
       ? containers.reduce((total, container) => total + (pick(container) ?? 0), 0)
