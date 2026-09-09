@@ -94,7 +94,7 @@ const STATUS_PRESENTATION: Record<
   not_created: { label: "Not created", tone: "muted" },
   initializing: { label: "Starting", tone: "info" },
   ready: { label: "Running", tone: "success" },
-  stopped: { label: "Stopped", tone: "warning" },
+  stopped: { label: "Stopped", tone: "muted" },
   removing: { label: "Removing", tone: "info" },
   removed: { label: "Removed", tone: "muted" },
   error: { label: "Error", tone: "danger" },

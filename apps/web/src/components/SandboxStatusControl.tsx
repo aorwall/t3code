@@ -21,7 +21,7 @@ const STATUS_TONES: Record<SandboxStatus, "muted" | "warning" | "error"> = {
   not_created: "warning",
   initializing: "muted",
   ready: "muted",
-  stopped: "warning",
+  stopped: "muted",
   removing: "muted",
   removed: "warning",
   error: "error",
@@ -72,9 +72,11 @@ export function SandboxStatusControl({ status, className, compact }: SandboxStat
         <span
           className={cn(
             "size-2 shrink-0 rounded-full",
-            // The launcher shows this while everything is fine, so a running
-            // sandbox has to look like one rather than like a warning.
-            sandboxStatus === "ready" ? "bg-success" : "bg-warning",
+            sandboxStatus === "ready"
+              ? "bg-success"
+              : tone === "warning"
+                ? "bg-warning"
+                : "bg-muted-foreground/50",
           )}
         />
       )}
