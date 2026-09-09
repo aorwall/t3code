@@ -15,6 +15,10 @@
  * rather than empty when the deployment publishes nothing for it; see the
  * `SandboxDetail` contract module.
  *
+ * A wide panel splits those seven across two columns on that same seam: what
+ * the sandbox is and how it is configured on the left, what is running inside
+ * it on the right.
+ *
  * This surface is deliberately reachable with the sandbox stopped
  * (`sandboxSurfaces.ts`): it is where a person starts one.
  */
@@ -147,6 +151,18 @@ const ACTION_ORDER: ReadonlyArray<SandboxAction> = [
   "cleanup",
 ];
 
+/**
+ * Two columns once the panel is wide enough for both to stay readable, which
+ * is the maximized right panel and a wide sheet.
+ *
+ * The split is fixed rather than height-balanced: a section that hops columns
+ * when a server log opens or a container appears is worse than an uneven
+ * bottom edge. Sized against the panel, not the viewport, because the right
+ * panel is resizable.
+ */
+const TWO_COLUMNS =
+  "@[44rem]/sandbox-panel:grid @[44rem]/sandbox-panel:grid-cols-2 @[44rem]/sandbox-panel:items-start";
+
 function failureMessage(error: unknown): string {
   return error instanceof Error && error.message.trim().length > 0
     ? error.message
@@ -159,51 +175,56 @@ export function SandboxPanel({ threadRef }: { readonly threadRef: ScopedThreadRe
   const { status } = useSandboxAvailability(threadRef);
   const detail = useSandboxDetail(threadRef);
   const servers = useThreadPreviewServers(threadRef);
-  const sandboxStatus = status.data?.sandboxStatus ?? null;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <ScrollArea className="min-h-0 flex-1">
-        <div className="flex flex-col gap-3 p-2">
-          <StatusSection threadRef={threadRef} status={status} detail={detail} />
-          {detail.data?.image ? (
-            <ImageSection image={detail.data.image} desiredState={detail.data.desiredState} />
-          ) : null}
-          {detail.data ? (
-            <IdleStopSection
-              threadRef={threadRef}
-              minutes={detail.data.idleTimeoutMinutes}
-              onChanged={detail.refresh}
-            />
-          ) : null}
-          {detail.data?.containers?.length ? (
-            <ContainersSection containers={detail.data.containers} />
-          ) : null}
-          {detail.data?.runtimeEvents?.length ? (
-            <SandboxSection title="Runtime events">
-              {detail.data.runtimeEvents.map((event) => (
-                <SandboxEntry
-                  // The runtime publishes no id, and one reason can repeat with
-                  // a different message, so the pair is the key.
-                  key={`${event.reason}:${event.message}`}
-                  title={event.reason}
-                  badge={
-                    <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
-                      {event.count === null ? "" : `×${event.count}`}
-                    </span>
-                  }
-                >
-                  <SandboxNote tone={eventIsWarning(event) ? "warning" : "default"}>
-                    {event.message}
-                  </SandboxNote>
-                </SandboxEntry>
-              ))}
-            </SandboxSection>
-          ) : null}
-          {status.data?.commands?.length ? (
-            <CommandsSection commands={status.data.commands} />
-          ) : null}
-          <ServersSection threadRef={threadRef} servers={servers.servers} />
+        <div className="@container/sandbox-panel p-2">
+          <div className={cn("flex flex-col gap-3", TWO_COLUMNS)}>
+            <div className="flex min-w-0 flex-col gap-3">
+              <StatusSection threadRef={threadRef} status={status} detail={detail} />
+              {detail.data?.image ? (
+                <ImageSection image={detail.data.image} desiredState={detail.data.desiredState} />
+              ) : null}
+              {detail.data ? (
+                <IdleStopSection
+                  threadRef={threadRef}
+                  minutes={detail.data.idleTimeoutMinutes}
+                  onChanged={detail.refresh}
+                />
+              ) : null}
+            </div>
+            <div className="flex min-w-0 flex-col gap-3">
+              {detail.data?.containers?.length ? (
+                <ContainersSection containers={detail.data.containers} />
+              ) : null}
+              {detail.data?.runtimeEvents?.length ? (
+                <SandboxSection title="Runtime events">
+                  {detail.data.runtimeEvents.map((event) => (
+                    <SandboxEntry
+                      // The runtime publishes no id, and one reason can repeat
+                      // with a different message, so the pair is the key.
+                      key={`${event.reason}:${event.message}`}
+                      title={event.reason}
+                      badge={
+                        <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
+                          {event.count === null ? "" : `×${event.count}`}
+                        </span>
+                      }
+                    >
+                      <SandboxNote tone={eventIsWarning(event) ? "warning" : "default"}>
+                        {event.message}
+                      </SandboxNote>
+                    </SandboxEntry>
+                  ))}
+                </SandboxSection>
+              ) : null}
+              {status.data?.commands?.length ? (
+                <CommandsSection commands={status.data.commands} />
+              ) : null}
+              <ServersSection threadRef={threadRef} servers={servers.servers} />
+            </div>
+          </div>
         </div>
       </ScrollArea>
     </div>
