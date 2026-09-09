@@ -98,7 +98,7 @@ export class ThreadSnoozeBlockedError extends Schema.TaggedError<ThreadSnoozeBlo
 }
 
 // Fork: setting a thread's visibility from its row menu.
-export class ThreadVisibilityUnsupportedError extends Schema.TaggedErrorClass<ThreadVisibilityUnsupportedError>()(
+export class ThreadVisibilityUnsupportedError extends Schema.TaggedError<ThreadVisibilityUnsupportedError>()(
   "ThreadVisibilityUnsupportedError",
   {
     environmentId: EnvironmentId,
