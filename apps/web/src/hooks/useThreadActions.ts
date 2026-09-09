@@ -6,7 +6,13 @@ import {
 } from "@t3tools/client-runtime/environment";
 import { settlePromise, squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
 import { canSnooze, threadWokeAt } from "@t3tools/client-runtime/state/thread-settled";
-import { EnvironmentId, type ScopedThreadRef, ThreadId } from "@t3tools/contracts";
+import {
+  EnvironmentId,
+  type ScopedThreadRef,
+  ThreadId,
+  // Fork: the visibility level `thread.visibility.set` carries.
+  type ThreadVisibility,
+} from "@t3tools/contracts";
 import * as Cause from "effect/Cause";
 import * as Schema from "effect/Schema";
 import { AsyncResult } from "effect/unstable/reactivity";
@@ -28,6 +34,8 @@ import {
   readEnvironmentSupportsActiveReorder,
   readEnvironmentSupportsSettlement,
   readEnvironmentSupportsSnooze,
+  // Fork: setting a thread's visibility from its row menu.
+  readEnvironmentSupportsVisibility,
   readEnvironmentThreadRefs,
   readProject,
   readThreadShell,
@@ -86,6 +94,19 @@ export class ThreadSnoozeBlockedError extends Schema.TaggedErrorClass<ThreadSnoo
 ) {
   override get message(): string {
     return "This thread is waiting on you. Respond to the pending request before snoozing it.";
+  }
+}
+
+// Fork: setting a thread's visibility from its row menu.
+export class ThreadVisibilityUnsupportedError extends Schema.TaggedErrorClass<ThreadVisibilityUnsupportedError>()(
+  "ThreadVisibilityUnsupportedError",
+  {
+    environmentId: EnvironmentId,
+    threadId: ThreadId,
+  },
+) {
+  override get message(): string {
+    return "This environment's server does not support thread visibility.";
   }
 }
 
@@ -205,6 +226,10 @@ export function useThreadActions() {
     reportFailure: false,
   });
   const unsnoozeThreadMutation = useAtomCommand(threadEnvironment.unsnooze, {
+    reportFailure: false,
+  });
+  // Fork: setting a thread's visibility from its row menu.
+  const setThreadVisibilityMutation = useAtomCommand(threadEnvironment.setVisibility, {
     reportFailure: false,
   });
   const stopThreadSession = useAtomCommand(threadEnvironment.stopSession);
@@ -722,6 +747,44 @@ export function useThreadActions() {
     [unsnoozeThreadMutation],
   );
 
+  // Fork: going public puts the thread in reach of everyone, so it confirms
+  // first; going private takes reach away and needs no confirmation. The level
+  // is sent whole rather than toggled, so the caller decides the target and two
+  // clients cannot flip each other's write.
+  const confirmAndSetThreadVisibility = useCallback(
+    async (target: ScopedThreadRef, visibility: ThreadVisibility) => {
+      if (!readEnvironmentSupportsVisibility(target.environmentId)) {
+        return AsyncResult.failure(
+          Cause.fail(
+            new ThreadVisibilityUnsupportedError({
+              environmentId: target.environmentId,
+              threadId: target.threadId,
+            }),
+          ),
+        );
+      }
+      const localApi = readLocalApi();
+      if (visibility === "public" && localApi) {
+        const title = resolveThreadTarget(target)?.thread.title ?? "this thread";
+        const confirmed = await settlePromise(() =>
+          localApi.dialogs.confirm(
+            [
+              `Make thread "${title}" public?`,
+              "Anyone who can reach this server will be able to read its conversation.",
+            ].join("\n"),
+          ),
+        );
+        if (confirmed._tag === "Failure") return confirmed;
+        if (!confirmed.value) return AsyncResult.success(undefined);
+      }
+      return setThreadVisibilityMutation({
+        environmentId: target.environmentId,
+        input: { threadId: target.threadId, visibility },
+      });
+    },
+    [resolveThreadTarget, setThreadVisibilityMutation],
+  );
+
   const confirmAndDeleteThread = useCallback(
     async (target: ScopedThreadRef) => {
       const localApi = readLocalApi();
@@ -766,10 +829,13 @@ export function useThreadActions() {
       confirmAndUnpinThread,
       reorderPinnedThread,
       reorderActiveThread,
+      // Fork: setting a thread's visibility from its row menu.
+      confirmAndSetThreadVisibility,
     }),
     [
       archiveThread,
       confirmAndDeleteThread,
+      confirmAndSetThreadVisibility,
       confirmAndUnpinThread,
       deleteThread,
       pinThread,

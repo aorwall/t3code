@@ -10,7 +10,14 @@ const baseState: ThreadActionMenuState = {
   canSnoozeNow: true,
   isRegeneratingTitle: false,
   isRunning: false,
-  supports: { settlement: true, snooze: true, pinning: true, titleRegeneration: true },
+  isPublic: false,
+  supports: {
+    settlement: true,
+    snooze: true,
+    pinning: true,
+    titleRegeneration: true,
+    visibility: true,
+  },
   snoozePresets: [
     { id: "hour", label: "In 1 hour", whenLabel: "3:00 PM", snoozedUntil: "2026-08-07T15:00:00Z" },
   ],
@@ -34,7 +41,13 @@ describe("buildThreadActionMenuItems", () => {
     expect(
       ids({
         ...baseState,
-        supports: { settlement: false, snooze: false, pinning: false, titleRegeneration: false },
+        supports: {
+          settlement: false,
+          snooze: false,
+          pinning: false,
+          titleRegeneration: false,
+          visibility: false,
+        },
       }),
     ).toEqual(["rename", "mark-unread", "copy", "project-settings", "archive"]);
   });
@@ -96,7 +109,13 @@ describe("buildThreadActionMenuItems", () => {
     expect(
       ids({
         ...baseState,
-        supports: { settlement: false, snooze: false, pinning: false, titleRegeneration: false },
+        supports: {
+          settlement: false,
+          snooze: false,
+          pinning: false,
+          titleRegeneration: false,
+          visibility: false,
+        },
       }),
     ).toContain("archive");
   });
@@ -106,5 +125,41 @@ describe("buildThreadActionMenuItems", () => {
       (item) => item.id === "archive",
     );
     expect(archiveItem?.disabled).toBe(true);
+  });
+
+  // Fork: the visibility item names the level the click moves to, and is the
+  // only indicator of the current one — the sidebar row carries no badge.
+  it("offers the visibility level the thread is not on", () => {
+    expect(buildThreadActionMenuItems(baseState)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "make-public", label: "Make public", icon: "globe" }),
+      ]),
+    );
+    expect(ids(baseState)).not.toContain("make-private");
+
+    expect(buildThreadActionMenuItems({ ...baseState, isPublic: true })).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "make-private", label: "Make private", icon: "lock" }),
+      ]),
+    );
+    expect(ids({ ...baseState, isPublic: true })).not.toContain("make-public");
+  });
+
+  it("omits visibility entirely when the environment does not support it", () => {
+    const withoutVisibility = ids({
+      ...baseState,
+      isPublic: true,
+      supports: { ...baseState.supports, visibility: false },
+    });
+    expect(withoutVisibility).not.toContain("make-public");
+    expect(withoutVisibility).not.toContain("make-private");
+  });
+
+  // Fork: the item sits in the lifecycle group so upstream's tail keeps its
+  // order — see the project-settings test above.
+  it("keeps visibility above the rename separator", () => {
+    const items = buildThreadActionMenuItems(baseState);
+    const visibilityIndex = items.findIndex((item) => item.id === "make-public");
+    expect(items[visibilityIndex + 1]?.id).toBe("rename");
   });
 });

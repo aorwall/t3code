@@ -116,6 +116,11 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
   /** Server understands thread.pin.reorder (and orderKey on thread.pin).
       Same version-skew contract as threadSettlement. */
   threadPinReorder: Schema.optionalKey(Schema.Boolean),
+  /** Fork: server understands thread.visibility.set, and its thread rows carry
+      `visibility`. One flag for the pair — a client that cannot read the
+      current level has nothing to label the control with. Same version-skew
+      contract as threadSettlement. */
+  threadVisibility: Schema.optionalKey(Schema.Boolean),
   /** Server persists manual Active order through thread.active.reorder. */
   threadActiveReorder: Schema.optionalKey(Schema.Boolean),
   /** Server understands regenerateTitle on thread.meta.update. Absent on

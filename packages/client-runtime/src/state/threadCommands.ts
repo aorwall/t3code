@@ -13,6 +13,8 @@ import {
   type DeleteThreadInput,
   // Fork: forking a thread from the chat hover action.
   type ForkThreadInput,
+  // Fork: setting a thread's visibility from its row menu.
+  type SetThreadVisibilityInput,
   type InterruptThreadTurnInput,
   type RespondToThreadApprovalInput,
   type RespondToThreadUserInputInput,
@@ -36,6 +38,7 @@ import {
   createThread,
   deleteThread,
   forkThread,
+  setThreadVisibility,
   interruptThreadTurn,
   respondToThreadApproval,
   respondToThreadUserInput,
@@ -63,6 +66,7 @@ export type {
   CreateThreadInput,
   DeleteThreadInput,
   ForkThreadInput,
+  SetThreadVisibilityInput,
   InterruptThreadTurnInput,
   RespondToThreadApprovalInput,
   RespondToThreadUserInputInput,
@@ -104,6 +108,13 @@ export function createThreadEnvironmentAtoms<R, E>(
     fork: createEnvironmentCommand(runtime, {
       label: "environment-data:commands:thread:fork",
       execute: (input: ForkThreadInput) => forkThread(input),
+      scheduler,
+      concurrency,
+    }),
+    // Fork: setting a thread's visibility from its row menu.
+    setVisibility: createEnvironmentCommand(runtime, {
+      label: "environment-data:commands:thread:set-visibility",
+      execute: (input: SetThreadVisibilityInput) => setThreadVisibility(input),
       scheduler,
       concurrency,
     }),

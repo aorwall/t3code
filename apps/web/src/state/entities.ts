@@ -211,6 +211,16 @@ export function readEnvironmentSupportsPinning(environmentId: EnvironmentId): bo
   );
 }
 
+/** Fork: whether the environment's server understands thread.visibility.set
+    and sends `visibility` on a thread row. Same version-skew contract as
+    settlement. */
+export function readEnvironmentSupportsVisibility(environmentId: EnvironmentId): boolean {
+  return (
+    appAtomRegistry.get(environmentServerConfigsAtom).get(environmentId)?.environment.capabilities
+      .threadVisibility === true
+  );
+}
+
 /** Whether the environment's server understands thread title regeneration.
     Same version-skew contract as settlement. */
 export function readEnvironmentSupportsTitleRegeneration(environmentId: EnvironmentId): boolean {

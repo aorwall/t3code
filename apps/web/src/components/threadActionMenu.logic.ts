@@ -26,6 +26,9 @@ export type ThreadActionMenuId =
   | "copy-branch"
   // Fork: archive closes the Moatless task; settling here is only triage.
   | "archive"
+  // Fork: flip the Moatless task between public and private.
+  | "make-public"
+  | "make-private"
   | "copy-thread-id"
   | "delete";
 
@@ -38,11 +41,15 @@ export interface ThreadActionMenuState {
   readonly isRegeneratingTitle: boolean;
   /** Archive rejects a thread with an active turn, so disable it here rather than let the action fail. */
   readonly isRunning: boolean;
+  /** Fork: who may read the thread, as the server last sent it. */
+  readonly isPublic: boolean;
   readonly supports: {
     readonly settlement: boolean;
     readonly snooze: boolean;
     readonly pinning: boolean;
     readonly titleRegeneration: boolean;
+    /** Fork: see `readEnvironmentSupportsVisibility`. */
+    readonly visibility: boolean;
   };
   readonly snoozePresets: ReadonlyArray<SnoozePreset>;
 }
@@ -96,6 +103,17 @@ export function buildThreadActionMenuItems(
                   label: `${preset.label} (${preset.whenLabel})`,
                 })),
               },
+        ]
+      : []),
+    // Fork: the label is the only indicator of the current level — a sidebar
+    // row shows no badge — so it names the level the click moves to, not the
+    // one the thread is on. It sits in the lifecycle group so upstream's
+    // copy / project-settings / archive tail keeps its order.
+    ...(state.supports.visibility
+      ? [
+          state.isPublic
+            ? { id: "make-private" as const, label: "Make private", icon: "lock" }
+            : { id: "make-public" as const, label: "Make public", icon: "globe" },
         ]
       : []),
     { id: "rename", label: "Rename thread", icon: "pencil", separatorBefore: true },

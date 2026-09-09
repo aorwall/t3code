@@ -2123,6 +2123,8 @@ export default function Sidebar() {
     reorderActiveThread,
     archiveThread,
     deleteThread,
+    // Fork: setting a thread's visibility from its row menu.
+    confirmAndSetThreadVisibility,
   } = useThreadActions();
   const updateThreadMetadata = useAtomCommand(threadEnvironment.updateMetadata, {
     reportFailure: false,
@@ -3940,6 +3942,11 @@ export default function Sidebar() {
         const supportsTitleRegeneration =
           serverConfigs.get(thread.environmentId)?.environment.capabilities
             .threadTitleRegeneration === true;
+        // Fork: setting a thread's visibility from its row menu. One flag
+        // covers both the command and the `visibility` field the label reads.
+        const supportsVisibility =
+          serverConfigs.get(thread.environmentId)?.environment.capabilities.threadVisibility ===
+          true;
         const isRegeneratingTitle = thread.titleRegeneration != null;
         const isSettled = settledThreadKeysRef.current.has(threadKey);
         const isSnoozed = snoozedThreadKeysRef.current.has(threadKey);
@@ -3957,11 +3964,16 @@ export default function Sidebar() {
               isRegeneratingTitle,
               isRunning:
                 thread.session?.status === "running" && thread.session.activeTurnId != null,
+              // Fork: absent on a server without the capability, which
+              // `supports.visibility` below already hides the item for.
+              isPublic: thread.visibility === "public",
               supports: {
                 settlement: supportsSettlement,
                 snooze: supportsSnooze,
                 pinning: supportsPinning,
                 titleRegeneration: supportsTitleRegeneration,
+                // Fork: see supportsVisibility above.
+                visibility: supportsVisibility,
               },
               snoozePresets,
             }),
@@ -4026,6 +4038,26 @@ export default function Sidebar() {
           case "unpin":
             attemptUnpin(threadRef);
             return;
+          // Fork: the confirmation before going public lives in
+          // `confirmAndSetThreadVisibility`, shared with the chat header menu.
+          case "make-public":
+          case "make-private": {
+            const result = await confirmAndSetThreadVisibility(
+              threadRef,
+              clicked.value === "make-public" ? "public" : "private",
+            );
+            if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
+              const error = squashAtomCommandFailure(result);
+              toastManager.add(
+                stackedThreadToast({
+                  type: "error",
+                  title: "Failed to change thread visibility",
+                  description: error instanceof Error ? error.message : "An error occurred.",
+                }),
+              );
+            }
+            return;
+          }
           case "rename":
             startThreadRename(threadRef, thread.title);
             return;
@@ -4141,6 +4173,7 @@ export default function Sidebar() {
       attemptUnsnooze,
       confirmThreadArchive,
       confirmThreadDelete,
+      confirmAndSetThreadVisibility,
       copyBranchToClipboard,
       copyPathToClipboard,
       copyThreadIdToClipboard,

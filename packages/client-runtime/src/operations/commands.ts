@@ -55,6 +55,8 @@ export type RevertThreadCheckpointInput = CommandInput<"thread.checkpoint.revert
 export type StopThreadSessionInput = CommandInput<"thread.session.stop">;
 // Fork: forking a thread from the chat hover action.
 export type ForkThreadInput = CommandInput<"thread.fork">;
+// Fork: setting a thread's visibility from its row menu.
+export type SetThreadVisibilityInput = CommandInput<"thread.visibility.set">;
 
 type DispatchTag = typeof ORCHESTRATION_WS_METHODS.dispatchCommand;
 type CommandEffect = Effect.Effect<
@@ -365,6 +367,19 @@ export const forkThread: (input: ForkThreadInput) => CommandEffect = Effect.fn(
   return yield* dispatch({
     ...input,
     type: "thread.fork",
+    commandId: metadata.commandId,
+    createdAt: metadata.createdAt,
+  });
+});
+
+// Fork: setting a thread's visibility from its row menu.
+export const setThreadVisibility: (input: SetThreadVisibilityInput) => CommandEffect = Effect.fn(
+  "EnvironmentCommands.setThreadVisibility",
+)(function* (input) {
+  const metadata = yield* timestampedCommandMetadata(input);
+  return yield* dispatch({
+    ...input,
+    type: "thread.visibility.set",
     commandId: metadata.commandId,
     createdAt: metadata.createdAt,
   });

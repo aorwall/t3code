@@ -238,6 +238,15 @@ The server's internal union is wider (e.g. `thread.session.set`,
 `thread.activity.append`) — those are server-authored and **not** dispatchable by
 clients. `ClientOrchestrationCommand` is the client-facing subset.
 
+**Fork addition.** `thread.visibility.set` carries a `visibility` of `"private"` or
+`"public"`, and `OrchestrationThread` / `OrchestrationThreadShell` each carry the matching
+optional `visibility`. A Moatless Task decides who may read it; a T3 thread is readable by
+whoever reaches the server, so upstream has no such command. Both halves sit behind the
+one `threadVisibility` capability — a client that cannot read the current level has
+nothing to label the control with. The level is sent whole rather than toggled, so two
+clients that disagree about the current value cannot flip each other's write. `apps/server`
+refuses the command: it has no per-thread read grant to move.
+
 ## 3. HTTP — `EnvironmentHttpApi`
 
 Four groups, 23 endpoints ([`environmentHttp.ts:553`][http]). Endpoints marked ✓ carry

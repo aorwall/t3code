@@ -45,6 +45,17 @@ const ICON_PATHS: Record<string, ReadonlyArray<{ tag: string; attrs: Record<stri
     { tag: "circle", attrs: { cx: "6", cy: "18", r: "3" } },
     { tag: "path", attrs: { d: "M18 9a9 9 0 0 1-9 9" } },
   ],
+  // Fork: the two icons the thread visibility items use.
+  globe: [
+    { tag: "circle", attrs: { cx: "12", cy: "12", r: "10" } },
+    { tag: "path", attrs: { d: "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" } },
+    { tag: "path", attrs: { d: "M2 12h20" } },
+  ],
+  // Fork: see globe above.
+  lock: [
+    { tag: "rect", attrs: { width: "18", height: "11", x: "3", y: "11", rx: "2", ry: "2" } },
+    { tag: "path", attrs: { d: "M7 11V7a5 5 0 0 1 10 0v4" } },
+  ],
   hash: [
     { tag: "line", attrs: { x1: "4", x2: "20", y1: "9", y2: "9" } },
     { tag: "line", attrs: { x1: "4", x2: "20", y1: "15", y2: "15" } },

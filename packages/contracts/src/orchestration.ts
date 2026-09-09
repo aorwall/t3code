@@ -629,6 +629,13 @@ export const ThreadTitleRegeneration = Schema.Struct({
 });
 export type ThreadTitleRegeneration = typeof ThreadTitleRegeneration.Type;
 
+// Fork: who may read a thread. Moatless carries this on the Task itself, and
+// `thread.visibility.set` is what moves it. An upstream server sends neither
+// the field nor the `threadVisibility` capability, so the control is absent
+// rather than wrong.
+export const ThreadVisibility = Schema.Literals(["private", "public"]);
+export type ThreadVisibility = typeof ThreadVisibility.Type;
+
 export const ThreadLinkedPullRequest = Schema.Struct({
   projectId: ProjectId,
   repository: TrimmedNonEmptyString,
@@ -666,6 +673,9 @@ export const OrchestrationThread = Schema.Struct({
   // surfaces that show them all read this. `linkedPullRequest` above stays the
   // primary — the first element — so every upstream reader keeps working.
   linkedPullRequests: Schema.optional(Schema.Array(ThreadLinkedPullRequest)),
+  // Fork: see ThreadVisibility above. Optional so a payload from a server
+  // without the capability decodes unchanged.
+  visibility: Schema.optional(ThreadVisibility),
   latestTurn: Schema.NullOr(OrchestrationLatestTurn),
   createdAt: IsoDateTime,
   updatedAt: IsoDateTime,
@@ -754,6 +764,9 @@ export const OrchestrationThreadShell = Schema.Struct({
   // surfaces that show them all read this. `linkedPullRequest` above stays the
   // primary — the first element — so every upstream reader keeps working.
   linkedPullRequests: Schema.optional(Schema.Array(ThreadLinkedPullRequest)),
+  // Fork: see ThreadVisibility above. Optional so a payload from a server
+  // without the capability decodes unchanged.
+  visibility: Schema.optional(ThreadVisibility),
   latestTurn: Schema.NullOr(OrchestrationLatestTurn),
   createdAt: IsoDateTime,
   updatedAt: IsoDateTime,
@@ -1252,6 +1265,17 @@ const ThreadForkCommand = Schema.Struct({
   createdAt: IsoDateTime,
 });
 
+// Fork: setting a thread's visibility from its row menu. The level is sent
+// whole rather than as a toggle, so two clients that disagree about the current
+// value cannot flip each other's write.
+const ThreadVisibilitySetCommand = Schema.Struct({
+  type: Schema.Literal("thread.visibility.set"),
+  commandId: CommandId,
+  threadId: ThreadId,
+  visibility: ThreadVisibility,
+  createdAt: IsoDateTime,
+});
+
 const ThreadSessionStopCommand = Schema.Struct({
   type: Schema.Literal("thread.session.stop"),
   commandId: CommandId,
@@ -1293,6 +1317,8 @@ const DispatchableClientOrchestrationCommand = Schema.Union([
   ThreadSessionStopCommand,
   // Fork: see ThreadForkCommand above.
   ThreadForkCommand,
+  // Fork: see ThreadVisibilitySetCommand above.
+  ThreadVisibilitySetCommand,
 ]);
 export type DispatchableClientOrchestrationCommand =
   typeof DispatchableClientOrchestrationCommand.Type;
@@ -1325,6 +1351,8 @@ export const ClientOrchestrationCommand = Schema.Union([
   ThreadSessionStopCommand,
   // Fork: see ThreadForkCommand above.
   ThreadForkCommand,
+  // Fork: see ThreadVisibilitySetCommand above.
+  ThreadVisibilitySetCommand,
 ]);
 export type ClientOrchestrationCommand = typeof ClientOrchestrationCommand.Type;
 

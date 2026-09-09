@@ -1739,6 +1739,16 @@ export const decideOrchestrationCommand = Effect.fn("decideOrchestrationCommand"
       });
     }
 
+    // Fork: thread.visibility.set moves a Moatless Task's visibility. The
+    // bundled server has no notion of who else may read a thread, so it refuses
+    // the command rather than record a level nothing enforces.
+    case "thread.visibility.set": {
+      return yield* new OrchestrationCommandInvariantError({
+        commandType: command.type,
+        detail: "thread.visibility.set is not supported by this server.",
+      });
+    }
+
     default: {
       command satisfies never;
       const fallback = command as never as { type: string };

@@ -23,6 +23,8 @@ import {
   readEnvironmentSupportsSettlement,
   readEnvironmentSupportsSnooze,
   readEnvironmentSupportsTitleRegeneration,
+  // Fork: setting a thread's visibility from its row menu.
+  readEnvironmentSupportsVisibility,
   readThreadShell,
   useProjects,
 } from "../state/entities";
@@ -89,6 +91,8 @@ export function useThreadActionMenu(input: {
     confirmAndUnpinThread,
     archiveThread,
     deleteThread,
+    // Fork: setting a thread's visibility from its row menu.
+    confirmAndSetThreadVisibility,
   } = useThreadActions();
   const updateThreadMetadata = useAtomCommand(threadEnvironment.updateMetadata, {
     reportFailure: false,
@@ -134,6 +138,8 @@ export function useThreadActionMenu(input: {
           snooze: readEnvironmentSupportsSnooze(threadRef.environmentId),
           pinning: readEnvironmentSupportsPinning(threadRef.environmentId),
           titleRegeneration: readEnvironmentSupportsTitleRegeneration(threadRef.environmentId),
+          // Fork: setting a thread's visibility from its row menu.
+          visibility: readEnvironmentSupportsVisibility(threadRef.environmentId),
         };
         const isRegeneratingTitle = thread.titleRegeneration != null;
         const snoozePresets = resolveSnoozePresets(now, timestampFormat);
@@ -145,6 +151,9 @@ export function useThreadActionMenu(input: {
           canSnoozeNow: canSnooze(thread, { now: now.toISOString() }),
           isRegeneratingTitle,
           isRunning: thread.session?.status === "running" && thread.session.activeTurnId != null,
+          // Fork: absent on a server without the capability, which the
+          // `supports` flag above already hides the item for.
+          isPublic: thread.visibility === "public",
           supports,
           snoozePresets,
         });
@@ -238,6 +247,18 @@ export function useThreadActionMenu(input: {
             await reportFailure("Failed to unpin thread", () => confirmAndUnpinThread(threadRef));
             return;
           }
+          // Fork: the confirmation before going public lives in
+          // `confirmAndSetThreadVisibility`, shared with the sidebar.
+          case "make-public":
+            await reportFailure("Failed to make thread public", () =>
+              confirmAndSetThreadVisibility(threadRef, "public"),
+            );
+            return;
+          case "make-private":
+            await reportFailure("Failed to make thread private", () =>
+              confirmAndSetThreadVisibility(threadRef, "private"),
+            );
+            return;
           case "rename":
             onStartRename();
             return;
@@ -332,6 +353,7 @@ export function useThreadActionMenu(input: {
       archiveThread,
       confirmThreadArchive,
       confirmThreadDelete,
+      confirmAndSetThreadVisibility,
       confirmAndUnpinThread,
       copyBranchToClipboard,
       copyPathToClipboard,

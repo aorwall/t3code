@@ -397,6 +397,24 @@
       "note": "Fork-only test for the bundled server's thread.fork refusal, and the dialog the hover icon opens (same-sandbox toggle, initial message). apps/web/src/fork/threadFork.ts and its test are already covered by the fork-registry entry's apps/web/src/fork/** glob."
     },
     {
+      "id": "thread-visibility-upstream-files",
+      "paths": [
+        "packages/contracts/src/orchestration.ts",
+        "packages/contracts/src/environment.ts",
+        "packages/client-runtime/src/operations/commands.ts",
+        "packages/client-runtime/src/state/threadCommands.ts",
+        "apps/web/src/state/entities.ts",
+        "apps/web/src/hooks/useThreadActions.ts",
+        "apps/web/src/hooks/useThreadActionMenu.ts",
+        "apps/web/src/components/Sidebar.tsx",
+        "apps/web/src/contextMenuFallback.ts",
+        "apps/server/src/orchestration/decider.ts"
+      ],
+      "verdict": "converged",
+      "delta": "Thread Visibility Delta",
+      "note": "Take upstream, then apply Thread Visibility Delta. orchestration.ts, commands.ts, threadCommands.ts and decider.ts also carry the Thread Fork Delta; both must survive. The menu item goes above the rename separator, not after project-settings \u2014 upstream's \"groups project settings with utility actions before archive\" test asserts archive is two items after copy. decider.ts's hunk is a deliberate refusal: the bundled server has no per-thread read grant to move."
+    },
+    {
       "id": "mobile-touch-upstream-files",
       "paths": [
         "apps/web/src/components/ui/sidebar.tsx",
@@ -687,6 +705,25 @@
         "apps/server/src/orchestration/decider.threadFork.test.ts"
       ],
       "mustSurvive": "Hovering an assistant message with a completed or interrupted turn shows a fork icon beside the copy button. While the thread's newest turn is still running, the icon stays visible on messages from an earlier, already-ended turn and hides only on messages from that running turn itself — cutting below the open turn is allowed, cutting at or into it is not, matching the backend's own gate. `parseMoatlessTurnNumber` (`apps/web/src/fork/threadFork.ts`) reads the turn number off the wire `TurnId` to compare; either turn number failing to parse hides the icon. Clicking it opens a dialog rather than forking immediately: a same-sandbox toggle (on by default — it is the only checkout that resumes this conversation, and the dialog says so when switched off) and an optional first message. There is no branch control — a fork always runs on its source's branch. Confirming mints a thread id client-side, dispatches `thread.fork` with that id, the source thread's id, the hovered message's turn number, and the dialog's fields, then navigates to the new thread the same way starting a thread from a proposed plan does — same wait-for-started-thread and cleanup-on-failure path. Moatless is the only backend that runs `thread.fork`; the bundled server refuses it rather than fabricate a session-less copy."
+    },
+    {
+      "id": "thread-visibility",
+      "name": "Toggle a thread's visibility from its row menu",
+      "paths": [
+        "packages/contracts/src/orchestration.ts",
+        "packages/contracts/src/environment.ts",
+        "packages/client-runtime/src/operations/commands.ts",
+        "packages/client-runtime/src/state/threadCommands.ts",
+        "apps/web/src/state/entities.ts",
+        "apps/web/src/hooks/useThreadActions.ts",
+        "apps/web/src/hooks/useThreadActionMenu.ts",
+        "apps/web/src/components/Sidebar.tsx",
+        "apps/web/src/components/threadActionMenu.logic.ts",
+        "apps/web/src/components/threadActionMenu.logic.test.ts",
+        "apps/web/src/contextMenuFallback.ts",
+        "apps/server/src/orchestration/decider.ts"
+      ],
+      "mustSurvive": "Right-clicking a thread in the sidebar, or opening the chat header's menu, offers one visibility item: \"Make public\" on a private thread and \"Make private\" on a public one. The label is the only indicator \u2014 a sidebar row shows no badge \u2014 so it names the level the click moves to, not the one the thread is on. Going public confirms first (`confirmAndSetThreadVisibility` in useThreadActions.ts, shared by both surfaces); going private dispatches straight away. The item is gated on the `threadVisibility` capability, which covers both halves: the `thread.visibility.set` command and the `visibility` field on a thread row that the label reads. A server sending neither leaves the item out rather than showing a control it cannot label. The level is sent whole rather than toggled, so two clients that disagree about the current value cannot flip each other's write. Moatless carries visibility on the Task itself and keeps writes with the owner, so a public reader's toggle is refused; the bundled server refuses the command outright. LegacySidebar.tsx builds its own menu array and is deliberately left without the item."
     },
     {
       "id": "task-bound-pull-request",
