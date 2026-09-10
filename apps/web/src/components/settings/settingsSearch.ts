@@ -2,10 +2,14 @@ import { isElectron } from "~/env";
 import { isMacPlatform, isWindowsPlatform, normalizeSearchText } from "~/lib/utils";
 
 export type SettingsPath =
-  // Fork: the viewer's own Moatless credentials — GitHub, Claude Code, Codex.
+  // Fork: the viewer's own Moatless agent credentials — Claude Code and Codex.
   // Personal, not administrative, so it stays out of MoatlessAdminPath below
   // and everyone reaches it.
   | "/settings/account"
+  // Fork: the git hosts the viewer's own tasks clone and push with. Named
+  // "version-control" because upstream already owns "/settings/source-control".
+  // Personal, so it stays out of MoatlessAdminPath below.
+  | "/settings/version-control"
   | "/settings/projects"
   | "/settings/general"
   | "/settings/appearance"
@@ -75,9 +79,9 @@ export interface SettingsSearchItem {
   readonly localBackendManagementOnly?: boolean;
   readonly wslAvailableOnly?: boolean;
   readonly requiresThreadAutoSettlement?: boolean;
-  // Fork: the Account page draws its Forgejo section only where the Moatless
-  // deployment runs Forgejo, so a result for it would otherwise land on an
-  // anchor that is not there.
+  // Fork: the Version control page lists Forgejo only where the Moatless
+  // deployment runs Forgejo, so a result for it would otherwise land on a page
+  // that cannot show it.
   readonly forgejoEnabledOnly?: boolean;
 }
 
@@ -100,6 +104,8 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   // Fork: leads the personal group — reaching GitHub is the first thing a
   // person has to settle before any task of theirs can do useful work.
   "/settings/account": "Account",
+  // Fork: sits beside Account, which is the other half of the same question.
+  "/settings/version-control": "Version control",
   "/settings/general": "General",
   "/settings/appearance": "Appearance",
   "/settings/projects": "Projects",
@@ -697,20 +703,31 @@ export const SETTINGS_SEARCH_ITEMS = [
     title: "Users",
     to: "/settings/users",
   },
-  // Fork: the Account page's four sections, which the panel anchors to by
-  // these ids. Last in the catalog rather than first so they lose index
-  // tie-breaks: "git" should still reach upstream's git settings, and anyone
-  // after this page types "github", which matches nothing else.
+  // Fork: the Account page's two sections and the Version control page's, which
+  // the panels anchor to by these ids. Last in the catalog rather than first so
+  // they lose index tie-breaks: "git" should still reach upstream's git
+  // settings, and anyone after these pages types "github", which matches
+  // nothing else.
   {
-    id: "account-github",
+    id: "version-control",
+    title: "Version control",
+    to: "/settings/version-control",
+    searchTerms: ["git host repository clone push"],
+  },
+  // The Version control page draws one card, not a section per host, so both
+  // rows below scroll to that one anchor.
+  {
+    id: "version-control-github",
     title: "GitHub access",
-    to: "/settings/account",
+    to: "/settings/version-control",
+    targetId: "version-control",
     searchTerms: ["github app connect personal access token pat repositories"],
   },
   {
-    id: "account-forgejo",
+    id: "version-control-forgejo",
     title: "Forgejo access",
-    to: "/settings/account",
+    to: "/settings/version-control",
+    targetId: "version-control",
     searchTerms: ["forgejo gitea self-hosted instance connect personal access token pat"],
     forgejoEnabledOnly: true,
   },

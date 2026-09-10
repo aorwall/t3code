@@ -21,7 +21,7 @@ export function useAvailableSettingsSearchItems() {
   const primarySessionState = usePrimarySessionState();
   const primaryServerConfig = useAtomValue(primaryServerConfigAtom);
   const desktopWsl = useEnvironmentQuery(isElectron ? desktopWslStateAtom : null);
-  // Fork: the Account page's Forgejo section only exists where the Moatless
+  // Fork: the Version control page lists Forgejo only where the Moatless
   // deployment runs Forgejo. Shared with the panel through one cache entry.
   const { data: moatlessFeatures } = useMoatlessQuery(featureFlagsQuery);
   const canManageLocalBackend =

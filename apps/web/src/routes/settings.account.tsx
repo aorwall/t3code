@@ -1,4 +1,4 @@
-/** Fork-only. The viewer's own Moatless credentials: GitHub, Claude Code, Codex. */
+/** Fork-only. The viewer's own Moatless agent credentials: Claude Code, Codex. */
 
 import { createFileRoute } from "@tanstack/react-router";
 

@@ -89,6 +89,9 @@ const SETTINGS_SECTION_ICONS: Readonly<
 > = {
   // Fork: the Moatless account-credentials page.
   "/settings/account": IdCardIcon,
+  // Fork: the Moatless git-host page. Shares GitBranchIcon with
+  // "/settings/source-control", which FEATURE_BY_SETTINGS_PATH gates off here.
+  "/settings/version-control": GitBranchIcon,
   "/settings/general": Settings2Icon,
   "/settings/appearance": PaletteIcon,
   "/settings/projects": PanelsTopLeftIcon,

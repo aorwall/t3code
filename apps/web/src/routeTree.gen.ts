@@ -18,6 +18,7 @@ import { Route as ConnectRouteImport } from './routes/connect'
 import { Route as ChatRouteImport } from './routes/_chat'
 import { Route as ChatIndexRouteImport } from './routes/_chat.index'
 import { Route as SettingsWorkspacesRouteImport } from './routes/settings.workspaces'
+import { Route as SettingsVersionControlRouteImport } from './routes/settings.version-control'
 import { Route as SettingsUsersRouteImport } from './routes/settings.users'
 import { Route as SettingsSourceControlRouteImport } from './routes/settings.source-control'
 import { Route as SettingsSnapShotRouteImport } from './routes/settings.snap-shot'
@@ -88,6 +89,11 @@ const ChatIndexRoute = ChatIndexRouteImport.update({
 const SettingsWorkspacesRoute = SettingsWorkspacesRouteImport.update({
   id: '/workspaces',
   path: '/workspaces',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsVersionControlRoute = SettingsVersionControlRouteImport.update({
+  id: '/version-control',
+  path: '/version-control',
   getParentRoute: () => SettingsRoute,
 } as any)
 const SettingsUsersRoute = SettingsUsersRouteImport.update({
@@ -257,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/settings/snap-shot': typeof SettingsSnapShotRoute
   '/settings/source-control': typeof SettingsSourceControlRoute
   '/settings/users': typeof SettingsUsersRoute
+  '/settings/version-control': typeof SettingsVersionControlRoute
   '/settings/workspaces': typeof SettingsWorkspacesRoute
   '/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
   '/draft/$draftId': typeof ChatDraftDraftIdRoute
@@ -293,6 +300,7 @@ export interface FileRoutesByTo {
   '/settings/snap-shot': typeof SettingsSnapShotRoute
   '/settings/source-control': typeof SettingsSourceControlRoute
   '/settings/users': typeof SettingsUsersRoute
+  '/settings/version-control': typeof SettingsVersionControlRoute
   '/settings/workspaces': typeof SettingsWorkspacesRoute
   '/': typeof ChatIndexRoute
   '/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
@@ -332,6 +340,7 @@ export interface FileRoutesById {
   '/settings/snap-shot': typeof SettingsSnapShotRoute
   '/settings/source-control': typeof SettingsSourceControlRoute
   '/settings/users': typeof SettingsUsersRoute
+  '/settings/version-control': typeof SettingsVersionControlRoute
   '/settings/workspaces': typeof SettingsWorkspacesRoute
   '/_chat/': typeof ChatIndexRoute
   '/_chat/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
@@ -372,6 +381,7 @@ export interface FileRouteTypes {
     | '/settings/snap-shot'
     | '/settings/source-control'
     | '/settings/users'
+    | '/settings/version-control'
     | '/settings/workspaces'
     | '/$environmentId/$threadId'
     | '/draft/$draftId'
@@ -408,6 +418,7 @@ export interface FileRouteTypes {
     | '/settings/snap-shot'
     | '/settings/source-control'
     | '/settings/users'
+    | '/settings/version-control'
     | '/settings/workspaces'
     | '/'
     | '/$environmentId/$threadId'
@@ -446,6 +457,7 @@ export interface FileRouteTypes {
     | '/settings/snap-shot'
     | '/settings/source-control'
     | '/settings/users'
+    | '/settings/version-control'
     | '/settings/workspaces'
     | '/_chat/'
     | '/_chat/$environmentId/$threadId'
@@ -532,6 +544,13 @@ declare module '@tanstack/react-router' {
       path: '/workspaces'
       fullPath: '/settings/workspaces'
       preLoaderRoute: typeof SettingsWorkspacesRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/version-control': {
+      id: '/settings/version-control'
+      path: '/version-control'
+      fullPath: '/settings/version-control'
+      preLoaderRoute: typeof SettingsVersionControlRouteImport
       parentRoute: typeof SettingsRoute
     }
     '/settings/users': {
@@ -760,6 +779,7 @@ interface SettingsRouteChildren {
   SettingsSnapShotRoute: typeof SettingsSnapShotRoute
   SettingsSourceControlRoute: typeof SettingsSourceControlRoute
   SettingsUsersRoute: typeof SettingsUsersRoute
+  SettingsVersionControlRoute: typeof SettingsVersionControlRoute
   SettingsWorkspacesRoute: typeof SettingsWorkspacesRoute
   SettingsIntegrationsConnectionIdRoute: typeof SettingsIntegrationsConnectionIdRoute
   SettingsLoopsLoopIdRoute: typeof SettingsLoopsLoopIdRoute
@@ -786,6 +806,7 @@ const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsSnapShotRoute: SettingsSnapShotRoute,
   SettingsSourceControlRoute: SettingsSourceControlRoute,
   SettingsUsersRoute: SettingsUsersRoute,
+  SettingsVersionControlRoute: SettingsVersionControlRoute,
   SettingsWorkspacesRoute: SettingsWorkspacesRoute,
   SettingsIntegrationsConnectionIdRoute: SettingsIntegrationsConnectionIdRoute,
   SettingsLoopsLoopIdRoute: SettingsLoopsLoopIdRoute,
