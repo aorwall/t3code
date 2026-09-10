@@ -1,15 +1,23 @@
 /**
  * Fork-only: the rule for which right-panel surfaces survive a stopped sandbox.
  *
- * The load-bearing claim is that the surfaces the environment serves — Agents,
- * and Files now that the backend reads them from the S3 snapshot — are not
- * gated on the workspace, while the ones that read the live machine are. Get
- * the split wrong and either a working surface hides behind a machine it never
- * needed, or a dead one offers to open.
+ * The split frees the surfaces the environment serves, and gates the ones that
+ * read the live machine. Agents and Files are served, now that the backend
+ * reads a file from the S3 snapshot. A browser tab splits on the page it holds
+ * instead of on its kind. Get either wrong and a working surface hides behind a
+ * machine it never needed, or a dead one offers to open.
  */
+import type { PreviewSessionSnapshot } from "@t3tools/contracts";
 import { describe, expect, it } from "vite-plus/test";
 
-import { resolveSurfaceGate, surfaceNeedsSandbox } from "./sandboxSurfaces";
+import type { RightPanelSurface } from "~/rightPanelStore";
+
+import {
+  previewTabNeedsSandbox,
+  resolveActiveSurfaceNeedsSandbox,
+  resolveSurfaceGate,
+  surfaceNeedsSandbox,
+} from "./sandboxSurfaces";
 
 describe("surfaceNeedsSandbox", () => {
   it("frees the surfaces the environment serves and gates the rest", () => {
@@ -21,6 +29,118 @@ describe("surfaceNeedsSandbox", () => {
     for (const kind of ["diff", "preview", "terminal", "pull-request"] as const) {
       expect(surfaceNeedsSandbox(kind)).toBe(true);
     }
+  });
+});
+
+describe("previewTabNeedsSandbox", () => {
+  const ENVIRONMENT = "https://moatless.example.com";
+
+  it("frees a tab on the environment's asset route", () => {
+    expect(
+      previewTabNeedsSandbox(`${ENVIRONMENT}/api/assets/task-1/docs/report.html`, ENVIRONMENT),
+    ).toBe(false);
+  });
+
+  it("gates a server running inside the sandbox", () => {
+    expect(previewTabNeedsSandbox("https://3000-task-1.preview.example.com/", ENVIRONMENT)).toBe(
+      true,
+    );
+  });
+
+  it("gates the asset route on another origin", () => {
+    // The path alone says nothing: only this environment reads the snapshot.
+    expect(
+      previewTabNeedsSandbox("https://elsewhere.example.com/api/assets/task-1/a.html", ENVIRONMENT),
+    ).toBe(true);
+  });
+
+  it("gates an empty tab, and one with no environment to compare against", () => {
+    expect(previewTabNeedsSandbox(null, ENVIRONMENT)).toBe(true);
+    expect(previewTabNeedsSandbox(`${ENVIRONMENT}/api/assets/task-1/a.html`, null)).toBe(true);
+    expect(previewTabNeedsSandbox("not a url", ENVIRONMENT)).toBe(true);
+  });
+});
+
+describe("resolveActiveSurfaceNeedsSandbox", () => {
+  const ENVIRONMENT = "https://moatless.example.com";
+  const browserSurface = (tabId: string): RightPanelSurface => ({
+    id: `browser:${tabId}`,
+    kind: "preview",
+    resourceId: tabId,
+  });
+  const previewTab = (tabId: string, url: string | null): PreviewSessionSnapshot => ({
+    threadId: "task-1",
+    tabId,
+    navStatus: url === null ? { _tag: "Idle" } : { _tag: "Success", url, title: "Report" },
+    canGoBack: false,
+    canGoForward: false,
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  });
+  const resolve = (input: {
+    surfaces: readonly RightPanelSurface[];
+    activeSurfaceId: string | null;
+    previewSessions?: Record<string, PreviewSessionSnapshot>;
+  }) =>
+    resolveActiveSurfaceNeedsSandbox({
+      surfaces: input.surfaces,
+      activeSurfaceId: input.activeSurfaceId,
+      previewSessions: input.previewSessions ?? {},
+      environmentHttpBaseUrl: ENVIRONMENT,
+    });
+
+  it("frees a browser tab opened on a workspace file", () => {
+    // The file surface beside it already renders this page with the sandbox
+    // stopped, so gating the browser hid a working surface.
+    expect(
+      resolve({
+        surfaces: [browserSurface("tab-1")],
+        activeSurfaceId: "browser:tab-1",
+        previewSessions: {
+          "tab-1": previewTab("tab-1", `${ENVIRONMENT}/api/assets/task-1/docs/report.html`),
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it("gates a browser tab on a server inside the sandbox", () => {
+    expect(
+      resolve({
+        surfaces: [browserSurface("tab-1")],
+        activeSurfaceId: "browser:tab-1",
+        previewSessions: {
+          "tab-1": previewTab("tab-1", "https://3000-task-1.preview.example.com/"),
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it("gates a browser tab whose session it has not seen", () => {
+    expect(resolve({ surfaces: [browserSurface("tab-1")], activeSurfaceId: "browser:tab-1" })).toBe(
+      true,
+    );
+  });
+
+  it("gates the empty browser tab", () => {
+    expect(
+      resolve({
+        surfaces: [{ id: "browser:new", kind: "preview", resourceId: null }],
+        activeSurfaceId: "browser:new",
+      }),
+    ).toBe(true);
+  });
+
+  it("keeps the kind's own answer for every other surface", () => {
+    expect(resolve({ surfaces: [{ id: "files", kind: "files" }], activeSurfaceId: "files" })).toBe(
+      false,
+    );
+    expect(resolve({ surfaces: [{ id: "diff", kind: "diff" }], activeSurfaceId: "diff" })).toBe(
+      true,
+    );
+  });
+
+  it("gates an id with no surface behind it, and frees an empty panel", () => {
+    expect(resolve({ surfaces: [], activeSurfaceId: "browser:tab-1" })).toBe(true);
+    expect(resolve({ surfaces: [], activeSurfaceId: null })).toBe(false);
   });
 });
 

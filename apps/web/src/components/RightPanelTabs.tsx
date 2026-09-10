@@ -77,6 +77,7 @@ import { resolvePullRequestState } from "./pullRequest/pullRequestPresentation";
 // Fork: sandbox surface gating for the right panel tabs.
 import { RightPanelDisabledState } from "./sandbox/RightPanelDisabledState";
 import {
+  resolveActiveSurfaceNeedsSandbox,
   resolveSurfaceGate,
   surfaceNeedsSandbox,
   type SurfaceGate,
@@ -143,6 +144,10 @@ interface RightPanelTabsProps {
   /** Fork: the thread's sandbox status, shown on the entry that opens the
       surface explaining it. Absent where no sandbox owns this panel. */
   sandboxControl?: ReactNode;
+  /** Fork: where the environment serves its own asset route. A browser tab on
+      that route reads the workspace snapshot, so a stopped sandbox leaves it
+      showing its page. */
+  environmentHttpBaseUrl?: string | null | undefined;
   children: ReactNode;
 }
 
@@ -892,14 +897,15 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
       sandboxReason: surfaceDisabledReason,
     });
   // Fork: an open surface the stopped sandbox has emptied. A surface it does
-  // not own keeps rendering, and an id with no surface behind it is treated as
-  // owned so a stale tab cannot slip past the gate.
+  // not own keeps rendering.
   const activeSurfaceNeedsSandbox =
     props.surfaceDisabled === true &&
-    props.activeSurfaceId !== null &&
-    surfaceNeedsSandbox(
-      props.surfaces.find((surface) => surface.id === props.activeSurfaceId)?.kind ?? "preview",
-    );
+    resolveActiveSurfaceNeedsSandbox({
+      surfaces: props.surfaces,
+      activeSurfaceId: props.activeSurfaceId,
+      previewSessions: props.previewSessions,
+      environmentHttpBaseUrl: props.environmentHttpBaseUrl ?? null,
+    });
 
   const [addSurfaceMenuOpen, setAddSurfaceMenuOpen] = useState(false);
   const [tabScrollState, setTabScrollState] = useState({
