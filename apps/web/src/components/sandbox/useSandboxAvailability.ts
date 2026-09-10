@@ -59,7 +59,7 @@ export function useSandboxAvailability(threadRef: ScopedThreadRef | null): Sandb
         }),
   );
   const query = pushed ? live : polled;
-  const { data, error, isPending: queryIsPending, refresh } = query;
+  const { data, error, isPending: queryIsPending, isSuccess, refresh } = query;
   const sandboxStatus = data?.sandboxStatus ?? null;
   const isPending = queryIsPending && sandboxStatus === null;
 
@@ -73,9 +73,10 @@ export function useSandboxAvailability(threadRef: ScopedThreadRef | null): Sandb
       data,
       error,
       isPending,
+      isSuccess,
       refresh,
     }),
-    [data, error, isPending, refresh],
+    [data, error, isPending, isSuccess, refresh],
   );
 
   const ready = sandboxStatus === "ready";

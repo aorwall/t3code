@@ -44,7 +44,7 @@ export function useSandboxDetail(threadRef: ScopedThreadRef | null): SandboxDeta
           input: { threadId: threadRef.threadId },
         }),
   );
-  const { data, error, isPending: queryIsPending, refresh } = pushed ? live : polled;
+  const { data, error, isPending: queryIsPending, isSuccess, refresh } = pushed ? live : polled;
   const isPending = supported && queryIsPending && data === null;
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export function useSandboxDetail(threadRef: ScopedThreadRef | null): SandboxDeta
   }, [pushed, refresh, supported, threadRef?.environmentId, threadRef?.threadId]);
 
   return useMemo(
-    () => ({ data, error, isPending, refresh, supported }),
-    [data, error, isPending, refresh, supported],
+    () => ({ data, error, isPending, isSuccess, refresh, supported }),
+    [data, error, isPending, isSuccess, refresh, supported],
   );
 }

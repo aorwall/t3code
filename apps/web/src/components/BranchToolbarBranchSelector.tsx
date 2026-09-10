@@ -1,3 +1,6 @@
+import { useSupportsMultiplePullRequests } from "~/hooks/useSupportsMultiplePullRequests";
+import { resolveThreadCurrentPullRequestLink } from "@t3tools/shared/threadPullRequests";
+import { useRightPanelStore } from "../rightPanelStore";
 import { RefreshIcon } from "~/components/ui/refresh-icon";
 import { scopeProjectRef, scopeThreadRef } from "@t3tools/client-runtime/environment";
 import {
@@ -41,6 +44,7 @@ import { composerFloatingLayerProps } from "./chat/composerEventScope";
 import {
   deriveLocalBranchNameFromRemoteRef,
   resolveBranchTriggerLabel,
+  resolveBranchToolbarPrBranch,
   resolveBranchSelectionTarget,
   resolveBranchToolbarValue,
   resolveDraftEnvModeAfterBranchChange,
@@ -48,7 +52,13 @@ import {
   sanitizeNewRefName,
   shouldIncludeBranchPickerItem,
 } from "./BranchToolbar.logic";
-import { ChangeRequestStatusIcon, prStatusIndicator } from "./ThreadStatusIndicators";
+import {
+  ChangeRequestStatusIcon,
+  ThreadPullRequestBadgeControl,
+  prStatusIndicator,
+  resolveThreadPullRequestBadge,
+  useLinkedThreadPullRequest,
+} from "./ThreadStatusIndicators";
 // Fork: `+N` takes the same ink every other pull-request surface uses.
 import { resolvePullRequestState } from "./pullRequest/pullRequestPresentation";
 import { Menu, MenuPopup, MenuTrigger } from "./ui/menu";
@@ -633,35 +643,68 @@ export function BranchToolbarBranchSelector({
     startFromOrigin,
   });
 
+  // Branch status is the fallback when this thread has no linked pull requests.
+  const branchPrBranch = resolveBranchToolbarPrBranch({
+    activeThreadBranch,
+    resolvedActiveBranch,
+  });
+  const branchPr =
+    branchPrBranch !== null && branchStatusQuery.data?.refName === branchPrBranch
+      ? (branchStatusQuery.data.pr ?? null)
+      : null;
+  const supportsMultiplePullRequests = useSupportsMultiplePullRequests(environmentId);
+  const linkedStatus = useLinkedThreadPullRequest(
+    environmentId,
+    serverThread?.linkedPullRequest,
+    true,
+    serverThread?.pullRequests,
+    serverThread?.branchPullRequest,
+  );
+  const currentLinkedPr = supportsMultiplePullRequests
+    ? resolveThreadCurrentPullRequestLink(serverThread?.pullRequests ?? [])
+    : null;
+  const prBadge = supportsMultiplePullRequests
+    ? resolveThreadPullRequestBadge(serverThread?.pullRequests)
+    : null;
+  const displayedPr = linkedStatus?.pr ?? (currentLinkedPr === null ? branchPr : null);
+  const displayedPrStatus = prStatusIndicator(
+    displayedPr,
+    linkedStatus?.sourceControlProvider ?? branchStatusQuery.data?.sourceControlProvider,
+  );
+  const prNumber = currentLinkedPr?.number ?? displayedPr?.number;
+  const prUrl = currentLinkedPr?.url ?? displayedPr?.url;
   // Fork: the pill beside the branch selector shows the Task's bound pull
   // request, which belongs to no branch — see fork/threadPullRequest.ts for why
-  // upstream's branch match cannot gate it here.
-  const branchPr = resolveForkThreadPr(branchStatusQuery.data ?? null);
-  const branchPrStatus = prStatusIndicator(branchPr, branchStatusQuery.data?.sourceControlProvider);
+  // upstream's branch match cannot gate it here. Upstream's own multi-PR badge
+  // is preferred wherever the server advertises `threadPullRequests`; against a
+  // server that does not (Moatless does not yet serve `thread.pullRequests`)
+  // these are what the pill reads instead.
+  const forkPr = resolveForkThreadPr(branchStatusQuery.data ?? null);
+  const forkPrStatus = prStatusIndicator(forkPr, branchStatusQuery.data?.sourceControlProvider);
   // Fork: the Task's bound pull requests. The pill names one of them, and the
   // list is also where that one's repository comes from — the status snapshot
   // carries a number and no repository.
-  const branchPrs = forkThreadPullRequests(serverThread);
-  const branchPrRepository = forkShownPullRequestRepository(branchPrs, branchPr);
+  const forkPrs = forkThreadPullRequests(serverThread);
+  const forkPrRepository = forkShownPullRequestRepository(forkPrs, forkPr);
   // Action-oriented tooltip (the pill opens the PR), distinct from the sidebar's
   // state-description tooltip.
   // Fork: it names the repository in full, and the title, because the pill has
   // room for the repository's last segment and a truncated title only. A draft
   // reports its state as `open`, so `isDraft` is what tells the two apart.
-  const branchPrTooltip = branchPr
-    ? `Open ${branchPrRepository ?? sourceControlPresentation.terminology.singular} #${branchPr.number} (${branchPr.state === "open" && branchPr.isDraft === true ? "draft" : branchPr.state}): ${branchPr.title}`
+  const forkPrTooltip = forkPr
+    ? `Open ${forkPrRepository ?? sourceControlPresentation.terminology.singular} #${forkPr.number} (${forkPr.state === "open" && forkPr.isDraft === true ? "draft" : forkPr.state}): ${forkPr.title}`
     : "";
   // Fork: the Task's other bound pull requests. The pill opens the one it names
   // when this is empty and offers a menu when it is not.
-  const otherBranchPrs = forkAdditionalPullRequests(branchPrs, branchPr);
+  const otherForkPrs = forkAdditionalPullRequests(forkPrs, forkPr);
   // Fork: `+N` wears the ink of the most important pull request it hides, so a
   // Task with an open one still reads as open with the pill on a merged one.
   // `null` while no binding it covers has had its status fetched.
-  const otherBranchPrsLeadingState = forkLeadingPullRequestState(otherBranchPrs);
-  const otherBranchPrsTone =
-    otherBranchPrsLeadingState === null
+  const otherForkPrsLeadingState = forkLeadingPullRequestState(otherForkPrs);
+  const otherForkPrsTone =
+    otherForkPrsLeadingState === null
       ? null
-      : resolvePullRequestState(otherBranchPrsLeadingState).toneClassName;
+      : resolvePullRequestState(otherForkPrsLeadingState).toneClassName;
   const openPrLink = useOpenPrLink(threadRef);
 
   function renderPickerItem(itemValue: string, index: number) {
@@ -765,27 +808,43 @@ export function BranchToolbarBranchSelector({
         className={cn("flex min-w-0 items-center gap-1", className)}
         data-composer-context-control
       >
-        {branchPr && branchPrStatus ? (
+        {/* Fork: upstream's badge owns the pill wherever the server advertises
+            `threadPullRequests`; the fork's binding-derived pill is what a
+            server without that capability shows. */}
+        {supportsMultiplePullRequests ? (
+          <ThreadPullRequestBadgeControl
+            variant="ghost"
+            badge={prBadge}
+            number={prNumber}
+            url={prUrl}
+            status={displayedPrStatus}
+            onOpenStack={() => useRightPanelStore.getState().open(threadRef, "pull-requests")}
+            onOpenPullRequest={(event) => {
+              if (prUrl) openPrLink(event, prUrl);
+            }}
+          />
+        ) : null}
+        {!supportsMultiplePullRequests && forkPr && forkPrStatus ? (
           <Tooltip>
             <TooltipTrigger
               render={
                 <button
                   type="button"
-                  aria-label={branchPrTooltip}
-                  onClick={(event) => openPrLink(event, branchPrStatus.url)}
+                  aria-label={forkPrTooltip}
+                  onClick={(event) => openPrLink(event, forkPrStatus.url)}
                   className={cn(
                     // Fork: the pill carries a repository and a title beside the
                     // number now, so it may shrink rather than hold every
                     // character — the branch trigger beside it keeps its label.
                     "inline-flex min-w-0 items-center gap-0.5 rounded px-1 py-0.5 text-[11px] font-medium tabular-nums transition-colors hover:bg-muted/60",
-                    branchPrStatus.colorClass,
+                    forkPrStatus.colorClass,
                   )}
                 />
               }
             >
               <ChangeRequestStatusIcon
-                state={branchPr.state}
-                isDraft={branchPr.isDraft}
+                state={forkPr.state}
+                isDraft={forkPr.isDraft}
                 className="size-3"
               />
               {/* Fork: `#123 repo · title`. Everything but the icon still
@@ -801,47 +860,47 @@ export function BranchToolbarBranchSelector({
                   {/* Neither the number nor the repository truncates: together
                       they name the pull request, and the title is what the room
                       runs out on. */}
-                  <span className="shrink-0">#{branchPr.number}</span>
-                  {branchPrRepository === null ? null : (
+                  <span className="shrink-0">#{forkPr.number}</span>
+                  {forkPrRepository === null ? null : (
                     <span className="shrink-0 font-normal text-muted-foreground/80">
-                      {forkPullRequestRepoLabel(branchPrRepository)}
+                      {forkPullRequestRepoLabel(forkPrRepository)}
                     </span>
                   )}
                   <span aria-hidden className="shrink-0 text-muted-foreground/50">
                     ·
                   </span>
                   <span className="min-w-0 shrink truncate font-normal text-muted-foreground/70">
-                    {branchPr.title}
+                    {forkPr.title}
                   </span>
                 </span>
               </span>
             </TooltipTrigger>
-            <TooltipPopup side="top">{branchPrTooltip}</TooltipPopup>
+            <TooltipPopup side="top">{forkPrTooltip}</TooltipPopup>
           </Tooltip>
         ) : null}
         {/* Fork: the pill names one pull request, so the Task's others get a
             counter of their own rather than a second pill each, toned by the
             most important of them. */}
-        {otherBranchPrs.length > 0 ? (
+        {!supportsMultiplePullRequests && otherForkPrs.length > 0 ? (
           <Menu>
             <MenuTrigger
               render={
                 <button
                   type="button"
-                  aria-label={`Show ${otherBranchPrs.length} more ${
+                  aria-label={`Show ${otherForkPrs.length} more ${
                     sourceControlPresentation.terminology.singular
-                  }${otherBranchPrs.length === 1 ? "" : "s"}`}
+                  }${otherForkPrs.length === 1 ? "" : "s"}`}
                   className={cn(
                     "inline-flex shrink-0 items-center rounded px-1 py-0.5 font-medium text-[11px] tabular-nums transition-colors hover:bg-muted/60 hover:text-foreground/80",
-                    otherBranchPrsTone ?? "text-muted-foreground/70",
+                    otherForkPrsTone ?? "text-muted-foreground/70",
                   )}
                 />
               }
             >
-              +{otherBranchPrs.length}
+              +{otherForkPrs.length}
             </MenuTrigger>
             <MenuPopup align="start" side="top" className="min-w-[16rem]">
-              {otherBranchPrs.map((pullRequest) => (
+              {otherForkPrs.map((pullRequest) => (
                 <ForkPullRequestMenuItem
                   key={forkPullRequestKey(pullRequest)}
                   environmentId={environmentId}
