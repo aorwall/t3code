@@ -29,6 +29,8 @@ import { resolveChangeRequestPresentation } from "../sourceControlPresentation";
 import { resolveThreadStatusPill, type ThreadStatusPill } from "./Sidebar.logic";
 import type { SidebarThreadSummary } from "../types";
 import { formatWorktreePathForDisplay } from "../worktreeCleanup";
+// Fork: the badge lists a Task's other pull requests under it.
+import { Popover, PopoverPopup, PopoverTrigger } from "./ui/popover";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "./ui/tooltip";
 import { pullRequestListLines } from "./pullRequest/pullRequestListLines";
 import { resolvePullRequestState } from "./pullRequest/pullRequestPresentation";
@@ -142,17 +144,26 @@ export function ThreadPullRequestBadgeControl({
   number,
   url,
   status,
+  pullRequests,
   onOpenStack,
   onOpenPullRequest,
+  onOpenLink,
 }: {
   variant: "underline" | "ghost";
   badge: ThreadPullRequestBadge | null;
   number?: number | undefined;
   url?: string | undefined;
   status: PrStatusIndicator | null;
+  /** Fork: the links the badge lists. Supply `onOpenLink` with them. */
+  pullRequests?: ReadonlyArray<ThreadPullRequestLink> | undefined;
   onOpenStack: () => void;
   onOpenPullRequest: (event: MouseEvent<HTMLAnchorElement>) => void;
+  /** Fork: opens one listed link. */
+  onOpenLink?:
+    | ((event: MouseEvent<HTMLAnchorElement>, link: ThreadPullRequestLink) => void)
+    | undefined;
 }) {
+  const listed = useMemo(() => visibleThreadPullRequests(pullRequests ?? []), [pullRequests]);
   const isStack = badge?.kind === "stack";
   if (!isStack && (number === undefined || url === undefined)) return null;
   const label = isStack
@@ -180,6 +191,37 @@ export function ThreadPullRequestBadgeControl({
       ) : null}
     </>
   );
+  // Fork: several links that are not one stack. Upstream's badge is a link to
+  // the primary and the `+N` beside it names the rest with nothing behind it,
+  // so the fork puts the sidebar hover's list under the badge instead.
+  if (!isStack && onOpenLink !== undefined && listed.length > 1) {
+    return (
+      <Popover>
+        <PopoverTrigger
+          render={
+            <InlineButton
+              className={className}
+              aria-label={label}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
+            />
+          }
+        >
+          {content}
+        </PopoverTrigger>
+        <PopoverPopup
+          side="top"
+          align="start"
+          tooltipStyle
+          className="max-w-[min(30rem,calc(100vw-2rem))]"
+        >
+          <div className="py-0.5 text-muted-foreground text-xs">
+            <ThreadPullRequestsMiniList pullRequests={listed} onSelect={onOpenLink} />
+          </div>
+        </PopoverPopup>
+      </Popover>
+    );
+  }
   return (
     <Tooltip>
       <TooltipTrigger
@@ -221,8 +263,13 @@ export function ThreadPullRequestBadgeControl({
  */
 export function ThreadPullRequestsMiniList({
   pullRequests,
+  onSelect,
 }: {
   pullRequests: ReadonlyArray<ThreadPullRequestLink>;
+  /** Fork: makes each row a link to its own pull request. Absent, the list is text. */
+  onSelect?:
+    | ((event: MouseEvent<HTMLAnchorElement>, link: ThreadPullRequestLink) => void)
+    | undefined;
 }) {
   const lines = useMemo(
     () =>
@@ -238,14 +285,8 @@ export function ThreadPullRequestsMiniList({
           snapshot === null
             ? null
             : resolvePullRequestState({ state: snapshot.state, isDraft: snapshot.isDraft });
-        return (
-          <li
-            key={`${line.link.host}/${line.link.repository}#${line.link.number}`}
-            className="flex min-w-0 items-center gap-2"
-            // Capped like the panel: past a few layers the indent only repeats "still in the
-            // stack", and sixteen of them would walk the titles off the popover.
-            style={{ paddingLeft: `${Math.min(line.depth, 3) * 0.75}rem` }}
-          >
+        const row = (
+          <>
             {presentation ? (
               <presentation.Icon
                 aria-hidden
@@ -266,6 +307,29 @@ export function ThreadPullRequestsMiniList({
                 {line.stack.kind === "native" ? "stack" : "chain"} · {line.stack.size}
               </span>
             ) : null}
+          </>
+        );
+        return (
+          <li
+            key={`${line.link.host}/${line.link.repository}#${line.link.number}`}
+            className="flex min-w-0 items-center gap-2"
+            // Capped like the panel: past a few layers the indent only repeats "still in the
+            // stack", and sixteen of them would walk the titles off the popover.
+            style={{ paddingLeft: `${Math.min(line.depth, 3) * 0.75}rem` }}
+          >
+            {onSelect === undefined ? (
+              row
+            ) : (
+              <a
+                href={line.link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="-mx-1 flex min-w-0 flex-1 items-center gap-2 rounded-sm px-1 py-0.5 hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-ring"
+                onClick={(event) => onSelect(event, line.link)}
+              >
+                {row}
+              </a>
+            )}
           </li>
         );
       })}

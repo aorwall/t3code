@@ -767,10 +767,14 @@ export function BranchToolbarBranchSelector({
           number={prNumber}
           url={prUrl}
           status={displayedPrStatus}
+          // Fork: a Task binds every pull request its agent opened, and they
+          // rarely stack, so the badge lists them rather than naming one.
+          pullRequests={serverThread?.pullRequests}
           onOpenStack={() => useRightPanelStore.getState().open(threadRef, "pull-requests")}
           onOpenPullRequest={(event) => {
             if (prUrl) openPrLink(event, prUrl);
           }}
+          onOpenLink={(event, link) => openPrLink(event, link.url)}
         />
         {/* Context menu lives on the wrapper: the disabled Button has
             pointer-events-none, so the trigger itself never sees right-clicks

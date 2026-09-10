@@ -28,6 +28,22 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-10 — fork change: the composer badge lists a Task's pull requests
+
+- Not a merge. It follows the entry below, and the fork delta for pull requests
+  is now two: the `mergeEnvironmentThread` line, and this badge.
+- `ThreadPullRequestBadgeControl` opens a popover with more than one link and no
+  stack, holding `ThreadPullRequestsMiniList` — the list a sidebar row already
+  hovers — where each row links to its own pull request. Upstream's badge is an
+  anchor to the primary, so the `+N` had nothing behind it. The label is
+  unchanged.
+- Untouched: the sidebar badge, and the stack badge on both surfaces. A stack
+  still opens the `pull-requests` panel. Moatless rarely produces one, because a
+  Task's pull requests seldom share a base — see [the inventory](./inventory.json)
+  row `task-bound-pull-request`.
+- Verification: `pnpm lint` and `pnpm fmt:check` pass. `@t3tools/web#typecheck`
+  passes and its `ThreadStatusIndicators` suite passes, 10 tests.
+
 ### 2026-09-10 — fork change: the backend serves upstream's multi-PR threads
 
 - Not a merge. The Moatless half landed with it: `thread.pullRequests` is filled
