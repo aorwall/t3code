@@ -28,6 +28,80 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-10 — merged upstream to 0f602b33, upstream shipped its own multi-PR threads
+
+- Upstream: `0f602b337` from base `2a3035353` (`16` commits).
+- Landed: `280` files from `git diff --stat HEAD^1 HEAD` against `277` in the
+  upstream range (`2a3035353..HEAD^2`); fork delta `733` files from
+  `git diff --stat HEAD^2 HEAD`. `merge-stats.mjs` reported the two file sets as
+  an exact `277`/`277` match — nothing in the range was dropped and nothing extra
+  landed. The three over are the typecheck fixes amended into the merge commit,
+  listed below.
+- Conflicts: 6 files, all on one upstream feature — #10839
+  `feat(pull-requests): link multiple pull requests to threads`. `rightPanelStore.ts`
+  and `ChatView.tsx` were additive on both sides (upstream's `pull-requests`
+  surface and `addPullRequestsSurface`, the fork's `sandbox` surface and
+  `addSandboxSurface`); kept both. `orchestration.ts` was an import-block
+  collision plus the fork's `ThreadVisibility` literal landing on upstream's new
+  doc comment; kept both. The other three are the entry below.
+- **Upstream shipping the thing a convergence entry was waiting for does not
+  make it adoptable.** `task-bound-pull-request` said to re-home the fork's `+N`
+  menu onto upstream's equivalent "at which point"; upstream shipped that
+  equivalent here — `thread.pullRequests`, `packages/shared/src/threadPullRequests.ts`,
+  `ThreadPullRequestBadgeControl` — and it still cannot be re-homed, because
+  Moatless serves neither the array nor the `threadPullRequests` capability, so
+  upstream's badge resolves to nothing and would paint an empty pill over a
+  working one. `theirs` would have silently deleted live behaviour the entry's
+  `mustSurvive` names. Landed upstream's implementation whole and gated the two
+  presentations on `useSupportsMultiplePullRequests` in
+  `BranchToolbarBranchSelector.tsx`, `ThreadStatusIndicators.tsx` and
+  `Sidebar.tsx` — additive, no prop threading, and it re-homes itself the day the
+  backend advertises. Inventory and convergence entries updated to say so; the
+  deletion list is in [gaps](./gaps.md) under _Capabilities are reported…_.
+- **A clean merge can drop an import you still need.** `resolveBranchToolbarPrBranch`
+  vanished from `BranchToolbarBranchSelector.tsx`'s `./BranchToolbar.logic` import
+  with no conflict marker: the fork had deleted it from that line, upstream never
+  touched the line, so git kept the deletion while upstream's new `branchPrBranch`
+  logic reintroduced the use. Nothing flags this but typecheck.
+- Three typecheck failures, all fork-only web code that upstream's widened shared
+  types reached: `sandboxControl.placement.test.tsx` needed the two new
+  `RightPanelTabs` props (`onAddPullRequests`, `pullRequestsAvailable`), and
+  `useSandboxAvailability.ts` / `useSandboxDetail.ts` needed `isSuccess`
+  destructured out of the query and returned, since `EnvironmentQueryView` grew it.
+- Sweep: 13 owned-concern hits, all `infra/relay/**` FCM/Android-push files
+  matching on `relay`. They belong to the decided-out `cloud-relay-connect`
+  concern ("Being removed with Clerk. Do not adopt."), so they are inherited in
+  tree and adopted by nothing. No inventory entry.
+- Unsupported methods: 0 ADD, 0 DROP, 2 KEEP, 4 known exceptions — no `rpc.ts`
+  edit. Upstream's two new methods `pullRequests.stack` and
+  `pullRequests.linkedThreads` are already covered by the shared
+  `PullRequestRpcError` union.
+- `inventory.json` names a "Thread Fork Delta" and a "Thread Visibility Delta"
+  that [the inventory prose](./upstream-merge-inventory.md) has no section for.
+  Not introduced by this merge; noted so the next reader does not go looking.
+- Verification: `verify.mjs` green on seven of eight — `duplicate-adds`,
+  `tripwires`, `resolution-check`, `unsupported-methods`, `fmt:check`, `lint`,
+  `typecheck`. `test` is red on `@t3tools/desktop` alone, and it is the standing
+  `libsecret-1` gap already in [gaps](./gaps.md): `scripts/browser-secret-native.test.mjs
+  > bundled libsecret helper`, 100 files pass and 1 fails to compile. Not
+merge-introduced — `git diff --name-only HEAD^1 HEAD | grep browser-secret`is
+empty. Four packages did not finish under`vp run -r test` (`@t3tools/mobile`,
+`t3`, `@t3tools/web`, `t3code-relay`) and all four pass alone, so that is
+parallel load again, not the merge. Whole run took ~18 min with
+`NODE_OPTIONS=--max-old-space-size=12288`.
+- `vp i` itself now OOMs under the default Node heap, not just the test suite —
+  `Ineffective mark-compacts near heap limit`, surfacing as a bare exit 1.
+  Re-run with `NODE_OPTIONS=--max-old-space-size=12288` and it installs.
+- `git push --force-with-lease` is rejected with "stale info" on a merge branch
+  here, every time. `.git/config`'s origin fetch refspec is only
+  `+refs/heads/main:refs/remotes/origin/main`, so no remote-tracking ref exists
+  for `merge/upstream-*` and the bare lease has nothing to compare against. Pass
+  the ref and sha explicitly:
+  `git push --force-with-lease=<branch>:<sha> origin HEAD:<branch>`.
+- `pnpm-lock.yaml` floated a transitive `js-yaml` `4.2.0` → `4.3.1` and an
+  alchemy peer hash on every `vp i`, same as last merge. Reverted before each
+  commit and amend.
+
 ### 2026-09-09 — merged upstream to 2a303535, question attachments + an Effect rename that hid in three fork-only classes
 
 - Upstream: `2a3035353` from base `a37c66406` (`53` commits).

@@ -43,7 +43,8 @@ not report is every boolean added since that handshake was written —
 `threadPinning` (upstream, 2026-08-06), `threadPinReorder` (upstream,
 2026-08-08), `threadTitleRegeneration`, `serverSelfUpdate`,
 `serverSelfUpdateProgress` and `agentActivityPublishing` (upstream,
-2026-08-16), and `questionAttachments` (upstream, 2026-09-08) — so each of those
+2026-08-16), `questionAttachments` (upstream, 2026-09-08) and
+`threadPullRequests` (upstream, 2026-09-09) — so each of those
 surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
 statement from the deployment. That is correct for the ones the backend does not
@@ -56,6 +57,23 @@ whether a user may attach files to an answer to an agent's async question
 the answer composer drops its attach control and the text-only answer path is
 unchanged, so nothing breaks — a user simply cannot send a screenshot back to a
 question that asked for one.
+
+`threadPullRequests` is the newest and the one that costs the most here, because
+it is the capability the fork has been waiting on. Upstream's 2026-09-09 merge
+shipped its own several-pull-requests-per-thread model — `thread.pullRequests:
+ThreadLinkedPullRequest[]`, `packages/shared/src/threadPullRequests.ts`, and the
+`ThreadPullRequestBadgeControl` pill with its stack panel — which is the arrival
+the `task-bound-pull-request` convergence entry said to re-home the fork's `+N`
+menu onto. It cannot be re-homed yet: Moatless serves no `pullRequests` array on
+a thread and does not advertise the capability, so on this deployment upstream's
+badge would resolve to nothing and paint an empty pill over the working one. So
+both presentations are in the tree, and `supportsMultiplePullRequests`
+(`apps/web/src/hooks/useSupportsMultiplePullRequests.ts`) is the switch between
+them: upstream's badge where the server advertises the capability, the fork's
+binding-derived pill and `+N` menu where it does not. The switch is what makes
+this a placeholder rather than a permanent delta — the day the backend fills the
+array and reports the boolean, the fork half stops rendering on its own and can
+then be deleted.
 
 A sibling record has the same shape one level down. `ServerProvider` grew a
 `reportsContextWindow` flag (upstream, 2026-09-08,
@@ -96,7 +114,13 @@ the answer varies by deployment; keep the flag when it cannot.
   to implement, and drops or contract-registers the two fork-invented keys.
 - **Then here:** for a boolean that gates a `FEATURES` flag (pinning is the near
   one — see _Settlement rules Moatless owns_), delete the flag and its gates when
-  the backend reports it true.
+  the backend reports it true. For `threadPullRequests`, once the backend fills
+  `thread.pullRequests` and reports the boolean, delete the fork half of the
+  switch: the `!supportsMultiplePullRequests` pill and `+N` menu branches in
+  `BranchToolbarBranchSelector.tsx`, `prOverflowBadge` and its two row usages in
+  `Sidebar.tsx`, the `forkInlinePullRequestSummary` path in
+  `ThreadStatusIndicators.tsx`, and `apps/web/src/fork/threadPullRequest.ts`
+  entire.
 
 ### Methods the backend does not dispatch
 

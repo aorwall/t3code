@@ -52,6 +52,7 @@ function render(options: {
       onAddBrowserInProfile={() => undefined}
       onAddTerminal={() => undefined}
       onAddPullRequest={() => undefined}
+      onAddPullRequests={() => undefined}
       onAddDiff={() => undefined}
       onAddFiles={() => undefined}
       onAddAgents={() => undefined}
@@ -62,6 +63,7 @@ function render(options: {
       diffAvailable
       filesAvailable
       pullRequestAvailable
+      pullRequestsAvailable
       agentsAvailable
       surfaceDisabled={options.surfaceDisabled}
       surfaceDisabledReason="Start the sandbox to use right-panel surfaces."
