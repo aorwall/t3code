@@ -16,7 +16,6 @@ import {
 import { getCodexConfig } from "@t3tools/moatless-api/generated/agent-harness-access/agent-harness-access";
 import { getFeatureFlags } from "@t3tools/moatless-api/generated/feature-flags/feature-flags";
 import {
-  getForgejoConfig,
   getGithubConfig,
   listForgejoConnections,
 } from "@t3tools/moatless-api/generated/git-host-access/git-host-access";
@@ -35,7 +34,6 @@ import type {
   EffectivePluginResponse,
   FeatureFlagsResponse,
   ForgejoConnectionsResponse,
-  ForgejoProviderTokenStatusResponse,
   GitHubAppsResponse,
   GitHubProviderTokenStatusResponse,
   Loop,
@@ -123,31 +121,14 @@ export const codexAccessQuery = moatlessQuery<CodexAgentHarnessCredentialStatusR
  * Every Forgejo instance this deployment registered, each carrying the viewer's
  * own credential for it.
  *
- * Keyed at `account/forgejo`, the prefix the per-host reads below sit under, so
- * one write refreshes this list and every host in it.
+ * One read covers every host, because the backend resolves them from one
+ * credential store: a write against any instance refreshes all of them at once,
+ * and a host that read stale is a host the page reports the wrong state for.
  */
 export const forgejoConnectionsQuery = moatlessQuery<ForgejoConnectionsResponse>(
   "account/forgejo",
   () => listForgejoConnections(),
 );
-
-/**
- * The viewer's credential for one Forgejo instance, keyed by host.
- *
- * Per host because Forgejo is self-hosted and each instance is connected
- * separately, so one person can hold a different credential on each. Under
- * `account/forgejo`, so a write to any of them refreshes every one — the backend
- * resolves them from one credential store, and a host that reads stale here is
- * a host the page reports the wrong state for.
- *
- * A function rather than a constant because the key carries the host; safe to
- * call during render, since the key decides the atom.
- */
-export function forgejoAccessQuery(host: string) {
-  return moatlessQuery<ForgejoProviderTokenStatusResponse>(`account/forgejo/${host}`, () =>
-    getForgejoConfig({ host }),
-  );
-}
 
 /**
  * What this deployment offers, which decides whether a surface is drawn at all.

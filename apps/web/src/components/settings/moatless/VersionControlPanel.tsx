@@ -26,8 +26,6 @@ import type {
 import { useMoatlessCommand, useMoatlessQuery } from "../../../moatless/query";
 import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
-import { Input } from "../../ui/input";
-import { ITEM_ROW_CLASSNAME } from "../itemRows";
 import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
 import { searchableSetting } from "../settingsSearch";
 import {
@@ -48,16 +46,10 @@ import {
   forgejoConnectOutcome,
   forgejoConnectUrl,
   forgejoCredential,
-  forgejoHost,
   type ForgejoConnectOutcome,
 } from "./forgejoRows";
 import { SectionError, SectionPending } from "./MoatlessSectionState";
-import {
-  featureFlagsQuery,
-  forgejoAccessQuery,
-  forgejoConnectionsQuery,
-  githubAccessQuery,
-} from "./queries";
+import { featureFlagsQuery, forgejoConnectionsQuery, githubAccessQuery } from "./queries";
 import { SettingsMasterDetail, type MasterDetailEntry } from "./SettingsMasterDetail";
 import { cn } from "~/lib/utils";
 
@@ -258,12 +250,12 @@ function GithubDetail() {
 // --------------------------------------------------------------- Forgejo ----
 
 /**
- * Forgejo access, one row per instance.
+ * Forgejo access, one section per instance.
  *
  * Forgejo is self-hosted, so the deployment registers each host separately and
- * `GET /settings/forgejo/instances` is what names them. A host with no
- * registered application is absent from that list, and the field at the bottom
- * is how the viewer reaches one.
+ * `GET /settings/forgejo/instances` is what names them. That list is the whole
+ * page: a host it does not carry is a host this deployment does not run, so
+ * there is nothing here to type a hostname into.
  */
 function ForgejoDetail() {
   const { data, error, isPending, refresh } = useMoatlessQuery(forgejoConnectionsQuery);
@@ -316,85 +308,24 @@ function ForgejoDetail() {
         <SectionPending label="Forgejo instances" />
       ) : instances.length === 0 ? (
         <p className="px-3 text-[13px] text-muted-foreground/80 sm:px-4">
-          No instance is registered on this deployment. Name one below to connect it with a personal
-          access token.
+          No instance is registered on this deployment. An administrator registers one before it can
+          be connected here.
         </p>
       ) : (
-        instances.map((instance) => <ForgejoInstanceRows key={instance.host} status={instance} />)
+        instances.map((instance) => (
+          <ForgejoInstanceSection key={instance.host} status={instance} />
+        ))
       )}
-
-      {/* Outside the read's own states: when the list is unavailable, naming a
-          host is the only way left to reach an instance. */}
-      <AnotherForgejoInstance knownHosts={instances.map((instance) => instance.host)} />
     </>
   );
-}
-
-/**
- * An instance the list does not carry, which is one with no registered OAuth2
- * application. A personal access token still connects it.
- */
-function AnotherForgejoInstance({ knownHosts }: { readonly knownHosts: readonly string[] }) {
-  const [draft, setDraft] = useState("");
-  const [host, setHost] = useState("");
-  const listed = host !== "" && knownHosts.includes(host);
-
-  return (
-    <>
-      <div className={ITEM_ROW_CLASSNAME}>
-        <label
-          htmlFor="version-control-forgejo-host"
-          className="mb-1.5 block font-medium text-foreground text-xs"
-        >
-          Another instance
-        </label>
-        <div className="flex flex-wrap items-center gap-2">
-          <Input
-            id="version-control-forgejo-host"
-            value={draft}
-            autoComplete="off"
-            placeholder="git.example.com"
-            onChange={(event) => setDraft(event.currentTarget.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") setHost(forgejoHost(draft));
-            }}
-            className="min-w-56 flex-1 font-mono text-[13px]"
-          />
-          <Button
-            size="sm"
-            disabled={forgejoHost(draft) === ""}
-            onClick={() => setHost(forgejoHost(draft))}
-          >
-            Check
-          </Button>
-        </div>
-        <p className="mt-1 text-[13px] text-muted-foreground/80">
-          {listed
-            ? `${host} is listed above.`
-            : "A host this deployment registered no application for. A full URL works too — only its host is kept."}
-        </p>
-      </div>
-
-      {/* Remounted per host, so switching instances cannot show one host's
-          credential under another's name while the read is in flight. */}
-      {host === "" || listed ? null : <ForgejoInstance key={host} host={host} />}
-    </>
-  );
-}
-
-/** One instance the list does not carry, read on its own. */
-function ForgejoInstance({ host }: { readonly host: string }) {
-  const query = useMemo(() => forgejoAccessQuery(host), [host]);
-  const { data, error, refresh } = useMoatlessQuery(query);
-  const label = `Forgejo access for ${host}`;
-
-  if (error) return <SectionError error={error} label={label} onRetry={refresh} />;
-  if (data === null) return <SectionPending label={label} />;
-  return <ForgejoInstanceRows status={data} />;
 }
 
 /** What the viewer holds for one instance, and everything that changes it. */
-function ForgejoInstanceRows({ status }: { readonly status: ForgejoProviderTokenStatusResponse }) {
+function ForgejoInstanceSection({
+  status,
+}: {
+  readonly status: ForgejoProviderTokenStatusResponse;
+}) {
   const host = status.host;
   const credential = useMemo(() => forgejoCredential(status), [status]);
   const connectLabel = forgejoConnectLabel(status);
@@ -429,15 +360,14 @@ function ForgejoInstanceRows({ status }: { readonly status: ForgejoProviderToken
   const showTokenField = tokenFieldOpen || !canConnectForgejoOauth(status);
 
   return (
-    <>
+    <section className="space-y-2">
+      {/* The host heads its own section rather than sitting on the row, so a
+          deployment with several instances reads as several settings groups. */}
+      <h4 className="px-3 font-medium font-mono text-foreground text-sm sm:px-4">{host}</h4>
+
       <CredentialRow
         title={credential.label}
         description={credential.description}
-        badge={
-          <Badge variant="secondary" className="font-mono">
-            {host}
-          </Badge>
-        }
         actions={
           <>
             {connectLabel !== null ? (
@@ -478,7 +408,8 @@ function ForgejoInstanceRows({ status }: { readonly status: ForgejoProviderToken
 
       {canConnectForgejoOauth(status) ? null : (
         <p className="px-3 text-[13px] text-muted-foreground/80 sm:px-4">
-          No OAuth application is registered for {host}, so a personal access token is the way in.
+          No OAuth application is registered for this instance, so a personal access token is the
+          way in.
         </p>
       )}
 
@@ -514,6 +445,6 @@ function ForgejoInstanceRows({ status }: { readonly status: ForgejoProviderToken
         </div>
       )}
       <ErrorText error={savePat.error} />
-    </>
+    </section>
   );
 }

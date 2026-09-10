@@ -1,9 +1,10 @@
 /**
- * Fork-only. What the Account page says about the viewer's Forgejo instances.
+ * Fork-only. What the Version control page says about the viewer's Forgejo
+ * instances.
  *
  * Apart from `accountRows` because Forgejo is self-hosted: there is no single
- * account to read, so every rule here takes a host and the page has to be given
- * one before it can read anything at all.
+ * account to read, so every rule here takes one instance's status, which the
+ * deployment's own list of registered instances supplies.
  */
 
 import type { ForgejoProviderTokenStatusResponse } from "@t3tools/moatless-api/generated/model";
@@ -18,12 +19,12 @@ const AUTH_METHOD_FORGEJO_OAUTH = "forgejo_oauth";
 export const FORGEJO_HOST_PARAM = "forgejoHost";
 
 /**
- * The host part of what someone typed, so a pasted URL and a bare host reach
- * the same instance. Empty when the value names no host.
+ * The host part of a value that may carry a whole URL, so it names the same
+ * instance the backend does. Empty when the value names no host.
  *
  * Drops a scheme, a path, a query, a fragment and a trailing dot, which is what
  * the backend's own `normalize_host` drops. A host this disagrees with is a
- * host the page lists twice.
+ * host the page cannot match against the list it was given.
  *
  * The port is kept: `git.example.com:3000` is a different instance from
  * `git.example.com`, and the backend keys every credential on the whole
