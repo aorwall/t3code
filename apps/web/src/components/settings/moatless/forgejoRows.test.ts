@@ -31,6 +31,11 @@ describe("forgejoHost", () => {
     expect(forgejoHost("HTTP://Git.Example.COM/")).toBe("git.example.com");
   });
 
+  it("drops what the backend drops, so a typed host matches a listed one", () => {
+    expect(forgejoHost("git.example.com/?ref=main#top")).toBe("git.example.com");
+    expect(forgejoHost("git.example.com.")).toBe("git.example.com");
+  });
+
   it("keeps the port — it is part of which instance this is", () => {
     expect(forgejoHost("http://git.example.com:3000/owner")).toBe("git.example.com:3000");
   });

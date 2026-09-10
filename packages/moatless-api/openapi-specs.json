@@ -1647,6 +1647,201 @@
         }
       }
     },
+    "/api/v1/admin/settings/apps": {
+      "get": {
+        "tags": ["app-administration"],
+        "operationId": "admin_list_provider_apps",
+        "responses": {
+          "200": {
+            "description": "Every provider spec, and every app registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderAppsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Admin only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/settings/apps/{provider}/{key}": {
+      "put": {
+        "tags": ["app-administration"],
+        "operationId": "admin_save_provider_app",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "description": "A provider named by GET /api/v1/admin/settings/apps",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "description": "A Forgejo host, or an adapter's app key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveProviderAppRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "App registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderAppSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A field is unknown, missing, or the provider rejected the credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Admin only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such provider",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The provider could not be reached to check the credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["app-administration"],
+        "operationId": "admin_remove_provider_app",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "description": "A provider named by GET /api/v1/admin/settings/apps",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "description": "A Forgejo host, or an adapter's app key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "App removed"
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Admin only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing is registered under that provider and key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/settings/codex/config": {
       "post": {
         "tags": ["agent-harness-access"],
@@ -5781,6 +5976,36 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ForgejoProviderTokenStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/forgejo/instances": {
+      "get": {
+        "tags": ["git-host-access"],
+        "summary": "List every registered instance with the caller's own connection to each.",
+        "description": "Any signed-in caller reads this, unlike\n[`admin_list_forgejo_instances`]: a hostname is not a secret, and the\nsettings screen cannot offer a Connect button without one.",
+        "operationId": "list_forgejo_connections",
+        "responses": {
+          "200": {
+            "description": "Registered instances and the caller's connection to each",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForgejoConnectionsResponse"
                 }
               }
             }
@@ -11235,6 +11460,19 @@
           }
         }
       },
+      "ForgejoConnectionsResponse": {
+        "type": "object",
+        "description": "Every registered instance, each carrying the caller's own connection to it.\n\nThis is not [`ForgejoInstancesResponse`]: that one is the admin view of the\nregistered OAuth2 applications, and it names a `client_id`.",
+        "required": ["instances"],
+        "properties": {
+          "instances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForgejoProviderTokenStatusResponse"
+            }
+          }
+        }
+      },
       "ForgejoInstanceSummary": {
         "type": "object",
         "required": ["host", "clientId", "updatedAt"],
@@ -12891,6 +13129,119 @@
           }
         }
       },
+      "ProviderAppField": {
+        "type": "object",
+        "description": "One field a provider's app takes.",
+        "required": ["name", "label", "description", "secret", "required"],
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name on the wire, and the name `moat app set --field <name>=` takes."
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "secret": {
+            "type": "boolean",
+            "description": "Whether the stored value is sealed and never returned by a read path."
+          }
+        }
+      },
+      "ProviderAppSpec": {
+        "type": "object",
+        "description": "What one provider needs before its app credentials can be stored.",
+        "required": ["provider", "displayName", "keyLabel", "keyDescription", "fields"],
+        "properties": {
+          "callbackUrl": {
+            "type": ["string", "null"],
+            "description": "The URL an admin must register at the provider itself. `None` where the\nprovider needs none."
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProviderAppField"
+            }
+          },
+          "keyDescription": {
+            "type": "string"
+          },
+          "keyLabel": {
+            "type": "string",
+            "description": "What the `{key}` path segment names here — a Forgejo host, an adapter's\napp key."
+          },
+          "provider": {
+            "type": "string",
+            "description": "The `{provider}` path segment: `forgejo`, `slack`, `telegram`, `linear`."
+          }
+        }
+      },
+      "ProviderAppSummary": {
+        "type": "object",
+        "description": "One registered app, carrying no secret value.",
+        "required": ["provider", "key", "displayName", "config", "secretFingerprints", "updatedAt"],
+        "properties": {
+          "config": {
+            "type": "object",
+            "description": "The non-secret fields, as stored.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "secretFingerprints": {
+            "type": "object",
+            "description": "A digest per stored secret, enough to tell two values apart and\nrevealing neither. Empty where the store keeps no digest.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        }
+      },
+      "ProviderAppsResponse": {
+        "type": "object",
+        "description": "`GET /api/v1/admin/settings/apps` — every spec, and everything registered.",
+        "required": ["specs", "apps"],
+        "properties": {
+          "apps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProviderAppSummary"
+            }
+          },
+          "specs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProviderAppSpec"
+            }
+          }
+        }
+      },
       "ProviderConnection": {
         "type": "object",
         "description": "Connection state for an external provider (OAuth app, GitHub App, PAT, …).\n\n`connected = false` indicates the frontend should prompt the user to\nreconnect: either no token is stored, or the most recent refresh attempt\nfailed.",
@@ -13726,6 +14077,22 @@
           },
           "webhookSecret": {
             "type": ["string", "null"]
+          }
+        }
+      },
+      "SaveProviderAppRequest": {
+        "type": "object",
+        "description": "`PUT /api/v1/admin/settings/apps/{provider}/{key}`.\n\nEvery value is a field named by the provider's spec, and an unknown name is\nrejected rather than dropped: a mistyped secret would otherwise register an\napp that authenticates against nothing.",
+        "required": ["fields"],
+        "properties": {
+          "fields": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
           }
         }
       },

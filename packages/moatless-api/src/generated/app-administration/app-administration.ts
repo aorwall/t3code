@@ -13,11 +13,14 @@ import type {
   ForgejoInstancesResponse,
   GitHubAppRegistrationResponse,
   GitHubAppsResponse,
+  ProviderAppSummary,
+  ProviderAppsResponse,
   RegisterForgejoInstanceRequest,
   RegisterGitHubAppRequest,
   RemoveGitHubAppResponse,
   RotateGitHubAppKeyRequest,
   SaveAdapterAppRequest,
+  SaveProviderAppRequest,
 } from "../model";
 
 import { customInstance } from "../../customInstance.ts";
@@ -334,6 +337,185 @@ export const adminDeleteAdapterApp = async (
 ): Promise<adminDeleteAdapterAppResponse> => {
   return customInstance<adminDeleteAdapterAppResponse>(
     getAdminDeleteAdapterAppUrl(adapterKind, appKey),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export type adminListProviderAppsResponse200 = {
+  data: ProviderAppsResponse;
+  status: 200;
+};
+
+export type adminListProviderAppsResponse401 = {
+  data: ErrorBody;
+  status: 401;
+};
+
+export type adminListProviderAppsResponse403 = {
+  data: ErrorBody;
+  status: 403;
+};
+
+export type adminListProviderAppsResponseSuccess = adminListProviderAppsResponse200 & {
+  headers: Headers;
+};
+export type adminListProviderAppsResponseError = (
+  | adminListProviderAppsResponse401
+  | adminListProviderAppsResponse403
+) & {
+  headers: Headers;
+};
+
+export type adminListProviderAppsResponse =
+  | adminListProviderAppsResponseSuccess
+  | adminListProviderAppsResponseError;
+
+export const getAdminListProviderAppsUrl = () => {
+  return `/api/v1/admin/settings/apps`;
+};
+
+export const adminListProviderApps = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<adminListProviderAppsResponse> => {
+  return customInstance<adminListProviderAppsResponse>(getAdminListProviderAppsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export type adminSaveProviderAppResponse200 = {
+  data: ProviderAppSummary;
+  status: 200;
+};
+
+export type adminSaveProviderAppResponse400 = {
+  data: ErrorBody;
+  status: 400;
+};
+
+export type adminSaveProviderAppResponse401 = {
+  data: ErrorBody;
+  status: 401;
+};
+
+export type adminSaveProviderAppResponse403 = {
+  data: ErrorBody;
+  status: 403;
+};
+
+export type adminSaveProviderAppResponse404 = {
+  data: ErrorBody;
+  status: 404;
+};
+
+export type adminSaveProviderAppResponse502 = {
+  data: ErrorBody;
+  status: 502;
+};
+
+export type adminSaveProviderAppResponseSuccess = adminSaveProviderAppResponse200 & {
+  headers: Headers;
+};
+export type adminSaveProviderAppResponseError = (
+  | adminSaveProviderAppResponse400
+  | adminSaveProviderAppResponse401
+  | adminSaveProviderAppResponse403
+  | adminSaveProviderAppResponse404
+  | adminSaveProviderAppResponse502
+) & {
+  headers: Headers;
+};
+
+export type adminSaveProviderAppResponse =
+  | adminSaveProviderAppResponseSuccess
+  | adminSaveProviderAppResponseError;
+
+export const getAdminSaveProviderAppUrl = (provider: string, key: string) => {
+  return `/api/v1/admin/settings/apps/${provider}/${key}`;
+};
+
+export const adminSaveProviderApp = async (
+  provider: string,
+  key: string,
+  saveProviderAppRequest: SaveProviderAppRequest,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<adminSaveProviderAppResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customInstance<adminSaveProviderAppResponse>(getAdminSaveProviderAppUrl(provider, key), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(saveProviderAppRequest),
+  });
+};
+
+export type adminRemoveProviderAppResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type adminRemoveProviderAppResponse401 = {
+  data: ErrorBody;
+  status: 401;
+};
+
+export type adminRemoveProviderAppResponse403 = {
+  data: ErrorBody;
+  status: 403;
+};
+
+export type adminRemoveProviderAppResponse404 = {
+  data: ErrorBody;
+  status: 404;
+};
+
+export type adminRemoveProviderAppResponseSuccess = adminRemoveProviderAppResponse204 & {
+  headers: Headers;
+};
+export type adminRemoveProviderAppResponseError = (
+  | adminRemoveProviderAppResponse401
+  | adminRemoveProviderAppResponse403
+  | adminRemoveProviderAppResponse404
+) & {
+  headers: Headers;
+};
+
+export type adminRemoveProviderAppResponse =
+  | adminRemoveProviderAppResponseSuccess
+  | adminRemoveProviderAppResponseError;
+
+export const getAdminRemoveProviderAppUrl = (provider: string, key: string) => {
+  return `/api/v1/admin/settings/apps/${provider}/${key}`;
+};
+
+export const adminRemoveProviderApp = async (
+  provider: string,
+  key: string,
+  options?: Parameters<typeof customInstance>[1],
+): Promise<adminRemoveProviderAppResponse> => {
+  return customInstance<adminRemoveProviderAppResponse>(
+    getAdminRemoveProviderAppUrl(provider, key),
     {
       ...options,
       method: "DELETE",

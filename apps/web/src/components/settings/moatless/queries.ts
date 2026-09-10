@@ -18,6 +18,7 @@ import { getFeatureFlags } from "@t3tools/moatless-api/generated/feature-flags/f
 import {
   getForgejoConfig,
   getGithubConfig,
+  listForgejoConnections,
 } from "@t3tools/moatless-api/generated/git-host-access/git-host-access";
 import { listRepositories } from "@t3tools/moatless-api/generated/repositories/repositories";
 import { listSecrets } from "@t3tools/moatless-api/generated/secrets/secrets";
@@ -33,6 +34,7 @@ import type {
   CodexAgentHarnessCredentialStatusResponse,
   EffectivePluginResponse,
   FeatureFlagsResponse,
+  ForgejoConnectionsResponse,
   ForgejoProviderTokenStatusResponse,
   GitHubAppsResponse,
   GitHubProviderTokenStatusResponse,
@@ -115,6 +117,18 @@ export const githubAccessQuery = moatlessQuery<GitHubProviderTokenStatusResponse
 export const codexAccessQuery = moatlessQuery<CodexAgentHarnessCredentialStatusResponse>(
   "account/codex",
   () => getCodexConfig(),
+);
+
+/**
+ * Every Forgejo instance this deployment registered, each carrying the viewer's
+ * own credential for it.
+ *
+ * Keyed at `account/forgejo`, the prefix the per-host reads below sit under, so
+ * one write refreshes this list and every host in it.
+ */
+export const forgejoConnectionsQuery = moatlessQuery<ForgejoConnectionsResponse>(
+  "account/forgejo",
+  () => listForgejoConnections(),
 );
 
 /**

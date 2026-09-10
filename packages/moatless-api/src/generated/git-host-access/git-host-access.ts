@@ -9,6 +9,7 @@ import type {
   DeleteForgejoConfigParams,
   DeleteForgejoPatOverrideParams,
   ErrorBody,
+  ForgejoConnectionsResponse,
   ForgejoProviderTokenStatusResponse,
   GetForgejoConfigParams,
   GitHubProviderTokenStatusResponse,
@@ -111,6 +112,46 @@ export const deleteForgejoConfig = async (
   return customInstance<deleteForgejoConfigResponse>(getDeleteForgejoConfigUrl(params), {
     ...options,
     method: "DELETE",
+  });
+};
+
+export type listForgejoConnectionsResponse200 = {
+  data: ForgejoConnectionsResponse;
+  status: 200;
+};
+
+export type listForgejoConnectionsResponse401 = {
+  data: ErrorBody;
+  status: 401;
+};
+
+export type listForgejoConnectionsResponseSuccess = listForgejoConnectionsResponse200 & {
+  headers: Headers;
+};
+export type listForgejoConnectionsResponseError = listForgejoConnectionsResponse401 & {
+  headers: Headers;
+};
+
+export type listForgejoConnectionsResponse =
+  | listForgejoConnectionsResponseSuccess
+  | listForgejoConnectionsResponseError;
+
+export const getListForgejoConnectionsUrl = () => {
+  return `/api/v1/settings/forgejo/instances`;
+};
+
+/**
+ * Any signed-in caller reads this, unlike
+ * [`admin_list_forgejo_instances`]: a hostname is not a secret, and the
+ * settings screen cannot offer a Connect button without one.
+ * @summary List every registered instance with the caller's own connection to each.
+ */
+export const listForgejoConnections = async (
+  options?: Parameters<typeof customInstance>[1],
+): Promise<listForgejoConnectionsResponse> => {
+  return customInstance<listForgejoConnectionsResponse>(getListForgejoConnectionsUrl(), {
+    ...options,
+    method: "GET",
   });
 };
 

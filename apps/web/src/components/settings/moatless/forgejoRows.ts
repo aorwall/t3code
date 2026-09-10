@@ -21,13 +21,18 @@ export const FORGEJO_HOST_PARAM = "forgejoHost";
  * The host part of what someone typed, so a pasted URL and a bare host reach
  * the same instance. Empty when the value names no host.
  *
+ * Drops a scheme, a path, a query, a fragment and a trailing dot, which is what
+ * the backend's own `normalize_host` drops. A host this disagrees with is a
+ * host the page lists twice.
+ *
  * The port is kept: `git.example.com:3000` is a different instance from
  * `git.example.com`, and the backend keys every credential on the whole
  * authority.
  */
 export function forgejoHost(value: string): string {
   const withoutScheme = value.trim().replace(/^[a-z][a-z0-9+.-]*:\/\//i, "");
-  return (withoutScheme.split("/")[0] ?? "").toLowerCase();
+  const authority = withoutScheme.split(/[/?#]/)[0] ?? "";
+  return authority.replace(/\.+$/, "").toLowerCase();
 }
 
 /** How the viewer's credential for one instance was obtained. */
