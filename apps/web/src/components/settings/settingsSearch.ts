@@ -101,8 +101,8 @@ export interface SettingsSearchAvailability {
  * subtitles both render from this record, so each label exists once.
  */
 export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
-  // Fork: leads the personal group — reaching GitHub is the first thing a
-  // person has to settle before any task of theirs can do useful work.
+  // Fork: leads the personal group — the agent credentials a person's own
+  // tasks run with.
   "/settings/account": "Account",
   // Fork: sits beside Account, which is the other half of the same question.
   "/settings/version-control": "Version control",
