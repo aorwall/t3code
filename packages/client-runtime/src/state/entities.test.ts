@@ -239,60 +239,58 @@ describe("environment entity projections", () => {
     expect(merged?.messages).toBe(messages);
   });
 
-  // Fork: the pull requests a Task is bound to reach a detail only in its
-  // snapshot, so a thread open across a binding change shows the old set until
-  // the shell's is taken instead.
-  it("takes the shell's bound pull requests over the set the detail was loaded with", () => {
-    const linked = [
-      { projectId: PROJECT_ID, repository: "owner/repo", number: 2, url: "https://x/2" },
-      { projectId: PROJECT_ID, repository: "owner/repo", number: 1, url: "https://x/1" },
-    ];
-    const base = {
+  /** One link, as the shell reports one. */
+  const link = (number: number) =>
+    ({
+      host: "github.com",
+      repository: "owner/repo",
+      number,
+      url: `https://github.com/owner/repo/pull/${number}`,
+      source: "manual",
+      linkedAt: "2026-03-09T12:00:00.000Z",
+      snapshot: null,
+      stack: null,
+    }) as const;
+
+  /** A detail whose `pullRequests` is `links`. */
+  const detailWith = (links: readonly ReturnType<typeof link>[]) =>
+    ({
       ...THREAD_SHELL,
       environmentId: ENVIRONMENT_ID,
+      pullRequests: links,
       deletedAt: null,
       messages: [],
       proposedPlans: [],
       activities: [],
       checkpoints: [],
-    } satisfies OrchestrationThread & { readonly environmentId: EnvironmentId };
+    }) satisfies OrchestrationThread & { readonly environmentId: EnvironmentId };
 
-    const merged = mergeEnvironmentThread(base, {
+  // Fork: the pull requests a Task is bound to reach a detail only in its
+  // snapshot, because Moatless emits no `thread.pull-request-linked`. A thread
+  // open across a binding change shows the old set until the shell's is taken
+  // instead.
+  it("takes the shell's bound pull requests over the set the detail was loaded with", () => {
+    const linked = [link(2), link(1)];
+
+    const merged = mergeEnvironmentThread(detailWith([]), {
       ...THREAD_SHELL,
       environmentId: ENVIRONMENT_ID,
-      linkedPullRequest: linked[0],
-      linkedPullRequests: linked,
+      pullRequests: linked,
     });
 
-    expect(merged?.linkedPullRequests).toBe(linked);
-    expect(merged?.linkedPullRequest).toBe(linked[0]);
+    expect(merged?.pullRequests).toBe(linked);
   });
 
-  // Fork: a server that sends neither field on the shell must not have the
-  // detail's answer replaced by its silence.
-  it("keeps the detail's bound pull requests when the shell carries none", () => {
-    const linked = [
-      { projectId: PROJECT_ID, repository: "owner/repo", number: 7, url: "https://x/7" },
-    ];
-    const detail = {
+  // Fork: the same rule in the other direction. An unlink leaves the shell
+  // saying none, and the detail's stale set must not survive it.
+  it("clears the detail's bound pull requests when the shell reports none", () => {
+    const merged = mergeEnvironmentThread(detailWith([link(7)]), {
       ...THREAD_SHELL,
       environmentId: ENVIRONMENT_ID,
-      linkedPullRequest: linked[0],
-      linkedPullRequests: linked,
-      deletedAt: null,
-      messages: [],
-      proposedPlans: [],
-      activities: [],
-      checkpoints: [],
-    } satisfies OrchestrationThread & { readonly environmentId: EnvironmentId };
-
-    const merged = mergeEnvironmentThread(detail, {
-      ...THREAD_SHELL,
-      environmentId: ENVIRONMENT_ID,
+      pullRequests: [],
     });
 
-    expect(merged?.linkedPullRequests).toBe(linked);
-    expect(merged?.linkedPullRequest).toBe(linked[0]);
+    expect(merged?.pullRequests).toEqual([]);
   });
 
   it("preserves untouched project and thread identities across unrelated shell updates", () => {

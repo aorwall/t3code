@@ -53,26 +53,11 @@ import {
   shouldIncludeBranchPickerItem,
 } from "./BranchToolbar.logic";
 import {
-  ChangeRequestStatusIcon,
   ThreadPullRequestBadgeControl,
   prStatusIndicator,
   resolveThreadPullRequestBadge,
   useLinkedThreadPullRequest,
 } from "./ThreadStatusIndicators";
-// Fork: `+N` takes the same ink every other pull-request surface uses.
-import { resolvePullRequestState } from "./pullRequest/pullRequestPresentation";
-import { Menu, MenuPopup, MenuTrigger } from "./ui/menu";
-// Fork: the pill's pull requests come from the Task's bindings, not its branch.
-import { ForkPullRequestMenuItem } from "../fork/PullRequestMenuItem";
-import {
-  forkAdditionalPullRequests,
-  forkLeadingPullRequestState,
-  forkPullRequestKey,
-  forkPullRequestRepoLabel,
-  forkShownPullRequestRepository,
-  forkThreadPullRequests,
-  resolveForkThreadPr,
-} from "../fork/threadPullRequest";
 import { Button } from "./ui/button";
 import { Switch } from "./ui/switch";
 import { getVirtualizedScrollFadeClassName } from "./ui/scroll-area";
@@ -673,38 +658,6 @@ export function BranchToolbarBranchSelector({
   );
   const prNumber = currentLinkedPr?.number ?? displayedPr?.number;
   const prUrl = currentLinkedPr?.url ?? displayedPr?.url;
-  // Fork: the pill beside the branch selector shows the Task's bound pull
-  // request, which belongs to no branch — see fork/threadPullRequest.ts for why
-  // upstream's branch match cannot gate it here. Upstream's own multi-PR badge
-  // is preferred wherever the server advertises `threadPullRequests`; against a
-  // server that does not (Moatless does not yet serve `thread.pullRequests`)
-  // these are what the pill reads instead.
-  const forkPr = resolveForkThreadPr(branchStatusQuery.data ?? null);
-  const forkPrStatus = prStatusIndicator(forkPr, branchStatusQuery.data?.sourceControlProvider);
-  // Fork: the Task's bound pull requests. The pill names one of them, and the
-  // list is also where that one's repository comes from — the status snapshot
-  // carries a number and no repository.
-  const forkPrs = forkThreadPullRequests(serverThread);
-  const forkPrRepository = forkShownPullRequestRepository(forkPrs, forkPr);
-  // Action-oriented tooltip (the pill opens the PR), distinct from the sidebar's
-  // state-description tooltip.
-  // Fork: it names the repository in full, and the title, because the pill has
-  // room for the repository's last segment and a truncated title only. A draft
-  // reports its state as `open`, so `isDraft` is what tells the two apart.
-  const forkPrTooltip = forkPr
-    ? `Open ${forkPrRepository ?? sourceControlPresentation.terminology.singular} #${forkPr.number} (${forkPr.state === "open" && forkPr.isDraft === true ? "draft" : forkPr.state}): ${forkPr.title}`
-    : "";
-  // Fork: the Task's other bound pull requests. The pill opens the one it names
-  // when this is empty and offers a menu when it is not.
-  const otherForkPrs = forkAdditionalPullRequests(forkPrs, forkPr);
-  // Fork: `+N` wears the ink of the most important pull request it hides, so a
-  // Task with an open one still reads as open with the pill on a merged one.
-  // `null` while no binding it covers has had its status fetched.
-  const otherForkPrsLeadingState = forkLeadingPullRequestState(otherForkPrs);
-  const otherForkPrsTone =
-    otherForkPrsLeadingState === null
-      ? null
-      : resolvePullRequestState(otherForkPrsLeadingState).toneClassName;
   const openPrLink = useOpenPrLink(threadRef);
 
   function renderPickerItem(itemValue: string, index: number) {
@@ -808,109 +761,17 @@ export function BranchToolbarBranchSelector({
         className={cn("flex min-w-0 items-center gap-1", className)}
         data-composer-context-control
       >
-        {/* Fork: upstream's badge owns the pill wherever the server advertises
-            `threadPullRequests`; the fork's binding-derived pill is what a
-            server without that capability shows. */}
-        {supportsMultiplePullRequests ? (
-          <ThreadPullRequestBadgeControl
-            variant="ghost"
-            badge={prBadge}
-            number={prNumber}
-            url={prUrl}
-            status={displayedPrStatus}
-            onOpenStack={() => useRightPanelStore.getState().open(threadRef, "pull-requests")}
-            onOpenPullRequest={(event) => {
-              if (prUrl) openPrLink(event, prUrl);
-            }}
-          />
-        ) : null}
-        {!supportsMultiplePullRequests && forkPr && forkPrStatus ? (
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <button
-                  type="button"
-                  aria-label={forkPrTooltip}
-                  onClick={(event) => openPrLink(event, forkPrStatus.url)}
-                  className={cn(
-                    // Fork: the pill carries a repository and a title beside the
-                    // number now, so it may shrink rather than hold every
-                    // character — the branch trigger beside it keeps its label.
-                    "inline-flex min-w-0 items-center gap-0.5 rounded px-1 py-0.5 text-[11px] font-medium tabular-nums transition-colors hover:bg-muted/60",
-                    forkPrStatus.colorClass,
-                  )}
-                />
-              }
-            >
-              <ChangeRequestStatusIcon
-                state={forkPr.state}
-                isDraft={forkPr.isDraft}
-                className="size-3"
-              />
-              {/* Fork: `#123 repo · title`. Everything but the icon still
-                  collapses in the composer's compact mode. */}
-              <span
-                data-composer-label
-                className="min-w-0 max-w-[18rem] overflow-hidden group-data-[compact]/composer-context:max-w-0"
-              >
-                <span
-                  data-composer-label-motion
-                  className="flex w-full min-w-0 max-w-[18rem] items-baseline gap-1 transition-opacity duration-180 ease-[cubic-bezier(0.32,0.72,0,1)] group-data-[compact]/composer-context:opacity-0 motion-reduce:transition-none"
-                >
-                  {/* Neither the number nor the repository truncates: together
-                      they name the pull request, and the title is what the room
-                      runs out on. */}
-                  <span className="shrink-0">#{forkPr.number}</span>
-                  {forkPrRepository === null ? null : (
-                    <span className="shrink-0 font-normal text-muted-foreground/80">
-                      {forkPullRequestRepoLabel(forkPrRepository)}
-                    </span>
-                  )}
-                  <span aria-hidden className="shrink-0 text-muted-foreground/50">
-                    ·
-                  </span>
-                  <span className="min-w-0 shrink truncate font-normal text-muted-foreground/70">
-                    {forkPr.title}
-                  </span>
-                </span>
-              </span>
-            </TooltipTrigger>
-            <TooltipPopup side="top">{forkPrTooltip}</TooltipPopup>
-          </Tooltip>
-        ) : null}
-        {/* Fork: the pill names one pull request, so the Task's others get a
-            counter of their own rather than a second pill each, toned by the
-            most important of them. */}
-        {!supportsMultiplePullRequests && otherForkPrs.length > 0 ? (
-          <Menu>
-            <MenuTrigger
-              render={
-                <button
-                  type="button"
-                  aria-label={`Show ${otherForkPrs.length} more ${
-                    sourceControlPresentation.terminology.singular
-                  }${otherForkPrs.length === 1 ? "" : "s"}`}
-                  className={cn(
-                    "inline-flex shrink-0 items-center rounded px-1 py-0.5 font-medium text-[11px] tabular-nums transition-colors hover:bg-muted/60 hover:text-foreground/80",
-                    otherForkPrsTone ?? "text-muted-foreground/70",
-                  )}
-                />
-              }
-            >
-              +{otherForkPrs.length}
-            </MenuTrigger>
-            <MenuPopup align="start" side="top" className="min-w-[16rem]">
-              {otherForkPrs.map((pullRequest) => (
-                <ForkPullRequestMenuItem
-                  key={forkPullRequestKey(pullRequest)}
-                  environmentId={environmentId}
-                  pullRequest={pullRequest}
-                  onOpen={(event) => openPrLink(event, pullRequest.url)}
-                />
-              ))}
-            </MenuPopup>
-          </Menu>
-        ) : null}
+        <ThreadPullRequestBadgeControl
+          variant="ghost"
+          badge={prBadge}
+          number={prNumber}
+          url={prUrl}
+          status={displayedPrStatus}
+          onOpenStack={() => useRightPanelStore.getState().open(threadRef, "pull-requests")}
+          onOpenPullRequest={(event) => {
+            if (prUrl) openPrLink(event, prUrl);
+          }}
+        />
         {/* Context menu lives on the wrapper: the disabled Button has
             pointer-events-none, so the trigger itself never sees right-clicks
             while refs are loading or a branch action is pending. */}

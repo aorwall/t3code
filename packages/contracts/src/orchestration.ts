@@ -24,8 +24,6 @@ import {
   TurnId,
 } from "./baseSchemas.ts";
 import { ProviderInstanceId } from "./providerInstance.ts";
-// Fork: `PullRequestState` is also what `ThreadLinkedPullRequest` reports a
-// bound pull request's state with.
 import {
   PullRequestActor,
   PullRequestChecksState,
@@ -669,18 +667,6 @@ export const ThreadLinkedPullRequest = Schema.Struct({
   repository: TrimmedNonEmptyString,
   number: PositiveInt,
   url: TrimmedNonEmptyString,
-  // Fork: the status a Moatless binding already recorded, named as
-  // `PullRequestSummary` names it so a surface reads one vocabulary. The six
-  // travel together — one refresh writes all of them — and are absent together
-  // for a binding whose status has never been fetched, which is what leaves
-  // `pullRequests.summary` the read that fetches it. An upstream server sends
-  // none of them.
-  title: Schema.optional(TrimmedNonEmptyString),
-  state: Schema.optional(PullRequestState),
-  isDraft: Schema.optional(Schema.Boolean),
-  headBranch: Schema.optional(TrimmedNonEmptyString),
-  baseBranch: Schema.optional(TrimmedNonEmptyString),
-  updatedAt: Schema.optional(IsoDateTime),
 });
 export type ThreadLinkedPullRequest = typeof ThreadLinkedPullRequest.Type;
 
@@ -775,10 +761,6 @@ export const OrchestrationThread = Schema.Struct({
     Schema.withDecodingDefault(Effect.succeed([])),
   ),
   branchPullRequest: Schema.optional(Schema.NullOr(ThreadLinkedPullRequest)),
-  // Fork: a Moatless Task can be bound to several pull requests, and the
-  // surfaces that show them all read this. `linkedPullRequest` above stays the
-  // primary — the first element — so every upstream reader keeps working.
-  linkedPullRequests: Schema.optional(Schema.Array(ThreadLinkedPullRequest)),
   // Fork: see ThreadVisibility above. Optional so a payload from a server
   // without the capability decodes unchanged.
   visibility: Schema.optional(ThreadVisibility),
@@ -869,10 +851,6 @@ export const OrchestrationThreadShell = Schema.Struct({
     Schema.withDecodingDefault(Effect.succeed([])),
   ),
   branchPullRequest: Schema.optional(Schema.NullOr(ThreadLinkedPullRequest)),
-  // Fork: a Moatless Task can be bound to several pull requests, and the
-  // surfaces that show them all read this. `linkedPullRequest` above stays the
-  // primary — the first element — so every upstream reader keeps working.
-  linkedPullRequests: Schema.optional(Schema.Array(ThreadLinkedPullRequest)),
   // Fork: see ThreadVisibility above. Optional so a payload from a server
   // without the capability decodes unchanged.
   visibility: Schema.optional(ThreadVisibility),

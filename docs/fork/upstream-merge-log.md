@@ -28,6 +28,36 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-10 — fork change: the backend serves upstream's multi-PR threads
+
+- Not a merge. The Moatless half landed with it: `thread.pullRequests` is filled
+  from the Task's GitHub bindings, `threadPullRequests` is reported, and
+  `thread.pull-request.link` / `.unlink` are dispatched onto those bindings.
+- **The capability and the deletions are one commit, on purpose.** With the flag
+  reported and the fork branches still in the tree, a sidebar row renders both
+  counts and every fork menu row resolves to no status:
+  `ForkPullRequestMenuItem` called `useLinkedThreadPullRequest` with two
+  arguments, and the fork branches in `Sidebar.tsx` and `GitActionsControl.tsx`
+  read no capability at all. Splitting the change ships that state.
+- Deleted: `apps/web/src/fork/threadPullRequest.ts` and its test,
+  `apps/web/src/fork/PullRequestMenuItem.tsx`, the `+N` menu in
+  `BranchToolbarBranchSelector.tsx`, `prOverflowBadge` in `Sidebar.tsx`, the
+  inline summary in `ThreadStatusIndicators.tsx`, the fork rows in
+  `GitActionsControl.tsx`, and `linkedPullRequests` plus the six status fields on
+  `ThreadLinkedPullRequest` in `packages/contracts/src/orchestration.ts`.
+- Kept, and the whole of the remaining delta: the `pullRequests` line in
+  `mergeEnvironmentThread`. Its reason and its deletion condition are in
+  [the inventory](./inventory.json) row `task-bound-pull-request` and in
+  [gaps](./gaps.md) under _A pull request link is a listing change, not an
+  event_.
+- Verification: `pnpm typecheck`, `pnpm lint` and `pnpm fmt:check` pass.
+  `pnpm test` exits 1 on three tasks, none of them this change.
+  `@t3tools/desktop#test` cannot find the `libsecret-1` system library in this
+  sandbox. `@t3tools/mobile#test` and `@t3tools/web#test` exit 137 under `vp`'s
+  default concurrency, which [gaps](./gaps.md) records under _The full suite
+  needs a raised heap_. Both pass alone under
+  `NODE_OPTIONS="--max-old-space-size=12288"`: web `4838` tests, mobile `1393`.
+
 ### 2026-09-10 — merged upstream to 0f602b33, upstream shipped its own multi-PR threads
 
 - Upstream: `0f602b337` from base `2a3035353` (`16` commits).

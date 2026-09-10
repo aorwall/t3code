@@ -18,8 +18,6 @@ import { FolderGit2Icon, GitPullRequestArrowIcon, LayersIcon, TerminalIcon } fro
 import { useMemo, type MouseEvent } from "react";
 import { buttonVariants, InlineButton } from "./ui/button";
 import { cn } from "../lib/utils";
-// Fork: a bound pull request's status travels on the thread row.
-import { forkInlinePullRequestSummary } from "../fork/threadPullRequest";
 import { useEnvironment, usePrimaryEnvironmentId } from "../state/environments";
 import { EnvironmentMachineIcon } from "./EnvironmentMachineIcon";
 import { parseChangeRequestUrl } from "../lib/openPullRequestLink";
@@ -75,23 +73,12 @@ export function useLinkedThreadPullRequest(
   const host = fallback == null ? undefined : parseChangeRequestUrl(fallback.url)?.host;
   const reference =
     fallback == null ? null : { ...fallback, ...(host === undefined ? {} : { host }) };
-  // Fork: against Moatless a thread row carries a refreshed binding's status,
-  // so every surface that names a pull request paints in its first frame. The
-  // query is what a binding whose status has never been fetched still needs —
-  // and answering it is what fetches that status.
-  const inline = useMemo(
-    () => (fallback == null ? null : forkInlinePullRequestSummary(fallback)),
-    [fallback],
-  );
   const queried = useEnvironmentQuery(
-    // Fork: `inline !== null` — the row already carried the status, so there is
-    // nothing left to fetch.
-    !enabled || environmentId === null || reference === null || inline !== null
+    !enabled || environmentId === null || reference === null
       ? null
       : linkedPullRequestDetailAtom({ environmentId, input: reference }),
   ).data;
-  // Fork: `queried ?? inline` — the inline summary, when the row carried one.
-  const detail = useSharedPullRequestSummary(environmentId, reference, queried ?? inline);
+  const detail = useSharedPullRequestSummary(environmentId, reference, queried);
 
   return useMemo(() => {
     if (current !== null) return linkedPullRequestSnapshotStatus(current);
