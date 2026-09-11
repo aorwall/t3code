@@ -57,6 +57,7 @@ export type EnvironmentSubscriptionRpcTag =
   // fork-only surfaces.
   | typeof WS_METHODS.sandboxSubscribeStatus
   | typeof WS_METHODS.sandboxSubscribeDetail
+  | typeof WS_METHODS.subscribeDeviceState
   | typeof WS_METHODS.subscribeResourceTelemetry
   | typeof WS_METHODS.pullRequestsSubscribeRefreshes
   | typeof WS_METHODS.previewAutomationConnect

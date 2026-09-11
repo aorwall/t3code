@@ -273,6 +273,29 @@ what a person loses, which is the part the derivation cannot tell you:
   (upstream, 2026-09-08, `apps/server/src/mcp/toolkits/preview/tools.ts`) that
   writes the screenshot to disk for the agent to re-read. It rides this surface
   and closes with it.
+- **The device hub** — `device.configure`, `device.list`, `device.testHost`,
+  `device.open`, `device.close`, `device.shutdown`, `device.detail`,
+  `device.action` and the `subscribeDeviceState` push stream, all new upstream in
+  the 2026-09-11 merge (#10677, #10854, #10855, #10856). They run iOS simulators
+  and Android emulators for a person and an agent to share: `apps/server/src/device/`
+  drives them on the server's own machine (`LocalDeviceHost.ts`) or on another one
+  over SSH (`SshDeviceHost.ts`), streams video and the accessibility tree, and
+  exposes tap/type/screenshot to the agent through an MCP toolkit
+  (`apps/server/src/mcp/toolkits/device/`). The client half is a `device`
+  right-panel surface (`apps/web/src/components/device/`) and a Device hosts
+  settings page. **Nothing gates it on a capability**: `ChatView.tsx` passes
+  `deviceAvailable={activeThreadRef !== null}`, so the launcher offers a Device
+  row on every thread. What a Moatless user reaches is the setup dialog rather
+  than a broken panel — `subscribeDeviceState` never resolves, so the state stays
+  the empty record, `onboardingCompleted` is false, and `addDeviceSurface` opens
+  `DeviceSetup`; its "Enable the device hub" step calls `device.configure`, which
+  resolves to the refusal the dialog then shows. That is a dead end a person can
+  walk into, which is the part this merge found and did not do: one additive
+  `FEATURES.deviceHub` read on the two `deviceAvailable` props in `ChatView.tsx`
+  drops the row instead. Holds open the nine union entries. Closes when the
+  backend runs a simulator host for a task, which is a real question and not a
+  stub — the hub needs Xcode or the Android SDK on the host it drives, and its
+  stream is a second connection beside the RPC one.
 - **Desktop and host lifecycle** — `server.updateServer`,
   `updateServerWithProgress`, `commitDesktopUpdate`, `getBackgroundPolicy`,
   `subscribeBackgroundPolicy`, `reportHostPowerState`, `cloud.installRelayClient`,

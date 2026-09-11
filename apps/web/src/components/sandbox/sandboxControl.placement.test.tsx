@@ -56,6 +56,7 @@ function render(options: {
       onAddDiff={() => undefined}
       onAddFiles={() => undefined}
       onAddAgents={() => undefined}
+      onAddDevice={() => undefined}
       onAddSandbox={"onAddSandbox" in options ? options.onAddSandbox : () => undefined}
       liveAgentCount={0}
       browserAvailable
@@ -65,6 +66,7 @@ function render(options: {
       pullRequestAvailable
       pullRequestsAvailable
       agentsAvailable
+      deviceAvailable
       surfaceDisabled={options.surfaceDisabled}
       surfaceDisabledReason="Start the sandbox to use right-panel surfaces."
       sandboxControl={<span {...{ [CONTROL_MARKER]: "" }} />}
@@ -82,10 +84,12 @@ function region(markup: string): "tab-bar" | "body" | "absent" {
 }
 
 describe("the sandbox status indicator", () => {
-  it("rides the launcher card that opens the sandbox surface", () => {
+  it("rides the launcher row that opens the sandbox surface", () => {
     const markup = render({ surfaceDisabled: false });
     expect(markup).toContain("Open a surface");
-    expect(markup).toContain("Inspect and control this thread&#x27;s sandbox.");
+    // The row renders its label, not its description: upstream's launcher went
+    // from cards to compact rows and stopped rendering `description` at all.
+    expect(markup).toContain("Sandbox");
     expect(region(markup)).toBe("body");
   });
 
