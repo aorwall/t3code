@@ -68,7 +68,7 @@ describe("a badge for several pull requests", () => {
     return renderToStaticMarkup(
       <ThreadPullRequestBadgeControl
         variant="ghost"
-        badge={{ kind: "pull-request", others: pullRequests.length - 1 }}
+        badge={{ kind: "pull-request", others: pullRequests.length - 1, state: "open" }}
         number={pullRequests[0]?.number}
         url={pullRequests[0]?.url}
         status={null}
@@ -85,7 +85,9 @@ describe("a badge for several pull requests", () => {
 
     expect(markup).toContain("<button");
     expect(markup).not.toContain("href=");
-    expect(markup).toContain("+1");
+    // Upstream's badge counts every linked pull request rather than the extras
+    // beside a named primary, so two links read `+2`, not `#41 +1`.
+    expect(markup).toContain("+2");
   });
 
   it("stays a link to the one pull request it names", () => {

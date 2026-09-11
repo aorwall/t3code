@@ -325,6 +325,33 @@
       "except": "fork-preview-files"
     },
     {
+      "id": "fork-sandbox-components",
+      "paths": ["apps/web/src/components/sandbox/**"],
+      "verdict": "ours",
+      "note": "Fork-only: the sandbox right-panel surface, the status control's hosts, surfaceNeedsSandbox, and sandboxControl.placement.test.tsx. None of it exists upstream. The test is fork-only but renders upstream's RightPanelTabs, so upstream restructuring that component breaks it with no conflict — it is the intended failure, not a stale test."
+    },
+    {
+      "id": "right-panel-surfaces",
+      "paths": ["apps/web/src/components/RightPanelTabs.tsx", "apps/web/src/rightPanelStore.ts"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply the fork's right-panel deltas: the 'sandbox' RightPanelKind and its store action, the Sandbox entry in the surface launcher and the tab-bar '+' menu, the sandboxControl indicator riding that entry, and the per-surface gating described in the Sandbox lifecycle controls and Sandbox right-panel surface inventory entries. Upstream restructures the launcher — it went from cards to compact rows in #11111 — so the delta is what must survive, not a hunk to replay: put the indicator back on whatever element opens the Sandbox surface, additively, without threading a prop or re-indenting upstream's JSX."
+    },
+    {
+      "id": "client-runtime-rpc-client",
+      "paths": ["packages/client-runtime/src/rpc/client.ts"],
+      "verdict": "converged",
+      "note": "Upstream's file. Re-add the four fork subscription tags to EnvironmentSubscriptionRpcTag: subscribeServerStatus, serversSubscribeLogs, sandboxSubscribeStatus and sandboxSubscribeDetail. The conflict here is additive on both sides every time upstream adds a stream of its own, so keep both blocks — this merge collided with upstream's subscribeDeviceState."
+    },
+    {
+      "id": "thread-status-indicators",
+      "paths": [
+        "apps/web/src/components/ThreadStatusIndicators.tsx",
+        "apps/web/src/components/ThreadStatusIndicators.test.tsx"
+      ],
+      "verdict": "converged",
+      "note": "Upstream's component, carrying the fork's useSupportsMultiplePullRequests gate and the popover that lists a Task's several links (inventory entry task-bound-pull-request). Upstream keeps changing what the badge means without changing its types — #11104 and #11180 made the count the total linked rather than the extras beside a named primary, and hoisted `state` onto both badge shapes — so the fork test is the only thing that catches it. A changed expectation here is upstream's semantics, not a fork regression; re-read the badge before editing the assertion."
+    },
+    {
       "id": "contracts-rpc-auth",
       "paths": ["packages/contracts/src/rpc.ts", "packages/contracts/src/auth.ts"],
       "verdict": "converged",

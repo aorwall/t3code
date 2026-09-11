@@ -3,6 +3,7 @@ import { Globe, History, RadioTower } from "lucide-react";
 
 import type { BrowserHistoryEntry } from "~/browserHistoryStore";
 import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from "~/components/ui/empty";
+import { DiscoveryList } from "../ui/discovery-list";
 
 import { PreviewRecentUrlCard } from "./PreviewRecentUrlCard";
 import { PreviewServerCard } from "./PreviewServerCard";
@@ -46,7 +47,7 @@ export function PreviewEmptyState({ threadRef, recentEntries, onRemoveRecent, on
               <History className="size-4 shrink-0" />
               <h2 className="font-medium">Recently used</h2>
             </div>
-            <div className="flex flex-col divide-y divide-border/60 overflow-hidden rounded-xl border border-border/70 bg-background">
+            <DiscoveryList>
               {recents.map((entry) => (
                 <PreviewRecentUrlCard
                   key={entry.url}
@@ -56,7 +57,7 @@ export function PreviewEmptyState({ threadRef, recentEntries, onRemoveRecent, on
                   onRemove={() => onRemoveRecent(entry.url)}
                 />
               ))}
-            </div>
+            </DiscoveryList>
           </div>
         ) : null}
         {servers.length > 0 ? (
@@ -65,8 +66,9 @@ export function PreviewEmptyState({ threadRef, recentEntries, onRemoveRecent, on
               <RadioTower className="size-4 shrink-0" />
               <h2 className="font-medium">Preview servers</h2>
             </div>
+            {/* Fork: the sandbox read can fail where a local port scan cannot. */}
             {error === null ? null : <p className="px-1 text-xs text-muted-foreground">{error}</p>}
-            <div className="flex flex-col divide-y divide-border/60 overflow-hidden rounded-xl border border-border/70 bg-background">
+            <DiscoveryList>
               {servers.map((server) => (
                 <PreviewServerCard
                   key={server.name}
@@ -76,7 +78,7 @@ export function PreviewEmptyState({ threadRef, recentEntries, onRemoveRecent, on
                   }}
                 />
               ))}
-            </div>
+            </DiscoveryList>
             <p className="px-1 text-xs text-muted-foreground">
               Select a server to open it in this browser tab.
             </p>

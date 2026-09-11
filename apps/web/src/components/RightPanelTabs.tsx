@@ -17,6 +17,7 @@ import {
   Bot,
   // Fork: the sandbox surface's icon.
   Box as BoxIcon,
+  Smartphone,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -48,6 +49,7 @@ import type { RightPanelKind, RightPanelSurface } from "~/rightPanelStore";
 import { cn } from "~/lib/utils";
 import { readLocalApi } from "~/localApi";
 import { Button } from "~/components/ui/button";
+import { AndroidIcon, AppleIcon } from "~/components/Icons";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip";
 import { Kbd } from "~/components/ui/kbd";
 import {
@@ -109,6 +111,7 @@ interface RightPanelTabsProps {
   previewRuntimeTabId?: ((tabId: string) => string) | undefined;
   terminalLabelsById: ReadonlyMap<string, string>;
   onActivate: (surface: RightPanelSurface) => void;
+  onRenameDevice?: (surfaceId: string, title: string) => void;
   onCloseSurface: (surface: RightPanelSurface) => void;
   onCloseOtherSurfaces: (surface: RightPanelSurface) => void;
   onCloseSurfacesToRight: (surface: RightPanelSurface) => void;
@@ -129,6 +132,7 @@ interface RightPanelTabsProps {
   onAddAgents: () => void;
   /** Fork: opens the sandbox surface. */
   onAddSandbox?: (() => void) | undefined;
+  onAddDevice: () => void;
   browserAvailable: boolean;
   terminalAvailable: boolean;
   diffAvailable: boolean;
@@ -136,6 +140,7 @@ interface RightPanelTabsProps {
   pullRequestAvailable: boolean;
   pullRequestsAvailable: boolean;
   agentsAvailable: boolean;
+  deviceAvailable: boolean;
   pullRequestStatusSeeds?: Readonly<Record<string, PullRequestTabStatusSeed>>;
   /** Running + waiting subagents; badges the Agents card in the empty state. */
   liveAgentCount: number;
@@ -178,6 +183,7 @@ const SURFACE_DISABLED_REASONS = {
   pullRequest: "This thread's branch has no pull request yet.",
   pullRequests: "Linked pull requests are only available for server threads.",
   agents: "Agents are only available from a thread.",
+  device: "Devices are only available from a thread.",
 } as const;
 
 /** Overlays that must win over the launcher's letter shortcuts. */
@@ -192,7 +198,7 @@ const LAUNCHER_SHORTCUT_BLOCKING_LAYERS = [
   '[data-slot="autocomplete-popup"]',
 ].join(",");
 
-/** One-line unavailability hints for the empty-state cards. */
+/** One-line unavailability hints for the empty-state rows. */
 const SURFACE_UNAVAILABLE_HINTS = {
   browser: "Only available in the desktop app.",
   terminal: "Available when a project is open.",
@@ -201,9 +207,11 @@ const SURFACE_UNAVAILABLE_HINTS = {
   pullRequest: "No pull request on this branch yet.",
   pullRequests: "Available for server threads.",
   agents: "Available from a thread.",
+  device: "Available from a thread.",
 } as const;
 
 type TabContextMenuAction =
+  | "rename"
   | "copy-path"
   | "toggle-mute"
   | "close"
@@ -323,7 +331,7 @@ function SurfaceMenuItem(props: {
 }
 
 /**
- * Card launcher shown when the right panel has no surfaces. Keyboard-first
+ * List launcher shown when the right panel has no surfaces. Keyboard-first
  * without palette chrome: a surface's letter opens it directly from anywhere
  * outside a typing context, and arrows plus Enter work while the launcher is
  * focused. The highlight only appears on hover or arrow use. Unavailable
@@ -341,6 +349,7 @@ function RightPanelEmptyState(props: {
   onAddAgents: () => void;
   /** Fork: opens the sandbox surface. */
   onAddSandbox?: (() => void) | undefined;
+  onAddDevice: () => void;
   browserAvailable: boolean;
   terminalAvailable: boolean;
   diffAvailable: boolean;
@@ -348,6 +357,7 @@ function RightPanelEmptyState(props: {
   pullRequestAvailable: boolean;
   pullRequestsAvailable: boolean;
   agentsAvailable: boolean;
+  deviceAvailable: boolean;
   liveAgentCount: number;
   /** Fork: the thread's sandbox status, shown on the entry that opens the
       surface explaining it. Absent where no sandbox owns this panel. */
@@ -373,7 +383,6 @@ function RightPanelEmptyState(props: {
   const baseActions = [
     {
       label: "Browser",
-      description: "Open a local app or URL.",
       icon: Globe2,
       shortcut: "B",
       ...gate(props.browserAvailable, SURFACE_UNAVAILABLE_HINTS.browser, "preview"),
@@ -382,7 +391,6 @@ function RightPanelEmptyState(props: {
     },
     {
       label: "Terminal",
-      description: "Start a shell in this workspace.",
       icon: TerminalSquare,
       shortcut: "T",
       ...gate(props.terminalAvailable, SURFACE_UNAVAILABLE_HINTS.terminal, "terminal"),
@@ -391,7 +399,6 @@ function RightPanelEmptyState(props: {
     },
     {
       label: "Files",
-      description: "Browse and read workspace files.",
       icon: Files,
       shortcut: "F",
       ...gate(props.filesAvailable, SURFACE_UNAVAILABLE_HINTS.files, "files"),
@@ -400,7 +407,6 @@ function RightPanelEmptyState(props: {
     },
     {
       label: "Diff",
-      description: "Review changes in this thread.",
       icon: FileDiff,
       shortcut: "D",
       ...gate(props.diffAvailable, SURFACE_UNAVAILABLE_HINTS.diff, "diff"),
@@ -409,7 +415,6 @@ function RightPanelEmptyState(props: {
     },
     {
       label: "Pull request",
-      description: "Open this branch's pull request.",
       icon: GitPullRequest,
       shortcut: "P",
       ...gate(props.pullRequestAvailable, SURFACE_UNAVAILABLE_HINTS.pullRequest, "pull-request"),
@@ -418,7 +423,6 @@ function RightPanelEmptyState(props: {
     },
     {
       label: "Linked pull requests",
-      description: "Every pull request this thread has linked, stacks included.",
       icon: GitPullRequestArrow,
       shortcut: "L",
       available: props.pullRequestsAvailable,
@@ -428,12 +432,21 @@ function RightPanelEmptyState(props: {
     },
     {
       label: "Agents",
-      description: "Follow subagents and workflows.",
       icon: Bot,
       shortcut: "A",
       ...gate(props.agentsAvailable, SURFACE_UNAVAILABLE_HINTS.agents, "agents"),
       onClick: props.onAddAgents,
       badgeCount: props.liveAgentCount,
+    },
+    {
+      label: "Device",
+      description: "Watch an iOS Simulator or Android Emulator.",
+      icon: Smartphone,
+      shortcut: "M",
+      available: props.deviceAvailable,
+      disabledReason: SURFACE_UNAVAILABLE_HINTS.device,
+      onClick: props.onAddDevice,
+      badgeCount: 0,
     },
   ] as const;
 
@@ -501,9 +514,8 @@ function RightPanelEmptyState(props: {
       return;
     }
     if (event.key === "Enter") {
-      // A focused card button owns its own activation; only open from the
-      // highlight when the container itself has focus.
-      if (event.target instanceof HTMLElement && event.target.closest("button")) return;
+      // Only activate the highlight when the launcher itself has focus.
+      if (event.target !== event.currentTarget) return;
       const action = availableActions[highlightIndex];
       if (!action) return;
       event.preventDefault();
@@ -537,10 +549,6 @@ function RightPanelEmptyState(props: {
     );
   };
 
-  const cardShellClass =
-    "rounded-lg border border-border/80 bg-card dark:border-transparent dark:shadow-none dark:inset-ring-1 dark:inset-ring-white/5";
-  const highlightedCardClass = "bg-accent/60 dark:inset-ring-white/20";
-
   return (
     <div
       ref={focusOnMount}
@@ -551,24 +559,19 @@ function RightPanelEmptyState(props: {
       className={cn(
         "flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-6 pt-6 outline-none",
         // The panel topbar sits above this container; matching bottom padding
-        // keeps the cards centered against the full panel, not the leftover.
+        // keeps the list centered against the full panel, not the leftover.
         "pb-[calc(var(--workspace-topbar-height)+--spacing(6))]",
       )}
     >
-      <div className="relative w-full max-w-lg">
-        <div className="absolute inset-x-0 bottom-full mb-5 text-center">
-          <h3 className="font-medium text-foreground text-sm">Open a surface</h3>
-          <p className="mt-1 text-muted-foreground text-xs">
-            Choose what to show in the right panel.
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
+      <div className="w-full max-w-xs">
+        <h3 className="mb-3 text-center font-medium text-foreground text-sm">Open a surface</h3>
+        <div className="flex flex-col gap-0.5">
           {actions.map((action) =>
             action.available ? (
-              // The card is itself a button, so the profile chooser sits beside
+              // The row is itself a button, so the profile chooser sits beside
               // it in a wrapper rather than inside it. Hover lives on the
-              // wrapper: the chooser overlays the card, and a pointer moving
-              // onto it must not read as leaving the card.
+              // wrapper: the chooser overlays the row, and a pointer moving
+              // onto it must not read as leaving the row.
               <div
                 key={action.label}
                 className="group relative"
@@ -583,28 +586,26 @@ function RightPanelEmptyState(props: {
                   type="button"
                   onClick={action.onClick}
                   className={cn(
-                    // Full height: the wrapper is the grid item that stretches
-                    // to the row, so the button must fill it to stay level with
-                    // its neighbour and keep the chooser anchored inside.
-                    "relative flex h-full w-full cursor-pointer flex-col items-start p-4 text-left transition group-hover:border-border group-hover:bg-accent/60",
-                    cardShellClass,
-                    isHighlighted(action) && highlightedCardClass,
+                    "flex h-8 w-full cursor-pointer items-center gap-2.5 rounded-[var(--control-radius)] px-2.5 text-left text-sm transition-colors group-hover:bg-accent/60",
+                    isHighlighted(action) && "bg-accent/60",
                   )}
                 >
-                  <Kbd className="absolute top-3 right-3">{action.shortcut}</Kbd>
-                  <span className="flex items-center gap-2 pe-8">
-                    {actionIcon(action)}
-                    <span className="font-medium text-sm">{action.label}</span>
-                    {/* Fork: the sandbox's state, said on the card that opens the
-                        surface explaining it. */}
-                    {action.label === "Sandbox" ? props.sandboxControl : null}
+                  {actionIcon(action, "size-4")}
+                  <span
+                    className={cn(
+                      "min-w-0 flex-1 truncate",
+                      action.label === "Browser" && props.browserProfiles.length > 1 && "pr-7",
+                    )}
+                  >
+                    {action.label}
                   </span>
-                  <span className="mt-1.5 text-muted-foreground text-xs leading-relaxed">
-                    {action.description}
-                  </span>
+                  {/* Fork: the sandbox's state, said on the row that opens the
+                      surface explaining it. */}
+                  {action.label === "Sandbox" ? props.sandboxControl : null}
+                  <Kbd>{action.shortcut}</Kbd>
                 </button>
                 {/*
-                  Same choice the tab bar's "+" menu offers: the card opens the
+                  Same choice the tab bar's "+" menu offers: the row opens the
                   default profile, the chevron picks another. Only worth showing
                   once there is something to choose between.
                 */}
@@ -614,7 +615,7 @@ function RightPanelEmptyState(props: {
                       render={
                         <Button
                           aria-label="Open browser in a profile"
-                          className="absolute right-3 bottom-3 [--control-icon-color:currentColor]"
+                          className="absolute top-1/2 right-8 -translate-y-1/2 [--control-icon-color:currentColor]"
                           size="icon-xs"
                           variant="ghost-muted"
                         />
@@ -641,22 +642,21 @@ function RightPanelEmptyState(props: {
                 ) : null}
               </div>
             ) : (
-              <div
+              <DisabledReasonTooltip
                 key={action.label}
-                className={cn(
-                  "relative flex w-full flex-col items-start p-4 opacity-40",
-                  cardShellClass,
-                )}
-              >
-                <Kbd className="absolute top-3 right-3">{action.shortcut}</Kbd>
-                <span className="flex items-center gap-2 pe-8">
-                  {actionIcon(action)}
-                  <span className="font-medium text-sm">{action.label}</span>
-                </span>
-                <span className="mt-1.5 text-muted-foreground text-xs leading-relaxed">
-                  {action.disabledReason}
-                </span>
-              </div>
+                reason={action.disabledReason}
+                trigger={
+                  <div
+                    tabIndex={0}
+                    aria-disabled="true"
+                    className="flex h-8 w-full cursor-default items-center gap-2.5 rounded-[var(--control-radius)] px-2.5 text-left text-sm opacity-50"
+                  >
+                    {actionIcon(action, "size-4")}
+                    <span className="min-w-0 flex-1 truncate">{action.label}</span>
+                    <Kbd>{action.shortcut}</Kbd>
+                  </div>
+                }
+              />
             ),
           )}
         </div>
@@ -694,6 +694,8 @@ function surfaceTitle(
     // Fork: the thread's sandbox.
     case "sandbox":
       return "Sandbox";
+    case "device":
+      return surface.title ?? surface.target?.name ?? "Device";
     case "preview": {
       const snapshot = surface.resourceId ? sessions[surface.resourceId] : null;
       if (!snapshot || snapshot.navStatus._tag === "Idle") return "Browser";
@@ -786,6 +788,14 @@ function SurfaceIcon({
     // Fork: the thread's sandbox.
     case "sandbox":
       return <BoxIcon className="size-3 shrink-0" />;
+    case "device":
+      return surface.target?.platform === "ios" ? (
+        <AppleIcon className="size-3 shrink-0" />
+      ) : surface.target?.platform === "android" ? (
+        <AndroidIcon className="size-3 shrink-0" />
+      ) : (
+        <Smartphone className="size-3 shrink-0" />
+      );
   }
 }
 
@@ -907,6 +917,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
       environmentHttpBaseUrl: props.environmentHttpBaseUrl ?? null,
     });
 
+  const [renamingDevice, setRenamingDevice] = useState<string | null>(null);
   const [addSurfaceMenuOpen, setAddSurfaceMenuOpen] = useState(false);
   const [tabScrollState, setTabScrollState] = useState({
     hasOverflow: false,
@@ -1000,6 +1011,14 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
       ...sandboxGate(props.agentsAvailable, SURFACE_DISABLED_REASONS.agents, "agents"),
       onClick: props.onAddAgents,
     },
+    {
+      label: "Device",
+      icon: Smartphone,
+      shortcut: "M",
+      available: props.deviceAvailable,
+      disabledReason: SURFACE_DISABLED_REASONS.device,
+      onClick: props.onAddDevice,
+    },
   ] as const;
 
   // Fork: the sandbox the other surfaces run in. Ungated, because it is where a
@@ -1041,6 +1060,8 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
       if (surfaceIndex < 0) return;
 
       const items: ContextMenuItem<TabContextMenuAction>[] = [];
+      if (surface.kind === "device" && props.onRenameDevice)
+        items.push({ id: "rename", label: "Rename" });
       if (surface.kind === "file" && surface.attachment === undefined) {
         items.push({ id: "copy-path", label: "Copy path" });
       }
@@ -1084,6 +1105,9 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
 
       const action = await api.contextMenu.show(items, { x: event.clientX, y: event.clientY });
       switch (action) {
+        case "rename":
+          setRenamingDevice(surface.id);
+          break;
         case "copy-path":
           if (surface.kind === "file" && surface.attachment === undefined) {
             props.onCopyFilePath(surface.relativePath);
@@ -1290,20 +1314,48 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
                       <TooltipPopup>{audio === "muted" ? "Unmute tab" : "Mute tab"}</TooltipPopup>
                     </Tooltip>
                   )}
-                  <Tooltip>
-                    <TooltipTrigger
-                      render={
-                        <button
-                          type="button"
-                          className="cursor-pointer flex min-w-0 items-center"
-                          onClick={() => props.onActivate(surface)}
-                        >
-                          <span className="truncate">{title}</span>
-                        </button>
-                      }
+                  {renamingDevice === surface.id ? (
+                    <input
+                      aria-label="Device tab name"
+                      className="w-24 min-w-0 rounded-sm bg-background px-1 outline-none ring-1 ring-ring"
+                      defaultValue={title}
+                      ref={(element) => {
+                        element?.focus();
+                        element?.select();
+                      }}
+                      onBlur={(event) => {
+                        props.onRenameDevice?.(surface.id, event.currentTarget.value);
+                        setRenamingDevice(null);
+                      }}
+                      onKeyDown={(event) => {
+                        event.stopPropagation();
+                        if (event.key === "Enter") event.currentTarget.blur();
+                        if (event.key === "Escape") {
+                          event.currentTarget.value = title;
+                          event.currentTarget.blur();
+                        }
+                      }}
                     />
-                    <TooltipPopup>{title}</TooltipPopup>
-                  </Tooltip>
+                  ) : (
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <button
+                            type="button"
+                            onDoubleClick={() => {
+                              if (surface.kind === "device" && props.onRenameDevice)
+                                setRenamingDevice(surface.id);
+                            }}
+                            className="cursor-pointer flex min-w-0 items-center"
+                            onClick={() => props.onActivate(surface)}
+                          >
+                            <span className="truncate">{title}</span>
+                          </button>
+                        }
+                      />
+                      <TooltipPopup>{title}</TooltipPopup>
+                    </Tooltip>
+                  )}
                 </div>
               );
             })}
@@ -1475,6 +1527,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             onAddPullRequest={props.onAddPullRequest}
             onAddPullRequests={props.onAddPullRequests}
             onAddAgents={props.onAddAgents}
+            onAddDevice={props.onAddDevice}
             browserAvailable={props.browserAvailable}
             terminalAvailable={props.terminalAvailable}
             diffAvailable={props.diffAvailable}
@@ -1482,6 +1535,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             pullRequestAvailable={props.pullRequestAvailable}
             pullRequestsAvailable={props.pullRequestsAvailable}
             agentsAvailable={props.agentsAvailable}
+            deviceAvailable={props.deviceAvailable}
             liveAgentCount={props.liveAgentCount}
           />
         ) : activeSurfaceNeedsSandbox ? (

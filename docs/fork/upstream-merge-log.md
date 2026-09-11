@@ -28,6 +28,82 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-11 — merged upstream to 02297e3d, upstream shipped a simulator hub and restructured the surface launcher
+
+- Upstream: `02297e3db` from base `0f602b337` (`35` commits).
+- Landed: `170` files from `git diff --stat HEAD^1 HEAD` against `166` in the
+  upstream range (`0f602b337..HEAD^2`); fork delta `756` files from
+  `git diff --stat HEAD^2 HEAD`. The gap is six named files and reconciles
+  exactly. Five landed that are not in the range: `ThreadStatusIndicators.test.tsx`
+  and `sandboxControl.placement.test.tsx`, the two fork-test fixes amended into
+  the merge commit and described below, plus these three fork documents. One in
+  the range did not land: `PreviewLocalServerCard.tsx`, re-deleted per
+  `deletedUpstreamPaths`.
+- Conflicts: 11 files. Additive on both sides, kept whole — `MessagesTimeline.tsx`
+  (import block), `client-runtime/src/rpc/client.ts` (the fork's four
+  subscription tags against upstream's `subscribeDeviceState`),
+  `rightPanelStore.ts` (the fork's `sandbox` kind against upstream's `device`),
+  `rpc.ts` and `RpcAuthorization.ts` (the fork's thread-server/sandbox/subtasks
+  methods and scopes against upstream's eight `device.*` methods),
+  `ChatView.tsx` (both right-panel arms, both `onAdd*` props at the inline and
+  sheet call sites, and upstream's extended `closePreviewPanel` under the fork's
+  proactive preview-open effect). `PreviewEmptyState.tsx` and
+  `ThreadPreviewMiniPlayer.tsx` took upstream's `DiscoveryList` and
+  `rounded-[inherit]` with the fork's sandbox-read error line and framed
+  `hasPreviewSurface` condition re-stated on top. `pnpm-lock.yaml` auto-merged,
+  so `--theirs` had nothing to do; reset it to `upstream/main` and re-derived the
+  fork edges with `vp i`.
+- **A `converged` delta can lose the line it was anchored to.** #11111 rebuilt
+  the right panel's add-surface menu from a card grid into compact rows, and the
+  fork's sandbox badge in `RightPanelTabs.tsx` (7 conflicts, the hard one) had no
+  literal home left. Re-stated on upstream's row rather than replayed: the badge
+  renders between the label and the `Kbd`, additively, with no prop threaded and
+  no upstream JSX re-indented. `sandboxControl.placement.test.tsx` is what makes
+  that checkable and it caught the second half — upstream's rows stopped
+  rendering the action `description` at all (in its own Device action too), so
+  the test's assertion on the sandbox description was asserting on markup nobody
+  emits. Now asserts the rendered label. New inventory row `right-panel-surfaces`.
+- **The silent auto-merge this workflow exists for happened, and only the fork's
+  own test caught it.** No conflict marker, no type error, no
+  `resolution-check.mjs` hit: #11104 and #11180 changed what the multi-PR badge
+  counts — the total linked, not the extras beside a named primary — and hoisted
+  `state` onto both `ThreadPullRequestBadge` shapes with a new `draft` color.
+  `ThreadStatusIndicators.test.tsx` failed on `+1` against `+2`. Fixture gained
+  the now-required `state`, expectation updated to upstream's semantics. New
+  inventory row `thread-status-indicators` says to re-read the badge before
+  touching that assertion again.
+- Sweep: 11 keyword hits, all false positives. Ten are upstream's new device-hub
+  files matching the `client-identity` concern on `host`/`proxy`
+  (`DeviceHost.ts`, `LocalDeviceHost.ts`, `SshDeviceHost.ts`, `DeviceHubProxy.ts`
+  and siblings) — that concern is about **device pairing identity**, not
+  simulators, so they are inherited in tree and adopted by nothing. The
+  eleventh, `McpProviderSession.test.ts`, matched on `session`. No concern entry.
+  The device hub's real record is a gaps entry, not a sweep hit.
+- Unsupported methods: 9 ADD, 0 DROP after the edit. Upstream's eight `device.*`
+  methods plus the `subscribeDeviceState` stream are dispatched by no Moatless
+  backend, so each gained `UnsupportedMethodError`; re-derivation reports
+  0 ADD / 0 DROP. What a person loses is in [gaps](./gaps.md) under _The device
+  hub_, including the `FEATURES.deviceHub` gate this merge did **not** add — the
+  Device row is offered on every thread and leads to a setup dialog whose first
+  step resolves to the refusal.
+- Four unlisted paths this merge decided now have rows:
+  `right-panel-surfaces`, `client-runtime-rpc-client`, `thread-status-indicators`
+  and `fork-sandbox-components`. `inventory-check.mjs` is clean.
+- Verification: `verify.mjs` green on seven of eight — `duplicate-adds`,
+  `tripwires`, `resolution-check`, `unsupported-methods`, `fmt:check`, `lint`,
+  `typecheck`. `test` is red on `@t3tools/desktop` alone, confirmed failing alone
+  rather than machine noise, and it is the standing environmental one:
+  `scripts/browser-secret-native.test.mjs > bundled libsecret helper` cannot find
+  `libsecret-1` in this sandbox's pkg-config path. 1 file failed of 102;
+  [gaps](./gaps.md) records it under _The desktop suite needs libsecret_.
+- **Four packages did not finish under `vp run -r test` and were each run alone**
+  — mobile `157` files, `t3` `315`, web `389`, relay `30`, all passing. Worth
+  writing down because the truncated parallel pass reported a failure that does
+  not exist: `shikiReviewHighlighter.test.ts > initializes source and snippet
+  highlighting without a warmup` fails on a loaded box and passes in the alone
+  run, and neither side of this merge touches that file or its subject. Read the
+  retry lines at the end of the log, not the parallel output above them.
+
 ### 2026-09-10 — fork change: the composer badge lists a Task's pull requests
 
 - Not a merge. It follows the entry below, and the fork delta for pull requests
