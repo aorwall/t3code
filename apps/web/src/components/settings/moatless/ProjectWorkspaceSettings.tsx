@@ -226,40 +226,41 @@ function GeneralSection({
   return (
     <SettingsSection id="workspace-general" title="General">
       <IconRow workspace={workspace} project={project} isLocked={isLocked} />
-      <div className={cn(ITEM_ROW_CLASSNAME, "space-y-4")}>
-        <div>
-          <label
-            htmlFor="workspace-name"
-            className="mb-1.5 block text-xs font-medium text-foreground"
-          >
-            Name
-          </label>
+      <SettingsRow
+        title="Name"
+        description="What this project is called in the sidebar and in task lists."
+        control={
           <Input
             id="workspace-name"
+            size="sm"
+            className="w-full sm:w-64"
+            aria-label="Workspace name"
             value={form.values.name}
             disabled={isLocked}
             onChange={(event) => form.setField("name", event.currentTarget.value)}
           />
-        </div>
-        <div>
-          <label
-            htmlFor="workspace-description"
-            className="mb-1.5 block text-xs font-medium text-foreground"
-          >
-            Description
-          </label>
+        }
+      />
+      <SettingsRow
+        title="Description"
+        description="What this project is for."
+        control={
           <Textarea
             id="workspace-description"
+            className="w-full sm:w-96"
+            aria-label="Workspace description"
             value={form.values.description}
             disabled={isLocked}
             placeholder="What this workspace is for."
             onChange={(event) => form.setField("description", event.currentTarget.value)}
           />
-        </div>
-        {save.error ? (
-          <p className="text-[13px] text-destructive-foreground">{save.error.message}</p>
-        ) : null}
-      </div>
+        }
+      />
+      {save.error ? (
+        <p className={cn(ITEM_ROW_CLASSNAME, "py-0 text-[13px] text-destructive-foreground")}>
+          {save.error.message}
+        </p>
+      ) : null}
       <SaveBar
         isDirty={form.isDirty && !isLocked}
         isSaving={save.isRunning}
@@ -489,45 +490,42 @@ function RunConfigurationSection({
 
   return (
     <SettingsSection id="workspace-run-configuration" title="Run configuration">
-      <div className={cn(ITEM_ROW_CLASSNAME, "space-y-4")}>
-        <div>
-          <label
-            htmlFor="workspace-docker-image"
-            className="mb-1.5 block text-xs font-medium text-foreground"
-          >
-            Image
-          </label>
+      <SettingsRow
+        title="Image"
+        description="The container image a task in this project starts from."
+        control={
           <Input
             id="workspace-docker-image"
+            size="sm"
+            className="w-full sm:w-64"
+            aria-label="Image"
             value={form.values.dockerImage}
             disabled={isLocked}
             placeholder="The deployment default"
             onChange={(event) => form.setField("dockerImage", event.currentTarget.value)}
           />
-        </div>
-        <div>
-          <label
-            htmlFor="workspace-setup-commands"
-            className="mb-1.5 block text-xs font-medium text-foreground"
-          >
-            Setup commands
-          </label>
+        }
+      />
+      <SettingsRow
+        title="Setup commands"
+        description="One per line, run in the primary repository after the sandbox starts."
+        control={
           <Textarea
             id="workspace-setup-commands"
+            className="w-full font-mono text-[13px] sm:w-96"
+            aria-label="Setup commands"
             value={form.values.setupCommands}
             disabled={isLocked}
             placeholder={"pnpm install\npnpm build"}
             onChange={(event) => form.setField("setupCommands", event.currentTarget.value)}
-            className="font-mono text-[13px]"
           />
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            One per line, run in the primary repository after the sandbox starts.
-          </p>
-        </div>
-        {save.error ? (
-          <p className="text-[13px] text-destructive-foreground">{save.error.message}</p>
-        ) : null}
-      </div>
+        }
+      />
+      {save.error ? (
+        <p className={cn(ITEM_ROW_CLASSNAME, "py-0 text-[13px] text-destructive-foreground")}>
+          {save.error.message}
+        </p>
+      ) : null}
       <SaveBar
         isDirty={form.isDirty && !isLocked}
         isSaving={save.isRunning}
@@ -702,40 +700,41 @@ function IdentitySection({
 
   return (
     <SettingsSection id="workspace-identity" title="Identity">
-      <div className={cn(ITEM_ROW_CLASSNAME, "space-y-2")}>
-        <span className="mb-1.5 block text-xs font-medium text-foreground">Run as</span>
-        <Select
-          value={form.values.runAsUserId}
-          disabled={isLocked}
-          onValueChange={(value) => form.setField("runAsUserId", value ?? "")}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="The person who started the task">
-              {selected ? selected.login : undefined}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectPopup>
-            <SelectItem value="">The person who started the task</SelectItem>
-            {rows.map((user) => (
-              <SelectItem key={user.id} value={user.id}>
-                {user.login}
-                {user.isBot ? " (bot)" : ""}
-              </SelectItem>
-            ))}
-          </SelectPopup>
-        </Select>
-        <p className="text-[11px] text-muted-foreground">
-          A GitHub app's bot user makes every task here authenticate as that app's installation.
-        </p>
-        {users.error ? (
-          <p className="text-[13px] text-destructive-foreground">
-            Could not load users: {users.error.message}
-          </p>
-        ) : null}
-        {save.error ? (
-          <p className="text-[13px] text-destructive-foreground">{save.error.message}</p>
-        ) : null}
-      </div>
+      <SettingsRow
+        title="Run as"
+        description="A GitHub app's bot user makes every task here authenticate as that app's installation."
+        status={
+          users.error ? (
+            <span className="text-destructive-foreground">
+              Could not load users: {users.error.message}
+            </span>
+          ) : save.error ? (
+            <span className="text-destructive-foreground">{save.error.message}</span>
+          ) : null
+        }
+        control={
+          <Select
+            value={form.values.runAsUserId}
+            disabled={isLocked}
+            onValueChange={(value) => form.setField("runAsUserId", value ?? "")}
+          >
+            <SelectTrigger size="sm" aria-label="Run as">
+              <SelectValue placeholder="The person who started the task">
+                {selected ? selected.login : undefined}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectPopup align="end" alignItemWithTrigger={false}>
+              <SelectItem value="">The person who started the task</SelectItem>
+              {rows.map((user) => (
+                <SelectItem key={user.id} value={user.id}>
+                  {user.login}
+                  {user.isBot ? " (bot)" : ""}
+                </SelectItem>
+              ))}
+            </SelectPopup>
+          </Select>
+        }
+      />
       <SaveBar
         isDirty={form.isDirty && !isLocked}
         isSaving={save.isRunning}

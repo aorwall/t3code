@@ -121,15 +121,16 @@ export interface SettingsSearchAvailability {
  * subtitles both render from this record, so each label exists once.
  */
 export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
-  // Fork: the git hosts a person's own tasks clone and push with. The agent
-  // credentials are the other half of the same question and live on Providers.
-  "/settings/version-control": "Version control",
   "/settings/projects": "Project",
   "/settings/general": "General",
   "/settings/appearance": "Appearance",
   "/settings/keybindings": "Keybindings",
   "/settings/snap-shot": "SnapShots",
   "/settings/providers": "Providers",
+  // Fork: the git hosts a person's own tasks clone and push with. The agent
+  // credentials are the other half of the same question, so this sits directly
+  // below Providers.
+  "/settings/version-control": "Version control",
   "/settings/browser": "Browser",
   "/settings/source-control": "Source Control",
   "/settings/connections": "Connections",

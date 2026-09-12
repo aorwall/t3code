@@ -46,8 +46,10 @@ import {
 // Fork: settingsPathEnabled/isMoatlessAdminPath gate settings pages and
 // split the nav into personal vs. admin-only sections (used further below).
 import { settingsPathEnabled } from "../../fork/features";
+import { useMoatlessQuery } from "../../moatless/query";
 import { useMoatlessSession } from "../../moatless/session";
 import { SidebarUtilityMenu } from "../sidebar/SidebarChrome";
+import { featureFlagsQuery } from "./moatless/queries";
 import { scrollToSettingsTarget } from "./settingsLayout";
 import {
   isMoatlessAdminPath,
@@ -86,15 +88,15 @@ const T3ConnectSidebarAvatar = lazy(() =>
 const SETTINGS_SECTION_ICONS: Readonly<
   Record<SettingsPath, ComponentType<{ className?: string }>>
 > = {
-  // Fork: the Moatless git-host page. Shares GitBranchIcon with
-  // "/settings/source-control", which FEATURE_BY_SETTINGS_PATH gates off here.
-  "/settings/version-control": GitBranchIcon,
   "/settings/general": Settings2Icon,
   "/settings/appearance": PaletteIcon,
   "/settings/projects": PanelsTopLeftIcon,
   "/settings/keybindings": KeyboardIcon,
   "/settings/snap-shot": SnapShotIcon,
   "/settings/providers": BotIcon,
+  // Fork: the Moatless git-host page. Shares GitBranchIcon with
+  // "/settings/source-control", which FEATURE_BY_SETTINGS_PATH gates off here.
+  "/settings/version-control": GitBranchIcon,
   "/settings/browser": BlocksIcon,
   "/settings/source-control": GitBranchIcon,
   "/settings/connections": Link2Icon,
@@ -134,8 +136,17 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
   const scopeSearch = useMemo(() => validateSettingsScopeSearch(currentSearch), [currentSearch]);
   // Fork: upstream's Project-overview gate, applied to the personal group the
   // fork splits the nav into. /settings/projects is not an administration path.
+  //
+  // With workspace settings on, that page is also where a Moatless Workspace is
+  // administered, and the gate would hide the only way in until a project is
+  // already in scope. It stays listed instead, and the page's own notice offers
+  // the project list.
+  const workspaceSettings = useMoatlessQuery(featureFlagsQuery).data?.workspace_settings === true;
   const personalNavItems = PERSONAL_NAV_ITEMS.filter(
-    (item) => item.to !== "/settings/projects" || isSettingsOverviewVisible(scopeSearch),
+    (item) =>
+      item.to !== "/settings/projects" ||
+      workspaceSettings ||
+      isSettingsOverviewVisible(scopeSearch),
   );
   const { isMobile, setOpenMobile, open, setOpen } = useSidebar();
   const searchInputRef = useRef<HTMLInputElement>(null);
