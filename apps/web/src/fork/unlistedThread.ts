@@ -16,6 +16,7 @@ import type {
 } from "@t3tools/contracts";
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import { threadKey } from "@t3tools/client-runtime/state/entities";
+import type { EnvironmentThreadStatus } from "@t3tools/client-runtime/state/threads";
 import { Atom } from "effect/unstable/reactivity";
 import { useEffect, useMemo, useRef } from "react";
 
@@ -60,15 +61,26 @@ export function useAdoptedThread(
  * Whether the environment has yet said anything at all about this thread.
  *
  * This is the difference between "we have not asked yet" and "there is no such
- * thread", and only the second is a reason to leave the route. A thread state
- * that is still `empty` with no error is a subscription that has not answered:
- * the client cannot know whether the thread exists, and a client that guesses
- * "no" navigates people off threads that were about to load.
+ * thread", and only the second is a reason to leave the route. Both `empty` and
+ * `synchronizing` carry no data and no answer: the client cannot know whether
+ * the thread exists, and a client that guesses "no" navigates people off threads
+ * that were about to load. `synchronizing` is the state a subscription enters
+ * before it sends anything (`markSynchronizing` in client-runtime's
+ * `state/threads.ts`), so reading `empty` alone answers "no" one tick after
+ * mount, while the request is still in flight.
  *
  * An error settles it the other way. `orchestration.subscribeThread` fails for
  * a thread the viewer cannot open, so a failure with nothing loaded means the
  * server answered and the answer was no.
  */
+export function threadAwaitsFirstAnswer(
+  status: EnvironmentThreadStatus,
+  error: string | null,
+): boolean {
+  return error === null && (status === "empty" || status === "synchronizing");
+}
+
+/** See `threadAwaitsFirstAnswer`. */
 export function useThreadAwaitingFirstAnswer(ref: ScopedThreadRef | null): boolean {
   const status = useThreadStatus(ref);
   const errorAtom = useMemo(
@@ -76,7 +88,7 @@ export function useThreadAwaitingFirstAnswer(ref: ScopedThreadRef | null): boole
     [ref],
   );
   const error = useAtomValue(errorAtom);
-  return ref !== null && status === "empty" && error === null;
+  return ref !== null && threadAwaitsFirstAnswer(status, error);
 }
 
 /**
