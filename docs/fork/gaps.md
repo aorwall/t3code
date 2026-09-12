@@ -529,26 +529,14 @@ order for the active thread list (upstream #9729), and
 — a sidebar drag and a Dismiss button — and both fail generically on a backend
 that does not implement them.
 
-The 2026-09-12 merge added `thread.conversation.revert` (upstream #11358): rewind
-the conversation to a user message and leave the working tree alone, where the
-existing `thread.checkpoint.revert` rewinds both. Upstream deliberately made it a
-separate command rather than an option on the old one, so a server that does not
-know it fails the request instead of ignoring an unfamiliar `restoreFiles: false`
-and restoring files nobody asked to restore. The generic failure is the same
-silence as every other member here; what is different is that the wrong outcome
-is not reachable. The client renders the control either way —
-`MessagesTimeline.tsx`'s `RevertUserMessageButton` ("Edit from here") is gated
-only on the turn being idle — so on Moatless a user gets the failure rather than a
-rewind that discards their working tree.
-
-This is the reason `threadDeletion` is a build flag and not a typed refusal, and
-it will be the reason for the next one too.
+This is the reason `threadDeletion` and `checkpointFileRestore` are build flags
+and not typed refusals, and it will be the reason for the next one too.
 
 - **Closes when:** either the backend reports which command types it accepts, or
   the contract splits the union into methods that can each be refused. The first
   is cheaper and fits the capability record above.
-- **Then here:** delete `threadDeletion`, and the `projectManagement` gates that
-  cover `project.create` / `project.delete`.
+- **Then here:** delete `threadDeletion` and `checkpointFileRestore`, and the
+  `projectManagement` gates that cover `project.create` / `project.delete`.
 
 ### A message does not say where it came from
 
@@ -636,7 +624,7 @@ runtime knows the answer was already worked out upstream.
   failure mode is memory growth proportional to a thread's whole event history,
   which only shows up on long threads.
 
-Four more arrived in the 2026-09-12 merge:
+Three more arrived in the 2026-09-12 merge:
 
 - **A message sent during context compaction should be queued, not dropped.**
   Upstream's `ProviderCommandReactor` holds a user message that arrives while a
@@ -646,14 +634,6 @@ Four more arrived in the 2026-09-12 merge:
   the composer draft across a compaction — so on Moatless the text is not lost
   from the editor, but a message actually sent mid-compaction is the backend's
   problem to hold.
-- **Rewinding should restore the provider's own history and prompts, not just the
-  thread's.** Upstream's `CheckpointReactor` now rewinds the provider session
-  alongside the conversation, so a Claude or Codex session resumed after a rewind
-  does not carry the turns the user just removed
-  (`apps/server/src/orchestration/Layers/CheckpointReactor.ts` plus each
-  adapter's session runtime, #11338). This is the half of #11358's rewind that
-  lives entirely in the server, and it is the part that decides whether a rewind
-  actually took.
 - **A review diff should detect renames.** Upstream's diff builder reports a
   renamed file as one rename rather than a delete and an add
   (`apps/server/src/vcs/GitVcsDriverCore.ts`, #8086). Moatless builds its own
@@ -667,9 +647,8 @@ Four more arrived in the 2026-09-12 merge:
 
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
-  compaction path queues in-flight user messages, its rewind rewinds the provider
-  session too, its review diffs report renames, and it passes qualified model ids
-  through unmodified.
+  compaction path queues in-flight user messages, its review diffs report
+  renames, and it passes qualified model ids through unmodified.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

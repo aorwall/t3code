@@ -158,6 +158,14 @@ export const FEATURES = {
    * six searchable rows for a feature it can never run.
    */
   snapShots: false,
+  /**
+   * The "Revert files too" choice in the rewind dialog, which sends
+   * `thread.checkpoint.revert`. Moatless rewinds the conversation and refuses
+   * that command: it records no per-turn worktree snapshot, so there is no
+   * state to put the files back to. "Revert and keep changes" is served and is
+   * the whole dialog without this.
+   */
+  checkpointFileRestore: false,
 } satisfies Record<string, boolean>;
 
 export type FeatureName = keyof typeof FEATURES;

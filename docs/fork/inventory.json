@@ -979,6 +979,16 @@
       }
     },
     {
+      "id": "checkpoint-file-restore-gate",
+      "name": "File-restoring revert gate in the rewind dialog",
+      "paths": ["apps/web/src/components/ChatView.tsx", "apps/web/src/fork/features.ts"],
+      "mustSurvive": "The \"Edit from here?\" dialog offers Cancel and \"Revert and keep changes\" only. Moatless serves thread.conversation.revert and refuses thread.checkpoint.revert: it records no per-turn worktree snapshot, so there is nothing to restore the files from, and orchestration.dispatchCommand is dispatched as one method so the refusal reaches the user as a generic failure after they asked for it. One additive FEATURES.checkpointFileRestore ternary around upstream's destructive button in ChatView.tsx, which is the only call site passing restoreFiles: true — the hover action passes undefined and opens this dialog. Count the call sites every merge: a second route to restoreFiles: true needs its own gate. Drop the flag and the gate once Moatless snapshots a worktree per turn.",
+      "guard": {
+        "symbol": "FEATURES.checkpointFileRestore",
+        "files": ["apps/web/src/components/ChatView.tsx"]
+      }
+    },
+    {
       "id": "settings-gates",
       "name": "Settings gates",
       "paths": [
