@@ -47,6 +47,9 @@ import { ProviderSettingsForm } from "./ProviderSettingsForm";
 import { ProviderModelsSection } from "./ProviderModelsSection";
 import { ProviderInstanceIcon, providerInstanceInitials } from "../chat/ProviderInstanceIcon";
 import { ProviderAccentColorPicker } from "./ProviderAccentColorPicker";
+// Fork: a Claude Code token and a Codex sign-in are the viewer's own, so they
+// belong on the provider they authenticate.
+import { ProviderAuthAction, ProviderAuthSetup } from "./moatless/ProviderAuthSetup";
 import { RedactedSensitiveText } from "./RedactedSensitiveText";
 import { SettingsRow, SettingsSection } from "./settingsLayout";
 import {
@@ -844,12 +847,20 @@ export function ProviderInstanceCard({
                   spellCheck={false}
                 />
               </div>
-            ) : null
+            ) : (
+              // Fork: what the status reports is a credential the viewer holds,
+              // so what drops it belongs on the same row.
+              <ProviderAuthAction driver={instance.driver} />
+            )
           }
         />
       </SettingsSection>
 
       {setup ? <SettingsSection title="Setup">{setup}</SettingsSection> : null}
+
+      {/* Fork: its own section, because it is absent entirely once the viewer
+        has signed in. */}
+      <ProviderAuthSetup driver={instance.driver} />
 
       {/* Fork: every runtime flag persists through server.updateSettings, which
         the backend does not dispatch, and it would show a contract default as

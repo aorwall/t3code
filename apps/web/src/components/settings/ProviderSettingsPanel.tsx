@@ -85,8 +85,6 @@ import { ProviderInstanceCard } from "./ProviderInstanceCard";
 import { UsageProviderSettings } from "./UsageProviderSettings";
 import { ProviderSetupSection, readAntigravityAuthMethod } from "./ProviderSetupSection";
 import { DRIVER_OPTIONS, getDriverOption } from "./providerDriverMeta";
-// Fork: the viewer's own Claude Code and Codex credentials, in the Setup slot.
-import { ProviderAuthSetup } from "./moatless/ProviderAuthSetup";
 import { searchableSetting } from "./settingsSearch";
 import {
   backgroundActivityOverrideSettings,
@@ -937,10 +935,6 @@ export function EnvironmentProviderSettings({
               readOnly={readOnly}
               onEnable={() => updateProviderInstance(row, { ...row.instance, enabled: true })}
             />
-          ) : /* Fork: a Claude Code token and a Codex sign-in are the viewer's
-               own, so they belong in the provider they authenticate. */
-          mode === "editor" ? (
-            <ProviderAuthSetup driver={row.driver} />
           ) : null
         }
         onUpdate={(next) => {

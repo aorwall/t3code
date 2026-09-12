@@ -1,6 +1,8 @@
 /**
- * Fork-only. The agent credentials the viewer's own tasks run with, rendered in
- * the Setup slot of the provider they authenticate.
+ * Fork-only. The agent credentials the viewer's own tasks run with, on the
+ * provider they authenticate. What removes a credential sits beside the status
+ * row that reports it, and the rows that establish one are there only while
+ * there is none.
  *
  * Everything here belongs to the viewer, not to the deployment: a person who
  * administers nothing still sets their own Claude Code token and signs Codex in.
@@ -9,14 +11,8 @@
  */
 
 import type { ProviderDriverKind } from "@t3tools/contracts";
-import {
-  CheckIcon,
-  ExternalLinkIcon,
-  LoaderIcon,
-  Trash2Icon,
-  TriangleAlertIcon,
-} from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ExternalLinkIcon, LoaderIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import {
   deleteCodexConfig,
@@ -31,163 +27,191 @@ import type {
   SecretMutationResponse,
 } from "@t3tools/moatless-api/generated/model";
 
+import { cn } from "../../../lib/utils";
 import { useMoatlessCommand, useMoatlessQuery } from "../../../moatless/query";
 import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
 import { Textarea } from "../../ui/textarea";
 import { ITEM_ROW_CLASSNAME } from "../itemRows";
-import { SectionError, SectionPending } from "./MoatlessSectionState";
+import { SettingsSection } from "../settingsLayout";
+import { SectionError } from "./MoatlessSectionState";
 import {
   CLAUDE_TOKEN_SECRET_KEY,
   claudeTokenSecret,
   codexState,
   isCodexAuthJson,
 } from "./accountRows";
-import { CredentialRow, ErrorText, TokenField } from "./credentialRows";
+import { ErrorText, TokenField } from "./credentialRows";
 import { codexAccessQuery, secretsQuery } from "./queries";
 
 /**
- * The rows below carry their own padding and expect the dividers a grouped
- * `SettingsSection` draws between its direct children. The Setup slot pads them
- * as one child instead, so cancel that and redraw the dividers here.
+ * What the viewer holds, beside the status row that already says whether this
+ * provider is authenticated. Null for a driver whose credentials the Moatless
+ * backend does not hold, and for a viewer who has none of this one.
  */
-const FLUSH_ROWS_CLASSNAME = "-mx-3 -my-3 sm:-mx-4 [&>*+*]:border-t [&>*+*]:border-border/50";
-
-/** Null for a driver whose credentials the Moatless backend does not hold. */
-export function ProviderAuthSetup({ driver }: { readonly driver: ProviderDriverKind }) {
-  if (driver === "claudeAgent") return <ClaudeAuth />;
-  if (driver === "codex") return <CodexAuth />;
+export function ProviderAuthAction({ driver }: { readonly driver: ProviderDriverKind }) {
+  if (driver === "claudeAgent") return <ClaudeAuthAction />;
+  if (driver === "codex") return <CodexAuthAction />;
   return null;
+}
+
+/**
+ * How the viewer establishes a credential, in a Setup section of its own.
+ *
+ * Null once there is one: the status row reports it and the action above
+ * removes it, so a section offering to set it up again would be the third
+ * place saying so.
+ */
+export function ProviderAuthSetup({ driver }: { readonly driver: ProviderDriverKind }) {
+  if (driver === "claudeAgent") return <ClaudeAuthSetup />;
+  if (driver === "codex") return <CodexAuthSetup />;
+  return null;
+}
+
+/**
+ * Each row below is a direct child of the section, because that is what draws
+ * the card border around them and the dividers between them —
+ * `ITEM_ROW_CLASSNAME` carries the padding and nothing else.
+ */
+function AuthSetupSection({ children }: { readonly children: ReactNode }) {
+  return <SettingsSection title="Setup">{children}</SettingsSection>;
+}
+
+/** Why a removal failed, inline in the status row rather than under it. */
+function ActionError({ error }: { readonly error: Error | null }) {
+  if (error === null) return null;
+  return <span className="text-[13px] text-destructive-foreground">{error.message}</span>;
 }
 
 // ---------------------------------------------------------------- Claude ----
 
-function ClaudeAuth() {
+function ClaudeAuthAction() {
   const query = useMemo(() => secretsQuery("user"), []);
-  const { data, error, isPending, refresh } = useMoatlessQuery(query);
+  const { data } = useMoatlessQuery(query);
   const stored = useMemo(() => claudeTokenSecret(data), [data]);
-
-  const save = useMoatlessCommand<string, SecretMutationResponse>(
-    (value) => putSecret({ scope: "user", key: CLAUDE_TOKEN_SECRET_KEY, kind: "env", value }),
-    { invalidates: ["secrets"] },
-  );
   const remove = useMoatlessCommand<string, SecretMutationResponse>((id) => deleteSecret(id), {
     invalidates: ["secrets"],
   });
 
+  if (stored === null) return null;
+
   return (
-    <div className={FLUSH_ROWS_CLASSNAME}>
-      {error ? (
+    <>
+      <ActionError error={remove.error} />
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled={remove.isRunning}
+        onClick={() => void remove.run(stored.id)}
+      >
+        <Trash2Icon />
+        Remove token
+      </Button>
+    </>
+  );
+}
+
+function ClaudeAuthSetup() {
+  const query = useMemo(() => secretsQuery("user"), []);
+  const { data, error, refresh } = useMoatlessQuery(query);
+  const stored = useMemo(() => claudeTokenSecret(data), [data]);
+  const save = useMoatlessCommand<string, SecretMutationResponse>(
+    (value) => putSecret({ scope: "user", key: CLAUDE_TOKEN_SECRET_KEY, kind: "env", value }),
+    { invalidates: ["secrets"] },
+  );
+
+  if (error) {
+    return (
+      <AuthSetupSection>
         <SectionError error={error} label="Claude Code token" onRetry={refresh} />
-      ) : isPending && data === null ? (
-        <SectionPending label="Claude Code token" />
-      ) : (
-        <>
-          <CredentialRow
-            title={stored ? "Token stored" : "No token"}
-            description={
-              stored
-                ? "Delivered to every task you run."
-                : "Your tasks fall back to whatever the deployment provides, if anything."
-            }
-            badge={
-              stored ? (
-                <Badge variant="success">
-                  <CheckIcon />
-                  Active
-                </Badge>
-              ) : null
-            }
-            actions={
-              stored ? (
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  disabled={remove.isRunning}
-                  onClick={() => void remove.run(stored.id)}
-                >
-                  <Trash2Icon />
-                  Remove
-                </Button>
-              ) : null
-            }
-          />
-          <TokenField
-            id="provider-claude-token"
-            label={stored ? "Replace your token" : "Add a token"}
-            placeholder="sk-ant-oat…"
-            hint={
-              <>
-                Run <code className="font-mono">claude setup-token</code> to get one. Stored as your{" "}
-                <code className="font-mono">{CLAUDE_TOKEN_SECRET_KEY}</code> secret.
-              </>
-            }
-            isSaving={save.isRunning}
-            onSave={async (token) => (await save.run(token)) !== null}
-          />
-          <ErrorText error={save.error ?? remove.error} />
-        </>
-      )}
-    </div>
+      </AuthSetupSection>
+    );
+  }
+  // Nothing is offered until the read settles, so a viewer who has a token is
+  // never shown the field that adds one.
+  if (data === null || stored !== null) return null;
+
+  return (
+    <AuthSetupSection>
+      <TokenField
+        id="provider-claude-token"
+        label="Add a token"
+        placeholder="sk-ant-oat…"
+        hint={
+          <>
+            Run <code className="font-mono">claude setup-token</code> to get one. Stored as your{" "}
+            <code className="font-mono">{CLAUDE_TOKEN_SECRET_KEY}</code> secret.
+          </>
+        }
+        isSaving={save.isRunning}
+        onSave={async (token) => (await save.run(token)) !== null}
+      />
+      <ErrorText error={save.error} />
+    </AuthSetupSection>
   );
 }
 
 // ----------------------------------------------------------------- Codex ----
 
-function CodexAuth() {
-  const { data, error, isPending, refresh } = useMoatlessQuery(codexAccessQuery);
+function CodexAuthAction() {
+  const { data } = useMoatlessQuery(codexAccessQuery);
   const state = useMemo(() => codexState(data), [data]);
   const disconnect = useMoatlessCommand<void, unknown>(() => deleteCodexConfig(), {
     invalidates: ["account/codex"],
   });
 
+  if (!state.connected) return null;
+
   return (
-    <div className={FLUSH_ROWS_CLASSNAME}>
-      {error ? (
+    <>
+      {state.needsReconnect ? (
+        <Badge variant="warning">
+          <TriangleAlertIcon />
+          Expired
+        </Badge>
+      ) : state.detail ? (
+        <Badge variant="secondary">{state.detail}</Badge>
+      ) : null}
+      <ActionError error={disconnect.error} />
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled={disconnect.isRunning}
+        onClick={() => void disconnect.run(undefined)}
+      >
+        <Trash2Icon />
+        Disconnect
+      </Button>
+    </>
+  );
+}
+
+function CodexAuthSetup() {
+  const { data, error, refresh } = useMoatlessQuery(codexAccessQuery);
+  const state = useMemo(() => codexState(data), [data]);
+
+  if (error) {
+    return (
+      <AuthSetupSection>
         <SectionError error={error} label="Codex" onRetry={refresh} />
-      ) : isPending && data === null ? (
-        <SectionPending label="Codex" />
-      ) : (
-        <>
-          <CredentialRow
-            title={state.label}
-            description={
-              state.needsReconnect
-                ? "The stored credential stopped refreshing. Sign in again to repair it."
-                : state.connected
-                  ? "Delivered to every task you run."
-                  : "Your tasks fall back to whatever the deployment provides, if anything."
-            }
-            badge={
-              state.needsReconnect ? (
-                <Badge variant="warning">
-                  <TriangleAlertIcon />
-                  Expired
-                </Badge>
-              ) : state.detail ? (
-                <Badge variant="secondary">{state.detail}</Badge>
-              ) : null
-            }
-            actions={
-              state.connected ? (
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  disabled={disconnect.isRunning}
-                  onClick={() => void disconnect.run(undefined)}
-                >
-                  <Trash2Icon />
-                  Disconnect
-                </Button>
-              ) : null
-            }
-          />
-          <ErrorText error={disconnect.error} />
-          <CodexDeviceLogin />
-          <CodexAuthJsonForm />
-        </>
-      )}
-    </div>
+      </AuthSetupSection>
+    );
+  }
+  if (data === null) return null;
+  // A credential that stopped refreshing is repaired by signing in again, so
+  // these rows stay while it is connected but expired.
+  if (state.connected && !state.needsReconnect) return null;
+
+  return (
+    <AuthSetupSection>
+      {state.needsReconnect ? (
+        <p className={cn(ITEM_ROW_CLASSNAME, "text-[13px] text-muted-foreground/80")}>
+          The stored credential stopped refreshing. Sign in again to repair it.
+        </p>
+      ) : null}
+      <CodexDeviceLogin />
+      <CodexAuthJsonForm />
+    </AuthSetupSection>
   );
 }
 
