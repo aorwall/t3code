@@ -55,6 +55,8 @@ import {
   SquarePenIcon,
   TerminalIcon,
   Undo2Icon,
+  // Fork: the owner line in the row tooltip.
+  UserIcon,
   XIcon,
 } from "lucide-react";
 import {
@@ -367,6 +369,14 @@ function SidebarThreadTooltip({
                 className="size-3 shrink-0 stroke-muted-foreground"
               />
               <div className="min-w-0 truncate text-foreground/75">{environmentLabel}</div>
+            </div>
+          ) : null}
+          {/* Fork: the row truncates the owner's name to keep its meta line
+              scannable, so the tooltip is where it is readable whole. */}
+          {thread.ownerName ? (
+            <div className="flex min-w-0 items-center gap-2">
+              <UserIcon className="size-3 shrink-0 stroke-muted-foreground" />
+              <div className="min-w-0 truncate text-foreground/75">{thread.ownerName}</div>
             </div>
           ) : null}
           {thread.branch ? (
@@ -1925,6 +1935,15 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
                 <span className="shrink-0 font-mono">
                   <span className="text-diff-addition-foreground">+{diff.insertions}</span>{" "}
                   <span className="text-diff-deletion-foreground">−{diff.deletions}</span>
+                </span>
+              ) : null}
+              {/* Fork: a Moatless sidebar carries work other people started, so
+                  a row that is not yours says whose it is. The server sends the
+                  name only in that case, and the name reads as text rather than
+                  a glyph, so it stays outside the icon cluster below. */}
+              {thread.ownerName ? (
+                <span className="max-w-24 shrink truncate text-muted-foreground/60">
+                  {thread.ownerName}
                 </span>
               ) : null}
               <span

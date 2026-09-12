@@ -854,6 +854,13 @@ export const OrchestrationThreadShell = Schema.Struct({
   // Fork: see ThreadVisibility above. Optional so a payload from a server
   // without the capability decodes unchanged.
   visibility: Schema.optional(ThreadVisibility),
+  /**
+   * Fork: display name of whoever owns this thread, sent only when that is
+   * somebody other than the viewer. The server decides it, because the client
+   * is never told who it is signed in as. Optional so a payload from a server
+   * that does not send it decodes unchanged.
+   */
+  ownerName: Schema.optional(Schema.NullOr(TrimmedNonEmptyString)),
   latestTurn: Schema.NullOr(OrchestrationLatestTurn),
   createdAt: IsoDateTime,
   updatedAt: IsoDateTime,

@@ -459,6 +459,13 @@
       "note": "Take upstream, then apply Thread Follow Delta. Every path here also carries the Thread Visibility Delta and most carry the Thread Fork Delta; all must survive. The menu item goes directly below the visibility item and above archive, so upstream's archive-tail tests need the fork's two-item shift re-applied. decider.ts's hunk is a deliberate refusal: the bundled server lists every thread it stores and has no per-viewer listing to move one into."
     },
     {
+      "id": "thread-owner-name-upstream-files",
+      "paths": ["packages/contracts/src/orchestration.ts", "apps/web/src/components/Sidebar.tsx"],
+      "verdict": "converged",
+      "delta": "Thread Owner Name Delta",
+      "note": "Take upstream, then apply Thread Owner Name Delta. Both paths carry the Thread Visibility and Thread Follow Deltas as well; all must survive. The field is on OrchestrationThreadShell only, beside `visibility`, and the row hunk is two elements inside `SidebarThreadRow`'s card meta line and its tooltip — additive, and outside upstream's aria-hidden icon cluster."
+    },
+    {
       "id": "mobile-touch-upstream-files",
       "paths": [
         "apps/web/src/components/ui/sidebar.tsx",
@@ -793,6 +800,12 @@
         "files": ["apps/web/src/routes/_chat.$environmentId.$threadId.tsx"]
       },
       "mustSurvive": "A Moatless listing is the open work a viewer follows, so a thread reached by link is readable and absent from the sidebar at the same time. Opening one follows it: `useAutoFollowThread` in fork/unlistedThread.ts dispatches `thread.follow` once per thread from the thread route, and the row stays in the sidebar after the route closes. Four conditions bound it, and each one is a bug that does not happen. It fires once per ref and never again after an unfollow, because the row menu's Unfollow acts on the thread the viewer is looking at and a re-follow on the next render would make that item do nothing. It decides against the listing's own snapshot rather than the grafted one, for the reason `missingThreadIds` gives \u2014 the graft is what put the thread on screen. It waits for a non-null snapshot, because a listing that has not answered yet was about to carry the thread. It skips a thread with an `archivedAt`, because the sidebar filters on `archivedAt === null` and a followed closed thread would be a follow with no row to unfollow it from. The way out is \"Unfollow thread\" in the per-thread menu, directly below the visibility item and above \"Archive thread\", on both surfaces `buildThreadActionMenuItems` serves; it opens the archive group when the visibility item is absent. It dispatches `thread.unfollow` with no confirmation, because the thread keeps running and only this viewer's listing changes. Both halves are gated on the `threadFollow` capability, so a server without it follows nothing and offers no item. Moatless makes the follow row the listing's membership (`Reach::Followed` over `task_follows`) and records a listing change on each write, so the sidebar updates live for that viewer alone; the bundled server refuses both commands."
+    },
+    {
+      "id": "thread-owner-name",
+      "name": "A sidebar row names its owner when that is somebody else",
+      "paths": ["packages/contracts/src/orchestration.ts", "apps/web/src/components/Sidebar.tsx"],
+      "mustSurvive": "A Moatless sidebar lists work other people started — a public Task, a Task an admin can read, a Task followed by opening its link — so a row that is not yours says whose it is. `ownerName` on `OrchestrationThreadShell` carries the display name, and the card row shows it on the meta line directly left of the environment and provider glyphs, truncated, with the whole name on the owner line of the row tooltip. The server decides when to send it: the client is never told which user it is signed in as, so Moatless emits the name only when the Task's owner — the access rule's own `COALESCE(owner_user_id, created_by)` — is not the viewer, and null otherwise. Absence and null both mean \"yours, or a server that does not send it\", so no capability gates this: a row with no name renders exactly as it did before. The slim settled and snoozed rows are deliberately left without it; they carry no provider glyph either, and their point is a quiet tail."
     },
     {
       "id": "task-bound-pull-request",
