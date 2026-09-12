@@ -16,7 +16,14 @@ import {
   PlayIcon,
   WrenchIcon,
 } from "lucide-react";
-import React, { type FormEvent, type KeyboardEvent, useEffect, useState } from "react";
+import React, {
+  type FormEvent,
+  type KeyboardEvent,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 
 import {
   keybindingValueForCommand,
@@ -156,9 +163,22 @@ export function ProjectScriptEditorDialog({
   const [port, setPort] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [savingRequest, setSavingRequest] = useState<ProjectScriptEditorRequest | null>(null);
+  const pendingSubmissionRef = useRef<{ request: ProjectScriptEditorRequest } | null>(null);
 
   const isOpen = request !== null;
   const isEditing = request?.scriptId != null;
+  const isSaving = request !== null && savingRequest === request;
+
+  // A save completion must not affect a replacement request or an unmounted editor.
+  useLayoutEffect(
+    () => () => {
+      if (pendingSubmissionRef.current?.request === request) {
+        pendingSubmissionRef.current = null;
+      }
+    },
+    [request],
+  );
 
   // Hydrate the form whenever a new request opens the dialog.
   useEffect(() => {
@@ -171,7 +191,15 @@ export function ProjectScriptEditorDialog({
     setKeybinding(request.initial.keybinding ?? "");
     setPort(request.initial.port === null ? "" : String(request.initial.port));
     setValidationError(request.error ?? null);
+    setSavingRequest(null);
   }, [request]);
+
+  const close = () => {
+    pendingSubmissionRef.current = null;
+    setSavingRequest(null);
+    setIconPickerOpen(false);
+    onClose();
+  };
 
   const captureKeybinding = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Tab") return;
@@ -187,7 +215,7 @@ export function ProjectScriptEditorDialog({
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!request) return;
+    if (!request || pendingSubmissionRef.current !== null) return;
     const trimmedName = name.trim();
     const trimmedCommand = command.trim();
     if (trimmedName.length === 0) {
@@ -235,16 +263,31 @@ export function ProjectScriptEditorDialog({
       return;
     }
 
-    const result = await onSubmit(request.scriptId, payload);
-    if (result._tag === "Failure") {
-      if (!isAtomCommandInterrupted(result)) {
-        const error = squashAtomCommandFailure(result);
+    const submission = { request };
+    pendingSubmissionRef.current = submission;
+    setSavingRequest(request);
+    setIconPickerOpen(false);
+    try {
+      const result = await onSubmit(request.scriptId, payload);
+      if (pendingSubmissionRef.current === submission) {
+        if (result._tag === "Failure") {
+          if (!isAtomCommandInterrupted(result)) {
+            const error = squashAtomCommandFailure(result);
+            setValidationError(error instanceof Error ? error.message : "Failed to save action.");
+          }
+        } else {
+          close();
+        }
+      }
+    } catch (error) {
+      if (pendingSubmissionRef.current === submission) {
         setValidationError(error instanceof Error ? error.message : "Failed to save action.");
       }
-      return;
     }
-    setIconPickerOpen(false);
-    onClose();
+    if (pendingSubmissionRef.current === submission) {
+      pendingSubmissionRef.current = null;
+      setSavingRequest(null);
+    }
   };
 
   return (
@@ -253,8 +296,7 @@ export function ProjectScriptEditorDialog({
         open={isOpen}
         onOpenChange={(open) => {
           if (!open) {
-            setIconPickerOpen(false);
-            onClose();
+            close();
           }
         }}
       >
@@ -266,105 +308,108 @@ export function ProjectScriptEditorDialog({
             </DialogDescription>
           </DialogHeader>
           <DialogPanel>
-            <form id={formId} className="space-y-4" onSubmit={submit}>
-              <div className="space-y-1.5">
-                <Label htmlFor="script-name">Name</Label>
-                <div className="flex items-center gap-2">
-                  <Popover onOpenChange={setIconPickerOpen} open={iconPickerOpen}>
-                    <PopoverTrigger
-                      render={
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="size-9 shrink-0 hover:bg-popover active:bg-popover data-pressed:bg-popover data-pressed:shadow-xs/5 data-pressed:before:shadow-[0_1px_--theme(--color-black/4%)] dark:border-transparent dark:bg-white/[0.035] dark:data-pressed:before:shadow-none"
-                          aria-label="Choose icon"
-                        />
-                      }
-                    >
-                      <ScriptIcon icon={icon} className="size-4.5" />
-                    </PopoverTrigger>
-                    <PopoverPopup align="start">
-                      <div className="grid grid-cols-3 gap-2">
-                        {SCRIPT_ICONS.map((entry) => {
-                          const isSelected = entry.id === icon;
-                          return (
-                            <button
-                              key={entry.id}
-                              type="button"
-                              className={`relative flex flex-col items-center gap-2 rounded-md border px-2 py-2 text-xs dark:border-transparent ${
-                                isSelected
-                                  ? "border-primary/70 bg-primary/10 dark:ring-1 dark:ring-primary/30"
-                                  : "border-border/70 hover:bg-accent/60 dark:bg-white/[0.035]"
-                              }`}
-                              onClick={() => {
-                                setIcon(entry.id);
-                                setIconPickerOpen(false);
-                              }}
-                            >
-                              <ScriptIcon icon={entry.id} className="size-4" />
-                              <span>{entry.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </PopoverPopup>
-                  </Popover>
+            <form id={formId} onSubmit={submit}>
+              <fieldset className="space-y-4" disabled={isSaving}>
+                <div className="space-y-1.5">
+                  <Label htmlFor="script-name">Name</Label>
+                  <div className="flex items-center gap-2">
+                    <Popover onOpenChange={setIconPickerOpen} open={iconPickerOpen}>
+                      <PopoverTrigger
+                        render={
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="size-9 shrink-0 hover:bg-popover active:bg-popover data-pressed:bg-popover data-pressed:shadow-xs/5 data-pressed:before:shadow-[0_1px_--theme(--color-black/4%)] dark:border-transparent dark:bg-white/[0.035] dark:data-pressed:before:shadow-none"
+                            aria-label="Choose icon"
+                          />
+                        }
+                      >
+                        <ScriptIcon icon={icon} className="size-4.5" />
+                      </PopoverTrigger>
+                      <PopoverPopup align="start">
+                        <div className="grid grid-cols-3 gap-2">
+                          {SCRIPT_ICONS.map((entry) => {
+                            const isSelected = entry.id === icon;
+                            return (
+                              <button
+                                key={entry.id}
+                                type="button"
+                                className={`relative flex flex-col items-center gap-2 rounded-md border px-2 py-2 text-xs dark:border-transparent ${
+                                  isSelected
+                                    ? "border-primary/70 bg-primary/10 dark:ring-1 dark:ring-primary/30"
+                                    : "border-border/70 hover:bg-accent/60 dark:bg-white/[0.035]"
+                                }`}
+                                onClick={() => {
+                                  setIcon(entry.id);
+                                  setIconPickerOpen(false);
+                                }}
+                              >
+                                <ScriptIcon icon={entry.id} className="size-4" />
+                                <span>{entry.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </PopoverPopup>
+                    </Popover>
+                    <Input
+                      id="script-name"
+                      autoFocus
+                      placeholder="Test"
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="script-keybinding">Keybinding</Label>
                   <Input
-                    id="script-name"
-                    autoFocus
-                    placeholder="Test"
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
+                    id="script-keybinding"
+                    placeholder="Press shortcut"
+                    value={keybinding}
+                    readOnly
+                    onKeyDown={captureKeybinding}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Press a shortcut. Use <code>Backspace</code> to clear. Shortcuts are
+                    environment-wide. Projects using the same action share its shortcut.
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="script-command">Command</Label>
+                  <Textarea
+                    id="script-command"
+                    placeholder="bun test"
+                    value={command}
+                    onChange={(event) => setCommand(event.target.value)}
                   />
                 </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="script-keybinding">Keybinding</Label>
-                <Input
-                  id="script-keybinding"
-                  placeholder="Press shortcut"
-                  value={keybinding}
-                  readOnly
-                  onKeyDown={captureKeybinding}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Press a shortcut. Use <code>Backspace</code> to clear.
-                </p>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="script-command">Command</Label>
-                <Textarea
-                  id="script-command"
-                  placeholder="bun test"
-                  value={command}
-                  onChange={(event) => setCommand(event.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="script-port">Port (optional)</Label>
-                <Input
-                  id="script-port"
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  max={65535}
-                  placeholder="5173"
-                  value={port}
-                  onChange={(event) => setPort(event.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  The port this action serves on. The preview opens automatically at the published
-                  URL when it runs.
-                </p>
-              </div>
-              <label className="flex items-center justify-between gap-3 rounded-md border border-border/70 px-3 py-2 text-sm dark:border-transparent dark:bg-white/[0.035]">
-                <span>Run automatically on worktree creation</span>
-                <Switch
-                  checked={runOnWorktreeCreate}
-                  onCheckedChange={(checked) => setRunOnWorktreeCreate(Boolean(checked))}
-                />
-              </label>
-              {validationError && <p className="text-sm text-destructive">{validationError}</p>}
+                <div className="space-y-1.5">
+                  <Label htmlFor="script-port">Port (optional)</Label>
+                  <Input
+                    id="script-port"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={65535}
+                    placeholder="5173"
+                    value={port}
+                    onChange={(event) => setPort(event.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    The port this action serves on. The preview opens automatically at the published
+                    URL when it runs.
+                  </p>
+                </div>
+                <label className="flex items-center justify-between gap-3 rounded-md border border-border/70 px-3 py-2 text-sm dark:border-transparent dark:bg-white/[0.035]">
+                  <span>Run automatically on worktree creation</span>
+                  <Switch
+                    checked={runOnWorktreeCreate}
+                    onCheckedChange={(checked) => setRunOnWorktreeCreate(Boolean(checked))}
+                  />
+                </label>
+                {validationError && <p className="text-sm text-destructive">{validationError}</p>}
+              </fieldset>
             </form>
           </DialogPanel>
           <DialogFooter className="dark:border-transparent dark:bg-transparent">
@@ -373,16 +418,17 @@ export function ProjectScriptEditorDialog({
                 type="button"
                 variant="destructive-outline"
                 className="mr-auto"
+                disabled={isSaving}
                 onClick={() => setDeleteConfirmOpen(true)}
               >
                 Delete
               </Button>
             )}
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={close}>
               Cancel
             </Button>
-            <Button form={formId} type="submit">
-              {isEditing ? "Save changes" : "Save action"}
+            <Button form={formId} type="submit" disabled={isSaving}>
+              {isSaving ? "Saving…" : isEditing ? "Save changes" : "Save action"}
             </Button>
           </DialogFooter>
         </DialogPopup>
@@ -398,10 +444,11 @@ export function ProjectScriptEditorDialog({
             <AlertDialogClose render={<Button variant="outline" />}>Cancel</AlertDialogClose>
             <Button
               variant="destructive"
+              disabled={isSaving}
               onClick={() => {
                 if (!request?.scriptId) return;
                 setDeleteConfirmOpen(false);
-                onClose();
+                close();
                 onDelete(request.scriptId);
               }}
             >

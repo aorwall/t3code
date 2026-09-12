@@ -44,11 +44,30 @@ not report is every boolean added since that handshake was written —
 `threadPinning` (upstream, 2026-08-06), `threadPinReorder` (upstream,
 2026-08-08), `threadTitleRegeneration`, `serverSelfUpdate`,
 `serverSelfUpdateProgress` and `agentActivityPublishing` (upstream,
-2026-08-16) and `questionAttachments` (upstream, 2026-09-08) — so each of those
+2026-08-16), `questionAttachments` (upstream, 2026-09-08) and
+`projectSettingsOverrides` (upstream, 2026-09-09) — so each of those
 surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
 statement from the deployment. That is correct for the ones the backend does not
 implement and stale the day it does.
+
+`projectSettingsOverrides` is the one to know about, because it is the first of
+these the client degrades around rather than hides. Upstream's scoped-settings
+work (#11176 for the wire, #10639 for the UI) made every scopable server setting
+editable at a project scope by writing a patch into
+`ServerSettings.projectSettingsOverrides`. The whole settings UI ships and the
+scope selects render; what the absent capability changes is which environments a
+write fans out to. `scopedSettingsWrites` in
+`apps/web/src/components/settings/scopedSettings.ts` skips any environment whose
+handshake does not report the boolean, and `ProjectActionsSettings.tsx` filters
+the same way for a project's actions — an older server ignores the override
+record, so a project edit there would report success and vanish. On Moatless
+every environment is skipped at a project scope, which means the write never
+leaves the client: a person edits a project override, gets no error (not even the
+`server.updateSettings` refusal the environment scope would produce), and the
+inherited value stays. A silent no-op is worse than a hidden control or an honest
+refusal, and it is why reporting this one boolean matters more than the others
+above — reported `true`, the same UI starts working with no client change.
 
 `questionAttachments` is the newest and the cheapest to close: it gates only
 whether a user may attach files to an answer to an agent's async question
@@ -156,7 +175,13 @@ what a person loses, which is the part the derivation cannot tell you:
   `getConfig`), so Settings renders and nothing in it can be saved. Holds open
   `serverAdministration`. A project's scripts are the exception: the backend
   dispatches `project.meta.update` for them — see _A script runs on the backend_
-  below.
+  below. Everything upstream adds to `ServerSettings` inherits this: the
+  2026-09-12 merge brought `defaultRuntimeMode` (upstream #11346, the permission
+  mode a new thread starts in, decoding-defaulted to `full-access`) and the
+  `projectSettingsOverrides` record (#11176, a per-project patch over seventeen
+  scopable keys). Both read fine and neither can be saved, which is the same
+  refusal one level deeper rather than a new gap — see _Capabilities are
+  reported_ for the capability half.
 - **Diagnostics** — `server.getTraceDiagnostics`, `getProcessDiagnostics`,
   `getProcessResourceHistory`, `getResourceTelemetryHistory`, `signalProcess`,
   `retryResourceTelemetry`, `subscribeResourceTelemetry`. Holds open
@@ -216,7 +241,8 @@ what a person loses, which is the part the derivation cannot tell you:
   `pullRequestMergeMethodOverrides` client setting plus a project-level default
   that preselect merge/squash/rebase in the PR detail panel's merge control
   (`apps/web/src/components/pullRequest/PullRequestDetailPanel.tsx`, the
-  project field in `ProjectSettingsPanel.tsx`). The setting is client-side and
+  project field now in `ProjectDefaultsSettings.tsx`, which upstream's
+  scoped-settings work moved it to on 2026-09-09). The setting is client-side and
   survives, but it preselects a control on a panel the capability already keeps
   off, so it changes nothing on Moatless until the group is served. Closes when
   the backend reports `capabilities.pullRequests: true` and dispatches the rest.
@@ -450,9 +476,16 @@ thread out of it, so nothing here needs to know about archiving.
 
 ### A command cannot be refused
 
-`orchestration.dispatchCommand` is one dispatched method carrying a union of 26
-command types (`DispatchableClientOrchestrationCommand` in
-`packages/contracts/src/orchestration.ts`) — `thread.create`, `thread.archive`,
+`orchestration.dispatchCommand` is one dispatched method carrying a union of 30
+command types — 28 upstream's, 2 fork-only. Recount rather than trust that
+number:
+
+```bash
+sed -n '/^const DispatchableClientOrchestrationCommand/,/^]);/p' \
+  packages/contracts/src/orchestration.ts | grep -c 'Command,$'
+```
+
+The union itself is in `packages/contracts/src/orchestration.ts` — `thread.create`, `thread.archive`,
 `thread.delete`, `project.create`, `thread.pin`, `thread.settle`,
 `thread.snooze` and their inverses. The backend dispatches the method, so
 `UnsupportedMethodError` cannot say anything about the commands inside it: a
@@ -466,6 +499,18 @@ order for the active thread list (upstream #9729), and
 (upstream #10431). Both are ordinary controls the client renders unconditionally
 — a sidebar drag and a Dismiss button — and both fail generically on a backend
 that does not implement them.
+
+The 2026-09-12 merge added `thread.conversation.revert` (upstream #11358): rewind
+the conversation to a user message and leave the working tree alone, where the
+existing `thread.checkpoint.revert` rewinds both. Upstream deliberately made it a
+separate command rather than an option on the old one, so a server that does not
+know it fails the request instead of ignoring an unfamiliar `restoreFiles: false`
+and restoring files nobody asked to restore. The generic failure is the same
+silence as every other member here; what is different is that the wrong outcome
+is not reachable. The client renders the control either way —
+`MessagesTimeline.tsx`'s `RevertUserMessageButton` ("Edit from here") is gated
+only on the turn being idle — so on Moatless a user gets the failure rather than a
+rewind that discards their working tree.
 
 This is the reason `threadDeletion` is a build flag and not a typed refusal, and
 it will be the reason for the next one too.
@@ -540,13 +585,12 @@ thread takes effect at once rather than waiting for the wake time.
 - **Then here:** nothing to delete — this one is behaviour to reproduce, not a
   placeholder to remove.
 
-### Session and event-replay fixes upstream made to its own runtime
+### Runtime fixes upstream made to its own server
 
-Two upstream server fixes landed on 2026-09-08 that the fork cannot use, because
-Moatless owns both surfaces itself. Neither is a placeholder here — there is
-nothing in this repository holding them open — so they are recorded only so the
-next person to touch the Moatless runtime knows the answer was already worked
-out upstream.
+Upstream server fixes the fork cannot use, because Moatless owns the surface
+itself. None is a placeholder here — there is nothing in this repository holding
+them open — so they are recorded only so the next person to touch the Moatless
+runtime knows the answer was already worked out upstream.
 
 - **A completed turn should get a full idle window before its provider session
   is reaped.** Upstream's `ProviderSessionReaper` now measures idle time from the
@@ -563,10 +607,43 @@ out upstream.
   failure mode is memory growth proportional to a thread's whole event history,
   which only shows up on long threads.
 
+Four more arrived in the 2026-09-12 merge:
+
+- **A message sent during context compaction should be queued, not dropped.**
+  Upstream's `ProviderCommandReactor` holds a user message that arrives while a
+  thread is compacting and replays it when compaction finishes
+  (`apps/server/src/orchestration/Layers/ProviderCommandReactor.ts`, #11107). The
+  fork has the client half of the same problem already solved — #11103 preserves
+  the composer draft across a compaction — so on Moatless the text is not lost
+  from the editor, but a message actually sent mid-compaction is the backend's
+  problem to hold.
+- **Rewinding should restore the provider's own history and prompts, not just the
+  thread's.** Upstream's `CheckpointReactor` now rewinds the provider session
+  alongside the conversation, so a Claude or Codex session resumed after a rewind
+  does not carry the turns the user just removed
+  (`apps/server/src/orchestration/Layers/CheckpointReactor.ts` plus each
+  adapter's session runtime, #11338). This is the half of #11358's rewind that
+  lives entirely in the server, and it is the part that decides whether a rewind
+  actually took.
+- **A review diff should detect renames.** Upstream's diff builder reports a
+  renamed file as one rename rather than a delete and an add
+  (`apps/server/src/vcs/GitVcsDriverCore.ts`, #8086). Moatless builds its own
+  review diffs, so a rename shows there as two entries until it does the same.
+- **A qualified provider model id should survive selection and generation.**
+  Upstream stopped dropping the qualifier from Codex's fully-qualified model ids
+  when carrying a selection into text generation
+  (`apps/server/src/provider/ModelManifest.ts` and
+  `src/textGeneration/CodexTextGeneration.ts`, #9921). Relevant to Moatless
+  wherever it passes a model selection to a provider CLI by id.
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
-  two timestamps, and its thread/session event replay releases consumed pages.
+  two timestamps, its thread/session event replay releases consumed pages, its
+  compaction path queues in-flight user messages, its rewind rewinds the provider
+  session too, its review diffs report renames, and it passes qualified model ids
+  through unmodified.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
-  Strike this entry once both are confirmed in the backend.
+  Strike each bullet once it is confirmed in the backend, and the entry when the
+  last one goes.
 
 ## This fork
 

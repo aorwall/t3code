@@ -791,17 +791,17 @@
       "paths": [
         "apps/web/src/components/ProjectScriptsControl.tsx",
         "apps/web/src/components/chat/ChatHeader.tsx",
-        "apps/web/src/components/settings/ProjectSettingsPanel.tsx",
+        "apps/web/src/components/settings/ProjectActionsSettings.tsx",
         "apps/web/src/components/settings/ProjectActionsList.tsx",
         "apps/web/src/components/ChatView.tsx",
         "packages/contracts/src/orchestration.ts"
       ],
-      "mustSurvive": "A project's scripts can be edited only when the backend says so per workspace: a git-synced workspace owns its scripts in .moatless/workspaces.json and is projected read-only, a manual one is writable. That answer rides the wire as scriptsEditable on OrchestrationProject / OrchestrationProjectShell, threaded to ProjectScriptsControl and ProjectSettingsPanel as an `editable` prop that gates the per-script Edit button, the t3.json import items and the Add action. Upstream extracted the row list into ProjectActionsList.tsx on 2026-09-07, so the Edit gate now lives there behind an `editable` prop that defaults to upstream's always-editable behavior; ProjectSettingsPanel passes scriptsEditable and also gates upstream's Reset button, which writes. It is NOT a FEATURES flag — projectScriptEditing was deleted when the capability arrived, because the answer varies per deployment and per workspace. Running a script stays ungated: a read-only workspace still runs what it declares, and ProjectScriptsControl's no-primary-script branch returns null only when editing is also off. A merge that reintroduces FEATURES.projectScriptEditing or an always-on Add action has taken upstream's side back.",
+      "mustSurvive": "A project's scripts can be edited only when the backend says so per workspace: a git-synced workspace owns its scripts in .moatless/workspaces.json and is projected read-only, a manual one is writable. That answer rides the wire as scriptsEditable on OrchestrationProject / OrchestrationProjectShell, threaded to ProjectScriptsControl and the settings Actions section as an `editable` prop that gates the per-script Edit button, the t3.json import items and the Add action. Upstream extracted the row list into ProjectActionsList.tsx on 2026-09-07, so the Edit gate now lives there behind an `editable` prop that defaults to upstream's always-editable behavior; upstream then moved the Actions section itself out of ProjectSettingsPanel.tsx into ProjectActionsSettings.tsx on 2026-09-10, which is where scriptsEditable is now derived and where upstream's Reset button, which writes, is gated. It is NOT a FEATURES flag — projectScriptEditing was deleted when the capability arrived, because the answer varies per deployment and per workspace. Running a script stays ungated: a read-only workspace still runs what it declares, and ProjectScriptsControl's no-primary-script branch returns null only when editing is also off. A merge that reintroduces FEATURES.projectScriptEditing or an always-on Add action has taken upstream's side back.",
       "guard": {
         "symbol": "scriptsEditable",
         "files": [
           "packages/contracts/src/orchestration.ts",
-          "apps/web/src/components/settings/ProjectSettingsPanel.tsx"
+          "apps/web/src/components/settings/ProjectActionsSettings.tsx"
         ]
       }
     },
@@ -811,10 +811,11 @@
       "paths": [
         "apps/web/src/components/projectScriptEditor.tsx",
         "apps/web/src/components/settings/ProjectActionsList.tsx",
+        "apps/web/src/components/settings/ProjectActionsSettings.tsx",
         "apps/web/src/projectScripts.ts",
         "packages/contracts/src/orchestration.ts"
       ],
-      "mustSurvive": "The script editor sets a numeric Port, not upstream's free-text Preview URL: a script in a remote sandbox has no localhost to point at, so the host publishes the port and returns the real external URL when the script runs (scripts.run). ProjectScript carries port (1..65535); the editor's Port input replaces the Preview URL input and auto-open toggle, and buildProjectScript derives autoOpenPreview from the port's presence. previewUrl / autoOpenPreview stay on the contract for wire-compatibility but the fork's UI never writes a URL. The row badge in ProjectActionsList.tsx reads `preview · :<port>` where upstream reads `preview · desktop only` off previewUrl. A merge that restores the Preview URL input has dropped the port.",
+      "mustSurvive": "The script editor sets a numeric Port, not upstream's free-text Preview URL: a script in a remote sandbox has no localhost to point at, so the host publishes the port and returns the real external URL when the script runs (scripts.run). ProjectScript carries port (1..65535); the editor's Port input replaces the Preview URL input and auto-open toggle, and buildProjectScript derives autoOpenPreview from the port's presence. previewUrl / autoOpenPreview stay on the contract for wire-compatibility but the fork's UI never writes a URL. The row badge in ProjectActionsList.tsx reads `preview · :<port>` where upstream reads `preview · desktop only` off previewUrl. Importing a t3.json script in ProjectActionsSettings.tsx runs the free-text previewUrl through portFromPreviewUrl so the import keeps a port rather than a URL. A merge that restores the Preview URL input has dropped the port.",
       "guard": {
         "symbol": "port",
         "files": ["apps/web/src/components/projectScriptEditor.tsx"]
@@ -873,9 +874,11 @@
       "name": "Navigation gates",
       "paths": [
         "apps/web/src/components/CommandPalette.tsx",
-        "apps/web/src/components/Sidebar.tsx"
+        "apps/web/src/components/Sidebar.tsx",
+        "apps/web/src/components/LegacySidebar.tsx",
+        "apps/web/src/components/chat/DraftHeroHeadline.tsx"
       ],
-      "mustSurvive": "Re-apply list filtering gates."
+      "mustSurvive": "Re-apply list filtering gates. FEATURES.projectManagement also hides the New project affordance wherever it is offered: both sidebars and the draft hero's project picker, which upstream grew a New project menu item on 2026-09-05. A Moatless deployment creates projects from its own admin surfaces, so an enabled New project entry here leads nowhere."
     },
     {
       "id": "thread-deletion-gate",
@@ -942,7 +945,10 @@
     {
       "id": "moatless-version-control-page",
       "name": "Moatless version control page",
-      "paths": ["apps/web/src/routes/settings.version-control.tsx"],
+      "paths": [
+        "apps/web/src/routes/settings.version-control.tsx",
+        "apps/web/src/components/settings/useAvailableSettingsSearchItems.ts"
+      ],
       "mustSurvive": "Everyone — not only an administrator — configures their own GitHub and Forgejo credentials at /settings/version-control. Named version-control because upstream already owns /settings/source-control. The panel and its logic live under components/settings/moatless/** (moatless-admin-pages' glob), but the page is personal: it must stay out of MOATLESS_ADMIN_PATHS, or the settings.tsx beforeLoad redirects every non-admin away from a page they all need. settingsSearch.ts carries the SettingsPath entry, the SETTINGS_SECTION_LABELS label (beside Account in the personal group) and the version-control, version-control-github and version-control-forgejo SETTINGS_SEARCH_ITEMS; SettingsSidebarNav.tsx carries the icon, shared with the gated-off /settings/source-control. The page draws one card holding every host, so both host items carry targetId version-control — the panel's only anchor. GitHub's app flow is offered only when the status reports appConnectAvailable, and the PAT form is always offered beside it — a deployment with no GitHub App configured has no other way in. Forgejo is the same shape one level down: it is self-hosted, so the entry lists what GET /api/v1/settings/forgejo/instances reports, draws one section per instance under its host, and names that host in every call. There is no field for typing a host, and adding one back would offer to connect an instance this deployment does not run. It is listed only where the backend's feature-flags read reports forgejo_enabled — the flag gates nothing on the backend, so it is this client that must not offer to connect an instance a deployment does not run. version-control-forgejo carries forgejoEnabledOnly for the same reason, which is why settingsSearch.ts's SettingsSearchItem and SettingsSearchAvailability each carry a fork field and useAvailableSettingsSearchItems.ts reads featureFlagsQuery. The connect callback carries no host, so the entry puts one in the return URL as forgejoHost and reads it back — accountRows.ts's withoutConnectOutcome strips every provider's parameters at once because each entry builds its return URL from the same live URL, and it leaves the route's own entry parameter alone so an OAuth round trip returns to the host the viewer was configuring rather than to GitHub. SettingsMasterDetail.tsx copies the master/detail card out of ProviderSettingsPanel.tsx, which exports none of it; see the settings-master-detail convergence entry."
     },
     {
