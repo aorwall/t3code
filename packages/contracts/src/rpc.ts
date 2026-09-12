@@ -271,6 +271,8 @@ import {
 } from "./servers.ts";
 // Fork: the threads a thread spawned, a fork-only surface.
 import { SubtasksListInput, SubtasksListResult } from "./subtasks.ts";
+// Fork: the listing rows a filter names, a fork-only surface.
+import { ThreadBrowseInput, ThreadBrowseResult } from "./threadBrowse.ts";
 // Fork: one thread's listing row by id, a fork-only surface.
 import { ThreadShellGetInput, ThreadShellGetResult } from "./threadShellLookup.ts";
 import { ScriptsRunInput, ScriptsRunResult } from "./scripts.ts";
@@ -372,6 +374,9 @@ export const WS_METHODS = {
 
   // Fork: one thread's listing row, for a thread no listing carried.
   threadsGetShell: "threads.getShell",
+
+  // Fork: the listing rows a filter names, for threads no listing carried.
+  threadsBrowse: "threads.browse",
 
   // Thread script methods
   scriptsRun: "scripts.run",
@@ -1310,6 +1315,28 @@ export const WsThreadsGetShellRpc = Rpc.make(WS_METHODS.threadsGetShell, {
 });
 
 /**
+ * Fork: the listing rows a filter names.
+ *
+ * Upstream needs no such method because its shell listing already carries every
+ * thread, so filtering is something its client does over rows it holds. A
+ * Moatless listing is one person's follows, so the threads a filter is for were
+ * never sent — see `threadBrowse.ts`.
+ *
+ * An environment that does not declare the `threadBrowse` capability answers
+ * with `UnsupportedMethodError`, and a client reading the descriptor offers no
+ * filter there at all.
+ *
+ * Fork: `unsupported-methods.mjs` reports this method under DROP, because it
+ * reads Moatless's own dispatch and not `apps/server`'s. The union member stays
+ * regardless — see "Listing somebody else's threads" in docs/fork/gaps.md.
+ */
+export const WsThreadsBrowseRpc = Rpc.make(WS_METHODS.threadsBrowse, {
+  payload: ThreadBrowseInput,
+  success: ThreadBrowseResult,
+  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
+});
+
+/**
  * Runs a project's script in the environment. Declared with
  * `UnsupportedMethodError` because an environment without the `workspaceScripts`
  * capability — every T3-hosted one today — answers with it, and the client must
@@ -1767,6 +1794,8 @@ export const WsRpcGroup = RpcGroup.make(
   WsSubtasksListRpc,
   // Fork: one thread's listing row, for a thread no listing carried.
   WsThreadsGetShellRpc,
+  // Fork: the listing rows a filter names.
+  WsThreadsBrowseRpc,
   WsScriptsRunRpc,
   WsSandboxStatusRpc,
   // Fork: sandbox lifecycle push.

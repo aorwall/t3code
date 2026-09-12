@@ -456,6 +456,31 @@ The client half is fork-only and degrades rather than breaking: with no row the
 thread still renders from its subscription, which is what upstream's server
 leaves it doing.
 
+### Listing somebody else's threads has no upstream meaning
+
+`threads.browse` runs the derivation backwards for the same reason
+`threads.getShell` does, so it carries the same trap and the same instruction.
+
+Upstream has one person per server and one listing, so "whose thread is this"
+is not a question its client can ask. Moatless has users, roles and tags, and an
+administrator who has to see what a deployment is doing cannot get there from a
+listing scoped to their own follows. So the method answers a browse — by owner,
+by tag, or both, optionally including closed work — with the listing's own rows
+under the reader's ordinary read rules, and `apps/server` answers
+`UnsupportedMethodError` unconditionally, beside the `serversList` /
+`sandboxStatus` / `scriptsRun` / `subtasksList` / `threadsGetShell` stubs.
+
+- **Keep the union entry** for as long as `apps/server` answers the method with
+  `UnsupportedMethodError`, whatever `unsupported-methods.mjs` reports it under.
+  The fourth documented exception to _drop what DROP lists_.
+- **Closes when:** upstream's client grows a notion of another person's threads,
+  or the method leaves the contract. Neither is near.
+
+The client half is fork-only and gated on the `threadBrowse` capability as well
+as on the viewer being an administrator, so a build pointed at upstream's server
+offers the owner and tag selects to nobody and the sidebar filter is the closed
+toggle alone.
+
 ### A thread the listing does not carry used to redirect home
 
 Two upstream rules meet badly against Moatless, and this is written down because
@@ -475,7 +500,8 @@ fetched row into the snapshot the shell atoms read. Two consequences to keep:
 the graft is decided against the **listing's** snapshot and never the grafted
 one, or a supplied row reads as present and stops being supplied; and the
 sidebar's own `archivedAt === null` filter is what keeps an adopted closed
-thread out of it, so nothing here needs to know about archiving.
+thread out of it — relaxing that filter is all "include closed threads" in the
+sidebar filter does — so nothing here needs to know about archiving.
 
 ### A command cannot be refused
 

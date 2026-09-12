@@ -2928,6 +2928,20 @@ const makeWsRpcLayer = (
             ),
             { "rpc.aggregate": "orchestration" },
           ),
+        // Fork: refused for the same reason. Every thread is already in the
+        // listing here, so a filter is something the client applies to the rows
+        // it holds rather than a read that reaches past them.
+        [WS_METHODS.threadsBrowse]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.threadsBrowse,
+            Effect.fail(
+              new UnsupportedMethodError({
+                method: WS_METHODS.threadsBrowse,
+                message: "This environment lists every thread it has.",
+              }),
+            ),
+            { "rpc.aggregate": "orchestration" },
+          ),
         // Scripts are read from the project either way, but *running* one is a
         // hosted-environment capability: it needs a sandbox to host the terminal
         // and publish the served port. This server runs threads on the local

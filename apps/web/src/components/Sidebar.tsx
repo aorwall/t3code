@@ -126,6 +126,9 @@ import { useEnvironments, usePrimaryEnvironmentId } from "../state/environments"
 // Fork: feature gating and touch long-press context menus are Moatless additions.
 import { FEATURES } from "../fork/features";
 import { useTouchContextMenu } from "../fork/touchContextMenu";
+// Fork: the sidebar's own thread filter, and the list it produces.
+import { SidebarThreadFilter } from "../fork/SidebarThreadFilter";
+import { useSidebarThreadList } from "../fork/browsedThreadShells";
 import {
   readThreadShell,
   useAllEnvironmentProjectSnapshotsReady,
@@ -2135,7 +2138,11 @@ const SidebarSearchResultRow = memo(function SidebarSearchResultRow(props: {
 export default function Sidebar() {
   const projects = useProjects();
   const projectOrder = useUiStateStore((store) => store.projectOrder);
-  const threads = useThreadShells();
+  // Fork: a Moatless listing is the open work this viewer follows, so the
+  // filter beside the project scope both narrows it and reaches past it — see
+  // fork/browsedThreadShells.
+  const listedThreads = useThreadShells();
+  const { threads, isBrowsing, showsClosed, isTruncated } = useSidebarThreadList(listedThreads);
   const router = useRouter();
   const { isMobile, setOpenMobile } = useSidebar();
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
@@ -2535,7 +2542,9 @@ export default function Sidebar() {
     const preciseNow = new Date().toISOString();
     const visible = threads.filter(
       (thread) =>
-        thread.archivedAt === null &&
+        // Fork: closing a Task is what archives it, so the filter's "include
+        // closed" is this rule relaxed.
+        (showsClosed || thread.archivedAt === null) &&
         (scopedProjectKeys === null ||
           scopedProjectKeys.has(`${thread.environmentId}:${thread.projectId}`)),
     );
@@ -2554,10 +2563,18 @@ export default function Sidebar() {
       const supportsSettlement = capabilities?.threadSettlement === true;
       const supportsSnooze = capabilities?.threadSnooze === true;
       const threadKey = scopedThreadKey(scopeThreadRef(thread.environmentId, thread.id));
-      if (capabilities?.threadActiveReorder === true) activeReorderable.add(threadKey);
+      // Fork: `!isBrowsing` on both — a browsed list is somebody else's work in
+      // the order the server sent it, and the next refresh replaces it, so a
+      // drop there would appear to do nothing.
+      if (!isBrowsing && capabilities?.threadActiveReorder === true)
+        activeReorderable.add(threadKey);
       // Older servers retain their existing drag actions. Active placement
       // additionally requires its own ordering capability at the drop target.
-      if (capabilities?.threadPinning === true && capabilities.threadPinReorder === true) {
+      if (
+        !isBrowsing &&
+        capabilities?.threadPinning === true &&
+        capabilities.threadPinReorder === true
+      ) {
         draggable.add(threadKey);
       }
       if (optimisticDrop?.key === threadKey) {
@@ -2626,7 +2643,16 @@ export default function Sidebar() {
       settledThreads: sortSettledThreadsForSidebar(settled),
       snoozeNow: preciseNow,
     };
-  }, [nowMinute, optimisticDrop, scopedProjectKeys, serverConfigs, snoozeWakeTick, threads]);
+  }, [
+    isBrowsing,
+    nowMinute,
+    optimisticDrop,
+    scopedProjectKeys,
+    serverConfigs,
+    showsClosed,
+    snoozeWakeTick,
+    threads,
+  ]);
 
   const threadSearchInputRef = useRef<HTMLInputElement>(null);
   const [threadSearchQuery, setThreadSearchQuery] = useState("");
@@ -4661,6 +4687,9 @@ export default function Sidebar() {
                     <TooltipPopup side="right">New project</TooltipPopup>
                   </Tooltip>
                 ) : null}
+                {/* Fork: who the listed threads belong to, and whether closed
+                    ones are among them. */}
+                <SidebarThreadFilter />
               </div>
             ) : null}
           </SidebarGroup>
@@ -5033,11 +5062,23 @@ export default function Sidebar() {
                     </button>
                   ) : null}
                 </>
+              ) : isBrowsing ? (
+                // Fork: a browse lists work the viewer does not follow, so an
+                // empty one is the filter's doing and never "none yet".
+                "No threads match this filter"
               ) : scopedProjectGroup ? (
                 `No threads in ${scopedProjectGroup.displayName} yet`
               ) : (
                 "No threads yet"
               )}
+            </div>
+          ) : null}
+          {/* Fork: the server caps a browse, and a capped list looks exactly
+              like a complete one. Say which it is rather than let somebody
+              read somebody else's work as finished. */}
+          {isTruncated ? (
+            <div className="px-2 py-2 text-center text-[11px] text-muted-foreground/60">
+              Showing the newest matches only. Narrow the filter to see the rest.
             </div>
           ) : null}
         </SidebarGroup>

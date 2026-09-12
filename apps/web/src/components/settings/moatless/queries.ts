@@ -22,6 +22,7 @@ import {
 } from "@t3tools/moatless-api/generated/git-host-access/git-host-access";
 import { listRepositories } from "@t3tools/moatless-api/generated/repositories/repositories";
 import { listSecrets } from "@t3tools/moatless-api/generated/secrets/secrets";
+import { listTags } from "@t3tools/moatless-api/generated/tags/tags";
 import { listUsersHandler } from "@t3tools/moatless-api/generated/users/users";
 import {
   getWorkspace,
@@ -44,6 +45,7 @@ import type {
   RepositoryResponse,
   Scope,
   SecretMetadataResponse,
+  TagResponse,
   UserListResponse,
   WorkspaceResponse,
 } from "@t3tools/moatless-api/generated/model";
@@ -182,6 +184,16 @@ export function loopQuery(loopId: string) {
  * invalidations stay separate.
  */
 export const usersQuery = moatlessQuery<UserListResponse>("users", () => listUsersHandler());
+
+/**
+ * Every tag in the deployment.
+ *
+ * Read by the sidebar's thread filter rather than by a settings page: tags have
+ * no administration surface of their own, and a task is what creates one. Here
+ * anyway, because the keys are one namespace and a second file registering them
+ * is a second file to check before invalidating.
+ */
+export const tagsQuery = moatlessQuery<TagResponse[]>("tags", () => listTags());
 
 /**
  * The integration surface's reads, all under `integrations` so any write to a

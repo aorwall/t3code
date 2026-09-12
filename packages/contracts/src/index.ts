@@ -45,6 +45,8 @@ export * from "./servers.ts";
 export * from "./subtasks.ts";
 // Fork: one thread's listing row by id, for threads no listing carries.
 export * from "./threadShellLookup.ts";
+// Fork: the listing rows a filter names, for threads no listing carries.
+export * from "./threadBrowse.ts";
 export * from "./scripts.ts";
 export * from "./resourceTelemetry.ts";
 export * from "./usage.ts";

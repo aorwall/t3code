@@ -129,6 +129,11 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
       listing carries only the threads the viewer follows. Same version-skew
       contract as threadSettlement. */
   threadFollow: Schema.optionalKey(Schema.Boolean),
+  /** Fork: server understands threads.browse — it can answer with listing rows
+      for threads outside the viewer's own listing, narrowed by owner or tag.
+      Absent on servers whose listing is every thread there is, where filtering
+      is something a client does over the rows it already holds. */
+  threadBrowse: Schema.optionalKey(Schema.Boolean),
   /** Server persists manual Active order through thread.active.reorder. */
   threadActiveReorder: Schema.optionalKey(Schema.Boolean),
   /** Server understands regenerateTitle on thread.meta.update. Absent on

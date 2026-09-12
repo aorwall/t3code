@@ -165,6 +165,14 @@
       "see": "inventory `unlisted-thread-adoption`, and 'A thread outside the listing is a Moatless idea' in gaps.md"
     },
     {
+      "id": "threads-browse-upstream-refusal",
+      "method": "threads.browse",
+      "direction": "DROP",
+      "reason": "Upstream has one person per server, so listing another person's threads by owner or tag is not a question its client can ask; `apps/server` refuses the method while Moatless dispatches it. Same backwards derivation as `threads.getShell`.",
+      "retiredWhen": "`apps/server` stops answering `threads.browse` with `UnsupportedMethodError` — at which point delete this entry and let the DROP stand.",
+      "see": "inventory `sidebar-thread-filter`, and 'Listing somebody else's threads has no upstream meaning' in gaps.md"
+    },
+    {
       "id": "pull-requests-summary-shared-union",
       "method": "pullRequests.summary",
       "direction": "DROP",
@@ -576,9 +584,10 @@
         "packages/contracts/src/preview.ts",
         "packages/contracts/src/subtasks.ts",
         "packages/contracts/src/threadShellLookup.ts",
+        "packages/contracts/src/threadBrowse.ts",
         "packages/contracts/fixtures/moatless/**"
       ],
-      "mustSurvive": "Keep fork methods: server list, server status subscription, server log subscription, sandbox status, sandbox status subscription, sandbox start, sandbox stop, and subtasks.list. Keep sandbox lifecycle schemas separate from server list schemas. sandbox.subscribeStatus is gated on the sandboxStatusPush capability: absent, the client polls sandbox.status instead, so both paths have to keep working. subtasks.ts and threadShellLookup.ts are fork-only, and subtasks.list and threads.getShell each keep their UnsupportedMethodError union entry for as long as apps/server refuses the method, whatever unsupported-methods.mjs reports. threads.getShell returns the listing's own OrchestrationThreadShell and must keep doing so: a thread fetched by id has to be indistinguishable from the same thread delivered by the listing."
+      "mustSurvive": "Keep fork methods: server list, server status subscription, server log subscription, sandbox status, sandbox status subscription, sandbox start, sandbox stop, and subtasks.list. Keep sandbox lifecycle schemas separate from server list schemas. sandbox.subscribeStatus is gated on the sandboxStatusPush capability: absent, the client polls sandbox.status instead, so both paths have to keep working. subtasks.ts, threadShellLookup.ts and threadBrowse.ts are fork-only, and subtasks.list, threads.getShell and threads.browse each keep their UnsupportedMethodError union entry for as long as apps/server refuses the method, whatever unsupported-methods.mjs reports. threads.getShell and threads.browse both return the listing's own OrchestrationThreadShell and must keep doing so: a thread fetched by id, or reached through a browse, has to be indistinguishable from the same thread delivered by the listing. Every field of ThreadBrowseInput is optional and the backend refuses a browse that names neither an ownerUserId nor a tag, so the schema cannot express 'list everything'."
     },
     {
       "id": "server-state-client-runtime",
@@ -588,10 +597,11 @@
         "packages/client-runtime/src/state/sandbox.ts",
         "packages/client-runtime/src/state/subtasks.ts",
         "packages/client-runtime/src/state/threadShellLookup.ts",
+        "packages/client-runtime/src/state/threadBrowse.ts",
         "packages/client-runtime/src/rpc/client.ts",
         "packages/client-runtime/package.json"
       ],
-      "mustSurvive": "Keep fork server, sandbox lifecycle and subtask state surfaces separate. sandbox exposes both status (polled query, the fallback) and statusStream (the pushed subscription); dropping either leaves one class of server without a live indicator. The subscription tag is also listed in EnvironmentSubscriptionRpcTag in rpc/client.ts, an upstream file. subtasks is a query on a refresh interval, not a subscription: a child task settles at the pace of a task, not of a container probe. threadShellLookup is a query with no refresh at all: it is how the client learns a row the listing never sent, and once it has one nothing is pushing changes to re-read."
+      "mustSurvive": "Keep fork server, sandbox lifecycle and subtask state surfaces separate. sandbox exposes both status (polled query, the fallback) and statusStream (the pushed subscription); dropping either leaves one class of server without a live indicator. The subscription tag is also listed in EnvironmentSubscriptionRpcTag in rpc/client.ts, an upstream file. subtasks is a query on a refresh interval, not a subscription: a child task settles at the pace of a task, not of a container probe. threadShellLookup is a query with no refresh at all: it is how the client learns a row the listing never sent, and once it has one nothing is pushing changes to re-read. threadBrowse is a query on a refresh interval, because nothing pushes a change to a listing the viewer does not follow: the fork deliberately did not widen orchestration.subscribeShell for it, so the browse stays out of the snapshot every other surface reads."
     },
     {
       "id": "subtasks-agents-panel",
@@ -617,6 +627,24 @@
         "apps/web/src/components/settings/SettingsPanels.tsx"
       ],
       "mustSurvive": "A Moatless shell listing is the open work a viewer follows, not every thread there is, so closed threads, threads followed by someone else, and subtasks all open by URL while absent from it. Three deltas hold that together and each is small in an upstream file. threadRoutes.ts takes an optional serverThreadAwaitingFirstAnswer that defaults to upstream's rule, so 'no shell row' stops meaning 'gone' before the environment has answered — without it the route redirects to / on the first frame of every unlisted thread. state/threads.ts passes adoptedEnvironmentSnapshotAtom where upstream passes environmentSnapshotAtom, which is the whole graft hook. SettingsPanels.tsx makes an archived row's title a link, because unarchiving was the only way back into a thread you may already read. The store in fork/adoptedThreadShells.ts must keep deciding what is missing against the listing's snapshot rather than the grafted one."
+    },
+    {
+      "id": "sidebar-thread-filter",
+      "name": "Sidebar filter over whose threads are listed, and whether closed ones are",
+      "paths": [
+        "apps/web/src/fork/SidebarThreadFilter.tsx",
+        "apps/web/src/fork/threadBrowseFilter.ts",
+        "apps/web/src/fork/threadBrowseFilter.test.ts",
+        "apps/web/src/fork/browsedThreadShells.ts",
+        "apps/web/src/state/threadBrowse.ts",
+        "apps/web/src/components/Sidebar.tsx",
+        "apps/web/src/components/settings/moatless/queries.ts"
+      ],
+      "guard": {
+        "symbol": "useSidebarThreadList",
+        "files": ["apps/web/src/components/Sidebar.tsx"]
+      },
+      "mustSurvive": "The sidebar's thread header carries a filter beside the project scope: an administrator narrows the list to one owner and/or one tag, and anyone includes closed threads. The two halves are different reads and must stay that way. Owner and tag go to threads.browse, which replaces the listing rather than adding to it, because a filter narrows; closed threads come from orchestration.getArchivedShellSnapshot, which is the viewer's own followed-and-closed half, appended and deduped on environmentId:id because the adoption graft can already have put an open closed thread into the listing and React would see one key twice. With a browse active the closed toggle is inside its payload instead. The browse is read in fork/browsedThreadShells.ts and deliberately NOT grafted through adoptedEnvironmentSnapshotAtom: that snapshot feeds the command palette, the thread index and the first-run gate, and pointing those at somebody else's work is not what a sidebar filter means. threadBrowseInput writes a fixed key order and omits an unset field, because the atom family keys on JSON.stringify of the input and a second spelling of one filter is a second polling subscription. It returns null unless an owner or a tag is set, so includeClosed alone never issues a browse. The browse only fans out to environments whose descriptor carries threadBrowse, and with none it is forced to null so a persisted filter cannot empty the sidebar with nothing to explain it. Sidebar.tsx gates drag-reorder and pin-placement on !isBrowsing, since a browsed list is somebody else's work in the server's order and the next refresh replaces it; its empty state says the filter matched nothing rather than 'none yet'. Reset shows whenever any part of the filter is set, including for a demoted administrator whose owner and tag selects are hidden — otherwise a persisted filter has no way out. tagsQuery lives with the administration reads because the keys are one namespace, even though no settings page reads it."
     },
     {
       "id": "servers-right-panel",
