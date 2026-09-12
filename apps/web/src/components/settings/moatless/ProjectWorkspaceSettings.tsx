@@ -1,6 +1,4 @@
-import { Link } from "@tanstack/react-router";
 import {
-  ArrowLeftIcon,
   EllipsisIcon,
   GitBranchIcon,
   LoaderIcon,
@@ -8,7 +6,7 @@ import {
   StarIcon,
   TriangleAlertIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 
 import {
   deleteWorkspace,
@@ -18,10 +16,15 @@ import {
   setWorkspacePrimaryRepo,
   updateWorkspace,
 } from "@t3tools/moatless-api/generated/workspaces/workspaces";
-import type { WorkspaceResponse } from "@t3tools/moatless-api/generated/model";
+import type {
+  UpdateWorkspaceRequest,
+  WorkspaceResponse,
+} from "@t3tools/moatless-api/generated/model";
 
 import { useMoatlessCommand, useMoatlessQuery } from "../../../moatless/query";
+import { useMoatlessSession } from "../../../moatless/session";
 import { useDirtyForm } from "../../../moatless/useDirtyForm";
+import { ProjectFavicon, type ProjectFaviconProject } from "../../ProjectFavicon";
 import { Button } from "../../ui/button";
 import {
   AlertDialog,
@@ -33,78 +36,110 @@ import {
 } from "../../ui/alert-dialog";
 import { Input } from "../../ui/input";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../../ui/menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
+import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "../../ui/select";
 import { Textarea } from "../../ui/textarea";
 import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
-import { SettingsPageContainer, SettingsRow, SettingsSection } from "../settingsLayout";
+import { SettingResetButton, SettingsRow, SettingsSection } from "../settingsLayout";
 import { AddRepositoryDialog } from "./AddRepositoryDialog";
 import { SectionEmpty, SectionError, SectionPending } from "./MoatlessSectionState";
 import { RepositoryProviderIcon } from "./RepositoryProviderIcon";
-import { repositoriesQuery, usersQuery, workspaceQuery } from "./queries";
+import { agentsQuery, repositoriesQuery, usersQuery, workspaceQuery } from "./queries";
 import {
   formatSetupCommands,
   parseSetupCommands,
   placementRows,
+  workspaceIconOverride,
   workspaceProvenance,
 } from "./workspaceDetail";
+import { effortLabel, workspaceModelOptions } from "./workspaceTaskDefaults";
 import { cn } from "~/lib/utils";
 
+const ProjectIconPickerDialog = lazy(() =>
+  import("../ProjectIconPickerDialog").then((module) => ({
+    default: module.ProjectIconPickerDialog,
+  })),
+);
+
 /**
- * One workspace: what it is called, what code it contains, and how it runs.
+ * The Moatless Workspace behind a project, edited on the project's own settings
+ * page.
  *
- * The page is built from two independent reads — the workspace and the
- * repository catalog — and neither blocks the other. The catalog only supplies
- * names for the placements the workspace already lists, so a slow or forbidden
- * catalog costs a row its display name, not the person their page.
+ * A T3 project here is a projection of a Workspace, so what the project page
+ * would otherwise offer — its name, its icon, its default model — is a Workspace
+ * column, and `project.meta.update` refuses every one of them by name. These
+ * sections are the other side of that refusal: each writes over the Workspace
+ * REST API and invalidates `workspaces`, so the page shows the new value without
+ * waiting for the projection to push the project again.
  */
-export function WorkspaceDetailPanel({ workspaceId }: { readonly workspaceId: string }) {
-  const query = workspaceQuery(workspaceId);
-  const { data, error, isPending, refresh } = useMoatlessQuery(query);
+export function ProjectWorkspaceSettings({
+  workspaceId,
+  project,
+}: {
+  readonly workspaceId: string;
+  /** The project record, which draws the icon a workspace with no icon of its own falls back to. */
+  readonly project: ProjectFaviconProject;
+}) {
+  const { data, error, isPending, refresh } = useMoatlessQuery(workspaceQuery(workspaceId));
 
-  return (
-    <SettingsPageContainer>
-      <div>
-        <Button
-          size="xs"
-          variant="ghost"
-          className="-ml-1.5 text-muted-foreground"
-          render={<Link to="/settings/workspaces" />}
-        >
-          <ArrowLeftIcon />
-          Workspaces
-        </Button>
-      </div>
-
-      {error ? (
-        <SettingsSection id="workspace" title="Workspace">
-          <SectionError error={error} label="this workspace" onRetry={refresh} />
-        </SettingsSection>
-      ) : data === null ? (
-        <SettingsSection id="workspace" title="Workspace">
-          {isPending ? <SectionPending label="this workspace" /> : null}
-        </SettingsSection>
-      ) : (
-        // Keyed so that navigating between workspaces remounts the forms rather
-        // than carrying one workspace's unsaved edits into another's fields.
-        <WorkspaceDetail key={data.id} workspace={data} />
-      )}
-    </SettingsPageContainer>
-  );
+  if (error) {
+    return (
+      <SettingsSection id="workspace" title="Workspace">
+        <SectionError error={error} label="this workspace" onRetry={refresh} />
+      </SettingsSection>
+    );
+  }
+  if (data === null) {
+    return (
+      <SettingsSection id="workspace" title="Workspace">
+        {isPending ? <SectionPending label="this workspace" /> : null}
+      </SettingsSection>
+    );
+  }
+  // Keyed so that moving between projects remounts the forms rather than
+  // carrying one workspace's unsaved edits into another's fields.
+  return <WorkspaceSections key={data.id} workspace={data} project={project} />;
 }
 
-function WorkspaceDetail({ workspace }: { readonly workspace: WorkspaceResponse }) {
+/**
+ * Removing the project, which is the same act as deleting the workspace.
+ *
+ * Its own export so that the page can keep it where a danger section belongs —
+ * last, below the project's own sections — while the sections above it stay
+ * together at the top. Both read one cache entry, so this costs no second
+ * request.
+ */
+export function ProjectWorkspaceDangerSection({
+  workspaceId,
+  onDeleted,
+}: {
+  readonly workspaceId: string;
+  readonly onDeleted: () => void;
+}) {
+  const { data } = useMoatlessQuery(workspaceQuery(workspaceId));
+  if (data === null) return null;
+  return <DangerSection workspace={data} onDeleted={onDeleted} />;
+}
+
+function WorkspaceSections({
+  workspace,
+  project,
+}: {
+  readonly workspace: WorkspaceResponse;
+  readonly project: ProjectFaviconProject;
+}) {
   const provenance = workspaceProvenance(workspace);
+  const { isAdmin } = useMoatlessSession();
 
   return (
     <>
       {provenance.isLocked || provenance.isOverridden ? (
         <GitProvenanceNotice workspace={workspace} />
       ) : null}
-      <GeneralSection workspace={workspace} isLocked={provenance.isLocked} />
+      <GeneralSection workspace={workspace} project={project} isLocked={provenance.isLocked} />
       <RepositoriesSection workspace={workspace} isLocked={provenance.isLocked} />
       <RunConfigurationSection workspace={workspace} isLocked={provenance.isLocked} />
-      <IdentitySection workspace={workspace} isLocked={provenance.isLocked} />
-      <DangerSection workspace={workspace} />
+      <TaskDefaultsSection workspace={workspace} isLocked={provenance.isLocked} />
+      {isAdmin ? <IdentitySection workspace={workspace} isLocked={provenance.isLocked} /> : null}
     </>
   );
 }
@@ -166,9 +201,11 @@ function GitProvenanceNotice({ workspace }: { readonly workspace: WorkspaceRespo
 
 function GeneralSection({
   workspace,
+  project,
   isLocked,
 }: {
   readonly workspace: WorkspaceResponse;
+  readonly project: ProjectFaviconProject;
   readonly isLocked: boolean;
 }) {
   const form = useDirtyForm({
@@ -188,6 +225,7 @@ function GeneralSection({
 
   return (
     <SettingsSection id="workspace-general" title="General">
+      <IconRow workspace={workspace} project={project} isLocked={isLocked} />
       <div className={cn(ITEM_ROW_CLASSNAME, "space-y-4")}>
         <div>
           <label
@@ -235,6 +273,85 @@ function GeneralSection({
   );
 }
 
+/**
+ * The glyph every surface draws beside this project.
+ *
+ * Saved on selection rather than through the section's save bar: a picker dialog
+ * already asks for a decision, and holding the chosen glyph unsaved behind a
+ * second click reads as the pick not having registered.
+ */
+function IconRow({
+  workspace,
+  project,
+  isLocked,
+}: {
+  readonly workspace: WorkspaceResponse;
+  readonly project: ProjectFaviconProject;
+  readonly isLocked: boolean;
+}) {
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const save = useMoatlessCommand<UpdateWorkspaceRequest, WorkspaceResponse>(
+    (input) => updateWorkspace(workspace.id, input),
+    { invalidates: ["workspaces"] },
+  );
+
+  const icon = workspaceIconOverride(workspace.icon);
+
+  return (
+    <SettingsRow
+      title="Icon"
+      description={
+        icon?.kind === "lucide"
+          ? `${icon.name} · ${icon.color}`
+          : icon?.kind === "emoji"
+            ? icon.emoji
+            : "Automatic"
+      }
+      status={
+        save.error ? (
+          <span className="text-destructive-foreground">{save.error.message}</span>
+        ) : null
+      }
+      resetAction={
+        icon !== null && !isLocked ? (
+          <SettingResetButton
+            label="workspace icon"
+            tooltip="Reset to the automatic icon"
+            disabled={save.isRunning}
+            onClick={() => void save.run({ icon: null })}
+          />
+        ) : null
+      }
+      control={
+        <div className="flex items-center gap-2">
+          <ProjectFavicon
+            project={{ ...project, faviconPath: null, projectIcon: icon }}
+            className="size-6"
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={isLocked || save.isRunning}
+            onClick={() => setIsPickerOpen(true)}
+          >
+            Choose icon
+          </Button>
+          {isPickerOpen ? (
+            <Suspense fallback={null}>
+              <ProjectIconPickerDialog
+                current={icon}
+                open
+                onOpenChange={setIsPickerOpen}
+                onSelect={(selected) => void save.run({ icon: selected })}
+              />
+            </Suspense>
+          ) : null}
+        </div>
+      }
+    />
+  );
+}
+
 function RepositoriesSection({
   workspace,
   isLocked,
@@ -279,7 +396,7 @@ function RepositoriesSection({
           <SectionPending label="repositories" />
         ) : (
           <SectionEmpty>
-            No repositories yet. A task in this workspace would start with an empty sandbox.
+            No repositories yet. A task in this project would start with an empty sandbox.
           </SectionEmpty>
         )
       ) : (
@@ -423,10 +540,135 @@ function RunConfigurationSection({
 }
 
 /**
- * The identity every task on this workspace acts as.
+ * What a new task in this project starts on.
+ *
+ * Saved on change, like the selects elsewhere on this page. Effort is stored
+ * beside the model because it is read in the model's own vocabulary — the words
+ * a Claude model takes are not the words a Codex model takes — so choosing a
+ * model whose vocabulary excludes the stored effort clears it in the same write.
+ */
+function TaskDefaultsSection({
+  workspace,
+  isLocked,
+}: {
+  readonly workspace: WorkspaceResponse;
+  readonly isLocked: boolean;
+}) {
+  const agents = useMoatlessQuery(agentsQuery);
+  const save = useMoatlessCommand<UpdateWorkspaceRequest, WorkspaceResponse>(
+    (input) => updateWorkspace(workspace.id, input),
+    { invalidates: ["workspaces"] },
+  );
+
+  const options = workspaceModelOptions(agents.data?.agents ?? []);
+  const model = workspace.defaultModel ?? "";
+  const effort = workspace.defaultEffort ?? "";
+  const selected = options.find((option) => option.id === model);
+  const efforts = selected?.efforts ?? [];
+  const error = save.error ?? agents.error;
+
+  const chooseModel = (nextModel: string) => {
+    if (nextModel === model) return;
+    const nextEfforts = options.find((option) => option.id === nextModel)?.efforts ?? [];
+    void save.run({
+      defaultModel: nextModel.length > 0 ? nextModel : null,
+      ...(nextEfforts.includes(effort) ? {} : { defaultEffort: null }),
+    });
+  };
+
+  return (
+    <SettingsSection id="workspace-task-defaults" title="Task defaults">
+      <SettingsRow
+        title="Model"
+        description={
+          model.length > 0
+            ? "Every new task in this project starts on this model."
+            : "New tasks start on the model their agent picks."
+        }
+        status={error ? <span className="text-destructive-foreground">{error.message}</span> : null}
+        resetAction={
+          model.length > 0 && !isLocked ? (
+            <SettingResetButton
+              label="workspace default model"
+              tooltip="Reset to the agent's own model"
+              disabled={save.isRunning}
+              onClick={() => void save.run({ defaultModel: null, defaultEffort: null })}
+            />
+          ) : null
+        }
+        control={
+          <Select
+            value={model}
+            disabled={isLocked || save.isRunning}
+            onValueChange={(value) => chooseModel(value ?? "")}
+          >
+            <SelectTrigger size="sm" aria-label="Default model">
+              <SelectValue>
+                {selected ? selected.label : model.length > 0 ? model : "The agent's default"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectPopup align="end" alignItemWithTrigger={false}>
+              <SelectItem value="">The agent's default</SelectItem>
+              {options.map((option) => (
+                <SelectItem key={option.id} value={option.id}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectPopup>
+          </Select>
+        }
+      />
+      <SettingsRow
+        title="Effort"
+        description={
+          efforts.length === 0
+            ? "Choose a model to set how hard it thinks."
+            : "How hard the model thinks on the first turn of a new task."
+        }
+        resetAction={
+          effort.length > 0 && !isLocked ? (
+            <SettingResetButton
+              label="workspace default effort"
+              tooltip="Reset to the model's own effort"
+              disabled={save.isRunning}
+              onClick={() => void save.run({ defaultEffort: null })}
+            />
+          ) : null
+        }
+        control={
+          <Select
+            value={effort}
+            disabled={isLocked || save.isRunning || efforts.length === 0}
+            onValueChange={(value) => {
+              const next = value ?? "";
+              if (next !== effort) void save.run({ defaultEffort: next.length > 0 ? next : null });
+            }}
+          >
+            <SelectTrigger size="sm" aria-label="Default effort">
+              <SelectValue>
+                {effort.length > 0 ? effortLabel(effort) : "The model's default"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectPopup align="end" alignItemWithTrigger={false}>
+              <SelectItem value="">The model's default</SelectItem>
+              {efforts.map((level) => (
+                <SelectItem key={level} value={level}>
+                  {effortLabel(level)}
+                </SelectItem>
+              ))}
+            </SelectPopup>
+          </Select>
+        }
+      />
+    </SettingsSection>
+  );
+}
+
+/**
+ * The identity every task in this project acts as.
  *
  * This is what makes a GitHub app the credential a sandbox holds: naming an
- * app's bot user here means every task on the workspace mints an installation
+ * app's bot user here means every task in the workspace mints an installation
  * token through that app instead of using whoever started the task. Commits, pull
  * requests and comments are attributed to the bot for the same reason.
  *
@@ -434,7 +676,8 @@ function RunConfigurationSection({
  * outright for a non-admin — naming an identity decides whose git credential
  * every task reaches a host with — so folding it into the run configuration
  * above would make that section's save fail for everyone who is not an admin,
- * whether or not they touched this field.
+ * whether or not they touched this field. The section is drawn for admins only
+ * for the same reason.
  */
 function IdentitySection({
   workspace,
@@ -471,7 +714,7 @@ function IdentitySection({
               {selected ? selected.login : undefined}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent>
+          <SelectPopup>
             <SelectItem value="">The person who started the task</SelectItem>
             {rows.map((user) => (
               <SelectItem key={user.id} value={user.id}>
@@ -479,11 +722,10 @@ function IdentitySection({
                 {user.isBot ? " (bot)" : ""}
               </SelectItem>
             ))}
-          </SelectContent>
+          </SelectPopup>
         </Select>
         <p className="text-[11px] text-muted-foreground">
           A GitHub app's bot user makes every task here authenticate as that app's installation.
-          Admins only.
         </p>
         {users.error ? (
           <p className="text-[13px] text-destructive-foreground">
@@ -505,17 +747,30 @@ function IdentitySection({
   );
 }
 
-function DangerSection({ workspace }: { readonly workspace: WorkspaceResponse }) {
+/**
+ * Removing the project removes the workspace, because they are one thing.
+ *
+ * The project entry this page was opened from is a projection: deleting only it
+ * would leave the workspace behind and the entry would come back on the next
+ * listing.
+ */
+function DangerSection({
+  workspace,
+  onDeleted,
+}: {
+  readonly workspace: WorkspaceResponse;
+  readonly onDeleted: () => void;
+}) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const remove = useMoatlessCommand<void, unknown>(() => deleteWorkspace(workspace.id), {
     invalidates: ["workspaces"],
   });
 
   return (
-    <SettingsSection id="workspace-danger" title="Danger zone">
+    <SettingsSection id="workspace-danger" title="Danger">
       <SettingsRow
-        title="Delete this workspace"
-        description="Tasks that already ran in it are kept. The repositories it contains stay registered."
+        title="Remove project"
+        description="Deletes the workspace this project is. Tasks that already ran in it are kept, and the repositories it contains stay registered."
         status={
           remove.error ? (
             <span className="text-destructive-foreground">{remove.error.message}</span>
@@ -523,7 +778,7 @@ function DangerSection({ workspace }: { readonly workspace: WorkspaceResponse })
         }
         control={
           <Button size="sm" variant="destructive-outline" onClick={() => setIsConfirmOpen(true)}>
-            Delete
+            Remove project
           </Button>
         }
       />
@@ -531,9 +786,9 @@ function DangerSection({ workspace }: { readonly workspace: WorkspaceResponse })
       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <AlertDialogPopup>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {workspace.name}?</AlertDialogTitle>
+            <AlertDialogTitle>Remove {workspace.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              New tasks can no longer be started in this workspace. Loops that target it will stop
+              New tasks can no longer be started in this project. Loops that target it will stop
               finding it.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -546,12 +801,14 @@ function DangerSection({ workspace }: { readonly workspace: WorkspaceResponse })
               disabled={remove.isRunning}
               onClick={() => {
                 void remove.run().then((result) => {
-                  if (result !== null) setIsConfirmOpen(false);
+                  if (result === null) return;
+                  setIsConfirmOpen(false);
+                  onDeleted();
                 });
               }}
             >
               {remove.isRunning ? <LoaderIcon className="animate-spin" /> : null}
-              Delete workspace
+              Remove project
             </Button>
           </AlertDialogFooter>
         </AlertDialogPopup>

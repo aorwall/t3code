@@ -37,7 +37,6 @@ export type SettingsPath =
  * group without listing its members twice.
  */
 export type MoatlessAdminPath =
-  | "/settings/workspaces"
   | "/settings/loops"
   | "/settings/integrations"
   | "/settings/skills"
@@ -45,7 +44,6 @@ export type MoatlessAdminPath =
   | "/settings/users";
 
 export const MOATLESS_ADMIN_PATHS = [
-  "/settings/workspaces",
   "/settings/loops",
   "/settings/integrations",
   "/settings/skills",
@@ -57,7 +55,7 @@ const MOATLESS_ADMIN_PATH_SET: ReadonlySet<string> = new Set(MOATLESS_ADMIN_PATH
 
 /**
  * Whether a path administers the deployment, including its detail routes —
- * `/settings/workspaces/42` is as administrative as `/settings/workspaces`.
+ * `/settings/loops/42` is as administrative as `/settings/loops`.
  */
 export function isMoatlessAdminPath(pathname: string): boolean {
   if (MOATLESS_ADMIN_PATH_SET.has(pathname)) return true;
@@ -136,7 +134,6 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/source-control": "Source Control",
   "/settings/connections": "Connections",
   "/settings/archived": "Archive",
-  "/settings/workspaces": "Workspaces",
   "/settings/loops": "Loops",
   "/settings/integrations": "Integrations",
   "/settings/skills": "Skills",
@@ -161,7 +158,9 @@ export const SETTINGS_SEARCH_ITEMS = [
     id: "project-overview",
     title: "Project overview",
     to: "/settings/projects",
-    searchTerms: ["name icon emoji image checkout remove delete"],
+    searchTerms: [
+      "name icon emoji image checkout remove delete workspace repositories actions scripts description model effort",
+    ],
   },
   {
     id: "default-model",
@@ -753,19 +752,6 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["restore reopen deleted history projects"],
   },
   {
-    id: "workspaces",
-    title: "Workspaces",
-    to: "/settings/workspaces",
-  },
-  {
-    id: "workspace-repositories",
-    title: "Repositories",
-    to: "/settings/workspaces",
-    // Repositories are composed inside a workspace rather than listed on their
-    // own, so the list page is where somebody searching for one should land.
-    targetId: "workspaces",
-  },
-  {
     id: "loops",
     title: "Loops",
     to: "/settings/loops",
@@ -888,7 +874,6 @@ const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScop
   "/settings/archived": "project-defaults",
   // Fork: the Moatless admin pages administer the deployment, not a selected
   // environment or project, so none of them carries a scope.
-  "/settings/workspaces": null,
   "/settings/loops": null,
   "/settings/integrations": null,
   "/settings/skills": null,

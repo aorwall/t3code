@@ -1,9 +1,12 @@
+import type { ProjectIconOverride } from "@t3tools/contracts";
 import type {
   RepositoryResponse,
+  WorkspaceIcon,
   WorkspaceRepoResponse,
   WorkspaceResponse,
 } from "@t3tools/moatless-api/generated/model";
 
+import { PROJECT_ICON_COLORS } from "../../../projectIconOptions";
 import { repositoryProviderIcon, type RepositoryProviderIcon } from "./repositoryProvider";
 
 /**
@@ -190,4 +193,22 @@ export function parseSetupCommands(text: string): string[] {
 
 export function formatSetupCommands(commands: ReadonlyArray<string> | null | undefined): string {
   return (commands ?? []).join("\n");
+}
+
+/**
+ * A workspace's icon as the project surfaces draw one.
+ *
+ * The two shapes agree field for field, but the wire type widens `color` to any
+ * string while `ProjectIconOverride` names the palette. A colour outside it
+ * would render as no colour class at all, so a lucide icon naming one is
+ * reported as no icon and the project's automatic glyph is drawn instead.
+ */
+export function workspaceIconOverride(
+  icon: WorkspaceIcon | null | undefined,
+): ProjectIconOverride | null {
+  if (icon === null || icon === undefined) return null;
+  if (icon.kind === "emoji") return { kind: "emoji", emoji: icon.emoji };
+  const color = PROJECT_ICON_COLORS.find((entry) => entry.value === icon.color);
+  if (color === undefined) return null;
+  return { kind: "lucide", name: icon.name, color: color.value };
 }

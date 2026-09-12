@@ -27,4 +27,12 @@ export interface FeatureFlagsResponse {
   show_codex_settings: boolean;
   show_model_selector: boolean;
   slack?: null | SlackConfig;
+  /**
+   * Whether a T3 project's settings page edits the Workspace behind it.
+   *
+   * On, the page gains the Workspace's own description, repositories, image
+   * and defaults, and drops the three rows a Moatless Workspace does not
+   * have (`defaultThreadEnvMode`, auto-pull, agent browser access).
+   */
+  workspace_settings: boolean;
 }

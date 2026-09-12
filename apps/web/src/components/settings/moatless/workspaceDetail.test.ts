@@ -14,6 +14,7 @@ import {
   placementRows,
   repositoryNameFromRemote,
   shortenRemote,
+  workspaceIconOverride,
   workspaceProvenance,
 } from "./workspaceDetail";
 
@@ -203,5 +204,32 @@ describe("setup commands", () => {
 
   it("shows an empty field for a workspace with no setup", () => {
     expect(formatSetupCommands(null)).toBe("");
+  });
+});
+
+describe("workspaceIconOverride", () => {
+  it("carries a lucide icon across with its palette colour", () => {
+    expect(workspaceIconOverride({ kind: "lucide", name: "rocket", color: "blue" })).toEqual({
+      kind: "lucide",
+      name: "rocket",
+      color: "blue",
+    });
+  });
+
+  it("carries an emoji across", () => {
+    expect(workspaceIconOverride({ kind: "emoji", emoji: "🚀" })).toEqual({
+      kind: "emoji",
+      emoji: "🚀",
+    });
+  });
+
+  it("falls back to the automatic icon for a colour outside the palette", () => {
+    expect(
+      workspaceIconOverride({ kind: "lucide", name: "rocket", color: "chartreuse" }),
+    ).toBeNull();
+  });
+
+  it("reports no icon for a workspace that has none", () => {
+    expect(workspaceIconOverride(null)).toBeNull();
   });
 });

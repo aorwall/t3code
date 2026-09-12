@@ -11006,6 +11006,12 @@
         "type": "object",
         "required": ["name"],
         "properties": {
+          "defaultEffort": {
+            "type": ["string", "null"]
+          },
+          "defaultModel": {
+            "type": ["string", "null"]
+          },
           "description": {
             "type": ["string", "null"]
           },
@@ -11023,6 +11029,16 @@
             "propertyNames": {
               "type": "string"
             }
+          },
+          "icon": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/WorkspaceIcon"
+              }
+            ]
           },
           "name": {
             "type": "string"
@@ -11172,6 +11188,7 @@
           "show_model_selector",
           "gitlab_enabled",
           "forgejo_enabled",
+          "workspace_settings",
           "device_pairing"
         ],
         "properties": {
@@ -11207,6 +11224,10 @@
                 "$ref": "#/components/schemas/SlackConfig"
               }
             ]
+          },
+          "workspace_settings": {
+            "type": "boolean",
+            "description": "Whether a T3 project's settings page edits the Workspace behind it.\n\nOn, the page gains the Workspace's own description, repositories, image\nand defaults, and drops the three rows a Moatless Workspace does not\nhave (`defaultThreadEnvMode`, auto-pull, agent browser access)."
           }
         }
       },
@@ -11940,7 +11961,7 @@
         "oneOf": [
           {
             "type": "object",
-            "description": "`POST repos/{owner}/{repo}/pulls/{n}/comments` — an inline review comment.",
+            "description": "An inline review comment, from either\n`POST repos/{owner}/{repo}/pulls/{n}/comments` or one of the comments a\n`POST …/pulls/{n}/reviews` carried.",
             "required": ["value", "kind"],
             "properties": {
               "kind": {
@@ -11950,7 +11971,7 @@
               "value": {
                 "type": "integer",
                 "format": "int64",
-                "description": "`POST repos/{owner}/{repo}/pulls/{n}/comments` — an inline review comment.",
+                "description": "An inline review comment, from either\n`POST repos/{owner}/{repo}/pulls/{n}/comments` or one of the comments a\n`POST …/pulls/{n}/reviews` carried.",
                 "minimum": 0
               }
             }
@@ -16650,6 +16671,14 @@
       "UpdateWorkspaceRequest": {
         "type": "object",
         "properties": {
+          "defaultEffort": {
+            "type": ["string", "null"],
+            "description": "See [`WorkspaceResponse::default_effort`]. `Some(None)` clears it."
+          },
+          "defaultModel": {
+            "type": ["string", "null"],
+            "description": "See [`WorkspaceResponse::default_model`]. `Some(None)` clears it."
+          },
           "description": {
             "type": ["string", "null"]
           },
@@ -16667,6 +16696,17 @@
             "propertyNames": {
               "type": "string"
             }
+          },
+          "icon": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/WorkspaceIcon",
+                "description": "`Some(None)` clears the icon back to the client's default glyph."
+              }
+            ]
           },
           "name": {
             "type": ["string", "null"]
@@ -17053,6 +17093,40 @@
           }
         }
       },
+      "WorkspaceIcon": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["name", "color", "kind"],
+            "properties": {
+              "color": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": ["lucide"]
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["emoji", "kind"],
+            "properties": {
+              "emoji": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": ["emoji"]
+              }
+            }
+          }
+        ],
+        "description": "The glyph a client renders beside a Workspace name.\n\nMirrors the T3 client's `ProjectIconOverride`: it is the only surface that\npicks one, and its own schema enumerates the legal glyph names and colours.\nNeither vocabulary is restated here — both would drift from the client's."
+      },
       "WorkspaceRepoInput": {
         "type": "object",
         "description": "A repository placement inside a workspace (create/add payload).",
@@ -17120,6 +17194,14 @@
           "createdBy": {
             "type": ["string", "null"]
           },
+          "defaultEffort": {
+            "type": ["string", "null"],
+            "description": "Reasoning-effort level paired with `default_model`."
+          },
+          "defaultModel": {
+            "type": ["string", "null"],
+            "description": "Model catalog id a new Task on this Workspace starts with. An open\nstring: the catalog is deployment configuration."
+          },
           "deleted": {
             "type": "boolean",
             "description": "Soft-deleted workspaces are normally hidden. Git-origin tombstones remain\nvisible in admin so users can restore them from git without automatic\nsync recreating them behind their back."
@@ -17141,6 +17223,16 @@
             "propertyNames": {
               "type": "string"
             }
+          },
+          "icon": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/WorkspaceIcon"
+              }
+            ]
           },
           "id": {
             "type": "string"

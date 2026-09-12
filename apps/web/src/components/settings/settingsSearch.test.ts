@@ -470,15 +470,16 @@ describe("settings sidebar scope", () => {
 
 describe("moatless administration entries", () => {
   it("is reachable from search by its own name", () => {
-    expect(searchSettings("workspaces").map((item) => item.id)).toContain("workspaces");
+    expect(searchSettings("loops").map((item) => item.id)).toContain("loops");
   });
 
-  it("sends repositories to the workspace that contains them", () => {
-    // Repositories are not a page of their own here; they are a section of a
-    // workspace. Searching for one has to land somewhere that exists.
+  it("sends repositories to the project that contains them", () => {
+    // Repositories are not a page of their own here; they are a section of the
+    // workspace a project is. Searching for one has to land somewhere that
+    // exists.
     expect(searchSettings("repositories")[0]).toMatchObject({
-      id: "workspace-repositories",
-      to: "/settings/workspaces",
+      id: "project-overview",
+      to: "/settings/projects",
     });
   });
 });
@@ -491,9 +492,9 @@ describe("isMoatlessAdminPath", () => {
   });
 
   it("recognises a page below one of them", () => {
-    // The guard runs on the concrete pathname, so a workspace detail page has
-    // to be admitted by prefix or it is reachable without an admin check.
-    expect(isMoatlessAdminPath("/settings/workspaces/ws_1")).toBe(true);
+    // The guard runs on the concrete pathname, so a loop detail page has to be
+    // admitted by prefix or it is reachable without an admin check.
+    expect(isMoatlessAdminPath("/settings/loops/loop_1")).toBe(true);
   });
 
   it("leaves the settings pages this fork did not add alone", () => {
@@ -502,6 +503,6 @@ describe("isMoatlessAdminPath", () => {
   });
 
   it("does not admit a path that merely starts with an admin path's characters", () => {
-    expect(isMoatlessAdminPath("/settings/workspaces-archive")).toBe(false);
+    expect(isMoatlessAdminPath("/settings/loops-archive")).toBe(false);
   });
 });

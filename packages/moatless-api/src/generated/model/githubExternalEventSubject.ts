@@ -17,7 +17,9 @@ export type GithubExternalEventSubject =
   | {
       kind: "reviewComment";
       /**
-       * `POST repos/{owner}/{repo}/pulls/{n}/comments` — an inline review comment.
+       * An inline review comment, from either
+       * `POST repos/{owner}/{repo}/pulls/{n}/comments` or one of the comments a
+       * `POST …/pulls/{n}/reviews` carried.
        * @minimum 0
        */
       value: number;

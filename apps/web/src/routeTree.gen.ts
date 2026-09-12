@@ -17,7 +17,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ConnectRouteImport } from './routes/connect'
 import { Route as ChatRouteImport } from './routes/_chat'
 import { Route as ChatIndexRouteImport } from './routes/_chat.index'
-import { Route as SettingsWorkspacesRouteImport } from './routes/settings.workspaces'
 import { Route as SettingsVersionControlRouteImport } from './routes/settings.version-control'
 import { Route as SettingsUsersRouteImport } from './routes/settings.users'
 import { Route as SettingsSourceControlRouteImport } from './routes/settings.source-control'
@@ -38,7 +37,6 @@ import { Route as SettingsAppearanceRouteImport } from './routes/settings.appear
 import { Route as ProjectsProjectKeyRouteImport } from './routes/projects.$projectKey'
 import { Route as ConnectCallbackRouteImport } from './routes/connect_.callback'
 import { Route as ChatPullRequestsRouteImport } from './routes/_chat.pull-requests'
-import { Route as SettingsWorkspacesWorkspaceIdRouteImport } from './routes/settings.workspaces_.$workspaceId'
 import { Route as SettingsUsersLoginRouteImport } from './routes/settings.users_.$login'
 import { Route as SettingsSkillsPluginIdRouteImport } from './routes/settings.skills_.$pluginId'
 import { Route as SettingsLoopsLoopIdRouteImport } from './routes/settings.loops_.$loopId'
@@ -84,11 +82,6 @@ const ChatIndexRoute = ChatIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ChatRoute,
-} as any)
-const SettingsWorkspacesRoute = SettingsWorkspacesRouteImport.update({
-  id: '/workspaces',
-  path: '/workspaces',
-  getParentRoute: () => SettingsRoute,
 } as any)
 const SettingsVersionControlRoute = SettingsVersionControlRouteImport.update({
   id: '/version-control',
@@ -190,12 +183,6 @@ const ChatPullRequestsRoute = ChatPullRequestsRouteImport.update({
   path: '/pull-requests',
   getParentRoute: () => ChatRoute,
 } as any)
-const SettingsWorkspacesWorkspaceIdRoute =
-  SettingsWorkspacesWorkspaceIdRouteImport.update({
-    id: '/workspaces_/$workspaceId',
-    path: '/workspaces/$workspaceId',
-    getParentRoute: () => SettingsRoute,
-  } as any)
 const SettingsUsersLoginRoute = SettingsUsersLoginRouteImport.update({
   id: '/users_/$login',
   path: '/users/$login',
@@ -257,14 +244,12 @@ export interface FileRoutesByFullPath {
   '/settings/source-control': typeof SettingsSourceControlRoute
   '/settings/users': typeof SettingsUsersRoute
   '/settings/version-control': typeof SettingsVersionControlRoute
-  '/settings/workspaces': typeof SettingsWorkspacesRoute
   '/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
   '/draft/$draftId': typeof ChatDraftDraftIdRoute
   '/settings/integrations/$connectionId': typeof SettingsIntegrationsConnectionIdRoute
   '/settings/loops/$loopId': typeof SettingsLoopsLoopIdRoute
   '/settings/skills/$pluginId': typeof SettingsSkillsPluginIdRoute
   '/settings/users/$login': typeof SettingsUsersLoginRoute
-  '/settings/workspaces/$workspaceId': typeof SettingsWorkspacesWorkspaceIdRoute
 }
 export interface FileRoutesByTo {
   '/connect': typeof ConnectRoute
@@ -293,7 +278,6 @@ export interface FileRoutesByTo {
   '/settings/source-control': typeof SettingsSourceControlRoute
   '/settings/users': typeof SettingsUsersRoute
   '/settings/version-control': typeof SettingsVersionControlRoute
-  '/settings/workspaces': typeof SettingsWorkspacesRoute
   '/': typeof ChatIndexRoute
   '/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
   '/draft/$draftId': typeof ChatDraftDraftIdRoute
@@ -301,7 +285,6 @@ export interface FileRoutesByTo {
   '/settings/loops/$loopId': typeof SettingsLoopsLoopIdRoute
   '/settings/skills/$pluginId': typeof SettingsSkillsPluginIdRoute
   '/settings/users/$login': typeof SettingsUsersLoginRoute
-  '/settings/workspaces/$workspaceId': typeof SettingsWorkspacesWorkspaceIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -332,7 +315,6 @@ export interface FileRoutesById {
   '/settings/source-control': typeof SettingsSourceControlRoute
   '/settings/users': typeof SettingsUsersRoute
   '/settings/version-control': typeof SettingsVersionControlRoute
-  '/settings/workspaces': typeof SettingsWorkspacesRoute
   '/_chat/': typeof ChatIndexRoute
   '/_chat/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
   '/_chat/draft/$draftId': typeof ChatDraftDraftIdRoute
@@ -340,7 +322,6 @@ export interface FileRoutesById {
   '/settings/loops_/$loopId': typeof SettingsLoopsLoopIdRoute
   '/settings/skills_/$pluginId': typeof SettingsSkillsPluginIdRoute
   '/settings/users_/$login': typeof SettingsUsersLoginRoute
-  '/settings/workspaces_/$workspaceId': typeof SettingsWorkspacesWorkspaceIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -372,14 +353,12 @@ export interface FileRouteTypes {
     | '/settings/source-control'
     | '/settings/users'
     | '/settings/version-control'
-    | '/settings/workspaces'
     | '/$environmentId/$threadId'
     | '/draft/$draftId'
     | '/settings/integrations/$connectionId'
     | '/settings/loops/$loopId'
     | '/settings/skills/$pluginId'
     | '/settings/users/$login'
-    | '/settings/workspaces/$workspaceId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/connect'
@@ -408,7 +387,6 @@ export interface FileRouteTypes {
     | '/settings/source-control'
     | '/settings/users'
     | '/settings/version-control'
-    | '/settings/workspaces'
     | '/'
     | '/$environmentId/$threadId'
     | '/draft/$draftId'
@@ -416,7 +394,6 @@ export interface FileRouteTypes {
     | '/settings/loops/$loopId'
     | '/settings/skills/$pluginId'
     | '/settings/users/$login'
-    | '/settings/workspaces/$workspaceId'
   id:
     | '__root__'
     | '/_chat'
@@ -446,7 +423,6 @@ export interface FileRouteTypes {
     | '/settings/source-control'
     | '/settings/users'
     | '/settings/version-control'
-    | '/settings/workspaces'
     | '/_chat/'
     | '/_chat/$environmentId/$threadId'
     | '/_chat/draft/$draftId'
@@ -454,7 +430,6 @@ export interface FileRouteTypes {
     | '/settings/loops_/$loopId'
     | '/settings/skills_/$pluginId'
     | '/settings/users_/$login'
-    | '/settings/workspaces_/$workspaceId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -526,13 +501,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof ChatIndexRouteImport
       parentRoute: typeof ChatRoute
-    }
-    '/settings/workspaces': {
-      id: '/settings/workspaces'
-      path: '/workspaces'
-      fullPath: '/settings/workspaces'
-      preLoaderRoute: typeof SettingsWorkspacesRouteImport
-      parentRoute: typeof SettingsRoute
     }
     '/settings/version-control': {
       id: '/settings/version-control'
@@ -674,13 +642,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatPullRequestsRouteImport
       parentRoute: typeof ChatRoute
     }
-    '/settings/workspaces_/$workspaceId': {
-      id: '/settings/workspaces_/$workspaceId'
-      path: '/workspaces/$workspaceId'
-      fullPath: '/settings/workspaces/$workspaceId'
-      preLoaderRoute: typeof SettingsWorkspacesWorkspaceIdRouteImport
-      parentRoute: typeof SettingsRoute
-    }
     '/settings/users_/$login': {
       id: '/settings/users_/$login'
       path: '/users/$login'
@@ -760,12 +721,10 @@ interface SettingsRouteChildren {
   SettingsSourceControlRoute: typeof SettingsSourceControlRoute
   SettingsUsersRoute: typeof SettingsUsersRoute
   SettingsVersionControlRoute: typeof SettingsVersionControlRoute
-  SettingsWorkspacesRoute: typeof SettingsWorkspacesRoute
   SettingsIntegrationsConnectionIdRoute: typeof SettingsIntegrationsConnectionIdRoute
   SettingsLoopsLoopIdRoute: typeof SettingsLoopsLoopIdRoute
   SettingsSkillsPluginIdRoute: typeof SettingsSkillsPluginIdRoute
   SettingsUsersLoginRoute: typeof SettingsUsersLoginRoute
-  SettingsWorkspacesWorkspaceIdRoute: typeof SettingsWorkspacesWorkspaceIdRoute
 }
 
 const SettingsRouteChildren: SettingsRouteChildren = {
@@ -786,12 +745,10 @@ const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsSourceControlRoute: SettingsSourceControlRoute,
   SettingsUsersRoute: SettingsUsersRoute,
   SettingsVersionControlRoute: SettingsVersionControlRoute,
-  SettingsWorkspacesRoute: SettingsWorkspacesRoute,
   SettingsIntegrationsConnectionIdRoute: SettingsIntegrationsConnectionIdRoute,
   SettingsLoopsLoopIdRoute: SettingsLoopsLoopIdRoute,
   SettingsSkillsPluginIdRoute: SettingsSkillsPluginIdRoute,
   SettingsUsersLoginRoute: SettingsUsersLoginRoute,
-  SettingsWorkspacesWorkspaceIdRoute: SettingsWorkspacesWorkspaceIdRoute,
 }
 
 const SettingsRouteWithChildren = SettingsRoute._addFileChildren(

@@ -41,6 +41,12 @@ import {
 import { ProjectActionsSettings } from "./ProjectActionsSettings";
 import { projectGroupTitleNeedsUpdate } from "./ProjectSettingsPanel.logic";
 import { useSettingsProjectGroups } from "./useSettingsProjectGroups";
+import {
+  ProjectWorkspaceDangerSection,
+  ProjectWorkspaceSettings,
+} from "./moatless/ProjectWorkspaceSettings";
+import { featureFlagsQuery } from "./moatless/queries";
+import { useMoatlessQuery } from "~/moatless/query";
 
 const ProjectIconPickerDialog = lazy(() =>
   import("./ProjectIconPickerDialog").then((module) => ({
@@ -172,6 +178,11 @@ function ProjectDetail({
     group.memberProjects.find(
       (member) => environmentById.get(member.environmentId)?.serverConfig != null,
     ) ?? group.memberProjects[0]!;
+  // Fork: where the backend is Moatless, a project is one of its Workspaces and
+  // the Workspace owns the name and the icon that `project.meta.update` refuses
+  // by name. Those rows are replaced by sections that write over the Workspace
+  // API rather than hidden.
+  const workspaceSettings = useMoatlessQuery(featureFlagsQuery).data?.workspace_settings === true;
   const threads = useThreadShells();
   const updateProject = useAtomCommand(projectEnvironment.update, { reportFailure: false });
   const deleteProject = useAtomCommand(projectEnvironment.delete, { reportFailure: false });
@@ -406,112 +417,123 @@ function ProjectDetail({
   return (
     <>
       <SettingsPageContainer className="gap-6">
-        <SettingsSection id="project-overview" title="Project" hideTitle>
-          <SettingsRow
-            title="Name"
-            description="The shared name for this project group in the sidebar and thread lists."
-            control={
-              <Input
-                key={`${group.projectKey}:${group.displayName}`}
-                size="sm"
-                className="w-full sm:w-64"
-                aria-label="Project name"
-                defaultValue={group.displayName}
-                onChange={() => {
-                  projectNameEditedRef.current = true;
-                }}
-                onBlur={(event) => {
-                  const wasEdited = projectNameEditedRef.current;
-                  projectNameEditedRef.current = false;
-                  void renameGroup(event.currentTarget.value, wasEdited);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") event.currentTarget.blur();
-                }}
-              />
-            }
-          />
-          <SettingsRow
-            title="Project icon"
-            description={
-              projectIcon?.kind === "lucide"
-                ? `${projectIcon.name} · ${projectIcon.color}`
-                : projectIcon?.kind === "emoji"
-                  ? projectIcon.emoji
-                  : (faviconPath ?? "Automatic")
-            }
-            resetAction={
-              group.memberProjects.some(
-                (member) => member.faviconPath != null || member.projectIcon != null,
-              ) ? (
-                <SettingResetButton
-                  label="project icon"
-                  disabled={isSavingFavicon}
-                  onClick={() => void setProjectIcon({ faviconPath: null, projectIcon: null })}
+        {workspaceSettings ? (
+          <ProjectWorkspaceSettings workspaceId={representative.id} project={representative} />
+        ) : (
+          <SettingsSection id="project-overview" title="Project" hideTitle>
+            <SettingsRow
+              title="Name"
+              description="The shared name for this project group in the sidebar and thread lists."
+              control={
+                <Input
+                  key={`${group.projectKey}:${group.displayName}`}
+                  size="sm"
+                  className="w-full sm:w-64"
+                  aria-label="Project name"
+                  defaultValue={group.displayName}
+                  onChange={() => {
+                    projectNameEditedRef.current = true;
+                  }}
+                  onBlur={(event) => {
+                    const wasEdited = projectNameEditedRef.current;
+                    projectNameEditedRef.current = false;
+                    void renameGroup(event.currentTarget.value, wasEdited);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") event.currentTarget.blur();
+                  }}
                 />
-              ) : null
-            }
-            control={
-              <div className="flex items-center gap-2">
-                <ProjectFavicon project={representative} className="size-6" />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  type="button"
-                  aria-label="Choose a project icon"
-                  disabled={isSavingFavicon}
-                  onClick={() => setIconPickerOpen(true)}
-                >
-                  Choose icon
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  type="button"
-                  aria-label="Choose a project icon file"
-                  disabled={isSavingFavicon}
-                  onClick={() => setFaviconPickerOpen(true)}
-                >
-                  Choose file
-                </Button>
-              </div>
-            }
-          />
-        </SettingsSection>
+              }
+            />
+            <SettingsRow
+              title="Project icon"
+              description={
+                projectIcon?.kind === "lucide"
+                  ? `${projectIcon.name} · ${projectIcon.color}`
+                  : projectIcon?.kind === "emoji"
+                    ? projectIcon.emoji
+                    : (faviconPath ?? "Automatic")
+              }
+              resetAction={
+                group.memberProjects.some(
+                  (member) => member.faviconPath != null || member.projectIcon != null,
+                ) ? (
+                  <SettingResetButton
+                    label="project icon"
+                    disabled={isSavingFavicon}
+                    onClick={() => void setProjectIcon({ faviconPath: null, projectIcon: null })}
+                  />
+                ) : null
+              }
+              control={
+                <div className="flex items-center gap-2">
+                  <ProjectFavicon project={representative} className="size-6" />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    type="button"
+                    aria-label="Choose a project icon"
+                    disabled={isSavingFavicon}
+                    onClick={() => setIconPickerOpen(true)}
+                  >
+                    Choose icon
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    type="button"
+                    aria-label="Choose a project icon file"
+                    disabled={isSavingFavicon}
+                    onClick={() => setFaviconPickerOpen(true)}
+                  >
+                    Choose file
+                  </Button>
+                </div>
+              }
+            />
+          </SettingsSection>
+        )}
         <ProjectActionsSettings />
         {hasMultipleCheckouts ? checkoutChoices : null}
-        <SettingsSection title="Danger">
-          <SettingsRow
-            title={
-              hasOtherMembers
-                ? "Remove checkout"
-                : group.memberProjects.length > 1
-                  ? "Remove this project everywhere"
-                  : "Remove project"
-            }
-            description={
-              hasOtherMembers
-                ? "Deletes the selected machine's checkout entries and their threads. Other machines and files on disk are not touched."
-                : group.memberProjects.length > 1
-                  ? `Deletes all ${group.memberProjects.length} checkout entries and their threads on every machine. Files on disk are not touched.`
-                  : "Deletes the project entry and its threads. Files on disk are not touched."
-            }
-            control={
-              <Button
-                size="sm"
-                variant="destructive-outline"
-                onClick={() => void removeMembers(group.memberProjects)}
-              >
-                <Trash2Icon />
-                {hasOtherMembers
+        {workspaceSettings ? (
+          <ProjectWorkspaceDangerSection
+            workspaceId={representative.id}
+            onDeleted={() => void navigate({ to: "/", replace: true })}
+          />
+        ) : (
+          <SettingsSection title="Danger">
+            <SettingsRow
+              title={
+                hasOtherMembers
                   ? "Remove checkout"
                   : group.memberProjects.length > 1
-                    ? "Remove all entries"
-                    : "Remove project"}
-              </Button>
-            }
-          />
-        </SettingsSection>
+                    ? "Remove this project everywhere"
+                    : "Remove project"
+              }
+              description={
+                hasOtherMembers
+                  ? "Deletes the selected machine's checkout entries and their threads. Other machines and files on disk are not touched."
+                  : group.memberProjects.length > 1
+                    ? `Deletes all ${group.memberProjects.length} checkout entries and their threads on every machine. Files on disk are not touched.`
+                    : "Deletes the project entry and its threads. Files on disk are not touched."
+              }
+              control={
+                <Button
+                  size="sm"
+                  variant="destructive-outline"
+                  onClick={() => void removeMembers(group.memberProjects)}
+                >
+                  <Trash2Icon />
+                  {hasOtherMembers
+                    ? "Remove checkout"
+                    : group.memberProjects.length > 1
+                      ? "Remove all entries"
+                      : "Remove project"}
+                </Button>
+              }
+            />
+          </SettingsSection>
+        )}
       </SettingsPageContainer>
 
       <ProjectFaviconPickerDialog

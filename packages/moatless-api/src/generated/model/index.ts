@@ -416,6 +416,7 @@ export * from "./webhookPayload.ts";
 export * from "./webhookPayloadMetadata.ts";
 export * from "./workspaceCredentialProvider.ts";
 export * from "./workspaceCredentialResponse.ts";
+export * from "./workspaceIcon.ts";
 export * from "./workspaceRepoInput.ts";
 export * from "./workspaceRepoResponse.ts";
 export * from "./workspaceResponse.ts";

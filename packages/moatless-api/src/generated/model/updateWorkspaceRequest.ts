@@ -9,8 +9,19 @@ import type { ResourceConfig } from "./resourceConfig.ts";
 import type { Scope } from "./scope.ts";
 import type { ServerConfig } from "./serverConfig.ts";
 import type { UpdateWorkspaceRequestEnvVars } from "./updateWorkspaceRequestEnvVars.ts";
+import type { WorkspaceIcon } from "./workspaceIcon.ts";
 
 export interface UpdateWorkspaceRequest {
+  /**
+   * See [`WorkspaceResponse::default_effort`]. `Some(None)` clears it.
+   * @nullable
+   */
+  defaultEffort?: string | null;
+  /**
+   * See [`WorkspaceResponse::default_model`]. `Some(None)` clears it.
+   * @nullable
+   */
+  defaultModel?: string | null;
   /** @nullable */
   description?: string | null;
   /** @nullable */
@@ -19,6 +30,7 @@ export interface UpdateWorkspaceRequest {
   dockerImage?: string | null;
   /** @nullable */
   envVars?: UpdateWorkspaceRequestEnvVars;
+  icon?: null | WorkspaceIcon;
   /** @nullable */
   name?: string | null;
   /** @nullable */

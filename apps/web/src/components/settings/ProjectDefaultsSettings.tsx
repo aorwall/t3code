@@ -40,6 +40,8 @@ import {
   useScopedSettingSource,
   useUpdateScopedSettings,
 } from "./useScopedSettings";
+import { featureFlagsQuery } from "./moatless/queries";
+import { useMoatlessQuery } from "~/moatless/query";
 
 /**
  * Rows for the settings a project may override. The same rows edit
@@ -78,6 +80,12 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
   const workspaceSource = useScopedSettingSource(["defaultThreadEnvMode"]);
   const isProjectScope = scope.kind === "project" || scope.kind === "checkout";
   const unavailable = connectedEnvironments.length === 0;
+  // Fork: at a project scope on a Moatless backend the project is a Workspace,
+  // and the Workspace answers these four questions itself — the model and
+  // effort from its own defaults, and the other three not at all. The rows
+  // stay at an environment scope, where they are still the deployment default.
+  const workspaceOwnsProjectDefaults =
+    useMoatlessQuery(featureFlagsQuery).data?.workspace_settings === true && isProjectScope;
 
   // A checkout's t3.json wins over the environment default when the project
   // has no override of its own; show which one "inherit" resolves to.
@@ -151,78 +159,80 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
     >
       {category === "general" ? (
         <>
-          <SettingsRow
-            serverScoped
-            settingKeys={["defaultModelSelection"]}
-            mixed={mixedModel}
-            id="default-model"
-            title="Model"
-            description={
-              isProjectScope
-                ? "Model for new threads in this project."
-                : "Default model for new threads. Projects can override it."
-            }
-            status={
-              unavailable || mixedModel || modelSource === "project"
-                ? undefined
-                : settings.defaultModelSelection === null
-                  ? "Automatic"
-                  : undefined
-            }
-            resetAction={
-              settings.defaultModelSelection !== null ? (
-                <SettingResetButton label="default model" onClick={() => setModel(null)} />
-              ) : null
-            }
-            control={
-              selection && activeEntry ? (
-                <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">
-                  <ProviderModelPicker
-                    activeInstanceId={selection.instanceId}
-                    model={selection.model}
-                    lockedProvider={null}
-                    instanceEntries={entries}
-                    modelOptionsByInstance={modelOptions}
-                    triggerVariant="outline"
-                    triggerClassName={SETTINGS_PICKER_TRIGGER_CLASSNAME}
-                    {...(mixedModel ? { triggerLabel: "Mixed" } : {})}
-                    getModelDisabledReason={modelDisabledReason}
-                    onOpenProviderSetup={(instanceId) => {
-                      if (representative)
-                        void navigate({
-                          to: "/settings/providers",
-                          search: { environmentId: representative.environmentId, instanceId },
-                        });
-                    }}
-                    onInstanceModelChange={(instanceId, model) =>
-                      setModel(createModelSelection(instanceId, model))
-                    }
-                  />
-                  {!mixedModel ? (
-                    <TraitsPicker
-                      provider={activeEntry.driverKind}
-                      models={activeEntry.models}
+          {workspaceOwnsProjectDefaults ? null : (
+            <SettingsRow
+              serverScoped
+              settingKeys={["defaultModelSelection"]}
+              mixed={mixedModel}
+              id="default-model"
+              title="Model"
+              description={
+                isProjectScope
+                  ? "Model for new threads in this project."
+                  : "Default model for new threads. Projects can override it."
+              }
+              status={
+                unavailable || mixedModel || modelSource === "project"
+                  ? undefined
+                  : settings.defaultModelSelection === null
+                    ? "Automatic"
+                    : undefined
+              }
+              resetAction={
+                settings.defaultModelSelection !== null ? (
+                  <SettingResetButton label="default model" onClick={() => setModel(null)} />
+                ) : null
+              }
+              control={
+                selection && activeEntry ? (
+                  <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">
+                    <ProviderModelPicker
+                      activeInstanceId={selection.instanceId}
                       model={selection.model}
-                      prompt=""
-                      onPromptChange={() => {}}
-                      modelOptions={selection.options ?? []}
-                      allowPromptInjectedEffort={false}
-                      planModeEnabled={settings.planModeEnabled}
+                      lockedProvider={null}
+                      instanceEntries={entries}
+                      modelOptionsByInstance={modelOptions}
                       triggerVariant="outline"
                       triggerClassName={SETTINGS_PICKER_TRIGGER_CLASSNAME}
-                      onModelOptionsChange={(options) =>
-                        setModel(
-                          createModelSelection(selection.instanceId, selection.model, options),
-                        )
+                      {...(mixedModel ? { triggerLabel: "Mixed" } : {})}
+                      getModelDisabledReason={modelDisabledReason}
+                      onOpenProviderSetup={(instanceId) => {
+                        if (representative)
+                          void navigate({
+                            to: "/settings/providers",
+                            search: { environmentId: representative.environmentId, instanceId },
+                          });
+                      }}
+                      onInstanceModelChange={(instanceId, model) =>
+                        setModel(createModelSelection(instanceId, model))
                       }
                     />
-                  ) : null}
-                </div>
-              ) : (
-                <span className="text-sm text-muted-foreground">No providers available</span>
-              )
-            }
-          />
+                    {!mixedModel ? (
+                      <TraitsPicker
+                        provider={activeEntry.driverKind}
+                        models={activeEntry.models}
+                        model={selection.model}
+                        prompt=""
+                        onPromptChange={() => {}}
+                        modelOptions={selection.options ?? []}
+                        allowPromptInjectedEffort={false}
+                        planModeEnabled={settings.planModeEnabled}
+                        triggerVariant="outline"
+                        triggerClassName={SETTINGS_PICKER_TRIGGER_CLASSNAME}
+                        onModelOptionsChange={(options) =>
+                          setModel(
+                            createModelSelection(selection.instanceId, selection.model, options),
+                          )
+                        }
+                      />
+                    ) : null}
+                  </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground">No providers available</span>
+                )
+              }
+            />
+          )}
           <SettingsRow
             serverScoped
             settingKeys={["defaultRuntimeMode"]}
@@ -284,90 +294,94 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
               </Select>
             }
           />
-          <SettingsRow
-            serverScoped
-            settingKeys={["defaultThreadEnvMode"]}
-            mixed={mixedWorkspace}
-            id={searchableSetting("new-threads").id}
-            title="Workspace"
-            description={
-              isProjectScope
-                ? "Where new threads in this project start. A t3.json preference applies when the project has no override."
-                : "Where new threads start, unless overridden by the project or t3.json."
-            }
-            status={
-              inheritedEnvModeLabel ? `Repository default: ${inheritedEnvModeLabel}` : undefined
-            }
-            resetAction={
-              settings.defaultThreadEnvMode !== DEFAULT_SERVER_SETTINGS.defaultThreadEnvMode ? (
-                <SettingResetButton
-                  label="default workspace"
-                  onClick={() =>
-                    updateSettings({
-                      defaultThreadEnvMode: DEFAULT_SERVER_SETTINGS.defaultThreadEnvMode,
-                    })
-                  }
-                />
-              ) : null
-            }
-            control={
-              <Select
-                value={mixedWorkspace ? null : settings.defaultThreadEnvMode}
-                onValueChange={(value) => {
-                  if (value === "local" || value === "worktree")
-                    updateSettings({ defaultThreadEnvMode: value });
-                }}
-              >
-                <SelectTrigger size="sm" aria-label="Default workspace">
-                  <SelectValue>
-                    {(value: string | null) =>
-                      value === "local" || value === "worktree"
-                        ? resolveEnvModeLabel(value)
-                        : unavailable
-                          ? "Unavailable"
-                          : "Mixed"
+          {workspaceOwnsProjectDefaults ? null : (
+            <SettingsRow
+              serverScoped
+              settingKeys={["defaultThreadEnvMode"]}
+              mixed={mixedWorkspace}
+              id={searchableSetting("new-threads").id}
+              title="Workspace"
+              description={
+                isProjectScope
+                  ? "Where new threads in this project start. A t3.json preference applies when the project has no override."
+                  : "Where new threads start, unless overridden by the project or t3.json."
+              }
+              status={
+                inheritedEnvModeLabel ? `Repository default: ${inheritedEnvModeLabel}` : undefined
+              }
+              resetAction={
+                settings.defaultThreadEnvMode !== DEFAULT_SERVER_SETTINGS.defaultThreadEnvMode ? (
+                  <SettingResetButton
+                    label="default workspace"
+                    onClick={() =>
+                      updateSettings({
+                        defaultThreadEnvMode: DEFAULT_SERVER_SETTINGS.defaultThreadEnvMode,
+                      })
                     }
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectPopup align="end" alignItemWithTrigger={false}>
-                  <SelectItem value="local">{resolveEnvModeLabel("local")}</SelectItem>
-                  <SelectItem value="worktree">{resolveEnvModeLabel("worktree")}</SelectItem>
-                </SelectPopup>
-              </Select>
-            }
-          />
+                  />
+                ) : null
+              }
+              control={
+                <Select
+                  value={mixedWorkspace ? null : settings.defaultThreadEnvMode}
+                  onValueChange={(value) => {
+                    if (value === "local" || value === "worktree")
+                      updateSettings({ defaultThreadEnvMode: value });
+                  }}
+                >
+                  <SelectTrigger size="sm" aria-label="Default workspace">
+                    <SelectValue>
+                      {(value: string | null) =>
+                        value === "local" || value === "worktree"
+                          ? resolveEnvModeLabel(value)
+                          : unavailable
+                            ? "Unavailable"
+                            : "Mixed"
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectPopup align="end" alignItemWithTrigger={false}>
+                    <SelectItem value="local">{resolveEnvModeLabel("local")}</SelectItem>
+                    <SelectItem value="worktree">{resolveEnvModeLabel("worktree")}</SelectItem>
+                  </SelectPopup>
+                </Select>
+              }
+            />
+          )}
         </>
       ) : category === "source-control" ? (
         <>
-          <SettingsRow
-            serverScoped
-            settingKeys={["defaultAutoPull"]}
-            mixed={mixedAutoPull}
-            id="automatic-pull"
-            title="Automatically pull"
-            description={
-              isProjectScope
-                ? "Keeps this project's default branch current when the checkout has no local changes or commits."
-                : "Keeps the default branch current when the checkout has no local changes or commits. Projects can override it."
-            }
-            resetAction={
-              settings.defaultAutoPull ? (
-                <SettingResetButton
-                  label="default automatic pull"
-                  tooltip="Reset automatic pull to off"
-                  onClick={() => updateSettings({ defaultAutoPull: false })}
+          {workspaceOwnsProjectDefaults ? null : (
+            <SettingsRow
+              serverScoped
+              settingKeys={["defaultAutoPull"]}
+              mixed={mixedAutoPull}
+              id="automatic-pull"
+              title="Automatically pull"
+              description={
+                isProjectScope
+                  ? "Keeps this project's default branch current when the checkout has no local changes or commits."
+                  : "Keeps the default branch current when the checkout has no local changes or commits. Projects can override it."
+              }
+              resetAction={
+                settings.defaultAutoPull ? (
+                  <SettingResetButton
+                    label="default automatic pull"
+                    tooltip="Reset automatic pull to off"
+                    onClick={() => updateSettings({ defaultAutoPull: false })}
+                  />
+                ) : null
+              }
+              control={
+                <Switch
+                  aria-label="Default automatic pull"
+                  mixed={mixedAutoPull}
+                  checked={mixedAutoPull ? false : settings.defaultAutoPull}
+                  onCheckedChange={(enabled) => updateSettings({ defaultAutoPull: enabled })}
                 />
-              ) : null
-            }
-            control={
-              <Switch
-                aria-label="Default automatic pull"
-                mixed={mixedAutoPull}
-                checked={mixedAutoPull ? false : settings.defaultAutoPull}
-                onCheckedChange={(enabled) => updateSettings({ defaultAutoPull: enabled })}
-              />
-            }
-          />
+              }
+            />
+          )}
           <SettingsRow
             serverScoped
             settingKeys={["pullRequestMergeMethod"]}
@@ -419,39 +433,43 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
         </>
       ) : (
         <>
-          <SettingsRow
-            serverScoped
-            settingKeys={["enableAgentBrowserAccess"]}
-            mixed={mixedBrowser}
-            id={searchableSetting("agent-browser-access").id}
-            title="Agent browser access"
-            description={
-              isProjectScope
-                ? "Allow agents in this project to use the shared browser. Applies when the agent session next starts."
-                : "Allow agents to use the shared browser. Projects can override it."
-            }
-            resetAction={
-              settings.enableAgentBrowserAccess !==
-              DEFAULT_SERVER_SETTINGS.enableAgentBrowserAccess ? (
-                <SettingResetButton
-                  label="default browser access"
-                  onClick={() =>
-                    updateSettings({
-                      enableAgentBrowserAccess: DEFAULT_SERVER_SETTINGS.enableAgentBrowserAccess,
-                    })
+          {workspaceOwnsProjectDefaults ? null : (
+            <SettingsRow
+              serverScoped
+              settingKeys={["enableAgentBrowserAccess"]}
+              mixed={mixedBrowser}
+              id={searchableSetting("agent-browser-access").id}
+              title="Agent browser access"
+              description={
+                isProjectScope
+                  ? "Allow agents in this project to use the shared browser. Applies when the agent session next starts."
+                  : "Allow agents to use the shared browser. Projects can override it."
+              }
+              resetAction={
+                settings.enableAgentBrowserAccess !==
+                DEFAULT_SERVER_SETTINGS.enableAgentBrowserAccess ? (
+                  <SettingResetButton
+                    label="default browser access"
+                    onClick={() =>
+                      updateSettings({
+                        enableAgentBrowserAccess: DEFAULT_SERVER_SETTINGS.enableAgentBrowserAccess,
+                      })
+                    }
+                  />
+                ) : null
+              }
+              control={
+                <Switch
+                  aria-label="Agent browser access"
+                  mixed={mixedBrowser}
+                  checked={mixedBrowser ? false : settings.enableAgentBrowserAccess}
+                  onCheckedChange={(enabled) =>
+                    updateSettings({ enableAgentBrowserAccess: enabled })
                   }
                 />
-              ) : null
-            }
-            control={
-              <Switch
-                aria-label="Agent browser access"
-                mixed={mixedBrowser}
-                checked={mixedBrowser ? false : settings.enableAgentBrowserAccess}
-                onCheckedChange={(enabled) => updateSettings({ enableAgentBrowserAccess: enabled })}
-              />
-            }
-          />
+              }
+            />
+          )}
         </>
       )}
     </SettingsSection>

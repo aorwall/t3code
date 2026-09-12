@@ -14,6 +14,7 @@ import {
   adminListGithubApps,
 } from "@t3tools/moatless-api/generated/app-administration/app-administration";
 import { getCodexConfig } from "@t3tools/moatless-api/generated/agent-harness-access/agent-harness-access";
+import { listAgentsHandler } from "@t3tools/moatless-api/generated/agents/agents";
 import { getFeatureFlags } from "@t3tools/moatless-api/generated/feature-flags/feature-flags";
 import {
   getGithubConfig,
@@ -36,6 +37,7 @@ import type {
   ForgejoConnectionsResponse,
   GitHubAppsResponse,
   GitHubProviderTokenStatusResponse,
+  ListAgentsResponse,
   Loop,
   PluginResponse,
   PluginSkillResponse,
@@ -139,6 +141,14 @@ export const forgejoConnectionsQuery = moatlessQuery<ForgejoConnectionsResponse>
 export const featureFlagsQuery = moatlessQuery<FeatureFlagsResponse>("feature-flags", () =>
   getFeatureFlags(),
 );
+
+/**
+ * The agents this deployment installs, each with the models it offers.
+ *
+ * Its own namespace and never invalidated by a write: the catalog is deployment
+ * configuration, and a workspace naming one of its models does not change it.
+ */
+export const agentsQuery = moatlessQuery<ListAgentsResponse>("agents", () => listAgentsHandler());
 
 /**
  * Every Loop the deployment runs.
