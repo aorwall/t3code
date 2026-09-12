@@ -28,6 +28,90 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-12 — merged upstream to e8160649, upstream made every server setting scopable and settings is now most of the fork delta
+
+- Upstream: `e81606494` from base `02297e3db` (`47` commits).
+- Landed: `277` files from `git diff --stat HEAD^1 HEAD` against `275` in the
+  upstream range (`02297e3db..HEAD^2`); fork delta `756` files from
+  `git diff --stat HEAD^2 HEAD`. The gap is three named files and reconciles
+  exactly. Three landed that are not in the range — this entry, `inventory.json`
+  and `gaps.md`. One in the range did not land: `settings.integrations.tsx`, kept
+  as ours per `moatless-admin-integrations-route`, which is the standing add/add
+  collision and not a lost merge. `resolution-check.mjs` flags it every merge for
+  exactly that reason; the flag is the decision.
+- Conflicts: 15 files, `pnpm-lock.yaml` auto-merged again (reset to
+  `upstream/main`, fork edges re-derived with `vp i`). Eleven of the fifteen are
+  settings files, all from one upstream change — #11176 put a
+  `projectSettingsOverrides` record on `ServerSettings` and #10639 rebuilt the
+  whole settings UI around a scope (`SettingsScopeContext`, `ScopedSwitch`,
+  `settingKeys`, `onResetOverride`, `mixed`). Taken whole with the fork's gates
+  re-stated on upstream's rewritten rows: `SettingsPanels.tsx`
+  (`FEATURES.assistantStreaming` around the legacy-token-streaming row,
+  `FEATURES.projectManagement` around add-project-starts-in),
+  `SettingsSidebarNav.tsx` (personal-group filter over upstream's `navItems`),
+  `useAvailableSettingsSearchItems.ts` (the Forgejo read kept, the dependency
+  array rebuilt — the fork's copy referenced `primaryServerConfig` and
+  `primaryEnvironmentId`, which upstream deleted, so carrying it verbatim would
+  not have compiled). `orchestration.ts`, `threadReducer.ts`, `ChatView.tsx` and
+  `MessagesTimeline.tsx` are `converged` and kept both sides: the rewind command
+  beside the fork's two, upstream's perf rewrite of `applyMessageUpdate` with the
+  `origin` preservation re-added, the fork's fork-thread handlers moved inside
+  upstream's existing paint-only conditional spread rather than beside it, and
+  upstream's `RevertUserMessageButton` beside the fork's origin chip.
+  `PreviewView.tsx` and `ThreadPreviewMiniPlayer.tsx` are `decide`: upstream's
+  only real change to the first was the `miniPlayer?.tabId` → `miniPlayerTabId`
+  rename, so the fork block was kept with the rename applied; the second took
+  upstream's new `MiniPlayerShell` and moved both fork deltas onto its
+  `pillActions` / `visible` / `children(frame)` props.
+- **A conflict list does not show you a cross-file consequence.** Upstream moved
+  the `agent-browser-access` row off `/settings/projects` and onto the
+  embedded-surface panel, which the fork serves at `/settings/browser`, not
+  upstream's `/settings/integrations` (that path is the fork's Moatless admin
+  page). Nothing conflicted on the destination; the row would simply have pointed
+  at an anchor that is not there. Redirect added in `settingsSearch.ts` with the
+  reason inline, and the `settingsSearch.test.ts` assertion follows it.
+- **A fork delta moved upstream, so its inventory anchor was stale.** Upstream
+  extracted the Actions section out of `ProjectSettingsPanel.tsx` into a new
+  `ProjectActionsSettings.tsx`, which left `ProjectSettingsPanel.tsx`
+  byte-identical to upstream and `project-script-editing-capability`'s
+  `guard.files` pointing at a file that no longer contains `scriptsEditable`.
+  Re-pointed, and the `portFromPreviewUrl` import for t3.json script imports went
+  with it. `project-script-port-field`, `navigation-gates` (the
+  `FEATURES.projectManagement` New-project gate, which upstream grew a fourth
+  site for in `DraftHeroHeadline.tsx`) and `moatless-version-control-page` (whose
+  prose already named `useAvailableSettingsSearchItems.ts` without listing it)
+  gained paths too. `inventory-check.mjs` is clean.
+- **The silent auto-merge happened again, and again only a fork test caught it.**
+  #11285 turned the mini-player's target from a tab id into a source union
+  (`{ kind: "browser", tabId }`). `PreviewView.tsx` conflicted and took the new
+  shape; `PreviewView.test.tsx` auto-merged, so upstream's own assertion was
+  updated and the fork-only "under the frame capability" case a few hundred lines
+  down still asserted the string. No marker, no type error — `vi.fn()` takes
+  anything. Assertion updated to the union.
+- Sweep: no keyword hits across the newly added upstream files. No concern entry
+  needed.
+- Unsupported methods: 0 ADD, 0 DROP, 2 KEEP (`git.preparePullRequestThread`,
+  `vcs.switchRef`), 4 known exceptions still firing. `rpc.ts` unchanged — the
+  merge's new surface is a command inside `orchestration.dispatchCommand` and a
+  settings key, neither of which is a method that can be refused. Both are in
+  [gaps](./gaps.md), under _A command cannot be refused_ and _Editing server
+  settings_; the capability half is under _Capabilities are reported_, and it is
+  the one worth reading — a project-scope settings write on Moatless is now a
+  silent no-op rather than a refusal.
+- Verification: `verify.mjs` green on seven of eight — `duplicate-adds` (none
+  across 32 files), `tripwires` (3 deleted surfaces intact, exactly the 5 known
+  re-deletions, 3 allowed workflows), `resolution-check` (18 fork-delta paths
+  still differ from upstream, 17 theirs-verbatim byte-identical, the one explained
+  flag above), `unsupported-methods`, `fmt:check`, `lint`, `typecheck`. `test` is
+  red on `@t3tools/desktop` alone, confirmed failing alone, and it is the standing
+  environmental one: `browser-secret-native.test.mjs` cannot find `libsecret-1` in
+  this sandbox's pkg-config path — 1 file of 105, recorded in
+  [gaps](./gaps.md) under _The desktop suite needs libsecret_.
+- Four packages did not finish under `vp run -r test` and were each run alone
+  again; `@t3tools/web` was genuinely red on the first pass (the mini-player
+  assertion above) and is green on the re-run. Read the retry lines at the end of
+  the log, not the parallel output above them.
+
 ### 2026-09-11 — merged upstream to 02297e3d, upstream shipped a simulator hub and restructured the surface launcher
 
 - Upstream: `02297e3db` from base `0f602b337` (`35` commits).
@@ -99,9 +183,9 @@ bullet here that no one will read again.
 - **Four packages did not finish under `vp run -r test` and were each run alone**
   — mobile `157` files, `t3` `315`, web `389`, relay `30`, all passing. Worth
   writing down because the truncated parallel pass reported a failure that does
-  not exist: `shikiReviewHighlighter.test.ts > initializes source and snippet
-  highlighting without a warmup` fails on a loaded box and passes in the alone
-  run, and neither side of this merge touches that file or its subject. Read the
+  not exist: in `shikiReviewHighlighter.test.ts`, the case that highlights source
+  and snippet without a warmup fails on a loaded box and passes in the alone run,
+  and neither side of this merge touches that file or its subject. Read the
   retry lines at the end of the log, not the parallel output above them.
 
 ### 2026-09-10 — fork change: the composer badge lists a Task's pull requests
