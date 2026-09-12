@@ -2137,6 +2137,8 @@ export default function Sidebar() {
     deleteThread,
     // Fork: setting a thread's visibility from its row menu.
     confirmAndSetThreadVisibility,
+    // Fork: taking a thread out of the viewer's own listing from its row menu.
+    unfollowThread,
   } = useThreadActions();
   const updateThreadMetadata = useAtomCommand(threadEnvironment.updateMetadata, {
     reportFailure: false,
@@ -3994,6 +3996,11 @@ export default function Sidebar() {
         const supportsVisibility =
           serverConfigs.get(thread.environmentId)?.environment.capabilities.threadVisibility ===
           true;
+        // Fork: taking a thread out of the viewer's own listing from its row
+        // menu. A listing holds the threads the viewer follows, so without
+        // this the only way in — opening a link — has no way back out.
+        const supportsFollow =
+          serverConfigs.get(thread.environmentId)?.environment.capabilities.threadFollow === true;
         const isRegeneratingTitle = thread.titleRegeneration != null;
         const isSettled = settledThreadKeysRef.current.has(threadKey);
         const isSnoozed = snoozedThreadKeysRef.current.has(threadKey);
@@ -4021,6 +4028,8 @@ export default function Sidebar() {
                 titleRegeneration: supportsTitleRegeneration,
                 // Fork: see supportsVisibility above.
                 visibility: supportsVisibility,
+                // Fork: see supportsFollow above.
+                follow: supportsFollow,
               },
               snoozePresets,
             }),
@@ -4150,6 +4159,22 @@ export default function Sidebar() {
             }
             return;
           }
+          // Fork: the thread keeps running and only this viewer's listing
+          // changes, so it drops out of the sidebar with no confirmation.
+          case "unfollow": {
+            const result = await unfollowThread(threadRef);
+            if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
+              const error = squashAtomCommandFailure(result);
+              toastManager.add(
+                stackedThreadToast({
+                  type: "error",
+                  title: "Failed to unfollow thread",
+                  description: error instanceof Error ? error.message : "An error occurred.",
+                }),
+              );
+            }
+            return;
+          }
           case "archive": {
             if (confirmThreadArchive) {
               const confirmed = await settlePromise(() =>
@@ -4231,6 +4256,7 @@ export default function Sidebar() {
       projectByKey,
       serverConfigs,
       startThreadRename,
+      unfollowThread,
       updateThreadMetadata,
       timestampFormat,
     ],

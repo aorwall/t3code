@@ -35,6 +35,7 @@ import {
   readEnvironmentSupportsSettlement,
   readEnvironmentSupportsSnooze,
   // Fork: setting a thread's visibility from its row menu.
+  readEnvironmentSupportsFollow,
   readEnvironmentSupportsVisibility,
   readEnvironmentThreadRefs,
   readProject,
@@ -107,6 +108,19 @@ export class ThreadVisibilityUnsupportedError extends Schema.TaggedError<ThreadV
 ) {
   override get message(): string {
     return "This environment's server does not support thread visibility.";
+  }
+}
+
+// Fork: taking a thread out of the viewer's own listing from its row menu.
+export class ThreadFollowUnsupportedError extends Schema.TaggedError<ThreadFollowUnsupportedError>()(
+  "ThreadFollowUnsupportedError",
+  {
+    environmentId: EnvironmentId,
+    threadId: ThreadId,
+  },
+) {
+  override get message(): string {
+    return "This environment's server does not support following threads.";
   }
 }
 
@@ -230,6 +244,10 @@ export function useThreadActions() {
   });
   // Fork: setting a thread's visibility from its row menu.
   const setThreadVisibilityMutation = useAtomCommand(threadEnvironment.setVisibility, {
+    reportFailure: false,
+  });
+  // Fork: taking a thread out of the viewer's own listing from its row menu.
+  const unfollowThreadMutation = useAtomCommand(threadEnvironment.unfollow, {
     reportFailure: false,
   });
   const stopThreadSession = useAtomCommand(threadEnvironment.stopSession);
@@ -787,6 +805,29 @@ export function useThreadActions() {
     [resolveThreadTarget, setThreadVisibilityMutation],
   );
 
+  // Fork: the listing is what the viewer follows, so this is how a thread
+  // reached by link leaves it again. It ends nothing and nobody else's listing
+  // changes, so it neither confirms nor warns.
+  const unfollowThread = useCallback(
+    async (target: ScopedThreadRef) => {
+      if (!readEnvironmentSupportsFollow(target.environmentId)) {
+        return AsyncResult.failure(
+          Cause.fail(
+            new ThreadFollowUnsupportedError({
+              environmentId: target.environmentId,
+              threadId: target.threadId,
+            }),
+          ),
+        );
+      }
+      return unfollowThreadMutation({
+        environmentId: target.environmentId,
+        input: { threadId: target.threadId },
+      });
+    },
+    [unfollowThreadMutation],
+  );
+
   const confirmAndDeleteThread = useCallback(
     async (target: ScopedThreadRef) => {
       const localApi = readLocalApi();
@@ -833,6 +874,8 @@ export function useThreadActions() {
       reorderActiveThread,
       // Fork: setting a thread's visibility from its row menu.
       confirmAndSetThreadVisibility,
+      // Fork: taking a thread out of the viewer's own listing from its row menu.
+      unfollowThread,
     }),
     [
       archiveThread,
@@ -846,6 +889,7 @@ export function useThreadActions() {
       settleThread,
       snoozeThread,
       unarchiveThread,
+      unfollowThread,
       unpinThread,
       unsettleThread,
       unsnoozeThread,

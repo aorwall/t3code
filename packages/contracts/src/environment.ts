@@ -123,6 +123,10 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
       current level has nothing to label the control with. Same version-skew
       contract as threadSettlement. */
   threadVisibility: Schema.optionalKey(Schema.Boolean),
+  /** Fork: server understands thread.follow / thread.unfollow, and its shell
+      listing carries only the threads the viewer follows. Same version-skew
+      contract as threadSettlement. */
+  threadFollow: Schema.optionalKey(Schema.Boolean),
   /** Server persists manual Active order through thread.active.reorder. */
   threadActiveReorder: Schema.optionalKey(Schema.Boolean),
   /** Server understands regenerateTitle on thread.meta.update. Absent on

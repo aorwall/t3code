@@ -56,6 +56,18 @@ const ICON_PATHS: Record<string, ReadonlyArray<{ tag: string; attrs: Record<stri
     { tag: "rect", attrs: { width: "18", height: "11", x: "3", y: "11", rx: "2", ry: "2" } },
     { tag: "path", attrs: { d: "M7 11V7a5 5 0 0 1 10 0v4" } },
   ],
+  // Fork: the unfollow item's icon.
+  "bell-off": [
+    { tag: "path", attrs: { d: "M10.268 21a2 2 0 0 0 3.464 0" } },
+    {
+      tag: "path",
+      attrs: {
+        d: "M17 17H4a1 1 0 0 1-.74-1.673C4.59 13.956 6 12.499 6 8a6 6 0 0 1 .258-1.742",
+      },
+    },
+    { tag: "path", attrs: { d: "m2 2 20 20" } },
+    { tag: "path", attrs: { d: "M8.668 3.01A6 6 0 0 1 18 8c0 2.687.77 4.653 1.707 6.05" } },
+  ],
   hash: [
     { tag: "line", attrs: { x1: "4", x2: "20", y1: "9", y2: "9" } },
     { tag: "line", attrs: { x1: "4", x2: "20", y1: "15", y2: "15" } },

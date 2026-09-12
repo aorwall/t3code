@@ -2038,6 +2038,17 @@ export const decideOrchestrationCommand = Effect.fn("decideOrchestrationCommand"
       });
     }
 
+    // Fork: a Moatless listing holds the Tasks a viewer follows, so these two
+    // move a thread in and out of it. The bundled server lists every thread it
+    // stores and has no per-viewer listing to move anything into.
+    case "thread.follow":
+    case "thread.unfollow": {
+      return yield* new OrchestrationCommandInvariantError({
+        commandType: command.type,
+        detail: `${command.type} is not supported by this server.`,
+      });
+    }
+
     default: {
       command satisfies never;
       const fallback = command as never as { type: string };

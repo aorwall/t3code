@@ -59,6 +59,9 @@ export type StopThreadSessionInput = CommandInput<"thread.session.stop">;
 export type ForkThreadInput = CommandInput<"thread.fork">;
 // Fork: setting a thread's visibility from its row menu.
 export type SetThreadVisibilityInput = CommandInput<"thread.visibility.set">;
+// Fork: moving a thread in and out of the viewer's own listing.
+export type FollowThreadInput = CommandInput<"thread.follow">;
+export type UnfollowThreadInput = CommandInput<"thread.unfollow">;
 
 type DispatchTag = typeof ORCHESTRATION_WS_METHODS.dispatchCommand;
 type CommandEffect = Effect.Effect<
@@ -387,6 +390,32 @@ export const forkThread: (input: ForkThreadInput) => CommandEffect = Effect.fn(
   return yield* dispatch({
     ...input,
     type: "thread.fork",
+    commandId: metadata.commandId,
+    createdAt: metadata.createdAt,
+  });
+});
+
+// Fork: moving a thread in and out of the viewer's own listing.
+export const followThread: (input: FollowThreadInput) => CommandEffect = Effect.fn(
+  "EnvironmentCommands.followThread",
+)(function* (input) {
+  const metadata = yield* timestampedCommandMetadata(input);
+  return yield* dispatch({
+    ...input,
+    type: "thread.follow",
+    commandId: metadata.commandId,
+    createdAt: metadata.createdAt,
+  });
+});
+
+// Fork: see followThread above.
+export const unfollowThread: (input: UnfollowThreadInput) => CommandEffect = Effect.fn(
+  "EnvironmentCommands.unfollowThread",
+)(function* (input) {
+  const metadata = yield* timestampedCommandMetadata(input);
+  return yield* dispatch({
+    ...input,
+    type: "thread.unfollow",
     commandId: metadata.commandId,
     createdAt: metadata.createdAt,
   });

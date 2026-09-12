@@ -15,6 +15,9 @@ import {
   type ForkThreadInput,
   // Fork: setting a thread's visibility from its row menu.
   type SetThreadVisibilityInput,
+  // Fork: moving a thread in and out of the viewer's own listing.
+  type FollowThreadInput,
+  type UnfollowThreadInput,
   type InterruptThreadTurnInput,
   type LinkThreadPullRequestInput,
   type RespondToThreadApprovalInput,
@@ -41,6 +44,8 @@ import {
   deleteThread,
   forkThread,
   setThreadVisibility,
+  followThread,
+  unfollowThread,
   interruptThreadTurn,
   linkThreadPullRequest,
   respondToThreadApproval,
@@ -71,6 +76,8 @@ export type {
   DeleteThreadInput,
   ForkThreadInput,
   SetThreadVisibilityInput,
+  FollowThreadInput,
+  UnfollowThreadInput,
   InterruptThreadTurnInput,
   LinkThreadPullRequestInput,
   RespondToThreadApprovalInput,
@@ -121,6 +128,20 @@ export function createThreadEnvironmentAtoms<R, E>(
     setVisibility: createEnvironmentCommand(runtime, {
       label: "environment-data:commands:thread:set-visibility",
       execute: (input: SetThreadVisibilityInput) => setThreadVisibility(input),
+      scheduler,
+      concurrency,
+    }),
+    // Fork: moving a thread in and out of the viewer's own listing.
+    follow: createEnvironmentCommand(runtime, {
+      label: "environment-data:commands:thread:follow",
+      execute: (input: FollowThreadInput) => followThread(input),
+      scheduler,
+      concurrency,
+    }),
+    // Fork: see follow above.
+    unfollow: createEnvironmentCommand(runtime, {
+      label: "environment-data:commands:thread:unfollow",
+      execute: (input: UnfollowThreadInput) => unfollowThread(input),
       scheduler,
       concurrency,
     }),

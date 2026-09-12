@@ -29,6 +29,8 @@ export type ThreadActionMenuId =
   // Fork: flip the Moatless task between public and private.
   | "make-public"
   | "make-private"
+  // Fork: take the thread out of the viewer's own listing.
+  | "unfollow"
   | "copy-thread-id"
   | "delete";
 
@@ -50,6 +52,8 @@ export interface ThreadActionMenuState {
     readonly titleRegeneration: boolean;
     /** Fork: see `readEnvironmentSupportsVisibility`. */
     readonly visibility: boolean;
+    /** Fork: see `readEnvironmentSupportsFollow`. */
+    readonly follow: boolean;
   };
   readonly snoozePresets: ReadonlyArray<SnoozePreset>;
 }
@@ -157,12 +161,26 @@ export function buildThreadActionMenuItems(
               },
         ]
       : []),
+    // Fork: a listing holds the threads the viewer follows, and opening one by
+    // link adds it, so this is the way back out. It leaves the thread running
+    // and every other viewer's listing alone, which is why it sits above
+    // Archive rather than beside Delete.
+    ...(state.supports.follow
+      ? [
+          {
+            id: "unfollow" as const,
+            label: "Unfollow thread",
+            icon: "bell-off",
+            separatorBefore: !state.supports.visibility,
+          },
+        ]
+      : []),
     {
       id: "archive",
       label: "Archive thread",
       icon: "archive",
       disabled: state.isRunning,
-      separatorBefore: !state.supports.visibility,
+      separatorBefore: !state.supports.visibility && !state.supports.follow,
     },
     // Fork: the Moatless backend does not serve thread deletion — see
     // FEATURES.threadDeletion. Archiving keeps the conversation; deleting it

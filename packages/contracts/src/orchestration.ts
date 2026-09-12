@@ -1380,6 +1380,25 @@ const ThreadVisibilitySetCommand = Schema.Struct({
   createdAt: IsoDateTime,
 });
 
+// Fork: a Moatless listing is the open work a viewer follows, not every thread
+// the server has, so these two are what move a thread in and out of it. Both
+// touch the sender's own listing and nothing else: no other viewer's listing
+// changes, and neither one grants or revokes access.
+const ThreadFollowCommand = Schema.Struct({
+  type: Schema.Literal("thread.follow"),
+  commandId: CommandId,
+  threadId: ThreadId,
+  createdAt: IsoDateTime,
+});
+
+// Fork: see ThreadFollowCommand above.
+const ThreadUnfollowCommand = Schema.Struct({
+  type: Schema.Literal("thread.unfollow"),
+  commandId: CommandId,
+  threadId: ThreadId,
+  createdAt: IsoDateTime,
+});
+
 const ThreadSessionStopCommand = Schema.Struct({
   type: Schema.Literal("thread.session.stop"),
   commandId: CommandId,
@@ -1425,6 +1444,9 @@ const DispatchableClientOrchestrationCommand = Schema.Union([
   ThreadForkCommand,
   // Fork: see ThreadVisibilitySetCommand above.
   ThreadVisibilitySetCommand,
+  // Fork: see ThreadFollowCommand above.
+  ThreadFollowCommand,
+  ThreadUnfollowCommand,
 ]);
 export type DispatchableClientOrchestrationCommand =
   typeof DispatchableClientOrchestrationCommand.Type;
@@ -1461,6 +1483,9 @@ export const ClientOrchestrationCommand = Schema.Union([
   ThreadForkCommand,
   // Fork: see ThreadVisibilitySetCommand above.
   ThreadVisibilitySetCommand,
+  // Fork: see ThreadFollowCommand above.
+  ThreadFollowCommand,
+  ThreadUnfollowCommand,
 ]);
 export type ClientOrchestrationCommand = typeof ClientOrchestrationCommand.Type;
 

@@ -1,6 +1,6 @@
 /**
- * Fork-only. The two things the thread route needs to know about a thread its
- * shell listing never carried.
+ * Fork-only. What the thread route does about a thread its shell listing never
+ * carried: name it, decide whether it exists, and put it in the listing.
  *
  * Kept apart from `adoptedThreadShells.ts` on purpose: that module is read by
  * `state/threads.ts`, so anything importing `state/threads.ts` back into it
@@ -8,18 +8,31 @@
  * Store there, hooks here.
  */
 import { useAtomValue } from "@effect/atom-react";
-import type { EnvironmentId, ScopedThreadRef, ThreadId } from "@t3tools/contracts";
+import type {
+  EnvironmentId,
+  OrchestrationShellSnapshot,
+  ScopedThreadRef,
+  ThreadId,
+} from "@t3tools/contracts";
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
+import { threadKey } from "@t3tools/client-runtime/state/entities";
 import { Atom } from "effect/unstable/reactivity";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { adoptThread } from "./adoptedThreadShells";
-import { useThreadStatus } from "../state/entities";
-import { environmentThreadDetails } from "../state/threads";
+import { readEnvironmentSupportsFollow, useThreadShell, useThreadStatus } from "../state/entities";
+import { environmentSnapshotAtom } from "../state/shell";
+import { environmentThreadDetails, threadEnvironment } from "../state/threads";
+import { useAtomCommand } from "../state/use-atom-command";
 
 /** What the hooks read before a thread is chosen. Hooks may not be conditional. */
 const NO_THREAD_ERROR_ATOM = Atom.make<string | null>(null).pipe(
   Atom.withLabel("fork-unlisted-thread:no-error"),
+);
+
+/** See `NO_THREAD_ERROR_ATOM`. */
+const NO_SNAPSHOT_ATOM = Atom.make<OrchestrationShellSnapshot | null>(null).pipe(
+  Atom.withLabel("fork-unlisted-thread:no-snapshot"),
 );
 
 /**
@@ -64,4 +77,44 @@ export function useThreadAwaitingFirstAnswer(ref: ScopedThreadRef | null): boole
   );
   const error = useAtomValue(errorAtom);
   return ref !== null && status === "empty" && error === null;
+}
+
+/**
+ * Put a thread the listing does not carry into it, once, by following it.
+ *
+ * A Moatless listing is the open work the viewer follows, so a thread reached
+ * by link is readable and absent from the sidebar at the same time. Opening one
+ * is the request to work on it, and following is what makes the sidebar agree.
+ *
+ * Once per ref, and never again after an unfollow: the row menu's Unfollow acts
+ * on the thread the viewer is looking at, and a hook that re-followed on the
+ * next render would make that item do nothing. Decided against the *listing's*
+ * snapshot rather than the grafted one, for the reason `missingThreadIds`
+ * gives — the graft is what put this thread on screen, and reading it back
+ * would answer "present" for every thread this hook exists for.
+ */
+export function useAutoFollowThread(ref: ScopedThreadRef | null): void {
+  const follow = useAtomCommand(threadEnvironment.follow, { reportFailure: false });
+  const snapshotAtom = useMemo(
+    () => (ref === null ? NO_SNAPSHOT_ATOM : environmentSnapshotAtom(ref.environmentId)),
+    [ref],
+  );
+  const snapshot = useAtomValue(snapshotAtom);
+  const shell = useThreadShell(ref);
+  const attempted = useRef<string | null>(null);
+
+  useEffect(() => {
+    // A null snapshot is a listing that has not answered, and asking early
+    // would follow a thread the snapshot was about to carry anyway.
+    if (ref === null || snapshot === null || shell === null) return;
+    const key = threadKey(ref);
+    if (attempted.current === key) return;
+    if (!readEnvironmentSupportsFollow(ref.environmentId)) return;
+    if (snapshot.threads.some((thread) => thread.id === ref.threadId)) return;
+    // The sidebar filters on `archivedAt === null`, so following a closed
+    // thread would write a follow with no row to unfollow it from.
+    if (shell.archivedAt != null) return;
+    attempted.current = key;
+    void follow({ environmentId: ref.environmentId, input: { threadId: ref.threadId } });
+  }, [follow, ref, shell, snapshot]);
 }

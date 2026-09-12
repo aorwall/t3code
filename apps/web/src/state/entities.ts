@@ -221,6 +221,16 @@ export function readEnvironmentSupportsVisibility(environmentId: EnvironmentId):
   );
 }
 
+/** Fork: whether the environment's server understands thread.follow and
+    thread.unfollow, and its listing carries only the threads the viewer
+    follows. Same version-skew contract as settlement. */
+export function readEnvironmentSupportsFollow(environmentId: EnvironmentId): boolean {
+  return (
+    appAtomRegistry.get(environmentServerConfigsAtom).get(environmentId)?.environment.capabilities
+      .threadFollow === true
+  );
+}
+
 /** Whether the environment's server understands thread title regeneration.
     Same version-skew contract as settlement. */
 export function readEnvironmentSupportsTitleRegeneration(environmentId: EnvironmentId): boolean {

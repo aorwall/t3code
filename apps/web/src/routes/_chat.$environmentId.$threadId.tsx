@@ -8,7 +8,11 @@ import { resolveThreadRouteRef, resolveThreadRouteRenderState } from "../threadR
 import { resolveThreadSyncPhase } from "../threadSync";
 // Fork: a Moatless shell listing is the open work you follow, so a thread
 // reached by link, subtask row or archive is absent from it and still real.
-import { useAdoptedThread, useThreadAwaitingFirstAnswer } from "~/fork/unlistedThread";
+import {
+  useAdoptedThread,
+  useAutoFollowThread,
+  useThreadAwaitingFirstAnswer,
+} from "~/fork/unlistedThread";
 import { useSidebarPendingFileDropStore } from "../sidebarPendingFileDropStore";
 import { SidebarInset } from "~/components/ui/sidebar";
 import {
@@ -49,6 +53,10 @@ function ChatThreadRouteView() {
   // Fork: fetch this thread's listing row, so a thread no listing carried is
   // named, grouped and badged like any other for as long as it is open here.
   useAdoptedThread(threadRef?.environmentId ?? null, threadRef?.threadId ?? null);
+  // Fork: opening a thread the listing does not carry follows it, so it stays
+  // in the sidebar after this route closes. Unfollow in the row menu is the way
+  // back out.
+  useAutoFollowThread(threadRef);
   const serverThreadAwaitingFirstAnswer = useThreadAwaitingFirstAnswer(threadRef);
   const renderState = resolveThreadRouteRenderState({
     bootstrapComplete,

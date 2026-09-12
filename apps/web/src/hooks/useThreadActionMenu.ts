@@ -24,6 +24,7 @@ import {
   readEnvironmentSupportsSnooze,
   readEnvironmentSupportsTitleRegeneration,
   // Fork: setting a thread's visibility from its row menu.
+  readEnvironmentSupportsFollow,
   readEnvironmentSupportsVisibility,
   readThreadShell,
   useProjects,
@@ -93,6 +94,8 @@ export function useThreadActionMenu(input: {
     deleteThread,
     // Fork: setting a thread's visibility from its row menu.
     confirmAndSetThreadVisibility,
+    // Fork: taking a thread out of the viewer's own listing from its row menu.
+    unfollowThread,
   } = useThreadActions();
   const updateThreadMetadata = useAtomCommand(threadEnvironment.updateMetadata, {
     reportFailure: false,
@@ -140,6 +143,8 @@ export function useThreadActionMenu(input: {
           titleRegeneration: readEnvironmentSupportsTitleRegeneration(threadRef.environmentId),
           // Fork: setting a thread's visibility from its row menu.
           visibility: readEnvironmentSupportsVisibility(threadRef.environmentId),
+          // Fork: taking a thread out of the viewer's own listing from its row menu.
+          follow: readEnvironmentSupportsFollow(threadRef.environmentId),
         };
         const isRegeneratingTitle = thread.titleRegeneration != null;
         const snoozePresets = resolveSnoozePresets(now, timestampFormat);
@@ -297,6 +302,15 @@ export function useThreadActionMenu(input: {
               confirmAndSetThreadVisibility(threadRef, "private"),
             );
             return;
+          // Fork: the thread keeps running and only this viewer's listing
+          // changes, so it drops out of the sidebar with no confirmation.
+          case "unfollow": {
+            const result = await unfollowThread(threadRef);
+            if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
+              failureToast("Failed to unfollow thread", squashAtomCommandFailure(result));
+            }
+            return;
+          }
           case "archive": {
             if (confirmThreadArchive) {
               const confirmed = await settlePromise(() =>
@@ -372,6 +386,7 @@ export function useThreadActionMenu(input: {
       snoozeThread,
       threadRef,
       timestampFormat,
+      unfollowThread,
       unsettleThread,
       unsnoozeThread,
       updateThreadMetadata,

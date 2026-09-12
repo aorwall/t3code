@@ -442,6 +442,23 @@
       "note": "Take upstream, then apply Thread Visibility Delta. orchestration.ts, commands.ts, threadCommands.ts and decider.ts also carry the Thread Fork Delta; both must survive. The menu item goes directly above archive, which puts it inside upstream's tail: its \"groups project settings with utility actions before archive\" test asserts archive is two items after copy, and \"keeps archive last\" asserts archive carries the group separator. Both need the fork's one-item shift re-applied. decider.ts's hunk is a deliberate refusal: the bundled server has no per-thread read grant to move."
     },
     {
+      "id": "thread-follow-upstream-files",
+      "paths": [
+        "packages/contracts/src/orchestration.ts",
+        "packages/contracts/src/environment.ts",
+        "packages/client-runtime/src/operations/commands.ts",
+        "packages/client-runtime/src/state/threadCommands.ts",
+        "apps/web/src/state/entities.ts",
+        "apps/web/src/hooks/useThreadActions.ts",
+        "apps/web/src/hooks/useThreadActionMenu.ts",
+        "apps/web/src/components/Sidebar.tsx",
+        "apps/server/src/orchestration/decider.ts"
+      ],
+      "verdict": "converged",
+      "delta": "Thread Follow Delta",
+      "note": "Take upstream, then apply Thread Follow Delta. Every path here also carries the Thread Visibility Delta and most carry the Thread Fork Delta; all must survive. The menu item goes directly below the visibility item and above archive, so upstream's archive-tail tests need the fork's two-item shift re-applied. decider.ts's hunk is a deliberate refusal: the bundled server lists every thread it stores and has no per-viewer listing to move one into."
+    },
+    {
       "id": "mobile-touch-upstream-files",
       "paths": [
         "apps/web/src/components/ui/sidebar.tsx",
@@ -751,6 +768,31 @@
         "apps/server/src/orchestration/decider.ts"
       ],
       "mustSurvive": "Right-clicking a thread in the sidebar, or opening the chat header's menu, offers one visibility item: \"Make public\" on a private thread and \"Make private\" on a public one. The label is the only indicator \u2014 a sidebar row shows no badge \u2014 so it names the level the click moves to, not the one the thread is on. It sits directly above \"Archive thread\" and opens that group, so it carries the group's separator and `archive` gives it up while the item is present. Going public confirms first (`confirmAndSetThreadVisibility` in useThreadActions.ts, shared by both surfaces); going private dispatches straight away. Only that direction confirms because public is not read-only on Moatless: `ScopeContext::can_control` treats it as the whole of the control grant, so a public thread hands every signed-in viewer its turns, terminal, scripts and sandbox. The confirmation copy says so, and must keep saying so. The item is gated on the `threadVisibility` capability, which covers both halves: the `thread.visibility.set` command and the `visibility` field on a thread row that the label reads. A server sending neither leaves the item out rather than showing a control it cannot label. The level is sent whole rather than toggled, so two clients that disagree about the current value cannot flip each other's write. Moatless carries visibility on the Task itself and keeps writes with the owner, so a public reader's toggle is refused; the bundled server refuses the command outright. LegacySidebar.tsx builds its own menu array and is deliberately left without the item."
+    },
+    {
+      "id": "thread-follow",
+      "name": "Opening a thread by link follows it; the row menu unfollows it",
+      "paths": [
+        "packages/contracts/src/orchestration.ts",
+        "packages/contracts/src/environment.ts",
+        "packages/client-runtime/src/operations/commands.ts",
+        "packages/client-runtime/src/state/threadCommands.ts",
+        "apps/web/src/state/entities.ts",
+        "apps/web/src/fork/unlistedThread.ts",
+        "apps/web/src/routes/_chat.$environmentId.$threadId.tsx",
+        "apps/web/src/hooks/useThreadActions.ts",
+        "apps/web/src/hooks/useThreadActionMenu.ts",
+        "apps/web/src/components/Sidebar.tsx",
+        "apps/web/src/components/threadActionMenu.logic.ts",
+        "apps/web/src/components/threadActionMenu.logic.test.ts",
+        "apps/web/src/contextMenuFallback.ts",
+        "apps/server/src/orchestration/decider.ts"
+      ],
+      "guard": {
+        "symbol": "useAutoFollowThread",
+        "files": ["apps/web/src/routes/_chat.$environmentId.$threadId.tsx"]
+      },
+      "mustSurvive": "A Moatless listing is the open work a viewer follows, so a thread reached by link is readable and absent from the sidebar at the same time. Opening one follows it: `useAutoFollowThread` in fork/unlistedThread.ts dispatches `thread.follow` once per thread from the thread route, and the row stays in the sidebar after the route closes. Four conditions bound it, and each one is a bug that does not happen. It fires once per ref and never again after an unfollow, because the row menu's Unfollow acts on the thread the viewer is looking at and a re-follow on the next render would make that item do nothing. It decides against the listing's own snapshot rather than the grafted one, for the reason `missingThreadIds` gives \u2014 the graft is what put the thread on screen. It waits for a non-null snapshot, because a listing that has not answered yet was about to carry the thread. It skips a thread with an `archivedAt`, because the sidebar filters on `archivedAt === null` and a followed closed thread would be a follow with no row to unfollow it from. The way out is \"Unfollow thread\" in the per-thread menu, directly below the visibility item and above \"Archive thread\", on both surfaces `buildThreadActionMenuItems` serves; it opens the archive group when the visibility item is absent. It dispatches `thread.unfollow` with no confirmation, because the thread keeps running and only this viewer's listing changes. Both halves are gated on the `threadFollow` capability, so a server without it follows nothing and offers no item. Moatless makes the follow row the listing's membership (`Reach::Followed` over `task_follows`) and records a listing change on each write, so the sidebar updates live for that viewer alone; the bundled server refuses both commands."
     },
     {
       "id": "task-bound-pull-request",
