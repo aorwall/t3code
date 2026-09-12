@@ -70,8 +70,21 @@ export const FEATURES = {
   workspaceSearchContents: false,
   /** Opening a workspace path in an external editor. */
   workspaceOpenIn: false,
-  /** Editing server-side settings: keybindings and provider instances. */
+  /** Editing server-side settings: keybindings. */
   serverAdministration: false,
+  /**
+   * Configuring a provider instance: adding and removing one, its display name
+   * and accent colour, its runtime flags, its environment variables, its custom
+   * models, the usage-limit sources and the health-check interval. All of it
+   * persists through `server.updateSettings`, which the backend does not
+   * dispatch, and `server.getSettings` answers `{}` — so every control would
+   * show a contract default as though it were the server's configuration.
+   *
+   * The provider list, its live status and its refresh are reads the backend
+   * serves, and the Models section's hidden, favourite and order controls are
+   * client settings, so the page is otherwise whole.
+   */
+  providerConfiguration: false,
   /** Trace, process and resource-telemetry diagnostics. */
   diagnostics: false,
   /**
@@ -164,7 +177,6 @@ export type FeatureName = keyof typeof FEATURES;
 export const FEATURE_BY_SETTINGS_PATH: Readonly<Record<string, FeatureName>> = {
   "/settings/keybindings": "serverAdministration",
   "/settings/snap-shot": "snapShots",
-  "/settings/providers": "serverAdministration",
   "/settings/source-control": "projectManagement",
   "/settings/connections": "connections",
   "/settings/diagnostics": "diagnostics",

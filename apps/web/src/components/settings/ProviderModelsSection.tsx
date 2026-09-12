@@ -10,6 +10,7 @@ import {
 import { type CustomModelDefinition, normalizeCustomModelSlug } from "@t3tools/shared/model";
 
 import { cn } from "../../lib/utils";
+import { FEATURES } from "../../fork/features";
 import { sortModelsForProviderInstance } from "../../modelOrdering";
 import { MAX_CUSTOM_MODEL_LENGTH } from "../../modelSelection";
 import { Button } from "../ui/button";
@@ -598,7 +599,10 @@ export function ProviderModelsSection({
         })}
       </div>
 
-      {driverKind === "antigravity" ? null : isAdding ? (
+      {/* Fork: a custom model is stored in providerInstances, a server setting
+        this backend does not accept. Hiding, ordering and favouriting below are
+        client settings and keep working. */}
+      {driverKind === "antigravity" || !FEATURES.providerConfiguration ? null : isAdding ? (
         <div className="mt-3 flex flex-col gap-2 sm:flex-row">
           <Input
             id={`provider-instance-${instanceId}-custom-model`}

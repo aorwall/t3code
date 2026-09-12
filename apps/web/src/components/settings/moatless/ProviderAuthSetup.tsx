@@ -1,20 +1,18 @@
 /**
- * Fork-only. The agent credentials the viewer's own tasks run with.
+ * Fork-only. The agent credentials the viewer's own tasks run with, rendered in
+ * the Setup slot of the provider they authenticate.
  *
- * One page rather than a section per agent, because the question people arrive
- * with is "can my agent reach my things" and the answer is all of them at once.
- * The git hosts are the other half of that answer, and they live at
- * `/settings/version-control`. Everything here belongs to the viewer; the
- * deployment-wide equivalents live under the Administration pages and are
- * reachable only by an admin.
+ * Everything here belongs to the viewer, not to the deployment: a person who
+ * administers nothing still sets their own Claude Code token and signs Codex in.
+ * The git hosts are the other half of that answer and live at
+ * `/settings/version-control`.
  */
 
+import type { ProviderDriverKind } from "@t3tools/contracts";
 import {
   CheckIcon,
   ExternalLinkIcon,
-  KeyRoundIcon,
   LoaderIcon,
-  SparklesIcon,
   Trash2Icon,
   TriangleAlertIcon,
 } from "lucide-react";
@@ -38,8 +36,6 @@ import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
 import { Textarea } from "../../ui/textarea";
 import { ITEM_ROW_CLASSNAME } from "../itemRows";
-import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
-import { searchableSetting } from "../settingsSearch";
 import { SectionError, SectionPending } from "./MoatlessSectionState";
 import {
   CLAUDE_TOKEN_SECRET_KEY,
@@ -50,18 +46,23 @@ import {
 import { CredentialRow, ErrorText, TokenField } from "./credentialRows";
 import { codexAccessQuery, secretsQuery } from "./queries";
 
-export function AccountPanel() {
-  return (
-    <SettingsPageContainer>
-      <ClaudeSection />
-      <CodexSection />
-    </SettingsPageContainer>
-  );
+/**
+ * The rows below carry their own padding and expect the dividers a grouped
+ * `SettingsSection` draws between its direct children. The Setup slot pads them
+ * as one child instead, so cancel that and redraw the dividers here.
+ */
+const FLUSH_ROWS_CLASSNAME = "-mx-3 -my-3 sm:-mx-4 [&>*+*]:border-t [&>*+*]:border-border/50";
+
+/** Null for a driver whose credentials the Moatless backend does not hold. */
+export function ProviderAuthSetup({ driver }: { readonly driver: ProviderDriverKind }) {
+  if (driver === "claudeAgent") return <ClaudeAuth />;
+  if (driver === "codex") return <CodexAuth />;
+  return null;
 }
 
 // ---------------------------------------------------------------- Claude ----
 
-function ClaudeSection() {
+function ClaudeAuth() {
   const query = useMemo(() => secretsQuery("user"), []);
   const { data, error, isPending, refresh } = useMoatlessQuery(query);
   const stored = useMemo(() => claudeTokenSecret(data), [data]);
@@ -75,10 +76,7 @@ function ClaudeSection() {
   });
 
   return (
-    <SettingsSection
-      {...searchableSetting("account-claude")}
-      icon={<SparklesIcon className="size-4" />}
-    >
+    <div className={FLUSH_ROWS_CLASSNAME}>
       {error ? (
         <SectionError error={error} label="Claude Code token" onRetry={refresh} />
       ) : isPending && data === null ? (
@@ -115,7 +113,7 @@ function ClaudeSection() {
             }
           />
           <TokenField
-            id="account-claude-token"
+            id="provider-claude-token"
             label={stored ? "Replace your token" : "Add a token"}
             placeholder="sk-ant-oat…"
             hint={
@@ -130,13 +128,13 @@ function ClaudeSection() {
           <ErrorText error={save.error ?? remove.error} />
         </>
       )}
-    </SettingsSection>
+    </div>
   );
 }
 
 // ----------------------------------------------------------------- Codex ----
 
-function CodexSection() {
+function CodexAuth() {
   const { data, error, isPending, refresh } = useMoatlessQuery(codexAccessQuery);
   const state = useMemo(() => codexState(data), [data]);
   const disconnect = useMoatlessCommand<void, unknown>(() => deleteCodexConfig(), {
@@ -144,10 +142,7 @@ function CodexSection() {
   });
 
   return (
-    <SettingsSection
-      {...searchableSetting("account-codex")}
-      icon={<KeyRoundIcon className="size-4" />}
-    >
+    <div className={FLUSH_ROWS_CLASSNAME}>
       {error ? (
         <SectionError error={error} label="Codex" onRetry={refresh} />
       ) : isPending && data === null ? (
@@ -192,7 +187,7 @@ function CodexSection() {
           <CodexAuthJsonForm />
         </>
       )}
-    </SettingsSection>
+    </div>
   );
 }
 
@@ -307,13 +302,13 @@ function CodexAuthJsonForm() {
   return (
     <div className={ITEM_ROW_CLASSNAME}>
       <label
-        htmlFor="account-codex-auth-json"
+        htmlFor="provider-codex-auth-json"
         className="mb-1.5 block font-medium text-foreground text-xs"
       >
         Or paste auth.json
       </label>
       <Textarea
-        id="account-codex-auth-json"
+        id="provider-codex-auth-json"
         value={authJson}
         rows={4}
         placeholder='{"tokens":{…}}'

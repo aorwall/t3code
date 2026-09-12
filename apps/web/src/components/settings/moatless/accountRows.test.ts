@@ -130,8 +130,8 @@ describe("githubConnectLabel", () => {
 
 describe("githubConnectUrl", () => {
   it("encodes the return URL so its own query survives the round trip", () => {
-    expect(githubConnectUrl("https://t3.example/settings/account?tab=git")).toBe(
-      "/api/v1/auth/github-app/connect?return_to=https%3A%2F%2Ft3.example%2Fsettings%2Faccount%3Ftab%3Dgit",
+    expect(githubConnectUrl("https://t3.example/settings/version-control?tab=git")).toBe(
+      "/api/v1/auth/github-app/connect?return_to=https%3A%2F%2Ft3.example%2Fsettings%2Fversion-control%3Ftab%3Dgit",
     );
   });
 });
@@ -166,11 +166,13 @@ describe("githubConnectOutcome", () => {
 describe("withoutConnectOutcome", () => {
   it("strips only the outcome, so a reload does not re-announce it", () => {
     expect(
-      withoutConnectOutcome("https://t3.example/settings/account?githubConnect=connected"),
-    ).toBe("/settings/account");
+      withoutConnectOutcome("https://t3.example/settings/version-control?githubConnect=connected"),
+    ).toBe("/settings/version-control");
     expect(
-      withoutConnectOutcome("https://t3.example/settings/account?tab=git&githubConnect=connected"),
-    ).toBe("/settings/account?tab=git");
+      withoutConnectOutcome(
+        "https://t3.example/settings/version-control?tab=git&githubConnect=connected",
+      ),
+    ).toBe("/settings/version-control?tab=git");
   });
 
   it("strips every provider's parameters, not just the one being connected", () => {
@@ -178,9 +180,9 @@ describe("withoutConnectOutcome", () => {
     // parameters would otherwise ride back in on.
     expect(
       withoutConnectOutcome(
-        "https://t3.example/settings/account?forgejoConnect=denied&forgejoHost=git.example.com",
+        "https://t3.example/settings/version-control?forgejoConnect=denied&forgejoHost=git.example.com",
       ),
-    ).toBe("/settings/account");
+    ).toBe("/settings/version-control");
   });
 });
 

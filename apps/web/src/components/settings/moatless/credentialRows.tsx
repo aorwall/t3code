@@ -1,6 +1,6 @@
 /**
  * Fork-only. The three pieces every credential surface is built from, shared by
- * the Account page and the Version control page so both read the same.
+ * the Version control page and the provider Setup sections so both read the same.
  */
 
 import { useState } from "react";

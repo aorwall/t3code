@@ -1,5 +1,7 @@
 /**
- * Fork-only. What the Account page says about each credential the viewer holds.
+ * Fork-only. What the settings say about each credential the viewer holds: the
+ * git hosts on the Version control page, Claude Code and Codex in the Setup
+ * section of the provider that uses them.
  *
  * Every rule that decides a label, an affordance or a URL lives here rather than
  * in the panel, because each one is a claim about the backend's model — which

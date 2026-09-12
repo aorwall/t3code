@@ -173,9 +173,12 @@ what a person loses, which is the part the derivation cannot tell you:
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
   `getConfig`), so Settings renders and nothing in it can be saved. Holds open
-  `serverAdministration`. A project's scripts are the exception: the backend
-  dispatches `project.meta.update` for them — see _A script runs on the backend_
-  below. Everything upstream adds to `ServerSettings` inherits this: the
+  `serverAdministration` and `providerConfiguration`. `server.getSettings`
+  answers `{}`, so an ungated control does not merely fail to save — it shows a
+  contract default as though it were the server's configuration. A project's
+  scripts are the exception: the backend dispatches `project.meta.update` for
+  them — see _A script runs on the backend_ below. Everything upstream adds to
+  `ServerSettings` inherits this: the
   2026-09-12 merge brought `defaultRuntimeMode` (upstream #11346, the permission
   mode a new thread starts in, decoding-defaulted to `full-access`) and the
   `projectSettingsOverrides` record (#11176, a per-project patch over seventeen

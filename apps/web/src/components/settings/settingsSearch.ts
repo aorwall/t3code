@@ -1,4 +1,6 @@
 import { isElectron } from "~/env";
+// Fork: see providerConfigurationOnly on SettingsSearchItem.
+import { FEATURES } from "~/fork/features";
 import { isMacPlatform, isWindowsPlatform, normalizeSearchText } from "~/lib/utils";
 import type { EnvironmentId } from "@t3tools/contracts";
 import type { EnvironmentConnectionPhase } from "@t3tools/client-runtime/connection";
@@ -9,10 +11,6 @@ import {
 } from "./settingsScope";
 
 export type SettingsPath =
-  // Fork: the viewer's own Moatless agent credentials — Claude Code and Codex.
-  // Personal, not administrative, so it stays out of MoatlessAdminPath below
-  // and everyone reaches it.
-  | "/settings/account"
   // Fork: the git hosts the viewer's own tasks clone and push with. Named
   // "version-control" because upstream already owns "/settings/source-control".
   // Personal, so it stays out of MoatlessAdminPath below.
@@ -104,6 +102,9 @@ export interface SettingsSearchItem {
   // deployment runs Forgejo, so a result for it would otherwise land on a page
   // that cannot show it.
   readonly forgejoEnabledOnly?: boolean;
+  // Fork: the Providers page hides everything FEATURES.providerConfiguration
+  // gates, so a result for one of those rows would land on a page without it.
+  readonly providerConfigurationOnly?: boolean;
 }
 
 export interface SettingsSearchAvailability {
@@ -122,10 +123,8 @@ export interface SettingsSearchAvailability {
  * subtitles both render from this record, so each label exists once.
  */
 export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
-  // Fork: leads the personal group — the agent credentials a person's own
-  // tasks run with.
-  "/settings/account": "Account",
-  // Fork: sits beside Account, which is the other half of the same question.
+  // Fork: the git hosts a person's own tasks clone and push with. The agent
+  // credentials are the other half of the same question and live on Providers.
   "/settings/version-control": "Version control",
   "/settings/projects": "Project",
   "/settings/general": "General",
@@ -504,6 +503,7 @@ export const SETTINGS_SEARCH_ITEMS = [
       "usage sources CLIProxyAPI CLI proxy hub quota subscription limits management key add remove",
     ],
     providerSettingsOnly: true,
+    providerConfigurationOnly: true,
   },
   {
     id: "provider-health-check-interval",
@@ -511,6 +511,7 @@ export const SETTINGS_SEARCH_ITEMS = [
     to: "/settings/providers",
     searchTerms: ["refresh availability versions auth state models background probes seconds off"],
     providerSettingsOnly: true,
+    providerConfigurationOnly: true,
   },
   {
     id: "agent-browser-access",
@@ -844,16 +845,21 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["forgejo gitea self-hosted instance connect personal access token pat"],
     forgejoEnabledOnly: true,
   },
+  // Fork: both credentials live in the Setup section of the provider they
+  // authenticate, which only exists for whichever provider is selected — so
+  // they point at the page's own stable anchor.
   {
     id: "account-claude",
     title: "Claude Code token",
-    to: "/settings/account",
+    to: "/settings/providers",
+    targetId: "providers",
     searchTerms: ["claude code oauth token anthropic setup-token agent"],
   },
   {
     id: "account-codex",
     title: "Codex",
-    to: "/settings/account",
+    to: "/settings/providers",
+    targetId: "providers",
     searchTerms: ["codex chatgpt openai sign in device code auth.json agent"],
   },
 ] as const satisfies ReadonlyArray<SettingsSearchItem>;
@@ -863,9 +869,8 @@ export type SettingsSearchItemId = (typeof SETTINGS_SEARCH_ITEMS)[number]["id"];
 const SEARCH_ITEMS_BY_ID = new Map(SETTINGS_SEARCH_ITEMS.map((item) => [item.id, item] as const));
 
 const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScope | null>> = {
-  // Fork: personal pages — the viewer's own credentials and git hosts. They
-  // render the same at every selection, so no scope.
-  "/settings/account": null,
+  // Fork: a personal page — the viewer's own git hosts. It renders the same at
+  // every selection, so no scope.
   "/settings/version-control": null,
   "/settings/projects": "project",
   "/settings/general": null,
@@ -1007,7 +1012,9 @@ export function filterAvailableSettingsSearchItems(
       (!item.wslAvailableOnly || availability.isWslSettingsRowVisible) &&
       (!item.requiresThreadAutoSettlement || availability.hasThreadAutoSettlement) &&
       // Fork: see forgejoEnabledOnly above.
-      (!item.forgejoEnabledOnly || availability.forgejoEnabled),
+      (!item.forgejoEnabledOnly || availability.forgejoEnabled) &&
+      // Fork: see providerConfigurationOnly above.
+      (!item.providerConfigurationOnly || FEATURES.providerConfiguration),
   );
 }
 

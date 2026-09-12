@@ -16,8 +16,6 @@ import {
   BoxesIcon,
   createLucideIcon,
   GitBranchIcon,
-  // Fork: the Account section's nav icon.
-  IdCardIcon,
   KeyRoundIcon,
   PanelsTopLeftIcon,
   KeyboardIcon,
@@ -89,8 +87,6 @@ const T3ConnectSidebarAvatar = lazy(() =>
 const SETTINGS_SECTION_ICONS: Readonly<
   Record<SettingsPath, ComponentType<{ className?: string }>>
 > = {
-  // Fork: the Moatless account-credentials page.
-  "/settings/account": IdCardIcon,
   // Fork: the Moatless git-host page. Shares GitBranchIcon with
   // "/settings/source-control", which FEATURE_BY_SETTINGS_PATH gates off here.
   "/settings/version-control": GitBranchIcon,

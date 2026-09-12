@@ -118,9 +118,12 @@ describe("forgejoConnectLabel", () => {
 describe("forgejoConnectUrl", () => {
   it("names the instance and encodes the return URL so its own query survives", () => {
     expect(
-      forgejoConnectUrl("git.example.com", "https://t3.example/settings/account?forgejoHost=x"),
+      forgejoConnectUrl(
+        "git.example.com",
+        "https://t3.example/settings/version-control?forgejoHost=x",
+      ),
     ).toBe(
-      "/api/v1/auth/forgejo/connect?host=git.example.com&return_to=https%3A%2F%2Ft3.example%2Fsettings%2Faccount%3FforgejoHost%3Dx",
+      "/api/v1/auth/forgejo/connect?host=git.example.com&return_to=https%3A%2F%2Ft3.example%2Fsettings%2Fversion-control%3FforgejoHost%3Dx",
     );
   });
 });

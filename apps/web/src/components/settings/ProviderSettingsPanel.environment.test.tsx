@@ -273,8 +273,10 @@ describe("EnvironmentProviderSettings routing", () => {
     atoms.providers = [provider()];
     let panel = renderPanel({ readOnly: true });
 
-    const inertWrapper = visitElements(panel, (element) => element.props.inert === true);
-    expect(inertWrapper).not.toBeNull();
+    // Fork: the panel's only inert wrapper guarded the Advanced health-check
+    // interval, which FEATURES.providerConfiguration hides outright. Upstream
+    // asserts it is present. What read-only still governs is asserted below.
+    expect(visitElements(panel, (element) => element.props.inert === true)).toBeNull();
 
     const customRow = visitElements(
       panel,
@@ -306,25 +308,28 @@ describe("EnvironmentProviderSettings routing", () => {
       visitElements(panel, (element) => element.props.title === "Limited permissions"),
     ).toBeNull();
     expect(visitElements(panel, isRefreshButton)).not.toBeNull();
-    // Fork: "Add provider" stays gated behind FEATURES.serverAdministration,
+    // Fork: "Add provider" stays gated behind FEATURES.providerConfiguration,
     // which is off — refreshing the existing list is a read every server
-    // serves, but adding an instance is not.
+    // serves, but adding an instance is a server.updateSettings write.
     expect(visitElements(panel, isAddProviderButton)).toBeNull();
   });
 
-  it("keeps Advanced visible when search targets the provider health interval", () => {
+  // Fork: Advanced holds only the health-check interval, which persists through
+  // server.updateSettings — so FEATURES.providerConfiguration hides it whether or
+  // not search targets it. Upstream asserts the opposite here.
+  it("hides Advanced even when search targets the provider health interval", () => {
     let panel = renderPanel();
-    expect(visitElements(panel, (element) => element.props.title === "Advanced")).not.toBeNull();
+    expect(visitElements(panel, (element) => element.props.title === "Advanced")).toBeNull();
     expect(
       visitElements(panel, (element) => element.props.id === "provider-health-check-interval"),
-    ).not.toBeNull();
+    ).toBeNull();
 
     settingsSearchState.targetId = "provider-health-check-interval";
     panel = renderPanel();
-    expect(visitElements(panel, (element) => element.props.title === "Advanced")).not.toBeNull();
+    expect(visitElements(panel, (element) => element.props.title === "Advanced")).toBeNull();
     expect(
       visitElements(panel, (element) => element.props.id === "provider-health-check-interval"),
-    ).not.toBeNull();
+    ).toBeNull();
   });
 
   it("deletes and resets provider configuration without erasing shared preferences", () => {
@@ -345,6 +350,9 @@ describe("EnvironmentProviderSettings routing", () => {
       },
       favorites: [{ provider: customId, model: "favorite" }],
     };
+    // Fork: without provider configuration the list is narrowed to the drivers
+    // the server publishes, so codex has to be one of them to have a row.
+    atoms.providers = [provider()];
     let panel = renderPanel();
     const customRow = visitElements(
       panel,
