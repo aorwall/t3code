@@ -37,6 +37,7 @@ import {
 import { Input } from "../../ui/input";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../../ui/menu";
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "../../ui/select";
+import { Switch } from "../../ui/switch";
 import { Textarea } from "../../ui/textarea";
 import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
 import { SettingResetButton, SettingsRow, SettingsSection } from "../settingsLayout";
@@ -139,6 +140,7 @@ function WorkspaceSections({
       <RepositoriesSection workspace={workspace} isLocked={provenance.isLocked} />
       <RunConfigurationSection workspace={workspace} isLocked={provenance.isLocked} />
       <TaskDefaultsSection workspace={workspace} isLocked={provenance.isLocked} />
+      {isAdmin ? <AccessSection workspace={workspace} isLocked={provenance.isLocked} /> : null}
       {isAdmin ? <IdentitySection workspace={workspace} isLocked={provenance.isLocked} /> : null}
     </>
   );
@@ -658,6 +660,96 @@ function TaskDefaultsSection({
           </Select>
         }
       />
+    </SettingsSection>
+  );
+}
+
+/**
+ * Who can open this project.
+ *
+ * Sharing it promotes every repository placed in it to global scope in the same
+ * write — a project whose new readers cannot open its repositories lists things
+ * they cannot use. Turning sharing off does not hand those repositories back:
+ * the promotion dropped the owner they would return to, so the dialog says so
+ * before the first move rather than surprising whoever makes the second.
+ *
+ * Admin-only, like Identity below it. The backend refuses a global scope from
+ * anyone else, so the switch would only ever fail for them.
+ */
+function AccessSection({
+  workspace,
+  isLocked,
+}: {
+  readonly workspace: WorkspaceResponse;
+  readonly isLocked: boolean;
+}) {
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const save = useMoatlessCommand<UpdateWorkspaceRequest, WorkspaceResponse>(
+    (input) => updateWorkspace(workspace.id, input),
+    // Repositories too: a shared workspace rewrites the scope of every one it
+    // places, and the repository catalog on this page would still show the old one.
+    { invalidates: ["workspaces", "repositories"] },
+  );
+
+  const isShared = workspace.scope === "global";
+  const repoCount = workspace.repos.length;
+
+  return (
+    <SettingsSection id="workspace-access" title="Access">
+      <SettingsRow
+        title="Shared with everyone"
+        description={
+          isShared
+            ? "Everyone in this deployment can open this project and the repositories in it."
+            : "Only you and administrators can open this project."
+        }
+        status={
+          save.error ? (
+            <span className="text-destructive-foreground">{save.error.message}</span>
+          ) : null
+        }
+        control={
+          <Switch
+            checked={isShared}
+            disabled={isLocked || save.isRunning}
+            aria-label="Shared with everyone"
+            onCheckedChange={(checked) => {
+              if (checked) setIsConfirmOpen(true);
+              else void save.run({ scope: "user" });
+            }}
+          />
+        }
+      />
+
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogPopup>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Share {workspace.name} with everyone?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {repoCount > 0
+                ? `Everyone in this deployment will be able to open this project. Its ${repoCount === 1 ? "repository becomes" : `${repoCount} repositories become`} shared too, and turning this off later does not make ${repoCount === 1 ? "it" : "them"} private again.`
+                : "Everyone in this deployment will be able to open this project. Any repository added to it afterwards stays private until it is shared itself."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" onClick={() => setIsConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={save.isRunning}
+              onClick={() => {
+                void save.run({ scope: "global" }).then((result) => {
+                  if (result === null) return;
+                  setIsConfirmOpen(false);
+                });
+              }}
+            >
+              {save.isRunning ? <LoaderIcon className="animate-spin" /> : null}
+              Share project
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogPopup>
+      </AlertDialog>
     </SettingsSection>
   );
 }
