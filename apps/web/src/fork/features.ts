@@ -68,8 +68,20 @@ export const FEATURES = {
    * so the two halves stopped sharing a fate.
    */
   workspaceSearchContents: false,
-  /** Opening a workspace path in an external editor. */
-  workspaceOpenIn: false,
+  /**
+   * Opening a workspace path in an external editor, through
+   * `shell.openInEditor`. An editor runs on the machine the workspace is on,
+   * and here that machine is a sandbox in a cluster — a call that succeeded
+   * would open a window nobody is sitting at.
+   *
+   * Five ways in: the chat header's Open in picker, the same picker in a file
+   * preview's header, a transcript path link's Open in action and its
+   * modifier-click, a path link clicked in terminal output, and the commit
+   * dialog's file rows, whose only click action this is. Revealing a path in a
+   * file manager rides the same method and goes with them. What stays is the
+   * file panel, where a transcript path link and a diff's file already open.
+   */
+  openInEditor: false,
   /** Editing server-side settings: keybindings. */
   serverAdministration: false,
   /**
@@ -166,6 +178,35 @@ export const FEATURES = {
    * the whole dialog without this.
    */
   checkpointFileRestore: false,
+  /**
+   * The right panel's Pull request surface: one pull request read from its
+   * host, with its summary, its files and its timeline. Everything behind it —
+   * `pullRequests.detail`, `activity`, the review and comment actions — reads a
+   * git host, which the backend does not do. `pullRequests.summary` is the
+   * exception and is served off a task's own binding, which is what keeps the
+   * Linked pull requests surface and the sidebar status chip whole.
+   *
+   * `capabilities.pullRequests` decides everything else that reaches the
+   * surface — the sidebar tab, the `/pull-requests` route, and a pull request
+   * link in the transcript, which falls back to opening the host. What a
+   * capability cannot decide is the launcher, which keeps an unavailable
+   * surface on screen with a one-line reason: upstream's reads "No pull request
+   * on this branch yet", a wait that never ends here. This drops the row.
+   */
+  pullRequestSurface: false,
+  /**
+   * The device hub: an iOS Simulator or Android Emulator a person and the agent
+   * share, offered as a right-panel surface and a Devices settings section.
+   * Every method behind it is refused — `device.configure`, `list`, `open`,
+   * `action` and the `subscribeDeviceState` stream — and the surface asks for
+   * none of them until someone opens it, so nothing renders the refusal first.
+   * Upstream's launcher offers Device on any thread; ungated, that row opens
+   * `DeviceSetup`, whose "Enable the device hub" step calls `device.configure`
+   * and shows the refusal. The settings section is the same dead end reached
+   * from the other side: it saves hosts through `server.updateSettings`, which
+   * the backend does not dispatch either.
+   */
+  deviceHub: false,
 } satisfies Record<string, boolean>;
 
 export type FeatureName = keyof typeof FEATURES;

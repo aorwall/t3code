@@ -490,6 +490,8 @@ export default function DiffPanel({
         activeCwd,
         repositoryRoot: activeRepositoryRoot,
         openInEditor: (targetPath) => {
+          // Fork: reached only without a thread ref, where upstream falls back to an editor.
+          if (!FEATURES.openInEditor) return;
           void (async () => {
             const result = await openInPreferredEditor(targetPath);
             if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {

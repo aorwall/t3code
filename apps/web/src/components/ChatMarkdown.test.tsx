@@ -52,6 +52,13 @@ vi.mock("../editorPreferences", () => ({
   useOpenInPreferredEditor: () => vi.fn(),
   usePreferredEditor: () => [null, vi.fn()],
 }));
+// Fork: FEATURES.openInEditor off leaves a file link with no editor to open,
+// and a link with no action at all renders as a menu button rather than an
+// anchor. Enable it here so the href assertions keep covering path handling.
+vi.mock("../fork/features", async (importActual) => {
+  const actual = await importActual<typeof import("../fork/features")>();
+  return { ...actual, FEATURES: { ...actual.FEATURES, openInEditor: true } };
+});
 vi.mock("~/lib/openPullRequestLink", () => ({
   findProjectOnChangeRequestHost: () => undefined,
   parseChangeRequestUrl: () => null,

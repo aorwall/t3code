@@ -108,6 +108,7 @@ import {
   SettingsRow,
   SettingsSection,
 } from "./settingsLayout";
+import { FEATURES } from "../../fork/features";
 import { searchableSetting } from "./settingsSearch";
 import { ProjectDefaultsSettings } from "./ProjectDefaultsSettings";
 import { useSettingsScope } from "./SettingsScopeContext";
@@ -1314,7 +1315,9 @@ export function IntegrationsSettingsPanel() {
           previewDefaults
         )}
       </SettingsSection>
-      <DeviceIntegrationSettings />
+      {/* Fork: FEATURES.deviceHub off — the section saves through a method the
+          backend does not dispatch, for a hub it cannot run. */}
+      {FEATURES.deviceHub ? <DeviceIntegrationSettings /> : null}
     </SettingsPageContainer>
   );
 }

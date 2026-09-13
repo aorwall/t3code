@@ -228,11 +228,16 @@ what a person loses, which is the part the derivation cannot tell you:
   state changed on the host side (new commits, a review, a merge) so it can
   refetch rather than poll; `createLinkedPullRequestSummaryAtomFamily` in
   `packages/client-runtime/src/state/pullRequests.ts` wires it as the refresh
-  trigger for a thread's linked PR summary. Needs no fork gate: the client reads
+  trigger for a thread's linked PR summary. The client reads
   `capabilities.pullRequests`, which decodes to unsupported when a deployment's
-  handshake omits it, so the whole surface (sidebar tab, right-panel surface,
-  `/pull-requests` route, and now the push-refresh path) already stays off on
-  Moatless. `pullRequests.summary` is the exception and is served, because it is
+  handshake omits it, so the sidebar tab, the `/pull-requests` route, the
+  push-refresh path and a PR link in the transcript — which falls back to
+  opening the host — all stay off on Moatless without a fork gate. The launcher
+  is the exception, because an unavailable surface stays on screen there with a
+  one-line reason, and upstream's reads "No pull request on this branch yet": a
+  wait that never ends here. `FEATURES.pullRequestSurface` on
+  `pullRequestSurfaceAvailable` in `ChatView.tsx` drops that row, and holds open
+  no more than it. `pullRequests.summary` is the exception and is served, because it is
   the fallback for a bound reference whose state and title the thread row could
   not carry: a binding records those on its first refresh, and until then a link
   in `thread.pullRequests` carries a null `snapshot` and every surface that
@@ -281,7 +286,12 @@ what a person loses, which is the part the derivation cannot tell you:
   actions inside it resolve to a refusal. Closes if Moatless ever manages
   provider credentials on the client's behalf.
 - **Opening in an external editor** — `shell.openInEditor`. Holds open
-  `workspaceOpenIn`. Unlikely ever to close: the browser is not on the machine
+  `FEATURES.openInEditor`, which covers every way in: the chat header's and a file
+  preview's Open in pickers, a transcript path link's Open in action, its
+  modifier-click and its reveal-in-a-file-manager sibling, a path clicked in
+  terminal output, the commit dialog's changed-file rows, and the diff panel's
+  editor fallback for a file opened without a thread ref.
+  Unlikely ever to close: the browser is not on the machine
   the workspace is on, so this one is a candidate for deleting the surface
   rather than serving the method. Upstream answered the same problem on
   2026-08-16 for its own remote environments, by having the server return an
@@ -316,20 +326,22 @@ what a person loses, which is the part the derivation cannot tell you:
   over SSH (`SshDeviceHost.ts`), streams video and the accessibility tree, and
   exposes tap/type/screenshot to the agent through an MCP toolkit
   (`apps/server/src/mcp/toolkits/device/`). The client half is a `device`
-  right-panel surface (`apps/web/src/components/device/`) and a Device hosts
-  settings page. **Nothing gates it on a capability**: `ChatView.tsx` passes
-  `deviceAvailable={activeThreadRef !== null}`, so the launcher offers a Device
-  row on every thread. What a Moatless user reaches is the setup dialog rather
-  than a broken panel — `subscribeDeviceState` never resolves, so the state stays
-  the empty record, `onboardingCompleted` is false, and `addDeviceSurface` opens
-  `DeviceSetup`; its "Enable the device hub" step calls `device.configure`, which
-  resolves to the refusal the dialog then shows. That is a dead end a person can
-  walk into, which is the part this merge found and did not do: one additive
-  `FEATURES.deviceHub` read on the two `deviceAvailable` props in `ChatView.tsx`
-  drops the row instead. Holds open the nine union entries. Closes when the
-  backend runs a simulator host for a task, which is a real question and not a
-  stub — the hub needs Xcode or the Android SDK on the host it drives, and its
-  stream is a second connection beside the RPC one.
+  right-panel surface (`apps/web/src/components/device/`) and a Devices section
+  on the Integrations settings page. **Nothing gates it on a capability**:
+  upstream's `ChatView.tsx` passes `deviceAvailable={activeThreadRef !== null}`,
+  so the launcher offers a Device row on every thread, and what a Moatless user
+  reaches is the setup dialog rather than a broken panel —
+  `subscribeDeviceState` never resolves, so the state stays the empty record,
+  `onboardingCompleted` is false, and `addDeviceSurface` opens `DeviceSetup`;
+  its "Enable the device hub" step calls `device.configure`, which resolves to
+  the refusal the dialog then shows. `FEATURES.deviceHub` closes both ways in:
+  the two `deviceAvailable` props drop the launcher row, and
+  `IntegrationsSettingsPanel` drops the Devices section, whose hosts save
+  through `server.updateSettings` the backend does not dispatch either. Holds
+  open the nine union entries and that flag. Closes when the backend runs a
+  simulator host for a task, which is a real question and not a stub — the hub
+  needs Xcode or the Android SDK on the host it drives, and its stream is a
+  second connection beside the RPC one.
 - **Desktop and host lifecycle** — `server.updateServer`,
   `updateServerWithProgress`, `commitDesktopUpdate`, `getBackgroundPolicy`,
   `subscribeBackgroundPolicy`, `reportHostPowerState`, `cloud.installRelayClient`,
