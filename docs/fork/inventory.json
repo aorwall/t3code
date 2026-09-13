@@ -278,6 +278,13 @@
       "note": "Conflicts on every merge, and is never resolved by hand: `git checkout --theirs pnpm-lock.yaml` then `vp i`, which re-derives the fork's own edges (today, the `@t3tools/moatless-api` workspace dependency in apps/web/package.json). Hand-merging it produces a lockfile that matches neither side's resolution and installs something no one chose. The install is also what the merge needs before `regen-route-tree.mjs` or `merge-stats.mjs` can run."
     },
     {
+      "id": "third-party-licenses-config",
+      "paths": ["third-party-licenses.config.json"],
+      "verdict": "converged",
+      "delta": "mermaid-diagrams",
+      "note": "Upstream owns this file and appends to it as its own bundle changes. Take upstream, then re-append the fork's three `packageOverrides` entries at the end of the array: `khroma` with `license: \"MIT\"` and no notice — it declares no license but ships its own `license` file, so only the declaration is missing — and `fastdom` and `strictdom` with `generatedNotice` MIT and their README copyright lines, since both declare MIT and ship no notice file at all. All three arrive through the fork's `mermaid` edge, which upstream does not have, so upstream will never carry them. Nothing in `verify.mjs` reaches this: the plugin runs in `generateBundle`, so only `pnpm --filter @t3tools/web build` fails when they are missing."
+    },
+    {
       "id": "thread-server-surfaces",
       "paths": [
         "apps/web/src/state/servers.ts",
@@ -420,6 +427,12 @@
       "verdict": "converged",
       "delta": "Thread Fork Delta",
       "note": "Take upstream, then apply Thread Fork Delta. MessagesTimeline.tsx and orchestration.ts also carry the Message Origin Delta; both must survive. decider.ts's hunk is a deliberate refusal — the bundled server has no fork session to resume."
+    },
+    {
+      "id": "chat-composer-gates",
+      "paths": ["apps/web/src/components/chat/ChatComposer.tsx"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-state the two deltas `chat-surface-gates` describes: the runtime-mode picker lifted into a `runtimeModePicker` const gated on FEATURES.accessMode, and `phase === \"running\"` left out of collapsedComposerPrimaryActionDisabled. Upstream works in this file constantly and both deltas sit at stable anchors, so the conflict is usually the import block alone — keep both import lines."
     },
     {
       "id": "thread-fork-fork-files",
@@ -730,9 +743,14 @@
       "paths": [
         "apps/web/src/components/ChatView.tsx",
         "apps/web/src/components/RightPanelTabs.tsx",
-        "apps/web/src/components/chat/ChatHeader.tsx"
+        "apps/web/src/components/chat/ChatHeader.tsx",
+        "apps/web/src/components/chat/ChatComposer.tsx"
       ],
-      "mustSurvive": "Re-apply additive gates only. PanelLayoutControls.tsx left this entry when the fork took the terminal-drawer button back: the file is upstream's byte for byte again, so a merge has nothing to re-apply there."
+      "guard": {
+        "symbol": "FEATURES.accessMode",
+        "files": ["apps/web/src/components/chat/ChatComposer.tsx"]
+      },
+      "mustSurvive": "Re-apply additive gates only. PanelLayoutControls.tsx left this entry when the fork took the terminal-drawer button back: the file is upstream's byte for byte again, so a merge has nothing to re-apply there. ChatComposer.tsx carries two deltas. The composer's runtime-mode picker — upstream's read-only/write access modes — is lifted into a `runtimeModePicker` const gated on FEATURES.accessMode, because Moatless runs the agent in its own sandbox and the mode the picker sets is not a mode the backend honours; the interaction-mode toggle beside it is untouched and still renders. The lift is the additive shape here: the picked JSX keeps upstream's indentation and the return renders `{runtimeModePicker}` in its place, so re-indenting that block to inline the condition is the thing not to do. Separately, `phase === \"running\"` is dropped from collapsedComposerPrimaryActionDisabled, the mobile collapsed composer's Send button: a message sent while the agent is running is a follow-up the thread accepts, and the expanded composer never disabled it, so the collapsed one greying out was the odd case rather than the rule. Re-adding that term is a regression, not a re-sync."
     },
     {
       "id": "persisted-panel-gating",
@@ -1098,9 +1116,14 @@
         "apps/web/src/fork/mermaidDiagram.ts",
         "apps/web/src/fork/mermaidDiagram.test.ts",
         "apps/web/src/components/ChatMarkdown.tsx",
-        "apps/web/package.json"
+        "apps/web/package.json",
+        "third-party-licenses.config.json"
       ],
-      "mustSurvive": "A ```mermaid fence in a chat message is drawn as a diagram rather than highlighted as source. The whole delta in upstream's ChatMarkdown.tsx is two imports and one early return above upstream's own return in the `pre` renderer; the diagram sits inside upstream's MarkdownCodeBlock so the header, the language label and the copy button stay upstream's and copy still copies the mermaid source. The fence falls back to that same highlighted source in every case the diagram is not there — while the message streams, while mermaid loads, when mermaid cannot parse the source, and when someone asks for the source back — so a mermaid fence never renders worse than upstream renders it. Four properties are load-bearing and easy to lose in a rewrite: mermaid is imported lazily, because it is around a megabyte and nobody who never sees a diagram should pay for it; renders are serialized, because `initialize` sets the theme globally; rendered SVG is cached and read during the first render, because the message list is virtualized and a scrolled-back diagram would otherwise flash its source; and `securityLevel` is `strict`, because the source is model-written and arrives over the wire."
+      "guard": {
+        "symbol": "khroma",
+        "files": ["third-party-licenses.config.json"]
+      },
+      "mustSurvive": "A ```mermaid fence in a chat message is drawn as a diagram rather than highlighted as source. The whole delta in upstream's ChatMarkdown.tsx is two imports and one early return above upstream's own return in the `pre` renderer; the diagram sits inside upstream's MarkdownCodeBlock so the header, the language label and the copy button stay upstream's and copy still copies the mermaid source. The fence falls back to that same highlighted source in every case the diagram is not there — while the message streams, while mermaid loads, when mermaid cannot parse the source, and when someone asks for the source back — so a mermaid fence never renders worse than upstream renders it. Four properties are load-bearing and easy to lose in a rewrite: mermaid is imported lazily, because it is around a megabyte and nobody who never sees a diagram should pay for it; renders are serialized, because `initialize` sets the theme globally; rendered SVG is cached and read during the first render, because the message list is virtualized and a scrolled-back diagram would otherwise flash its source; and `securityLevel` is `strict`, because the source is model-written and arrives over the wire. The dependency edge also reaches outside apps/web: mermaid bundles khroma, and cytoscape under it bundles fastdom and strictdom, none of which upstream ships. Upstream's `t3code:third-party-licenses` plugin fails `vp build` on a bundled package whose license it cannot resolve, so the three `packageOverrides` entries at the end of `third-party-licenses.config.json` are part of this delta — dropping them does not break a test, it breaks the production web build."
     },
     {
       "id": "browser-history-gate",

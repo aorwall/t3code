@@ -57,7 +57,9 @@ export function SidebarThreadFilter() {
                   size="icon"
                   type="button"
                   aria-label="Filter threads"
-                  className="relative shrink-0 focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+                  // size-7 to sit in the header's segmented icon well beside
+                  // upstream's own SidebarHeaderIconButton.
+                  className="relative size-7 shrink-0 focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
                 />
               }
             />

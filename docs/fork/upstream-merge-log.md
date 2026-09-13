@@ -28,6 +28,104 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-13 — merged upstream to 0c5771d6, upstream folded the sidebar's project scope into a new header component and the Moatless backend moved its dispatch again
+
+- Upstream: `0c5771d60` from base `e81606494` (`32` commits).
+- Landed: `489` files from `git diff --stat HEAD^1 HEAD` against `484` in the
+  upstream range (`e81606494..HEAD^2`); fork delta `767` files from
+  `git diff --stat HEAD^2 HEAD`. The gap is five named files and reconciles
+  exactly, all landed-not-in-range: `apps/web/src/fork/SidebarThreadFilter.tsx`
+  (fork-only, re-sized below), this entry, `inventory.json`, `gaps.md`, and
+  `unsupported-methods.mjs`. Nothing in the range failed to land.
+- Conflicts: 8 files. `routeTree.gen.ts` is generated — regenerated with
+  `regen-route-tree.mjs` after the install, 22 insertions. `pnpm-lock.yaml`
+  auto-merged again and was reset to `upstream/main` with the fork edges
+  re-derived by `vp i` — the remaining diff against upstream is exactly the
+  `@t3tools/moatless-api` workspace link, `mermaid ^11.17.2` and one alchemy
+  peer hash. `projector.ts`, `orchestration.ts` and `threadReducer.ts` are
+  `converged — message-origin-upstream-files` and were all the same conflict
+  twice over: upstream added a `context` field to an orchestration message at the
+  exact anchor the fork's `origin` field sits on, so both lines stay.
+  `MessagesTimeline.tsx` is the same entry and the same shape — `GitForkIcon`
+  beside upstream's new `GitPullRequestIcon`, and the fork's `MessageOriginIcon` /
+  `MessageOriginChip` kept as sibling functions to upstream's new
+  `resolvePreviewAnnotationImage`. `SettingsSidebarNav.tsx` kept the fork's
+  `settingsPathEnabled` filter and took upstream's new rule — `/settings/general`
+  stays active on `/settings/open-source-licenses` — into `renderNavItem`.
+- **A fork gate's host file was replaced by one upstream had not written yet.**
+  #11315 folded the sidebar's project scope into the search row by extracting the
+  whole header into a new `apps/web/src/components/sidebar/SidebarThreadHeader.tsx`.
+  `Sidebar.tsx` is `converged — thread-visibility-upstream-files` and took
+  upstream whole, which left its `SidebarThreadFilter` import unused; both fork
+  deltas were re-applied additively in the new file instead — the
+  `FEATURES.projectManagement` gate on New project, and `<SidebarThreadFilter />`
+  as a third child of upstream's segmented icon well. No props threaded, no JSX
+  re-indented. The one edit outside the new file is
+  `SidebarThreadFilter.tsx`'s trigger className, now `size-7` so it matches
+  upstream's own `SidebarHeaderIconButton` in that well; that is the whole of the
+  file-count gap above.
+- **A `decide, then add an entry` obligation, paid.** `ChatComposer.tsx` was
+  unlisted and carries two fork deltas — the runtime-mode picker gated on
+  `FEATURES.accessMode`, and `phase === "running"` left out of
+  `collapsedComposerPrimaryActionDisabled`. Both survived, and the file is now in
+  `chat-surface-gates` with a guard plus a `chat-composer-gates` path policy, so
+  the next merge gets a cached answer instead of the same decision.
+  `file-preview-panel` was the only other `decide`: it auto-merged without a
+  marker and both deltas (`frameRevision`, `onRetargetFile`) were confirmed by
+  hand.
+- **The stale entry was a deliberate deletion, so it needed a new entry, not a
+  re-point.** `moatless-admin-pages` still listed the two Workspaces admin routes
+  the 2026-09-12 move folded into the project settings page. Re-pointed to the
+  five surfaces that remain, and the untracked delta the move left behind is now
+  `project-workspace-settings`.
+- Sweep: no keyword hits across the newly added upstream files. No concern entry
+  needed.
+- Unsupported methods: 0 ADD, 0 DROP, 2 KEEP (`git.preparePullRequestThread`,
+  `vcs.switchRef`), 5 known exceptions still firing, no stale ones. `rpc.ts`
+  unchanged. The merge's unsupported surface is upstream's Cursor `--classic`
+  launcher fix (#11498), which lands on a method already refused — see
+  [gaps](./gaps.md) under _Opening in an external editor_.
+- **The derivation could not read the backend, and that is what a red check
+  looks like when it is the script's fault.** `unsupported-methods` exited 2 with
+  "could not read the backend dispatch". The Moatless backend moved its dispatch
+  a second time: `crates/t3code/src/rpc/dispatch.rs` is now a 264-byte module
+  stub over an `rpc/dispatch/` directory whose `routing.rs` holds the arms and
+  whose siblings hold the handler bodies. `BACKEND_APIS` now names the directory
+  and the script concatenates every `.rs` file in it — pointing it at
+  `routing.rs` alone would have read the arms and lost the handlers, and
+  `refusesInside` only follows calls it can find in the same source, so every
+  conditional refusal would have come back as a false DROP.
+- Verification: `verify.mjs` green on seven of eight — `duplicate-adds` (none
+  across 34 files), `tripwires` (3 deleted surfaces intact, exactly the 5 known
+  re-deletions, 3 allowed workflows), `resolution-check` (16 fork-delta paths
+  still differ from upstream, 17 carry upstream's change, 17 theirs-verbatim
+  byte-identical, 18 unlisted), `unsupported-methods`, `fmt:check`, `lint`,
+  `typecheck`. `test` is red on `@t3tools/desktop` alone, confirmed failing
+  alone, and it is the standing environmental one: `browser-secret-native.test.mjs`
+  cannot find `libsecret-1` in this sandbox's pkg-config path — 1 file of 105,
+  recorded in [gaps](./gaps.md) under _The desktop suite needs libsecret_. No
+  root in the sandbox, so it cannot be installed here.
+- Four packages did not finish under `vp run -r test` and were each run alone
+  again, all green: `@t3tools/mobile` (165 files), `t3` (317, 2 skipped),
+  `@t3tools/web` (412), `t3code-relay` (30). Read the retry lines at the end of
+  the log, not the parallel output above them.
+- **CI caught what no local check runs.** `Build & push moatless-t3` failed on
+  the pushed merge commit: upstream's new `t3code:third-party-licenses` plugin
+  (#8962) runs in `generateBundle` and refused three packages the fork's own
+  `mermaid` edge bundles and upstream's config has never seen — `khroma` (no
+  license field, but it ships its own `license` file, so it needed the
+  declaration only), `fastdom` and `strictdom` (MIT declared, no notice file, so
+  both needed a `generatedNotice`). Three `packageOverrides` entries fixed it,
+  and they are now part of `mermaid-diagrams` plus a `third-party-licenses-config`
+  path policy. `verify.mjs` has no build step, so it could not have caught this —
+  [gaps](./gaps.md), _Nothing builds the web app before a merge is pushed_.
+- The sandbox was evicted mid-verification and `node_modules` went with it. The
+  merge commit survived because it had already been pushed, which is the whole
+  argument for step 8's ordering. The `origin/merge/upstream-2026-09-13`
+  tracking ref did **not** survive the restore — `git fetch origin
+merge/upstream-2026-09-13` and reading `FETCH_HEAD` is how to confirm the
+  branch is still on the remote after one of these.
+
 ### 2026-09-12 — merged upstream to e8160649, upstream made every server setting scopable and settings is now most of the fork delta
 
 - Upstream: `e81606494` from base `02297e3db` (`47` commits).

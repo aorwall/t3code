@@ -8,7 +8,7 @@
  * Contract side: every `Rpc.make(WS_METHODS.x, …)` / `Rpc.make(ORCHESTRATION_WS_METHODS.x, …)`
  * in packages/contracts/src/rpc.ts, resolved through the method maps to wire strings.
  * Backend side: the `"method.name" =>` arms of the frame dispatch in soaplabs/moatless
- * (crates/t3code/src/rpc/dispatch.rs), read over the API since a sandbox has no checkout.
+ * (crates/t3code/src/rpc/dispatch/), read over the API since a sandbox has no checkout.
  *
  * Both directions are findings. A method the backend has started serving keeps a
  * union entry that can never fire; a method it has stopped serving loses the typed
@@ -38,16 +38,24 @@ import {
 const RPC_PATH = "packages/contracts/src/rpc.ts";
 const ORCHESTRATION_PATH = "packages/contracts/src/orchestration.ts";
 /**
- * The dispatch has moved once already — it was inline in `lib.rs` until the
- * backend split `rpc/` into its own module on 2026-09-07. A read that finds the
- * file but no arms reports "0 dispatched methods", which reads as "the backend
- * serves nothing" and turns every union entry into a finding. Try each known
- * location and take the first that actually holds arms.
+ * The dispatch keeps moving — inline in `lib.rs` until the backend split `rpc/`
+ * into its own module on 2026-09-07, then again on 2026-09-13 when `dispatch.rs`
+ * became a module stub over an `rpc/dispatch/` directory whose `routing.rs` holds
+ * the arms and whose siblings hold the handler bodies. A read that finds the file
+ * but no arms reports "0 dispatched methods", which reads as "the backend serves
+ * nothing" and turns every union entry into a finding. Try each known location
+ * and take the first that actually holds arms.
+ *
+ * An entry naming a directory is read as every `.rs` file in it, concatenated,
+ * so the arms and the handlers they call stay in one source — `refusesInside`
+ * only follows calls it can find there.
  */
 const BACKEND_APIS = [
+  "repos/soaplabs/moatless/contents/crates/t3code/src/rpc/dispatch",
   "repos/soaplabs/moatless/contents/crates/t3code/src/rpc/dispatch.rs",
   "repos/soaplabs/moatless/contents/crates/t3code/src/lib.rs",
 ];
+const BACKEND_CONTENTS = "repos/soaplabs/moatless/contents/";
 
 const read = (relative) => NodeFS.readFileSync(NodePath.resolve(REPO_ROOT, relative), "utf8");
 
@@ -155,19 +163,37 @@ function refusesInside(source, code, depth, seen) {
   return false;
 }
 
+/** One `gh api` read, through `moat gh` when it is there. "" when the read fails. */
+function ghRead(api, jq) {
+  for (const cmd of [["moat", "gh"], ["gh"]]) {
+    const out = sh(cmd[0], [...cmd.slice(1), "api", api, "--jq", jq], { allowFailure: true });
+    if (out) return out;
+  }
+  return "";
+}
+
+const decodeFile = (api) => {
+  const raw = ghRead(api, ".content");
+  return raw ? Buffer.from(raw, "base64").toString("utf8") : "";
+};
+
+/** A file's text, or every `.rs` file of a directory concatenated. "" when neither reads. */
+function fetchBackend(api) {
+  // A file's payload is an object, so the array filter fails and leaves "".
+  const listing = ghRead(api, '.[] | select(.name | endswith(".rs")) | .path');
+  if (!listing) return decodeFile(api);
+  return listing
+    .split("\n")
+    .filter(Boolean)
+    .map((path) => decodeFile(BACKEND_CONTENTS + path))
+    .join("\n");
+}
+
 function parseBackend() {
   let source = "";
   for (const api of BACKEND_APIS) {
-    let raw = "";
-    for (const cmd of [["moat", "gh"], ["gh"]]) {
-      raw = sh(cmd[0], [...cmd.slice(1), "api", api, "--jq", ".content"], {
-        allowFailure: true,
-      });
-      if (raw) break;
-    }
-    if (!raw) continue;
-    const decoded = Buffer.from(raw, "base64").toString("utf8");
-    if (/"[a-zA-Z._]+"\s*=>/.test(decoded)) {
+    const decoded = fetchBackend(api);
+    if (decoded && /"[a-zA-Z._]+"\s*=>/.test(decoded)) {
       source = decoded;
       break;
     }
