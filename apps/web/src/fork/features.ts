@@ -68,8 +68,20 @@ export const FEATURES = {
    * so the two halves stopped sharing a fate.
    */
   workspaceSearchContents: false,
-  /** Opening a workspace path in an external editor. */
-  workspaceOpenIn: false,
+  /**
+   * Opening a workspace path in an external editor, through
+   * `shell.openInEditor`. An editor runs on the machine the workspace is on,
+   * and here that machine is a sandbox in a cluster — a call that succeeded
+   * would open a window nobody is sitting at.
+   *
+   * Five ways in: the chat header's Open in picker, the same picker in a file
+   * preview's header, a transcript path link's Open in action and its
+   * modifier-click, a path link clicked in terminal output, and the commit
+   * dialog's file rows, whose only click action this is. Revealing a path in a
+   * file manager rides the same method and goes with them. What stays is the
+   * file panel, where a transcript path link and a diff's file already open.
+   */
+  openInEditor: false,
   /** Editing server-side settings: keybindings. */
   serverAdministration: false,
   /**

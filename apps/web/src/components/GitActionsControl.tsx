@@ -80,6 +80,8 @@ import { Textarea } from "~/components/ui/textarea";
 import { stackedThreadToast, toastManager, type ThreadToastData } from "~/components/ui/toast";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip";
 import { useOpenInPreferredEditor } from "~/editorPreferences";
+// Fork: gates the commit dialog's open-the-file-in-an-editor click.
+import { FEATURES } from "~/fork/features";
 import {
   useGitStackedAction,
   useSourceControlActionRunning,
@@ -1864,6 +1866,8 @@ export default function GitActionsControl({
                               )}
                               <button
                                 type="button"
+                                // Fork: the row's only action is an editor open, which this build has none of.
+                                disabled={!FEATURES.openInEditor}
                                 className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
                                 onClick={() => openChangedFileInEditor(file.path)}
                               >

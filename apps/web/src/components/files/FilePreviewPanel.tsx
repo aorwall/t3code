@@ -28,6 +28,8 @@ import { isBrowserPreviewFile, openFileInPreview } from "~/browser/openFileInPre
 import { browserPreviewFrameRevision } from "~/fork/browserPreviewRevision";
 import { useAssetUrlRefresh, useAssetUrlState } from "~/assets/assetUrls";
 import { OpenInPicker } from "~/components/chat/OpenInPicker";
+// Fork: gates the header's Open in editor button.
+import { FEATURES } from "~/fork/features";
 import { PierreEntryIcon } from "~/components/chat/PierreEntryIcon";
 import { MediaVideoPlayer } from "~/components/media/MediaVideoPlayer";
 import { MediaActions, type MediaActionSource } from "~/components/media/MediaActions";
@@ -1155,7 +1157,9 @@ export default function FilePreviewPanel({
               </div>
             </ScrollArea>
           )}
-          {absolutePath &&
+          {/* Fork: no editor runs beside this browser, so the file's own header offers none. */}
+          {FEATURES.openInEditor &&
+          absolutePath &&
           (environmentId === primaryEnvironmentId || remoteOpenState.mode !== "local-exec") ? (
             <OpenInPicker
               environmentId={environmentId}

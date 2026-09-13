@@ -286,7 +286,12 @@ what a person loses, which is the part the derivation cannot tell you:
   actions inside it resolve to a refusal. Closes if Moatless ever manages
   provider credentials on the client's behalf.
 - **Opening in an external editor** — `shell.openInEditor`. Holds open
-  `workspaceOpenIn`. Unlikely ever to close: the browser is not on the machine
+  `FEATURES.openInEditor`, which covers every way in: the chat header's and a file
+  preview's Open in pickers, a transcript path link's Open in action, its
+  modifier-click and its reveal-in-a-file-manager sibling, a path clicked in
+  terminal output, the commit dialog's changed-file rows, and the diff panel's
+  editor fallback for a file opened without a thread ref.
+  Unlikely ever to close: the browser is not on the machine
   the workspace is on, so this one is a candidate for deleting the surface
   rather than serving the method. Upstream answered the same problem on
   2026-08-16 for its own remote environments, by having the server return an

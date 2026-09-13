@@ -57,6 +57,8 @@ import {
 } from "~/terminal/ghostty/surface";
 import { type GhosttyColor, type GhosttyTheme } from "~/terminal/ghostty/core";
 import { useOpenInPreferredEditor } from "../editorPreferences";
+// Fork: gates the path half of a terminal link activation.
+import { FEATURES } from "../fork/features";
 import { isTerminalUrl, resolvePathLinkTarget } from "../terminal-links";
 import {
   isDiffToggleShortcut,
@@ -814,6 +816,8 @@ export function TerminalViewport({
           });
           return;
         }
+        // Fork: a URL still opens; a path has no editor to open in.
+        if (!FEATURES.openInEditor) return;
         const target = resolvePathLinkTarget(text, cwd);
         void (async () => {
           const result = await openTerminalPath(target);

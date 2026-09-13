@@ -1017,6 +1017,32 @@
       }
     },
     {
+      "id": "open-in-editor-gate",
+      "name": "Open-in-an-external-editor gates",
+      "paths": [
+        "apps/web/src/components/chat/ChatHeader.tsx",
+        "apps/web/src/components/files/FilePreviewPanel.tsx",
+        "apps/web/src/components/ChatMarkdown.tsx",
+        "apps/web/src/components/ChatMarkdown.test.tsx",
+        "apps/web/src/components/ThreadTerminalDrawer.tsx",
+        "apps/web/src/components/GitActionsControl.tsx",
+        "apps/web/src/components/DiffPanel.tsx",
+        "apps/web/src/fork/features.ts"
+      ],
+      "mustSurvive": "No surface offers to open a workspace path in an external editor. shell.openInEditor runs an editor on the machine the workspace is on, and here that machine is a sandbox in a cluster, so even a call that succeeded opens a window nobody is sitting at. FEATURES.openInEditor holds every way in, and each is one expression: the Open in picker in ChatHeader.tsx and the same picker in a file preview's header in files/FilePreviewPanel.tsx; canUseShellActions in ChatMarkdown.tsx, which carries a path link's Open in menu item, its modifier-click and its reveal-in-a-file-manager action together — gated at that call site deliberately, since ChatMarkdown.test.tsx calls the pure canUseMarkdownFileShellActions directly, and that file mocks the flag on, because a link left with no action at all renders as a menu button rather than an anchor and upstream's Windows-path assertions read the href; the path branch of a terminal link activation in ThreadTerminalDrawer.tsx, where a URL still opens; and the commit dialog's changed-file row in GitActionsControl.tsx, disabled rather than rewritten because an editor open is the row's only action. DiffPanel.tsx's openDiffFilePrimaryAction callback is reached only without a thread ref, where upstream falls back to an editor instead of the file panel. Three other callers need no gate: KeybindingsSettings and DiagnosticsSettings sit behind serverAdministration and diagnostics, and __root.tsx's \"Open keybindings.json\" toast only raises on a keybindingsUpdated event the backend never sends. What stays is the file panel, which a transcript path link and a diff's file already open. Count the call sites every merge: a new one is a new way in. Drop the flag, all six gates and that mock together if a person's own editor ever reaches the workspace.",
+      "guard": {
+        "symbol": "FEATURES.openInEditor",
+        "files": [
+          "apps/web/src/components/chat/ChatHeader.tsx",
+          "apps/web/src/components/files/FilePreviewPanel.tsx",
+          "apps/web/src/components/ChatMarkdown.tsx",
+          "apps/web/src/components/ThreadTerminalDrawer.tsx",
+          "apps/web/src/components/GitActionsControl.tsx",
+          "apps/web/src/components/DiffPanel.tsx"
+        ]
+      }
+    },
+    {
       "id": "settings-gates",
       "name": "Settings gates",
       "paths": [

@@ -427,7 +427,7 @@ export const ChatHeader = memo(function ChatHeader({
             onDeleteScript={onDeleteProjectScript}
           />
         )}
-        {showOpenInPicker && FEATURES.workspaceOpenIn && (
+        {showOpenInPicker && FEATURES.openInEditor && (
           <OpenInPicker
             environmentId={activeThreadEnvironmentId}
             keybindings={keybindings}
