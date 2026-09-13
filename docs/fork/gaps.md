@@ -298,7 +298,12 @@ what a person loses, which is the part the derivation cannot tell you:
   SSH open target (`apps/server/src/environment/RemoteOpenTargets.ts`) that the
   _desktop_ shell hands to a local editor. That path needs an Electron shell, so
   it does not reach this fork's browser client — but the shape is the one to
-  copy if the surface is ever kept rather than deleted.
+  copy if the surface is ever kept rather than deleted. Upstream keeps fixing the
+  launcher behind it — the 2026-09-13 merge gave Cursor `baseArgs: ["--classic"]`
+  so a file open reaches the IDE rather than its Agents Window
+  (`packages/contracts/src/editor.ts`, #11498) — which lands in the contract and
+  in `apps/server`, neither of which changes anything here while the method is
+  refused.
 - **Codex feedback** — `provider.uploadFeedback`, new upstream in the
   2026-08-26 merge. Backs the `/feedback` slash command that posts a Codex
   session's transcript to OpenAI (`ChatView.tsx`'s `submitCodexFeedback`).
@@ -657,10 +662,38 @@ Three more arrived in the 2026-09-12 merge:
   `src/textGeneration/CodexTextGeneration.ts`, #9921). Relevant to Moatless
   wherever it passes a model selection to a provider CLI by id.
 
+Three more arrived in the 2026-09-13 merge:
+
+- **Listing pull requests should read the projects it was asked about, not every
+  project there is.** Upstream's `listWorkspaceProjects` fetched the whole shell
+  snapshot and then filtered it; it now asks the projection for the one project,
+  or for the listed ids, and scans nothing else
+  (`apps/server/src/pullRequest/PullRequestService.ts` and
+  `persistence/Layers/ProjectionSnapshotQuery.ts`, #11299). Moatless dispatches
+  `pullRequests.summary` for a single thread, so the cost lands on it the same
+  way the moment the summary is derived from a list.
+- **Usage should read each provider account's own history directory.** Upstream's
+  `UsageService` resolves an account's home from its home setting or its
+  `CODEX_HOME` / `CLAUDE_CONFIG_DIR` / `GROK_HOME` environment variable, counts
+  disabled accounts, and de-duplicates accounts that share a directory
+  (`apps/server/src/usage/UsageService.ts`, #11485). Moatless serves
+  `server.getUsageSummary` itself, so an account with a custom home reports zero
+  there — or double — until it resolves homes the same way.
+- **Forgejo and Gitea remotes should be first-class source control.** Upstream
+  recognises both hosts and drives them with the `fj` and `tea` CLIs across
+  remote identity, pull-request creation and PR sync
+  (`apps/server/src/git/GitManager.ts`,
+  `project/RepositoryIdentityResolver.ts`,
+  `orchestration/PullRequestSyncReactor.ts`, #11436). Moatless owns git and pull
+  requests, so a Forgejo or Gitea project is an unrecognised host there
+  regardless of what the client can render.
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
   compaction path queues in-flight user messages, its review diffs report
-  renames, and it passes qualified model ids through unmodified.
+  renames, it passes qualified model ids through unmodified, its pull-request
+  reads are scoped to the projects asked for, its usage scan follows each
+  account's own home, and it recognises Forgejo and Gitea remotes.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
@@ -754,6 +787,38 @@ Nothing is broken now — the base is correct again as of the 2026-08-06 merge
 commit. This is a rule, not a repair: **land upstream with a merge commit.** A
 cherry-pick moves the code without moving the base, and every later merge pays
 for it.
+
+### Nothing builds the web app before a merge is pushed
+
+`verify.mjs` runs the fork derivations, format, lint, types and every test
+suite, and none of those is a build. Upstream's `t3code:third-party-licenses`
+plugin runs in `generateBundle`, so it is only reachable from a real
+`vp build`, and it hard-fails on any bundled package whose license declaration
+or notice text it cannot resolve.
+
+What it costs: the 2026-09-13 merge passed every check here and broke the
+`Build & push moatless-t3` workflow on its first CI run, after the branch was
+pushed and the PR was open. Three packages the fork's own `mermaid` edge drags
+in — `khroma` through mermaid, `fastdom` and `strictdom` through cytoscape
+under it — are packages upstream never bundles, so upstream's
+`third-party-licenses.config.json` has nothing to say about them. Any
+dependency the fork adds that upstream does not have can do this again, and
+every local check stays green while it does.
+
+What holds it open: nothing fork-owned. `verify.mjs` simply has no build step,
+and the fix is one more step in it rather than a stand-in to delete. The three
+`packageOverrides` entries at the end of `third-party-licenses.config.json` are
+the fork delta this produced; they are covered by the `mermaid-diagrams`
+inventory entry and by the `third-party-licenses-config` path policy, and they
+stay as long as the mermaid edge does.
+
+- **Check:** `pnpm --filter @t3tools/web build` succeeds, and
+  `apps/web/dist/third-party-licenses.json` carries `khroma`, `fastdom` and
+  `strictdom` with a license and a notice each.
+- **Closes when:** `verify.mjs` runs that build as its own step, reachable with
+  `--only build`, so a merge finds this before the push rather than after it.
+- **Then here:** delete this entry. Nothing else to delete — the overrides are
+  the fork's own dependency edge, not a stand-in for a backend capability.
 
 ### `pnpm test` does not test every package
 

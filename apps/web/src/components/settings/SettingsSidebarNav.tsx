@@ -280,7 +280,10 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
   // identical rows; upstream inlines this in its single nav list.
   const renderNavItem = (item: (typeof SETTINGS_NAV_ITEMS)[number]) => {
     const Icon = item.icon;
-    const isActive = pathname === item.to || pathname.startsWith(`${item.to}/`);
+    const isGeneralDetailPage =
+      item.to === "/settings/general" && pathname === "/settings/open-source-licenses";
+    const isActive =
+      isGeneralDetailPage || pathname === item.to || pathname.startsWith(`${item.to}/`);
     return (
       <SidebarMenuItem key={item.to}>
         <SidebarMenuButton isActive={isActive} onClick={() => handleSectionClick(item.to)}>
@@ -400,7 +403,7 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
           ) : null}
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-[var(--sidebar-content-inset)]">
+      <SidebarFooter className="px-[var(--sidebar-content-inset)] py-1">
         <Suspense fallback={null}>
           <T3ConnectSidebarSignIn />
         </Suspense>
