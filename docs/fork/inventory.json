@@ -1016,8 +1016,6 @@
       "name": "Moatless administration pages",
       "paths": [
         "apps/web/src/components/settings/moatless/**",
-        "apps/web/src/routes/settings.workspaces.tsx",
-        "apps/web/src/routes/settings.workspaces_.$workspaceId.tsx",
         "apps/web/src/routes/settings.loops.tsx",
         "apps/web/src/routes/settings.loops_.$loopId.tsx",
         "apps/web/src/routes/settings.integrations.tsx",
@@ -1028,7 +1026,23 @@
         "apps/web/src/routes/settings.users.tsx",
         "apps/web/src/routes/settings.users_.$login.tsx"
       ],
-      "mustSurvive": "An administrator reaches every Moatless administration surface from T3 settings — Workspaces, Loops, Integrations, Skills, Secrets and Users, each with its detail route. Built out of upstream's own settings primitives (SettingsSection, SettingsRow, itemRows), so upstream restyling reaches them for free — keep it that way. See the inventory markdown for the markup conventions."
+      "mustSurvive": "An administrator reaches every Moatless administration surface from T3 settings — Loops, Integrations, Skills, Secrets and Users, each with its detail route. Built out of upstream's own settings primitives (SettingsSection, SettingsRow, itemRows), so upstream restyling reaches them for free — keep it that way. Workspaces is no longer one of them: a project here IS a Moatless Workspace, so /settings/workspaces and its detail route were a second page editing the same entity, and both were deleted on 2026-09-12 in favour of the Workspace sections on upstream's project settings page — see the project-workspace-settings entry. See the inventory markdown for the markup conventions."
+    },
+    {
+      "id": "project-workspace-settings",
+      "name": "Workspace settings on the project page",
+      "paths": [
+        "apps/web/src/components/settings/moatless/ProjectWorkspaceSettings.tsx",
+        "apps/web/src/components/settings/moatless/workspaceDetail.ts",
+        "apps/web/src/components/settings/moatless/workspaceTaskDefaults.ts",
+        "apps/web/src/components/settings/ProjectSettingsPanel.tsx",
+        "apps/web/src/components/settings/ProjectDefaultsSettings.tsx"
+      ],
+      "guard": {
+        "symbol": "ProjectWorkspaceSettings",
+        "files": ["apps/web/src/components/settings/ProjectSettingsPanel.tsx"]
+      },
+      "mustSurvive": "A project here is a Moatless Workspace, so upstream's /settings/projects page edits the Workspace itself: its icon, name and description, its repositories (add, remove, pick the primary), its image and setup commands, and its default model and effort, with Remove project deleting the Workspace. All of it is gated on the backend's workspace_settings feature flag — a deployment whose backend does not serve those reads keeps upstream's page unchanged. The fork delta on the two upstream files is additive: ProjectSettingsPanel.tsx renders ProjectWorkspaceSettings and the ProjectWorkspaceDangerRow second export beside upstream's own sections, and ProjectDefaultsSettings.tsx moves the Model, Workspace, Automatically pull and Agent browser access rows to environment scope when the flag is on, because none of them names something a Workspace has and the model comes from the Workspace's own default. Everything substantive lives under moatless/**; keep it that way so upstream restyling of the project page reaches it. A merge that re-indents or re-threads props through upstream's JSX to fit these in has taken the delta past additive."
     },
     {
       "id": "moatless-provider-auth",
