@@ -166,6 +166,22 @@ export const FEATURES = {
    * the whole dialog without this.
    */
   checkpointFileRestore: false,
+  /**
+   * The right panel's Pull request surface: one pull request read from its
+   * host, with its summary, its files and its timeline. Everything behind it —
+   * `pullRequests.detail`, `activity`, the review and comment actions — reads a
+   * git host, which the backend does not do. `pullRequests.summary` is the
+   * exception and is served off a task's own binding, which is what keeps the
+   * Linked pull requests surface and the sidebar status chip whole.
+   *
+   * `capabilities.pullRequests` decides everything else that reaches the
+   * surface — the sidebar tab, the `/pull-requests` route, and a pull request
+   * link in the transcript, which falls back to opening the host. What a
+   * capability cannot decide is the launcher, which keeps an unavailable
+   * surface on screen with a one-line reason: upstream's reads "No pull request
+   * on this branch yet", a wait that never ends here. This drops the row.
+   */
+  pullRequestSurface: false,
 } satisfies Record<string, boolean>;
 
 export type FeatureName = keyof typeof FEATURES;

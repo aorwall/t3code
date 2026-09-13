@@ -228,11 +228,16 @@ what a person loses, which is the part the derivation cannot tell you:
   state changed on the host side (new commits, a review, a merge) so it can
   refetch rather than poll; `createLinkedPullRequestSummaryAtomFamily` in
   `packages/client-runtime/src/state/pullRequests.ts` wires it as the refresh
-  trigger for a thread's linked PR summary. Needs no fork gate: the client reads
+  trigger for a thread's linked PR summary. The client reads
   `capabilities.pullRequests`, which decodes to unsupported when a deployment's
-  handshake omits it, so the whole surface (sidebar tab, right-panel surface,
-  `/pull-requests` route, and now the push-refresh path) already stays off on
-  Moatless. `pullRequests.summary` is the exception and is served, because it is
+  handshake omits it, so the sidebar tab, the `/pull-requests` route, the
+  push-refresh path and a PR link in the transcript — which falls back to
+  opening the host — all stay off on Moatless without a fork gate. The launcher
+  is the exception, because an unavailable surface stays on screen there with a
+  one-line reason, and upstream's reads "No pull request on this branch yet": a
+  wait that never ends here. `FEATURES.pullRequestSurface` on
+  `pullRequestSurfaceAvailable` in `ChatView.tsx` drops that row, and holds open
+  no more than it. `pullRequests.summary` is the exception and is served, because it is
   the fallback for a bound reference whose state and title the thread row could
   not carry: a binding records those on its first refresh, and until then a link
   in `thread.pullRequests` carries a null `snapshot` and every surface that

@@ -989,6 +989,16 @@
       }
     },
     {
+      "id": "pull-request-surface-gate",
+      "name": "Pull request surface gate in the right panel launcher",
+      "paths": ["apps/web/src/components/ChatView.tsx", "apps/web/src/fork/features.ts"],
+      "mustSurvive": "The right panel's launcher lists no Pull request row. Everything behind that surface — pullRequests.detail, activity and the review actions — reads a git host, which Moatless does not; only pullRequests.summary is served, off a task's own binding. capabilities.pullRequests already decides the sidebar tab, the /pull-requests route, the push-refresh path and a PR link in the transcript, which falls back to opening the host — so this is the one place a capability cannot reach: an unavailable surface stays in the launcher with a one-line reason, and upstream's reads \"No pull request on this branch yet\", a wait that never ends here. One additive FEATURES.pullRequestSurface conjunct on pullRequestSurfaceAvailable in ChatView.tsx, which feeds the pullRequestAvailable prop on both RightPanelTabs call sites; count them every merge, since a gate on one leaves the row on the other. The capability check stays beside the flag: a deployment that serves the group still decides for itself. Linked pull requests is a different surface and stays ungated — it reads thread.pullRequests, which Moatless projects from its bindings. Drop the flag and the conjunct once the backend serves the group and reports the capability.",
+      "guard": {
+        "symbol": "FEATURES.pullRequestSurface",
+        "files": ["apps/web/src/components/ChatView.tsx"]
+      }
+    },
+    {
       "id": "settings-gates",
       "name": "Settings gates",
       "paths": [
