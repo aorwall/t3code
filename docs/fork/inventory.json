@@ -999,6 +999,24 @@
       }
     },
     {
+      "id": "device-hub-gate",
+      "name": "Device hub gates",
+      "paths": [
+        "apps/web/src/components/ChatView.tsx",
+        "apps/web/src/components/settings/IntegrationsSettings.tsx",
+        "apps/web/src/components/settings/IntegrationsSettings.test.tsx",
+        "apps/web/src/fork/features.ts"
+      ],
+      "mustSurvive": "Neither way into the device hub is offered. Every method behind it is refused — device.configure, list, testHost, open, close, shutdown, detail, action and the subscribeDeviceState stream — and nothing upstream gates it on a capability: ChatView passes deviceAvailable={activeThreadRef !== null}, so the launcher offers Device on every thread, and the row opens DeviceSetup rather than a broken panel, whose \"Enable the device hub\" step then shows the refusal. FEATURES.deviceHub closes both ways in: the two deviceAvailable props in ChatView.tsx — count them every merge — and the DeviceIntegrationSettings ternary in IntegrationsSettingsPanel, whose hosts save through server.updateSettings the backend does not dispatch either. settingsSearch.ts is deliberately left upstream: its four device rows (device-hosts, agent-device-access, device-hub, device-platform-support) still match, and a result for one lands on the Integrations page without its Devices section. IntegrationsSettings.test.tsx mocks the flag on, so upstream's assertion that the Devices section follows the browser one keeps covering where that section lands. Drop the flag, both gates and that mock together once Moatless runs a simulator host for a task.",
+      "guard": {
+        "symbol": "FEATURES.deviceHub",
+        "files": [
+          "apps/web/src/components/ChatView.tsx",
+          "apps/web/src/components/settings/IntegrationsSettings.tsx"
+        ]
+      }
+    },
+    {
       "id": "settings-gates",
       "name": "Settings gates",
       "paths": [

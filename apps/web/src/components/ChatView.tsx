@@ -9539,7 +9539,8 @@ export default function ChatView(props: ChatViewProps) {
           pullRequestAvailable={pullRequestSurfaceAvailable}
           pullRequestsAvailable={pullRequestsSurfaceAvailable}
           agentsAvailable
-          deviceAvailable={activeThreadRef !== null}
+          // Fork: FEATURES.deviceHub off — no device row in the launcher.
+          deviceAvailable={FEATURES.deviceHub && activeThreadRef !== null}
           liveAgentCount={agentPanelModel.liveCount}
         >
           {rightPanelContent}
@@ -9601,7 +9602,8 @@ export default function ChatView(props: ChatViewProps) {
             pullRequestAvailable={pullRequestSurfaceAvailable}
             pullRequestsAvailable={pullRequestsSurfaceAvailable}
             agentsAvailable
-            deviceAvailable={activeThreadRef !== null}
+            // Fork: FEATURES.deviceHub off — no device row in the launcher.
+            deviceAvailable={FEATURES.deviceHub && activeThreadRef !== null}
             liveAgentCount={agentPanelModel.liveCount}
           >
             {rightPanelContent}

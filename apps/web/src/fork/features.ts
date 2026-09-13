@@ -182,6 +182,19 @@ export const FEATURES = {
    * on this branch yet", a wait that never ends here. This drops the row.
    */
   pullRequestSurface: false,
+  /**
+   * The device hub: an iOS Simulator or Android Emulator a person and the agent
+   * share, offered as a right-panel surface and a Devices settings section.
+   * Every method behind it is refused — `device.configure`, `list`, `open`,
+   * `action` and the `subscribeDeviceState` stream — and the surface asks for
+   * none of them until someone opens it, so nothing renders the refusal first.
+   * Upstream's launcher offers Device on any thread; ungated, that row opens
+   * `DeviceSetup`, whose "Enable the device hub" step calls `device.configure`
+   * and shows the refusal. The settings section is the same dead end reached
+   * from the other side: it saves hosts through `server.updateSettings`, which
+   * the backend does not dispatch either.
+   */
+  deviceHub: false,
 } satisfies Record<string, boolean>;
 
 export type FeatureName = keyof typeof FEATURES;

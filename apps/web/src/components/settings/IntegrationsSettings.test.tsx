@@ -20,6 +20,12 @@ const { listBrowserImportSources } = vi.hoisted(() => ({
 vi.mock("../preview/previewBridge", () => ({
   previewBridge: { listBrowserImportSources },
 }));
+// Fork: FEATURES.deviceHub off leaves the panel without its Devices section.
+// Enable it here so the ordering test keeps covering where the section lands.
+vi.mock("../../fork/features", async (importActual) => {
+  const actual = await importActual<typeof import("../../fork/features")>();
+  return { ...actual, FEATURES: { ...actual.FEATURES, deviceHub: true } };
+});
 vi.mock("../../env", () => ({ isElectron: true }));
 vi.mock("../../state/environments", () => ({
   useEnvironments: () => ({ environments: [], isReady: true }),
