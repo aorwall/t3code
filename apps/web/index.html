@@ -443,14 +443,12 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 96px;
-        height: 96px;
       }
 
       #boot-shell-logo {
-        width: 64px;
-        height: 64px;
-        object-fit: contain;
+        width: 240px;
+        max-width: 60vw;
+        height: auto;
       }
 
       #boot-error {
@@ -483,7 +481,13 @@
     <div id="root">
       <div id="boot-shell">
         <div id="boot-shell-card" aria-label="Moatless splash screen">
-          <img id="boot-shell-logo" src="/apple-touch-icon.png" alt="Moatless" />
+          <img
+            id="boot-shell-logo"
+            src="/moatless-logo.png"
+            width="740"
+            height="201"
+            alt="Moatless"
+          />
         </div>
       </div>
     </div>
