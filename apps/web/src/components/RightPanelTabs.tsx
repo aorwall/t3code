@@ -149,6 +149,9 @@ interface RightPanelTabsProps {
   /** Fork: the thread's sandbox status, shown on the entry that opens the
       surface explaining it. Absent where no sandbox owns this panel. */
   sandboxControl?: ReactNode;
+  /** Fork: the button that starts a stopped sandbox directly from the
+      disabled surface state. Absent where no sandbox owns this panel. */
+  sandboxStartControl?: ReactNode;
   /** Fork: where the environment serves its own asset route. A browser tab on
       that route reads the workspace snapshot, so a stopped sandbox leaves it
       showing its page. */
@@ -1542,6 +1545,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
           <RightPanelDisabledState
             reason={surfaceDisabledReason}
             onOpenSandbox={props.onAddSandbox}
+            startControl={props.sandboxStartControl}
           />
         ) : (
           props.children
