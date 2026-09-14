@@ -341,8 +341,10 @@ function isTransientBootstrapError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
 }
 
-async function bootstrapServerAuth(): Promise<ServerAuthGateState> {
-  const bootstrapCredential = getDesktopBootstrapCredential();
+async function bootstrapServerAuth(urlCredential: string | null): Promise<ServerAuthGateState> {
+  // Fork: Moatless answers the session probe with a cookie session instead of
+  // upstream's pairing state, so read it from there and treat 401/404 as an
+  // unauthenticated browser rather than a request failure.
   const currentSession =
     import.meta.env.VITE_MOATLESS_PROXY_AUTH === "true"
       ? await fetchMoatlessCurrentSessionState()
@@ -358,11 +360,18 @@ async function bootstrapServerAuth(): Promise<ServerAuthGateState> {
           }
           throw error;
         });
-  if (currentSession.authenticated) {
+  if (currentSession.authenticated && !urlCredential) {
     return { status: "authenticated" };
   }
 
-  if (!bootstrapCredential || !currentSession.auth.bootstrapMethods.includes("desktop-bootstrap")) {
+  const bootstrapCredential = urlCredential ?? getDesktopBootstrapCredential();
+  // Fork: a URL pairing token is its own method, so it stays on upstream's path.
+  // A desktop credential is only worth exchanging when the server advertises
+  // desktop-bootstrap — Moatless advertises none, and a stale one must not be sent.
+  if (
+    !bootstrapCredential ||
+    (urlCredential === null && !currentSession.auth.bootstrapMethods.includes("desktop-bootstrap"))
+  ) {
     return {
       status: "requires-login",
       auth: currentSession.auth,
@@ -476,19 +485,32 @@ export async function revokeOtherServerClientSessions(): Promise<number> {
 }
 
 export async function resolveInitialServerAuthGateState(): Promise<ServerAuthGateState> {
-  if (resolvedAuthenticatedGateState?.status === "authenticated") {
-    return resolvedAuthenticatedGateState;
+  const urlCredential = takePairingTokenFromUrl();
+  const previousPromise = bootstrapPromise;
+  if (urlCredential) {
+    resolvedAuthenticatedGateState = null;
+  } else {
+    if (previousPromise) {
+      return previousPromise;
+    }
+
+    if (resolvedAuthenticatedGateState?.status === "authenticated") {
+      return resolvedAuthenticatedGateState;
+    }
   }
 
-  if (bootstrapPromise) {
-    return bootstrapPromise;
-  }
-
-  const nextPromise = bootstrapServerAuth();
+  const nextPromise = previousPromise
+    ? previousPromise
+        .catch(() => undefined)
+        .then(() => {
+          resolvedAuthenticatedGateState = null;
+          return bootstrapServerAuth(urlCredential);
+        })
+    : bootstrapServerAuth(urlCredential);
   bootstrapPromise = nextPromise;
   return nextPromise
     .then((result) => {
-      if (result.status === "authenticated") {
+      if (bootstrapPromise === nextPromise && result.status === "authenticated") {
         resolvedAuthenticatedGateState = result;
       }
       return result;

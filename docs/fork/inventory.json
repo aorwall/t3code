@@ -529,6 +529,42 @@
       "verdict": "theirs-verbatim",
       "note": "Everything else under .github/workflows/. Upstream's files byte for byte, including workflows upstream adds later. They are switched off in GitHub, not in the tree, so there is no delta to preserve. Any fork delta here means someone edited a workflow — investigate before taking it.",
       "except": "fork-only-workflows,ci-workflow"
+    },
+    {
+      "id": "settings-surface-gates",
+      "paths": [
+        "apps/web/src/components/settings/SettingsPanels.tsx",
+        "apps/web/src/components/settings/SettingsSidebarNav.tsx",
+        "apps/web/src/components/settings/IntegrationsSettings.tsx",
+        "apps/web/src/components/settings/IntegrationsSettings.test.tsx"
+      ],
+      "verdict": "converged",
+      "note": "Take upstream, then re-state the FEATURES gates it wrote around. These are upstream's own files and it restructures them constantly, so the gates are written to survive that: each wraps a whole row or nav item additively and never re-indents the block beside it. SettingsSidebarNav also keeps the fork's extracted renderNavItem and its admin/feature filtering — carry upstream's collapsed-rail treatment into that helper rather than reverting it. When upstream replaces a gated control outright, the gate moves onto the replacement: the 2026-09-14 merge swapped enableLegacyTokenStreaming for the responseStreamingMode select and FEATURES.assistantStreaming moved with it. A gate silently dropped here un-hides a surface the backend cannot serve, and nothing else catches that."
+    },
+    {
+      "id": "settings-search-filters",
+      "paths": [
+        "apps/web/src/components/settings/settingsSearch.ts",
+        "apps/web/src/components/settings/settingsSearch.test.ts",
+        "apps/web/src/components/settings/useAvailableSettingsSearchItems.ts"
+      ],
+      "verdict": "converged",
+      "note": "Take upstream, then keep the fork's `*Only` availability filters — forgejoEnabledOnly, providerConfigurationOnly and assistantStreamingOnly, each an optional boolean on SettingsSearchItem read in filterAvailableSettingsSearchItems — plus the Moatless feature-flag read that feeds forgejoEnabled. This file is the second half of every gate in settings-surface-gates: gating a row in SettingsPanels does not reach the command palette, so a result for a hidden row still lands on the page at a hash for a control that is not rendered. When a merge gates a settings row, check whether upstream also gave it a searchable entry here."
+    },
+    {
+      "id": "sidebar-fork-chrome",
+      "paths": [
+        "apps/web/src/components/sidebar/SidebarChrome.tsx",
+        "apps/web/src/components/sidebar/SidebarThreadHeader.tsx"
+      ],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply the fork's chrome: APP_BASE_NAME branding in SidebarChrome (tripwire moatless-branding), and in SidebarThreadHeader the FEATURES.projectManagement gate on the New project button beside the fork-only SidebarThreadFilter. Upstream's compact-rail work rewrites the header's layout without touching either anchor, so the conflict is usually the import block alone — keep both fork import lines."
+    },
+    {
+      "id": "root-route",
+      "paths": ["apps/web/src/routes/__root.tsx"],
+      "verdict": "converged",
+      "note": "Take upstream, then keep `/login` in the chrome-less pathname list beside upstream's /pair and /connect. The fork's login route is its own full-page surface and must not render inside the app shell. Upstream's routing-recovery work — a notFoundComponent, and router.invalidate() in place of reset() so startup retries once the server is back — is additive and welcome; take all of it."
     }
   ],
 
