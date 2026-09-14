@@ -28,6 +28,74 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-14 — merged upstream to 1bbca0e7, upstream's compact-sidebar work rewrote the rows the fork gates and a settings gate had to move onto a control upstream replaced
+
+- Upstream: `1bbca0e78` from base `0c5771d60` (`32` commits).
+- Landed: `203` files from `git diff --stat HEAD^1 HEAD` against `201` in the
+  upstream range (`0c5771d60..HEAD^2`); fork delta `772` files from
+  `git diff --stat HEAD^2 HEAD`. The gap is two files and reconciles exactly,
+  both landed-not-in-range: `gaps.md` and `inventory.json` (this entry makes it
+  three). Nothing in the range failed to land.
+- Conflicts: 9 files, each taken to its inventory verdict. `pnpm-lock.yaml` was
+  reset to `upstream/main` and the fork edges re-derived by `vp i` — the
+  remaining diff is the `@t3tools/moatless-api` workspace link, `mermaid
+^11.17.2` and the `packages/moatless-api` importer. `AGENTS.md`
+  (`decide — agent-instructions`): upstream's only change in range was the
+  reusable dev credential, restated into the fork's own "Against the bundled
+  server" paragraph rather than taken as a block. `Sidebar.tsx`,
+  `LegacySidebar.tsx`, `ui/sidebar.tsx`, `SidebarThreadHeader.tsx` and
+  `ThreadStatusIndicators.tsx` are all the compact-sidebar restructure
+  (#11525, #9417, #11644) against fork gates — took upstream's structure whole
+  and re-applied each delta at its anchor. Four of those five were import-block
+  unions or a single re-placed element.
+- **A gated control was replaced, so the gate moved rather than survived.**
+  #11678 deleted the `enableLegacyTokenStreaming` switch the fork gated and put a
+  three-way `responseStreamingMode` select in its place. Taking upstream drops
+  the gate with the row it was on, which un-hides the replacement silently —
+  there is no conflict marker and no test for a surface that should not render.
+  The gate went onto the new row in `SettingsPanels.tsx`. The same sweep found
+  the second half: upstream also added a `response-streaming` entry to
+  `settingsSearch.ts`, and a gate on a row does not reach the command palette, so
+  the result would have landed on General at a hash for a control that is not
+  there. Added `assistantStreamingOnly` beside the existing
+  `providerConfigurationOnly` filter. New rows: `settings-surface-gates` and
+  `settings-search-filters` in the inventory — **when a merge gates a settings
+  row, check `settingsSearch.ts` in the same breath.**
+- **`authBootstrap.test.ts` auto-merged into something neither side wrote.** No
+  marker, no script catch — `resolution-check.mjs` documents this as the case it
+  cannot see. Upstream's two new tests assert `status: "requires-auth"`; the fork
+  renamed that gate status to `requires-login`. Only the fork's own suite caught
+  it. Restated the three assertions.
+- `auth.ts` (`decide — primary-auth`) took upstream's new `urlCredential`
+  parameter on top of the fork's cookie-session probe. The condition that matters:
+  a desktop credential is exchanged only when the server advertises
+  `desktop-bootstrap`, which `MOATLESS_BROWSER_COOKIE_AUTH` never does, so a
+  stale one is not sent; a URL pairing token is its own method and stays on
+  upstream's path.
+- Sweep: 8 owned-concern hits, all false positives — auth and pairing strings in
+  upstream's own `apps/server` auth work (#8606), which the fork does not adopt
+  and did not take. No file accepted from a concern-owned path.
+- Unsupported methods: ADD 0, DROP 0 — `rpc.ts` needed no edit. The two new
+  methods (`pullRequests.routing`, `routingIdentity`) arrived declaring
+  `PullRequestRpcError`, which already carries `UnsupportedMethodError`.
+- No route file was added, deleted or renamed upstream, so `regen-route-tree.mjs`
+  correctly skipped.
+- Verification: `tripwires`, `resolution-check`, `unsupported-methods`,
+  `fmt:check`, `lint` and `typecheck` all pass. Tests pass per package — web
+  `419`, mobile `319`, relay `30`. Two caveats, both standing:
+  - `@t3tools/desktop` fails `browser-secret-native.test.mjs` on a missing
+    `libsecret-1`. The file is untouched by this merge and `pkg-config --exists
+libsecret-1` fails in the sandbox — the machine, not the code. Already
+    recorded in gaps.md as _The desktop suite needs libsecret_.
+  - `duplicate-adds.mjs` reports 2 false positives. `auth.ts` → `if (` is a line
+    written by the `decide` resolution: it appears once in the merge and in
+    neither parent, so it cannot be a kept-twice duplicate. `authBootstrap.test.ts`
+    → `expect(testApi.calls.browserSession).toEqual([]);` traces to two
+    genuinely distinct tests, one per parent. The script's own tell is that a real
+    duplicate breaks lint, typecheck and test at once; all three are green.
+  - `@t3tools/mobile` failed once under the parallel run and passed alone — CPU
+    contention, not a regression.
+
 ### 2026-09-13 — merged upstream to 0c5771d6, upstream folded the sidebar's project scope into a new header component and the Moatless backend moved its dispatch again
 
 - Upstream: `0c5771d60` from base `e81606494` (`32` commits).

@@ -252,7 +252,18 @@ what a person loses, which is the part the derivation cannot tell you:
   project field now in `ProjectDefaultsSettings.tsx`, which upstream's
   scoped-settings work moved it to on 2026-09-09). The setting is client-side and
   survives, but it preselects a control on a panel the capability already keeps
-  off, so it changes nothing on Moatless until the group is served. Closes when
+  off, so it changes nothing on Moatless until the group is served. Grown again
+  in the 2026-09-14 merge by **cross-account routing** (upstream #11367):
+  `pullRequests.routing` and `pullRequests.routingIdentity`, which answer which
+  GitHub account an environment is authenticated as and pick the environment
+  whose account can act on a given pull request
+  (`packages/client-runtime/src/state/pullRequestRouting.ts`,
+  `connection/githubRoutingPermissions.ts`, `apps/server/src/pullRequest/`).
+  Both declare `PullRequestRpcError`, so they arrived already refusing and the
+  derivation reports no entry to add. Its settings UI mounts inside
+  `ConnectionsSettings.tsx`, so `FEATURES.connections` hides it too. Routing
+  means nothing before the group underneath it is served, so it closes with the
+  rest and not separately. Closes when
   the backend reports `capabilities.pullRequests: true` and dispatches the rest.
 - **Usage writes** — `server.refreshUsageRates` (#9146-era usage-pricing work,
   `apps/server/src/usage/usagePricing.ts`), which re-fetches provider price
@@ -373,6 +384,89 @@ what a person loses, which is the part the derivation cannot tell you:
   the two sides come from is _Deriving the unsupported set_ in the inventory.
 - **Then here:** drop the union entry in `packages/contracts/src/rpc.ts` and, if
   the method was the last one behind a flag, the flag too.
+
+### A folder expansion re-reads the whole index, because the backend ignores the path it was handed
+
+`projects.listEntries` is served and declares no `UnsupportedMethodError`, so
+this is not a refusal — it is a served method that got a new optional input in
+the 2026-09-14 merge and does not honour it. Upstream's #11527 added
+`directoryPath` to `ProjectListEntriesInput` (present → the immediate
+filesystem children of one directory, including gitignored ones; omitted → the
+old indexed recursive listing), an `ignored` boolean on `ProjectEntry`, and a
+`directory_list_failed` failure literal (`packages/contracts/src/project.ts`,
+`apps/server/src/workspace/WorkspaceEntries.ts`).
+
+Nothing breaks: `useDirectoryEntries` in
+`apps/web/src/components/files/useDirectoryEntries.ts` filters what comes back
+by parent path, so a full recursive listing still yields the right rows. It
+degrades instead, and quietly — every folder expansion re-reads and re-transfers
+the entire workspace index, the four-way request pool it added has nothing to
+pool, and gitignored files stay invisible because the indexed listing excludes
+them. On a large repository that is the difference between a keystroke and a
+wait.
+
+- **Closes when:** the backend reads `directoryPath` and answers with one
+  directory's immediate children, sets `ignored` on the entries that are
+  gitignored, and reports `directory_list_failed` for a path it cannot read.
+- **Then here:** nothing to delete — no flag holds this open, which is why it
+  would otherwise go unnoticed. Strike the entry when the backend honours the
+  field.
+
+### A turn arrives whole, so there is nothing for a streaming mode to govern
+
+`FEATURES.assistantStreaming` is `false` because Moatless delivers each
+assistant message once it is complete. Upstream's #11678 replaced the
+`enableLegacyTokenStreaming` boolean with a three-way `responseStreamingMode`
+(turn / paragraph / token) on `ServerSettings`, and the 2026-09-14 merge carried
+the fork's gate onto the new row in `SettingsPanels.tsx`. Two reasons it is worth
+more than a moved gate.
+
+The setting itself is unsaveable anyway — `server.updateSettings` refuses — so
+the gate is really about not showing a control for a distinction the backend does
+not make. The same merge added `assistantStreamingOnly` to `settingsSearch.ts`,
+because the gate on the row does not reach the command palette and a result for
+it would land on General at a hash for a control that is not rendered. That is
+the `snap-shot-*` problem above, one page over.
+
+The interesting half is upstream's server change behind the middle mode
+(#11062): `splitBufferedAssistantText` in
+`apps/server/src/orchestration/Layers/ProviderRuntimeIngestion.ts` flushes the
+buffered message at the last blank line or closing fence that is _not_ inside an
+open code block, no more than once every 400 ms. That needs no token stream — it
+is a buffer-and-split on the message the backend already builds, which makes it
+the reachable middle ground between what Moatless does now and real streaming.
+The client half merged inert and is ready for it: the fade-in is gated on
+`data-streaming` and the smooth end-scroll on `isWorking`, so a whole-message
+delivery simply never triggers them.
+
+- **Closes when:** the backend delivers a turn in completed paragraphs and code
+  blocks rather than all at once. Reproduce the split boundary faithfully — a
+  naive split on `\n\n` breaks fenced blocks and tables, which is the bug
+  upstream wrote that helper to avoid.
+- **Then here:** delete `FEATURES.assistantStreaming` and the
+  `assistantStreamingOnly` filter beside it. Saving the setting is a separate
+  gap — see _Editing server settings_ above.
+
+### The handshake now fails a connection whose environment id does not come back
+
+Upstream's #8606 was its own dev-auth feature, which this fork does not adopt,
+but it carried a client-side guard that applies here regardless. After
+`initialSync`, `packages/client-runtime/src/rpc/session.ts` compares
+`config.environment.environmentId` with the id the connection was registered
+under and fails with a `ConnectionBlockedError` — "Connected environment X does
+not match Y" — instead of proceeding. The same commit removed the
+initial-config race in the `serverConfigEvents` stream.
+
+So an id Moatless echoes differently from the one the client registered is now a
+hard connection failure rather than a silent mismatch. This is a live risk, not
+a missing feature: it is the kind of thing that passes every check in this
+repository and fails on first contact with a deployment.
+
+- **Closes when:** a real Moatless deployment has been connected to on this
+  branch and the handshake is confirmed to echo, in its `subscribeServerConfig`
+  descriptor, exactly the `environmentId` the client registered.
+- **Then here:** nothing to delete. Strike the entry once that check has been
+  run against a deployment.
 
 ### A script runs on the backend, and only the backend can edit one
 
@@ -688,12 +782,45 @@ Three more arrived in the 2026-09-13 merge:
   requests, so a Forgejo or Gitea project is an unrecognised host there
   regardless of what the client can render.
 
+Three more arrived in the 2026-09-14 merge:
+
+- **A thread should not fail to create because a worktree could not be made.**
+  Upstream now preflights whether the project cwd is a git repository at all and
+  whether the resolved base ref names a real commit, falling back to the project
+  checkout instead of failing thread creation (`isRepository` and `hasCommit` in
+  `apps/server/src/git/GitWorkflowService.ts`, the preflight in
+  `bootstrapProgram`, #6208). Largely moot today — `FEATURES.worktreeSelection`
+  is off because Moatless runs each task in its own sandbox and never sets
+  `worktreePath` — and recorded because the shape is the one to copy if worktrees
+  ever arrive: preflight and degrade, never fail the thread.
+- **Work that outlives a tool call should still emit a task lifecycle.**
+  Upstream's Grok adapter derives task started/updated/completed runtime events
+  from `ToolCallUpdated` payloads for long-running monitors and background
+  shells (`apps/server/src/provider/acp/XAiBackgroundTasks.ts`,
+  `provider/Layers/GrokAdapter.ts`, #9139). Moatless runs its own agents rather
+  than upstream's ACP adapters, so none of the code is reusable — but the
+  contract-level behaviour is: the client already knows how to render a task's
+  lifecycle, so a Moatless task that spawns a background shell or a watcher
+  lights that surface up for free by emitting the same events.
+- **A transport-error pattern should not swallow the agent's own diagnostics.**
+  Upstream's `transportError` regex gained a `(?!\[internal\])` so a
+  `RetriableError: [internal] …` is no longer replaced with a generic "Something
+  went wrong communicating with the server"
+  (`apps/server/src/provider/acp/CursorTransportFailure.ts`, #11365).
+  Cursor-specific and not a fork target; the generalisable part is the failure
+  mode. Wherever Moatless normalises sandbox or agent errors into
+  transport-versus-agent buckets, an over-broad transport pattern erases exactly
+  the diagnostic a person needed.
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
   compaction path queues in-flight user messages, its review diffs report
   renames, it passes qualified model ids through unmodified, its pull-request
   reads are scoped to the projects asked for, its usage scan follows each
-  account's own home, and it recognises Forgejo and Gitea remotes.
+  account's own home, it recognises Forgejo and Gitea remotes, it preflights and
+  degrades rather than failing a thread whose worktree cannot be made, it emits
+  task lifecycle events for work outliving a tool call, and its error
+  normalisation preserves internal agent diagnostics.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
