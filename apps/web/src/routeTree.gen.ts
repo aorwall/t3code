@@ -42,6 +42,7 @@ import { Route as SettingsUsersLoginRouteImport } from './routes/settings.users_
 import { Route as SettingsSkillsPluginIdRouteImport } from './routes/settings.skills_.$pluginId'
 import { Route as SettingsLoopsLoopIdRouteImport } from './routes/settings.loops_.$loopId'
 import { Route as SettingsIntegrationsConnectionIdRouteImport } from './routes/settings.integrations_.$connectionId'
+import { Route as ChatTasksTaskIdRouteImport } from './routes/_chat.tasks.$taskId'
 import { Route as ChatDraftDraftIdRouteImport } from './routes/_chat.draft.$draftId'
 import { Route as ChatEnvironmentIdThreadIdRouteImport } from './routes/_chat.$environmentId.$threadId'
 
@@ -211,6 +212,11 @@ const SettingsIntegrationsConnectionIdRoute =
     path: '/integrations/$connectionId',
     getParentRoute: () => SettingsRoute,
   } as any)
+const ChatTasksTaskIdRoute = ChatTasksTaskIdRouteImport.update({
+  id: '/tasks/$taskId',
+  path: '/tasks/$taskId',
+  getParentRoute: () => ChatRoute,
+} as any)
 const ChatDraftDraftIdRoute = ChatDraftDraftIdRouteImport.update({
   id: '/draft/$draftId',
   path: '/draft/$draftId',
@@ -254,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/settings/version-control': typeof SettingsVersionControlRoute
   '/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
   '/draft/$draftId': typeof ChatDraftDraftIdRoute
+  '/tasks/$taskId': typeof ChatTasksTaskIdRoute
   '/settings/integrations/$connectionId': typeof SettingsIntegrationsConnectionIdRoute
   '/settings/loops/$loopId': typeof SettingsLoopsLoopIdRoute
   '/settings/skills/$pluginId': typeof SettingsSkillsPluginIdRoute
@@ -290,6 +297,7 @@ export interface FileRoutesByTo {
   '/': typeof ChatIndexRoute
   '/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
   '/draft/$draftId': typeof ChatDraftDraftIdRoute
+  '/tasks/$taskId': typeof ChatTasksTaskIdRoute
   '/settings/integrations/$connectionId': typeof SettingsIntegrationsConnectionIdRoute
   '/settings/loops/$loopId': typeof SettingsLoopsLoopIdRoute
   '/settings/skills/$pluginId': typeof SettingsSkillsPluginIdRoute
@@ -328,6 +336,7 @@ export interface FileRoutesById {
   '/_chat/': typeof ChatIndexRoute
   '/_chat/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
   '/_chat/draft/$draftId': typeof ChatDraftDraftIdRoute
+  '/_chat/tasks/$taskId': typeof ChatTasksTaskIdRoute
   '/settings/integrations_/$connectionId': typeof SettingsIntegrationsConnectionIdRoute
   '/settings/loops_/$loopId': typeof SettingsLoopsLoopIdRoute
   '/settings/skills_/$pluginId': typeof SettingsSkillsPluginIdRoute
@@ -366,6 +375,7 @@ export interface FileRouteTypes {
     | '/settings/version-control'
     | '/$environmentId/$threadId'
     | '/draft/$draftId'
+    | '/tasks/$taskId'
     | '/settings/integrations/$connectionId'
     | '/settings/loops/$loopId'
     | '/settings/skills/$pluginId'
@@ -402,6 +412,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$environmentId/$threadId'
     | '/draft/$draftId'
+    | '/tasks/$taskId'
     | '/settings/integrations/$connectionId'
     | '/settings/loops/$loopId'
     | '/settings/skills/$pluginId'
@@ -439,6 +450,7 @@ export interface FileRouteTypes {
     | '/_chat/'
     | '/_chat/$environmentId/$threadId'
     | '/_chat/draft/$draftId'
+    | '/_chat/tasks/$taskId'
     | '/settings/integrations_/$connectionId'
     | '/settings/loops_/$loopId'
     | '/settings/skills_/$pluginId'
@@ -690,6 +702,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsIntegrationsConnectionIdRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/_chat/tasks/$taskId': {
+      id: '/_chat/tasks/$taskId'
+      path: '/tasks/$taskId'
+      fullPath: '/tasks/$taskId'
+      preLoaderRoute: typeof ChatTasksTaskIdRouteImport
+      parentRoute: typeof ChatRoute
+    }
     '/_chat/draft/$draftId': {
       id: '/_chat/draft/$draftId'
       path: '/draft/$draftId'
@@ -712,6 +731,7 @@ interface ChatRouteChildren {
   ChatIndexRoute: typeof ChatIndexRoute
   ChatEnvironmentIdThreadIdRoute: typeof ChatEnvironmentIdThreadIdRoute
   ChatDraftDraftIdRoute: typeof ChatDraftDraftIdRoute
+  ChatTasksTaskIdRoute: typeof ChatTasksTaskIdRoute
 }
 
 const ChatRouteChildren: ChatRouteChildren = {
@@ -719,6 +739,7 @@ const ChatRouteChildren: ChatRouteChildren = {
   ChatIndexRoute: ChatIndexRoute,
   ChatEnvironmentIdThreadIdRoute: ChatEnvironmentIdThreadIdRoute,
   ChatDraftDraftIdRoute: ChatDraftDraftIdRoute,
+  ChatTasksTaskIdRoute: ChatTasksTaskIdRoute,
 }
 
 const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)

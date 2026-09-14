@@ -205,6 +205,12 @@
       "note": "Fork-only /login."
     },
     {
+      "id": "moatless-task-link-route",
+      "paths": ["apps/web/src/routes/_chat.tasks.$taskId.tsx"],
+      "verdict": "ours",
+      "note": "Fork-only /tasks/<task id>, the URL Moatless prints for a task, forwarded to the thread route. Must keep outranking _chat.$environmentId.$threadId, which matches the same two-segment path."
+    },
+    {
       "id": "auth-bootstrap-test",
       "paths": ["apps/web/src/authBootstrap.test.ts"],
       "verdict": "decide",
