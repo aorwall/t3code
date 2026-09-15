@@ -28,6 +28,98 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-15 — merged upstream to 5623089a, upstream reverted the compact sidebar and took five fork gates' anchors with it
+
+- Upstream: `5623089ae` from base `1bbca0e78` (`60` commits).
+- Landed: `388` files from `git diff --stat HEAD^1 HEAD` against `386` in the
+  upstream range (`1bbca0e78..HEAD^2`); fork delta `777` files from
+  `git diff --stat HEAD^2 HEAD`. The gap reconciles exactly: three landed-not-in-range
+  (`gaps.md`, `inventory.json`, this entry) and one in-range-not-landed,
+  `apps/server/src/cli/pair.ts`, which the fork deletes on purpose and which
+  conflicted modify/delete — resolved by keeping the deletion. Nothing else in
+  the range failed to land.
+- Conflicts: 14 files. `pnpm-lock.yaml` was reset to `upstream/main` and the fork
+  edges re-derived by `vp i` (`@t3tools/moatless-api`, `mermaid`, `orval`).
+- **The dominant shape was upstream deleting the anchor, not upstream editing
+  the delta.** `d81278aa6 revert(web): remove the compact sidebar (#11685)` took
+  out every `group-data-[collapsible=icon]` variant (upstream now has 0), the
+  `compact` prop, the `useCompactSidebarEnabled` hook, and
+  `ThreadStatusIndicators`' `iconOnly` prop and `"badge"` variant. In
+  `LegacySidebar.tsx`, `Sidebar.tsx`, `SettingsSidebarNav.tsx`,
+  `SidebarThreadHeader.tsx` and `ThreadStatusIndicators.tsx` the fork's side
+  looked the richer one and mostly was not: most of that richness was upstream's
+  own code inherited from the merge base. **Check ownership per line with
+  `git show <merge-base>:<path>` before deciding one of these** — taking the
+  fork side wholesale would have left `compact`, `compactSidebarEnabled` and
+  `iconOnly` as undefined references, and taking upstream without reading would
+  have dropped `FEATURES.projectManagement`, `ownerName`, `isBrowsing` and
+  `pullRequests`. Took upstream's structure whole in all five and re-applied only
+  the genuinely fork-authored deltas.
+- `projectScripts.ts` / `projectScriptEditor.tsx` / `projectScripts.test.ts`
+  (`project-script-port-field`): upstream's #11832 added a `waitForSetup` toggle
+  mapping to `async: false`. Carried it — this is the first upstream field the
+  port-only form has had to decide on, and it is orthogonal to the port. The
+  fork's deletion of the preview-URL toggle survives. Added
+  `projectScripts.test.ts` to the entry's `paths`; it holds the fork's
+  `portFromPreviewUrl` test and was unlisted.
+- `BranchToolbar.tsx` (`navigation-gates`): additive, both sides kept —
+  `showWorkspaceControls` still stands in for upstream's `showGitControls`.
+  `MessagesTimeline.tsx`: fork's `onForkThread` kept beside upstream's three new
+  worktree-setup callbacks, in the interface, the context object and the dep
+  array. `__root.tsx` (`root-route`): upstream dropped
+  `pathname.startsWith("/connect/")`; the fork's `/login` guard stays.
+  `useAvailableSettingsSearchItems.ts` (`settings-search-filters`): took
+  upstream's `localEnvironmentDisabled`-guarded `desktopWsl`, kept the
+  `moatlessFeatures` read, unioned both dep arrays.
+- Sweep: upstream added 74 files; 14 land inside a fork-owned concern —
+  `ProjectCloneToastCoordinator.tsx`, `state/projectClones.ts` (web and mobile),
+  `ProjectCloneBanner.tsx`, `useRemoveClonedProject.ts`,
+  `contracts/projectClone.ts`, `WorktreeSetupCard.tsx`,
+  `contracts/worktreeSetup.ts`, `DeviceHostEditor.tsx`,
+  `deviceHostConnectionChecks.ts`, `useHostConnectionChecks.ts`,
+  `LocalEnvironmentSetting.tsx`, `localEnvironment.ts`,
+  `T3ConnectProfilePage.tsx`. All accepted from upstream unmodified and **no new
+  `FEATURES` flag was needed**: each is reached only through a gate already in
+  place (`projectManagement` via `action:add-project`, `worktreeSelection` via
+  the composer's send mode, `deviceHub` via `IntegrationsSettingsPanel`) or sits
+  in a surface already decided out. The clone stream is doubly covered — the
+  client gates it on `capabilities.projectCloneTracking`, which a Moatless
+  handshake omits.
+- Unsupported methods: ADD 6, DROP 0. `projectClone.start` / `.cancel` /
+  `.retry`, `subscribeProjectClones`, `subscribeWorktreeSetup` and
+  `worktreeSetup.cancel` gained `UnsupportedMethodError` in `rpc.ts`. 99 of 157
+  WebSocket methods now declare it; re-derivation after the edit reports ADD 0 /
+  DROP 0. Both families are written up in
+  [gaps.md](./gaps.md) under _Methods the backend does not dispatch_.
+- No route file was added, deleted or renamed upstream, so `regen-route-tree.mjs`
+  correctly skipped.
+- Seven backend behaviours worth reproducing were recorded in gaps.md under
+  _Runtime fixes upstream made to its own server_ — thread titles from user
+  intent (#10720) and their link resolution (#11844), `async: false` setup
+  scripts (#11832), the setup-script color probe (#11843), the provider refresh
+  on `subscribeConfig` (#11811), the terminal output send window (#11407), and
+  tight-list streaming (#11833).
+- Verification: `duplicate-adds`, `tripwires`, `resolution-check`,
+  `unsupported-methods`, `fmt:check`, `lint` and `typecheck` pass. Two failures
+  were found and fixed before the final pass:
+  - `typecheck`: upstream's new `settingsSearch.test.ts` case built a
+    `SettingsSearchAvailability` without the fork's required `forgejoEnabled`.
+    This is the second merge running where a fork field on that type broke an
+    upstream test addition — **when the fork adds a field to a shared
+    availability type, expect upstream's next new fixture to miss it.**
+  - `unsupported-methods` exit 1 with the ADD bucket above.
+  - Caveat, standing: `@t3tools/desktop` fails
+    `browser-secret-native.test.mjs` on a missing `libsecret-1`. Untouched by
+    this merge and present on `HEAD^1`; `pkg-config --exists libsecret-1` fails
+    in the sandbox. Recorded in gaps.md as _The desktop suite needs libsecret_.
+  - `@t3tools/mobile`, `t3` and `@t3tools/web` did not finish in the parallel
+    run and passed when retried alone — CPU contention, the case
+    _The full suite needs a raised heap_ already covers.
+- Post-merge action: `tripwires.mjs` reports two new upstream workflows,
+  `desktop-macos-preview-publish.yml` and `release-desktop.yml`. Both must be
+  disabled in GitHub, and **cannot be until this PR merges** — the API answers
+  404 for a workflow that is not yet on the default branch.
+
 ### 2026-09-14 — merged upstream to 1bbca0e7, upstream's compact-sidebar work rewrote the rows the fork gates and a settings gate had to move onto a control upstream replaced
 
 - Upstream: `1bbca0e78` from base `0c5771d60` (`32` commits).
