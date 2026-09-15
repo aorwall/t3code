@@ -108,7 +108,57 @@ const STEPS = [
 ];
 
 /** The web suite exceeds node's default heap; see the header. */
-const HEAP_MB = 12288;
+const HEAP_FLOOR_MB = 4096;
+const HEAP_CEILING_MB = 12288;
+
+/**
+ * The heap ceiling handed to each test process.
+ *
+ * Node sizes its default heap from the host's memory and never sees a cgroup
+ * limit, so on a capped pod a hardcoded ceiling is a promise the kernel has
+ * not agreed to: one suite claims the whole budget, the pod is evicted rather
+ * than the process OOM-killed, and the run dies with no partial result and no
+ * readable log. Take a share of the real cap instead, leaving the rest for the
+ * task runner, pnpm, and whatever else shares the pod.
+ */
+function heapMb() {
+  const cap = cgroupMemoryLimitMb();
+  if (cap === null) return HEAP_CEILING_MB;
+  // Half, so that two of these side by side still fit inside the cap — the
+  // parallel step runs more than one test process at a time.
+  const share = Math.floor(cap / 2);
+  return Math.max(HEAP_FLOOR_MB, Math.min(HEAP_CEILING_MB, share));
+}
+
+/** The pod's memory cap in MB, or `null` when uncapped or unreadable. */
+function cgroupMemoryLimitMb() {
+  const sources = ["/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"];
+  for (const source of sources) {
+    let raw;
+    try {
+      raw = NodeFS.readFileSync(source, "utf8").trim();
+    } catch {
+      continue;
+    }
+    // cgroup v2 writes "max" when uncapped; v1 writes a number near 2^63.
+    if (raw === "max") return null;
+    const bytes = Number(raw);
+    if (!Number.isFinite(bytes) || bytes <= 0 || bytes > Number.MAX_SAFE_INTEGER) continue;
+    const mb = Math.floor(bytes / 1024 / 1024);
+    // A v1 "unlimited" sentinel is a real number; treat an implausible cap as none.
+    if (mb > 1024 * 1024) return null;
+    return mb;
+  }
+  return null;
+}
+
+const HEAP_MB = heapMb();
+
+/** Names the cap the heap was derived from, so a surprising number explains itself. */
+function capNote() {
+  const cap = cgroupMemoryLimitMb();
+  return cap === null ? " (no pod memory cap found)" : `, half of this pod's ${cap}MB cap`;
+}
 
 function heapEnv() {
   return {
@@ -446,8 +496,10 @@ function summarize(results) {
     // assertion. Chasing it as a test failure is a long detour.
     if (result.status === 137 || result.signal === "SIGKILL") {
       section.fail(`${result.name} was killed — out of memory, not a failing check`, [
-        `Already retried at --max-old-space-size=${HEAP_MB}. Raise it, or run the`,
-        "workspaces one at a time to find which suite is the heavy one.",
+        `Already retried at --max-old-space-size=${HEAP_MB}${capNote()}.`,
+        "Raising it past the pod's cap trades an OOM-killed process for an evicted",
+        "pod, which loses the whole run and its log. Run --sequential instead to",
+        "find which suite is the heavy one.",
       ]);
       continue;
     }

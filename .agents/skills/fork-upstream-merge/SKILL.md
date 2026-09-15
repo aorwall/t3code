@@ -414,6 +414,15 @@ nit does not hide the type errors behind it — and it raises the heap the web
 suite needs, whose failure mode is otherwise an exit 137 that reads like a real
 test failure.
 
+That heap is derived from the pod's cgroup cap, not hardcoded, and this is the
+one number not to raise by hand. Node sizes its default heap from the host's
+memory and never sees the cap, so `free` reporting 62GB on a 12GB pod is the
+trap: a heap set to the whole cap lets one suite claim the entire budget, and
+the kernel then evicts the pod rather than OOM-killing the process. An evicted
+pod loses the run, the `node_modules` it installed, and the log that would have
+said how far it got — strictly worse than the exit 137 the heap was raised to
+avoid.
+
 The full pass is about thirteen minutes and the test step is most of it. When
 something fails, fix it and re-run `verify.mjs --fast`, which keeps every check
 except the tests; run the full command again once it is green.
@@ -466,6 +475,11 @@ which bounds that peak, keeps each phase short, and prints a
 what passed. It is slower when the machine can take the parallel run, and it is
 the one that finishes when it cannot. The 2026-09-15 merge lost two full passes
 to this before finishing sequentially.
+
+Check `/sys/fs/cgroup/memory.max` before concluding a suite is at fault. That
+merge's evictions were not the suites being heavy: the heap ceiling was
+hardcoded at exactly the pod's cap, so any one of them was entitled to all of
+it. `free` reports the host and will not show you this.
 
 Reach for it on the second attempt, not the first — and do not hand-roll it as a
 shell loop over `--package`. A loop that pipes each run through `tail` reports
