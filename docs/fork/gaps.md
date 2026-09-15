@@ -193,6 +193,33 @@ what a person loses, which is the part the derivation cannot tell you:
   (commands, see below), `sourceControl.cloneRepository`, `lookupRepository`,
   `publishRepository`, `filesystem.browse`, `vcs.init`, `createRef`,
   `createWorktree`, `removeWorktree`, `pull`. Holds open `projectManagement`.
+  Grown in the 2026-09-15 merge by **background repository cloning** (upstream
+  #11762 web, #11774 mobile): `projectClone.start`, `.cancel`, `.retry` and the
+  `subscribeProjectClones` push stream, which turn "add a project from a remote"
+  into a tracked job — the project row appears immediately and the clone streams
+  its progress into a toast (`ProjectCloneToastCoordinator.tsx`,
+  `apps/web/src/state/projectClones.ts`) rather than blocking the palette.
+  Nothing new is lost: the whole flow hangs off `action:add-project`, which
+  `FEATURES.projectManagement` already drops, and the stream is additionally
+  gated client-side on `capabilities.projectCloneTracking`, which a Moatless
+  handshake omits — so the four union entries are the only stand-in, and they
+  close with the rest of this bullet.
+- **Preparing a worktree behind a progress stream** — `subscribeWorktreeSetup`
+  and `worktreeSetup.cancel`, new upstream in this merge (#11372, grown by
+  #11832). Upstream cuts a thread's worktree as a tracked setup with named
+  stages — clone, checkout, setup script — that the transcript renders as a
+  `WorktreeSetupCard` with a cancel button, an "open the terminal" action and a
+  "work locally instead" fallback, and #11832's `async: false` lets a setup
+  script block the agent until it finishes. A Moatless thread gets a sandbox
+  rather than a worktree, so there is no setup to stage and nothing is lost —
+  `FEATURES.worktreeSelection` keeps the composer out of `worktree` send mode,
+  `baseBranchForWorktree` therefore stays null in `ChatView.tsx`, and the
+  subscription is never opened. Holds open the two union entries and that flag,
+  which is the same flag the Workspace picker already holds. Closes only if
+  Moatless ever prepares a checkout in observable stages, which its sandbox
+  model does not currently have a place for. The setup script half is the
+  exception worth reading on its own — see _A script runs on the backend_ below,
+  where `async: false` is recorded as backend behavior rather than a refusal.
 - **Content search** — `projects.searchContents`. Path search, read and list are
   all served, so "Go to file" works and "search in files" does not. Holds open
   `workspaceSearchContents`.
@@ -511,6 +538,13 @@ the port and returns the real external URL when the script runs (see
 `autoOpenPreview` stay on the contract for wire-compatibility but the fork's UI
 no longer writes a URL.
 
+The 2026-09-15 merge added upstream's first such field, and it was carried: a
+setup script can now be marked to finish before the agent's first turn starts
+(#11832). It rides as `waitForSetup` in the editor's form and maps to
+`async: false` on the script (`apps/web/src/projectScripts.ts`), so the flag is
+written through `project.meta.update` today and does nothing until the backend
+honours it — see _Runtime fixes upstream made to its own server_ below.
+
 - **Closed by:** the backend dispatching `project.meta.update` for a project's
   scripts and reporting `scriptsEditable` per project.
 - **Watch on merge:** if upstream's editor grows a field the fork's port-only
@@ -812,6 +846,53 @@ Three more arrived in the 2026-09-14 merge:
   transport-versus-agent buckets, an over-broad transport pattern erases exactly
   the diagnostic a person needed.
 
+Seven more arrived in the 2026-09-15 merge:
+
+- **A generated thread title should describe what the user asked for.** Upstream
+  reworked title generation so the title is derived from user intent and
+  regenerated only when intent actually changes, with a decider
+  (`decider.titleRegeneration.test.ts`), a projection field, and a scripted
+  evaluation harness over recorded cases
+  (`apps/server/scripts/evaluate-thread-titles.ts`,
+  `orchestration/Layers/ProviderCommandReactor.ts`, #10720). Moatless titles its
+  own threads, so this is the whole behaviour to copy, not a patch — including
+  the harness, which is the part that makes "is the title good" answerable
+  rather than argued.
+- **A title's links should be resolved by the provider that owns them.**
+  Upstream moved issue- and PR-reference resolution out of title generation and
+  behind `SourceControlProvider`, with GitHub and GitLab implementations
+  (`apps/server/src/sourceControl/`, #11844, tidied by #11847). Moatless owns
+  source control, so a `#123` in a title stays unresolved text there until it
+  does the same lookup.
+- **A setup script should be able to block the agent.** #11832's `async: false`
+  lets a project setup script finish before the agent's first turn starts.
+  The fork already carries the client half — the editor's "Wait for it to finish
+  before the agent starts" toggle and the `waitForSetup` → `async: false`
+  mapping in `apps/web/src/projectScripts.ts` — so the flag reaches the backend
+  on `project.meta.update` today and means nothing until Moatless honours it.
+  See _A script runs on the backend_ above.
+- **A setup script should not wait on a color probe nobody will answer.**
+  Upstream sets `NO_COLOR=1` / `FORCE_COLOR=0` for a setup script, because it
+  runs before any terminal client has attached to answer the probe and the
+  script otherwise stalls (`apps/server/src/project/ProjectSetupScriptRunner.ts`,
+  #11843). Moatless runs scripts in a sandbox terminal with the same
+  nobody-is-attached window, so this is a one-line fix with a hang behind it.
+- **A config subscription should not refresh providers.** Upstream dropped a
+  provider refresh that ran on every `subscribeConfig` (`apps/server/src/ws.ts`,
+  #11811). Relevant wherever Moatless does work on subscribe rather than on
+  change: every reconnecting client paid for it.
+- **Terminal output should not cost a round trip per chunk.** Upstream added a
+  send window over `terminal.attach` and `subscribeTerminalEvents` — up to 8
+  pending chunks or 64 KiB in flight before it waits for an ack
+  (`apps/server/src/terminal/OutputProtocol.ts`, #11407). Moatless serves both
+  methods, so a chatty build in a sandbox terminal is latency-bound there in
+  exactly the way this fixes.
+- **A tight list should stream one item at a time.** Upstream's runtime
+  ingestion no longer emits a tight markdown list as one block in paragraph mode
+  (`orchestration/Layers/ProviderRuntimeIngestion.ts`, #11833). Moatless builds
+  its own assistant stream; see also _A turn arrives whole_ above, which is the
+  larger version of the same gap.
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
   compaction path queues in-flight user messages, its review diffs report
@@ -820,7 +901,11 @@ Three more arrived in the 2026-09-14 merge:
   account's own home, it recognises Forgejo and Gitea remotes, it preflights and
   degrades rather than failing a thread whose worktree cannot be made, it emits
   task lifecycle events for work outliving a tool call, and its error
-  normalisation preserves internal agent diagnostics.
+  normalisation preserves internal agent diagnostics, its titles are generated
+  from user intent and resolve their own links, it honours `async: false` on a
+  setup script and runs one without a color probe, it does no provider refresh
+  on subscribe, it windows terminal output rather than acking per chunk, and it
+  streams tight list items one at a time.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

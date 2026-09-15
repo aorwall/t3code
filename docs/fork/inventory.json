@@ -957,6 +957,7 @@
         "apps/web/src/components/settings/ProjectActionsList.tsx",
         "apps/web/src/components/settings/ProjectActionsSettings.tsx",
         "apps/web/src/projectScripts.ts",
+        "apps/web/src/projectScripts.test.ts",
         "packages/contracts/src/orchestration.ts"
       ],
       "mustSurvive": "The script editor sets a numeric Port, not upstream's free-text Preview URL: a script in a remote sandbox has no localhost to point at, so the host publishes the port and returns the real external URL when the script runs (scripts.run). ProjectScript carries port (1..65535); the editor's Port input replaces the Preview URL input and auto-open toggle, and buildProjectScript derives autoOpenPreview from the port's presence. previewUrl / autoOpenPreview stay on the contract for wire-compatibility but the fork's UI never writes a URL. The row badge in ProjectActionsList.tsx reads `preview · :<port>` where upstream reads `preview · desktop only` off previewUrl. Importing a t3.json script in ProjectActionsSettings.tsx runs the free-text previewUrl through portFromPreviewUrl so the import keeps a port rather than a URL. A merge that restores the Preview URL input has dropped the port.",

@@ -85,6 +85,8 @@ export interface NewProjectScriptInput {
   command: string;
   icon: ProjectScriptIcon;
   runOnWorktreeCreate: boolean;
+  /** Setup scripts only: hold the agent until the script exits. */
+  waitForSetup: boolean;
   keybinding: string | null;
   /**
    * Fork addition (Moatless). The port this script serves on, or null for a
@@ -102,6 +104,7 @@ export const EMPTY_PROJECT_SCRIPT_INPUT: NewProjectScriptInput = {
   command: "",
   icon: "play",
   runOnWorktreeCreate: false,
+  waitForSetup: false,
   keybinding: null,
   port: null,
 };
@@ -125,6 +128,7 @@ export function editorRequestForScript(
       command: script.command,
       icon: script.icon,
       runOnWorktreeCreate: script.runOnWorktreeCreate,
+      waitForSetup: script.runOnWorktreeCreate && script.async === false,
       keybinding: keybindingValueForCommand(keybindings, commandForProjectScript(script.id)),
       port: script.port ?? null,
     },
@@ -159,6 +163,7 @@ export function ProjectScriptEditorDialog({
   const [icon, setIcon] = useState<ProjectScriptIcon>("play");
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [runOnWorktreeCreate, setRunOnWorktreeCreate] = useState(false);
+  const [waitForSetup, setWaitForSetup] = useState(false);
   const [keybinding, setKeybinding] = useState("");
   const [port, setPort] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -188,6 +193,7 @@ export function ProjectScriptEditorDialog({
     setIcon(request.initial.icon);
     setIconPickerOpen(false);
     setRunOnWorktreeCreate(request.initial.runOnWorktreeCreate);
+    setWaitForSetup(request.initial.waitForSetup);
     setKeybinding(request.initial.keybinding ?? "");
     setPort(request.initial.port === null ? "" : String(request.initial.port));
     setValidationError(request.error ?? null);
@@ -255,6 +261,7 @@ export function ProjectScriptEditorDialog({
         command: trimmedCommand,
         icon,
         runOnWorktreeCreate,
+        waitForSetup: runOnWorktreeCreate && waitForSetup,
         keybinding: keybindingRule?.key ?? null,
         port: portValue,
       } satisfies NewProjectScriptInput;
@@ -408,6 +415,22 @@ export function ProjectScriptEditorDialog({
                     onCheckedChange={(checked) => setRunOnWorktreeCreate(Boolean(checked))}
                   />
                 </label>
+                <label
+                  className={`flex items-center justify-between gap-3 rounded-md border border-border/70 px-3 py-2 text-sm dark:border-transparent dark:bg-white/[0.035] ${
+                    runOnWorktreeCreate ? "" : "opacity-60"
+                  }`}
+                >
+                  <span>Wait for it to finish before the agent starts</span>
+                  <Switch
+                    checked={waitForSetup}
+                    disabled={!runOnWorktreeCreate}
+                    onCheckedChange={(checked) => setWaitForSetup(Boolean(checked))}
+                  />
+                </label>
+                {/* Fork: no "Open preview automatically" toggle — the Port field
+                    above stands in for upstream's Preview URL, and
+                    buildProjectScript derives autoOpenPreview from the port's
+                    presence (inventory entry project-script-port-field). */}
                 {validationError && <p className="text-sm text-destructive">{validationError}</p>}
               </fieldset>
             </form>
