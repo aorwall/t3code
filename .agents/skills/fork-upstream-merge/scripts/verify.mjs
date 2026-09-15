@@ -6,12 +6,27 @@
  *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --fast
  *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only typecheck,test
  *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only test --package @t3tools/web
+ *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --sequential
  *
  * `--package` runs the test step for one package. The full pass outruns the
  * ten-minute limit an agent's shell call gets, which turns the last step of
  * every merge into a background job and a polling loop — and a poll that gets
  * interrupted loses the run. One package at a time fits, and the retry path
  * below already had to run them individually anyway.
+ *
+ * `--sequential` runs every test package one at a time instead of handing the
+ * whole workspace to `vp run -r test`. It is slower on a machine that can take
+ * the parallel run, and it is the one that finishes on a machine that cannot:
+ * the parallel step's peak memory is what gets a loaded sandbox evicted, and an
+ * eviction costs the entire pass because the run has no partial result to keep.
+ * One package at a time bounds that peak and makes each phase short, so an
+ * eviction costs one package. The 2026-09-15 merge lost two full passes to this
+ * before finishing sequentially.
+ *
+ * It also prints a `PKG <name> PASS|FAIL` ledger line as each package lands, so
+ * a log that gets truncated is still readable up to the cut — and so nobody has
+ * to hand-roll the same loop in bash, where `node verify.mjs … | tail` silently
+ * reports the exit code of `tail`.
  *
  * `--fast` drops the test step and keeps everything else. The full pass is about
  * thirteen minutes and the test step is most of it, so a merge with something to
@@ -232,7 +247,36 @@ function runPackageAlone(pkg) {
 
 const retryPackageAlone = (pkg) => runPackageAlone(pkg).status === 0;
 
-async function runTestStep(step, onlyPackage) {
+/**
+ * Every test package, one at a time, with a ledger line as each one lands.
+ *
+ * There is no retry-alone path here and there does not need to be: a package
+ * that fails under `--sequential` already ran alone, so the flakiness the retry
+ * exists to absorb cannot arise. What a failure here means is what a failure in
+ * the retry means — a real finding.
+ *
+ * The ledger line is the point of the mode as much as the memory ceiling is. It
+ * is written before the next package starts, so a log cut off mid-run still says
+ * which packages passed, which is exactly what an evicted run cannot otherwise
+ * tell you.
+ */
+function runPackagesSequentially(packages) {
+  const ledger = [];
+  for (const [index, pkg] of packages.entries()) {
+    process.stdout.write(
+      `\n${bold(cyan(`── ${pkg}`))} ${dim(`(${index + 1} of ${packages.length})`)}\n`,
+    );
+    const at = process.hrtime.bigint();
+    const { status, signal } = runPackageAlone(pkg);
+    const seconds = Number(process.hrtime.bigint() - at) / 1e9;
+    const verdict = status === 0 ? green("PASS") : red(`FAIL(${signal ?? status})`);
+    process.stdout.write(`${bold(`PKG ${pkg}`)} ${verdict} ${dim(`${seconds.toFixed(0)}s`)}\n`);
+    ledger.push({ pkg, status, signal, seconds });
+  }
+  return ledger;
+}
+
+async function runTestStep(step, onlyPackage, sequential) {
   const started = process.hrtime.bigint();
   process.stdout.write(`\n${bold(cyan(`── ${step.name}`))} ${dim(step.what)}\n`);
 
@@ -242,6 +286,22 @@ async function runTestStep(step, onlyPackage) {
     const { status, signal } = runPackageAlone(onlyPackage);
     const seconds = Number(process.hrtime.bigint() - started) / 1e9;
     return { ...step, what: `${onlyPackage} only`, status, signal, seconds };
+  }
+
+  if (sequential) {
+    // Sorted so two runs on the same tree list their packages in the same
+    // order, which is what makes one run's log diffable against another's.
+    const packages = [...workspacePackages().withTests].sort();
+    const ledger = runPackagesSequentially(packages);
+    const seconds = Number(process.hrtime.bigint() - started) / 1e9;
+    const failing = ledger.filter((entry) => entry.status !== 0);
+    return {
+      ...step,
+      what: `${packages.length} packages, one at a time`,
+      status: failing.length > 0 ? 1 : 0,
+      seconds,
+      sequential: ledger,
+    };
   }
 
   const [command, ...args] = step.argv;
@@ -317,6 +377,26 @@ function summarize(results) {
   for (const result of results) {
     const took = `${result.seconds.toFixed(0)}s`;
 
+    // `--sequential` has its own shape: every package ran alone, so there is no
+    // skipped set to reconcile and no flaky set to forgive. Report the packages
+    // that failed and say plainly that each already ran in isolation, which is
+    // the question the retry path exists to answer.
+    if (result.sequential) {
+      const failing = result.sequential.filter((entry) => entry.status !== 0);
+      const ran = `${result.sequential.length} package(s) ran one at a time`;
+      if (failing.length > 0) {
+        section.fail(`${result.name} exited ${result.status} ${dim(took)}`, [
+          ran,
+          `Failing: ${failing.map((entry) => entry.pkg).join(", ")}`,
+          "Each already ran alone, so these are findings rather than load noise.",
+          `Re-run one: node ${SCRIPTS}/verify.mjs --only test --package <name>`,
+        ]);
+        continue;
+      }
+      section.ok(`${result.name} ${dim(took)} — ${ran}`);
+      continue;
+    }
+
     // Said before the pass/fail line below, because "green" from a run that
     // skipped a package is the one result worth distrusting.
     const notes = [];
@@ -384,6 +464,7 @@ runMain(async () => {
   const fast = process.argv.includes("--fast");
   const packageFlag = process.argv.indexOf("--package");
   const onlyPackage = packageFlag === -1 ? null : process.argv[packageFlag + 1];
+  const sequential = process.argv.includes("--sequential");
 
   let steps = only ? STEPS.filter((step) => only.has(step.name)) : STEPS;
   if (fast) steps = steps.filter((step) => !step.slow);
@@ -402,6 +483,19 @@ runMain(async () => {
   if (onlyPackage && !steps.some((step) => step.retryPackagesOnFailure)) {
     throw new Error("--package only applies to the test step; add `--only test`.");
   }
+  if (sequential && onlyPackage) {
+    throw new Error(
+      "--sequential and --package conflict: one package is already a run of its own.",
+    );
+  }
+  if (sequential && fast) {
+    throw new Error("--sequential and --fast conflict: --fast drops the test step it applies to.");
+  }
+  if (sequential && !steps.some((step) => step.retryPackagesOnFailure)) {
+    throw new Error(
+      "--sequential only applies to the test step; drop --only, or use `--only test`.",
+    );
+  }
   if (fast) {
     process.stdout.write(
       `${yellow("--fast")} ${dim(
@@ -414,7 +508,9 @@ runMain(async () => {
 
   const results = [];
   for (const step of steps) {
-    results.push(step.retryPackagesOnFailure ? await runTestStep(step, onlyPackage) : run(step));
+    results.push(
+      step.retryPackagesOnFailure ? await runTestStep(step, onlyPackage, sequential) : run(step),
+    );
   }
 
   const report = summarize(results);

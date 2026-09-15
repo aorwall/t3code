@@ -59,6 +59,9 @@ only makes sense once a merge commit exists.
 is about thirteen minutes and the tests are most of it, so a merge with anything
 to fix pays that twice — once to find the problem, once to confirm the fix.
 Iterate on `--fast`, then run the whole thing once before writing anything down.
+`verify.mjs --sequential` runs that final pass one test package at a time — the
+answer when a sandbox keeps getting evicted during the tests, covered under
+_Verify, before writing anything down_ below.
 
 A failing check names the `id` of the `inventory.json` entry it came from. Fix
 the entry, in the same merge — a stale entry is not noise to route around, it is
@@ -313,6 +316,30 @@ git merge upstream/main
    recreated from the repository, which discards anything never pushed. A merge
    redone from scratch is the most expensive thing that can happen here.
 
+   The first push is plain. Every push after an `--amend` rewrites history and
+   needs a lease, and this clone fetches only `main`:
+
+   ```bash
+   git config --get-all remote.origin.fetch
+   # +refs/heads/main:refs/remotes/origin/main
+   ```
+
+   So `origin/merge/upstream-*` is never stored locally, and a bare
+   `git push --force-with-lease` fails with `(stale info)` against a branch it
+   has no remote-tracking ref for — on a branch nobody else is touching, which
+   reads as a conflict that does not exist. Fetch the branch's own ref first and
+   the lease has something true to check:
+
+   ```bash
+   b=$(git branch --show-current)
+   git fetch origin "+refs/heads/$b:refs/remotes/origin/$b"
+   git push --force-with-lease origin "$b"
+   ```
+
+   Do not work around it by guessing the remote SHA for an explicit
+   `--force-with-lease=<ref>:<sha>` — a guessed SHA is a lease that checks
+   nothing.
+
    Two things not to sweep into that commit:
 
    - **Never `git add -A` during a merge.** Stage explicit paths. A restart can
@@ -324,9 +351,26 @@ git merge upstream/main
      one verification needs — rewrites it again. Check it before every `--amend`
      so that rewrite is not folded into the merge commit.
 
-   After any interruption, in order: `git status` for the merge state, then
-   `git grep -n '<<<<<<<'` for markers left behind, then `resolution-check.mjs`
-   for the silent case.
+   **After any interruption, run this before anything else.** A restart wipes
+   `node_modules` and leaves the merge state to be re-established, and the steps
+   are always these, in this order:
+
+   ```bash
+   vp i && git checkout -- pnpm-lock.yaml   # install, then undo the rewrite it just made
+   git status                                # merge state: mid-merge, or committed?
+   git grep -n '<<<<<<<'                     # markers left behind
+   node .agents/skills/fork-upstream-merge/scripts/resolution-check.mjs
+   ```
+
+   The first line is one command on purpose. `vp i` is not optional — a restart
+   leaves `node_modules` empty and every later step needs it — and it rewrites
+   `pnpm-lock.yaml` every time it runs, so the restore belongs to it rather than
+   to the `--amend` that comes minutes later and has to remember.
+
+   The last two cover the two ways a resolution disappears. A conflicted file
+   comes back with its markers and `git grep` finds it; a file edited as
+   collateral of resolving a conflict elsewhere reverts in silence, and only
+   `resolution-check.mjs` sees that one.
 
 9. Read what the merge actually took, against both parents:
 
@@ -405,6 +449,28 @@ CLI is absent, run the test step a package at a time:
 ```bash
 node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only test --package @t3tools/web
 ```
+
+**If the sandbox has already been evicted once, switch to `--sequential`** and
+stop re-running the parallel pass:
+
+```bash
+moat cmd run "node .agents/skills/fork-upstream-merge/scripts/verify.mjs --sequential"
+```
+
+The parallel test step's peak memory is what gets a loaded sandbox evicted, and
+an eviction costs the whole pass — there is no partial result to keep, and the
+`moat cmd` log dies with the pod, so a run that was interrupted cannot even be
+read to find out how far it got. `--sequential` runs each test package alone,
+which bounds that peak, keeps each phase short, and prints a
+`PKG <name> PASS|FAIL` line as each package lands so a truncated log still says
+what passed. It is slower when the machine can take the parallel run, and it is
+the one that finishes when it cannot. The 2026-09-15 merge lost two full passes
+to this before finishing sequentially.
+
+Reach for it on the second attempt, not the first — and do not hand-roll it as a
+shell loop over `--package`. A loop that pipes each run through `tail` reports
+`tail`'s exit code, which is always 0, so every package looks green including the
+one that failed.
 
 A check that is always red is a check nobody reads, so a derivation known to
 report backwards is declared rather than tolerated: `unsupported-methods.mjs`
