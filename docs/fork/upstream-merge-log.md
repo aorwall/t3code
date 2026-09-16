@@ -28,6 +28,133 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-16 — merged upstream to 0bf2d6b01, upstream's new icon variant broke a fork-only page that borrows upstream's picker
+
+- Upstream: `0bf2d6b01` from base `5623089ae` (`45` commits).
+- Landed: `255` files from `git diff --stat HEAD^1 HEAD` against `251` in the
+  upstream range (`5623089ae..HEAD^2`); fork delta `776` files from
+  `git diff --stat HEAD^2 HEAD`. The gap of 4 reconciles exactly: five
+  landed-not-in-range — `gaps.md`, `inventory.json`, this entry, and the two
+  fork-only files the typecheck fix below touched — against one
+  in-range-not-landed, `SidebarChrome.tsx`, whose conflict resolved to the fork
+  side byte for byte, so it shows no change against `HEAD^1`. Nothing else in
+  the range failed to land.
+- Conflicts: 4 files, each resolved with the verdict `preflight.mjs` printed.
+  - `AGENTS.md` (`decide` — `agent-instructions`): fork's rewrite kept whole,
+    and upstream's one new sentence folded into the bullet it belongs to — an
+    authorized mobile pass now builds a missing native client with
+    `scripts/mobile-native-client.ts` rather than stopping.
+  - `apps/web/src/state/threads.ts` (unlisted, inside a fork-owned concern, so
+    the fallback is `decide, then add an entry`): **upstream moved where the
+    snapshot enters, so the fork's graft had to move with it.** #8309 gave
+    `createThreadEnvironmentAtoms` a snapshot argument (upstream passes
+    `environmentSnapshotAtom`) to preserve cached turns and older-page loading.
+    The fork's `adoptedEnvironmentSnapshotAtom` was grafted one layer down, on
+    `createEnvironmentThreadShellAtoms`. Kept upstream's structure and moved the
+    graft up to the new argument, then pointed the shells at
+    `threadEnvironment.snapshotAtom`. Grafting in the old place would have left
+    the optimistic lifecycle reading the unadopted listing, so an adopted thread
+    would have lost it.
+  - `apps/web/src/components/settings/ProjectSettingsPanel.tsx` (unlisted,
+    same fallback): additive delta re-applied on upstream's rewrite of the icon
+    row — took upstream's `monogram` description arm and its new required
+    `projectName` prop, kept the `workspaceSettings` flag read and the Workspace
+    sections.
+  - `apps/web/src/components/sidebar/SidebarChrome.tsx` (`decide` —
+    `sidebar-brand`): upstream reintroduced `T3Wordmark` in the brand; the
+    fork's single `APP_BASE_NAME` span stands. The resolution is byte-identical
+    to `HEAD^1`.
+- `resolution-check` also flags `SidebarChrome.tsx` as landed unchanged from the
+  fork's pre-merge copy while upstream changed it. That is the decision, not a
+  lost merge — see the conflict above.
+- **`pathPolicy` had a hole and this merge closed it.** `resolution-check`
+  listed seven paths both sides changed with no policy entry, and every one of
+  them turned out to carry a real fork delta — so next merge's fallback would
+  have been `theirs` and silently dropped it. All seven are now listed, four by
+  extending the entry that already owned the behaviour and three as new entries:
+  - `thread-adoption-graft` (`apps/web/src/state/threads.ts`) and
+    `project-settings-panel` — the two that conflicted here. The first is worth
+    reading before touching `threads.ts` again: it says the graft belongs at the
+    **outermost** seam upstream feeds the snapshot through, which is the thing
+    #8309 moved.
+  - `branch-toolbar-gates` — `BranchToolbar.tsx` and
+    `BranchToolbarBranchSelector.tsx`, where `showWorkspaceControls` stands in
+    for upstream's `showGitControls` at six uses.
+  - `git-vcs-driver-core-test` — **the fork's only delta in `apps/server`
+    outside `auth.ts` and `rpc.ts`**, and it was unrecorded. The previous merge
+    rewrote upstream's non-interactive-fetch case to intercept
+    `ChildProcessSpawner` instead of writing an SSH wrapper to a temp dir,
+    because the sandbox has neither a reliable `ssh` nor an executable temp dir.
+    Nothing but this entry would have caught its loss.
+  - Extended: `chat-composer-gates` (+`CompactComposerControlsMenu.tsx`, the
+    same `FEATURES.accessMode` gate at the narrow width),
+    `thread-fork-upstream-files` (+`MessagesTimeline.logic.ts`, the settled-turn
+    rule that keeps an earlier turn forkable),
+    `message-origin-upstream-files` (+`packages/contracts/src/orchestration.test.ts`),
+    and `chat-markdown-mermaid` (+`apps/web/package.json`, which carries the
+    fork's only two dependency lines — `mermaid` and the `@t3tools/moatless-api`
+    workspace link).
+- `pnpm-lock.yaml` did not conflict this time. It is still worth re-deriving
+  rather than hand-resolving when it does: `vp i` and `git checkout --` it after
+  each run, because a failed install leaves it dirty.
+- Sweep: 2 of 27 upstream additions hit the pattern, plus one rename. Both
+  additions — `packages/client-runtime/src/connection/compatibility.ts` and its
+  test — are upstream's own protocol-version check, extracted whole by #11990
+  into a directory where fork deltas live but carrying none; accepted unmodified.
+  The rename is `patches/@clerk__expo@4.6.6.patch` → `@4.6.8.patch` at `R100`,
+  content identical, from the Clerk bump. Clerk stays decided out and compiling.
+- Unsupported methods: ADD 0, DROP 0, so `rpc.ts` is untouched. 99 of 157
+  WebSocket methods declare `UnsupportedMethodError` against 67 dispatched by the
+  backend; `KEEP 2` (`git.preparePullRequestThread`, `vcs.switchRef`) and the
+  five known exceptions in `inventory.json` are unchanged. Upstream added no
+  WebSocket method in this range — the monogram work rides `project.meta.update`,
+  and the follow-up queue is client-side.
+- No route file was added, deleted or renamed upstream, so `regen-route-tree.mjs`
+  correctly skipped.
+- Eight backend behaviours worth reproducing were recorded in gaps.md under
+  _Runtime fixes upstream made to its own server_: rewind surviving a
+  changed-length history (#11954), checkpoint capture reusing index metadata
+  (#10792), a faster fetch-and-checkout (#11633), a bounded git process pool with
+  the long operations exempt (#11405), releasing a preview host after an
+  unanswered request (#11381), naming the setting behind a missing provider
+  executable (#11345), health checks that clean up what they unpack (#12008), and
+  a GitHub quota budget with a read cache (#11888).
+- Verification: `tripwires`, `resolution-check`, `unsupported-methods`,
+  `fmt:check`, `lint` and `typecheck` pass; tests pass in 15 of 16 packages. One
+  failure was found and fixed, and two results are caveated.
+  - `typecheck`: **upstream gave an icon type a third arm and a fork-only page
+    that borrows upstream's picker stopped compiling.** #11845 and #11993 added
+    `monogram` to `ProjectIconOverride` and made `projectName` required on
+    `ProjectIconPickerDialog`; `moatless/ProjectWorkspaceSettings.tsx` uses that
+    dialog and casts its result into the Workspace API's `WorkspaceIcon`, which
+    has no monogram arm. Added `workspaceIconFromOverride` in
+    `moatless/workspaceDetail.ts` as the total inverse of `workspaceIconOverride`
+    and passed `project.title`. **A fork-only page that borrows an upstream
+    component inherits upstream's changes to that component's props and types,
+    and a cast at the boundary is what turns that into a compile error instead
+    of a wrong render** — the previous merge hit the mirror image, a fork field
+    missing from an upstream fixture. Keep these conversions explicit functions,
+    never casts. A monogram now saves as no icon; that is gaps.md,
+    _Workspace icons cannot hold a monogram_.
+  - Caveat, false positive: `duplicate-adds` exits 1 on
+    `packages/contracts/src/orchestration.test.ts`. The fork's script-port test
+    (`decodes a project.meta.update carrying a script with a port`) and
+    upstream's new monogram test share two boilerplate lines —
+    `const command = yield* decodeOrchestrationCommand({` and the
+    `assert.strictEqual(command.type, "project.meta.update")` after it — at
+    different indentation, and the script trims whitespace before comparing.
+    Both tests are wanted; no edit is correct. The next merge's base moves past
+    it, so this is a one-merge annoyance and not a gap.
+  - Caveat, standing: `@t3tools/desktop` fails
+    `scripts/browser-secret-native.test.mjs`, which shells out to `pkg-config`
+    for `libsecret-1` and does not find it here. Not in the merge diff
+    (`git diff HEAD^1 HEAD` on that path is empty) and 106 of its 108 suites
+    pass — 1365 tests, 12 skipped. gaps.md, _The desktop suite needs libsecret_.
+  - Ran sequentially by package, not as one `vp run -r test`: the sandbox is a
+    12 GB cgroup and the parallel run was evicted four times. `verify.mjs` derives
+    its heap from the cap and got it right at 6144 MB — this is the case
+    _The full suite needs a raised heap_ already covers, not a new one.
+
 ### 2026-09-15 — merged upstream to 5623089a, upstream reverted the compact sidebar and took five fork gates' anchors with it
 
 - Upstream: `5623089ae` from base `1bbca0e78` (`60` commits).

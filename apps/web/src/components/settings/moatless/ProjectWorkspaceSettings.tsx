@@ -49,6 +49,7 @@ import {
   formatSetupCommands,
   parseSetupCommands,
   placementRows,
+  workspaceIconFromOverride,
   workspaceIconOverride,
   workspaceProvenance,
 } from "./workspaceDetail";
@@ -343,9 +344,12 @@ function IconRow({
             <Suspense fallback={null}>
               <ProjectIconPickerDialog
                 current={icon}
+                projectName={project.title}
                 open
                 onOpenChange={setIsPickerOpen}
-                onSelect={(selected) => void save.run({ icon: selected })}
+                onSelect={(selected) =>
+                  void save.run({ icon: workspaceIconFromOverride(selected) })
+                }
               />
             </Suspense>
           ) : null}
