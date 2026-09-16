@@ -281,7 +281,7 @@
       "id": "lockfile",
       "paths": ["pnpm-lock.yaml"],
       "verdict": "theirs",
-      "note": "Conflicts on every merge, and is never resolved by hand: `git checkout --theirs pnpm-lock.yaml` then `vp i`, which re-derives the fork's own edges (today, the `@t3tools/moatless-api` workspace dependency in apps/web/package.json). Hand-merging it produces a lockfile that matches neither side's resolution and installs something no one chose. The install is also what the merge needs before `regen-route-tree.mjs` or `merge-stats.mjs` can run."
+      "note": "Never resolved by hand: `git checkout --theirs pnpm-lock.yaml` then `vp i`, which re-derives the fork's own edges (today, the `@t3tools/moatless-api` workspace dependency and `mermaid`, both in apps/web/package.json). Hand-merging it produces a lockfile that matches neither side's resolution and installs something no one chose. The install is also what the merge needs before `regen-route-tree.mjs` or `merge-stats.mjs` can run. It does NOT conflict on every merge, and the merge it does not conflict on is the dangerous one: git auto-merges it to upstream's copy whole, dropping the fork's edges with no marker, and `resolution-check.mjs` exempts plain `theirs` paths from its byte-identical rule. So run `vp i` after every upstream merge whether or not the lockfile conflicted, and commit what it produces. The `lockfile` step in `verify.mjs` is what holds this."
     },
     {
       "id": "third-party-licenses-config",

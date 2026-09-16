@@ -94,9 +94,19 @@ bullet here that no one will read again.
     and `chat-markdown-mermaid` (+`apps/web/package.json`, which carries the
     fork's only two dependency lines — `mermaid` and the `@t3tools/moatless-api`
     workspace link).
-- `pnpm-lock.yaml` did not conflict this time. It is still worth re-deriving
-  rather than hand-resolving when it does: `vp i` and `git checkout --` it after
-  each run, because a failed install leaves it dirty.
+- `pnpm-lock.yaml` did not conflict this time, **and that is what went wrong.**
+  Git auto-merged it to upstream's copy whole, dropping both fork edges —
+  `mermaid` and the `@t3tools/moatless-api` link — with no marker. Because the
+  step-5 ritual only fires on a conflict, it never ran; every `vp i` afterwards
+  re-derived the edges correctly and every one of those rewrites was discarded
+  with `git checkout --`, on the belief that it was the spurious rewrite step 8
+  warns about. Nothing here caught it: `resolution-check.mjs` exempts plain
+  `theirs` paths, and the working tree installed from a re-derived lockfile so
+  lint, typecheck and test were all green against a lockfile that was not
+  committed. The image build on `main` failed after this PR merged; fixed in a
+  follow-up, which also added the `lockfile` step to `verify.mjs` and rewrote
+  the `lockfile` inventory note that claimed it "conflicts on every merge".
+  **Re-derive and commit the lockfile on every upstream merge, conflict or not.**
 - Sweep: 2 of 27 upstream additions hit the pattern, plus one rename. Both
   additions — `packages/client-runtime/src/connection/compatibility.ts` and its
   test — are upstream's own protocol-version check, extracted whole by #11990

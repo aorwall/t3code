@@ -92,6 +92,19 @@ const STEPS = [
     argv: ["node", `${SCRIPTS}/unsupported-methods.mjs`],
     what: "contract union entries against the Moatless dispatch arms",
   },
+  {
+    // Catches a lockfile that landed as upstream's copy whole, with the fork's
+    // own dependency edges gone. Nothing else here sees that: `pnpm-lock.yaml`
+    // is `theirs`, which `resolution-check.mjs` exempts from its byte-identical
+    // rule, and lint, typecheck and test run against a working tree installed
+    // from a re-derived lockfile rather than the committed one.
+    //
+    // `--lockfile-only` resolves without writing; `--frozen-lockfile` makes a
+    // mismatch against the manifests an error.
+    name: "lockfile",
+    argv: ["pnpm", "install", "--frozen-lockfile", "--ignore-scripts", "--lockfile-only"],
+    what: "the committed lockfile against every workspace manifest",
+  },
   { name: "fmt:check", argv: ["pnpm", "fmt:check"], what: "formatting" },
   { name: "lint", argv: ["pnpm", "lint"], what: "lint rules" },
   { name: "typecheck", argv: ["pnpm", "typecheck"], what: "types across every workspace" },
