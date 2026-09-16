@@ -392,10 +392,10 @@
     },
     {
       "id": "chat-markdown-mermaid",
-      "paths": ["apps/web/src/components/ChatMarkdown.tsx"],
+      "paths": ["apps/web/src/components/ChatMarkdown.tsx", "apps/web/package.json"],
       "verdict": "converged",
       "delta": "Mermaid Diagram Delta",
-      "note": "Take upstream, then apply Mermaid Diagram Delta. Upstream owns this file and works in it steadily; the delta is two imports and one early return above upstream's own return in the `pre` renderer, and must not re-indent upstream's block. If upstream has started rendering mermaid itself, drop the delta rather than porting it."
+      "note": "Take upstream, then apply Mermaid Diagram Delta. Upstream owns this file and works in it steadily; the delta is two imports and one early return above upstream's own return in the `pre` renderer, and must not re-indent upstream's block. If upstream has started rendering mermaid itself, drop the delta rather than porting it. apps/web/package.json carries the fork's only two dependency lines — `mermaid` and the `@t3tools/moatless-api` workspace link — so a merge that takes upstream's package.json wholesale breaks the app's imports, not just the diagrams. Take upstream's dependency changes and put both lines back."
     },
     {
       "id": "message-origin-fork-files",
@@ -413,11 +413,12 @@
         "packages/contracts/src/orchestration.ts",
         "packages/client-runtime/src/state/threadReducer.ts",
         "apps/server/src/orchestration/projector.ts",
-        "apps/web/src/components/chat/MessagesTimeline.tsx"
+        "apps/web/src/components/chat/MessagesTimeline.tsx",
+        "packages/contracts/src/orchestration.test.ts"
       ],
       "verdict": "converged",
       "delta": "Message Origin Delta",
-      "note": "Take upstream, then apply Message Origin Delta. MessagesTimeline.tsx is a file upstream works in steadily; the delta is additive and must not re-indent upstream blocks."
+      "note": "Take upstream, then apply Message Origin Delta. MessagesTimeline.tsx is a file upstream works in steadily; the delta is additive and must not re-indent upstream blocks. orchestration.test.ts holds the fork's decode cases — a message carrying an origin, a composer message carrying none — and, separately, the script-port case the project-script-port-field entry describes. Both are additions at the end of upstream's own cases and neither may be dropped for looking like a duplicate: duplicate-adds.mjs trims whitespace before comparing, so the script-port case collides with upstream's monogram case on two lines of shared decode boilerplate. That hit is a false positive, not a merge artifact."
     },
     {
       "id": "thread-fork-upstream-files",
@@ -427,18 +428,22 @@
         "packages/client-runtime/src/state/threadCommands.ts",
         "apps/web/src/components/chat/MessagesTimeline.tsx",
         "apps/web/src/components/chat/MessagesTimeline.test.tsx",
+        "apps/web/src/components/chat/MessagesTimeline.logic.ts",
         "apps/web/src/components/ChatView.tsx",
         "apps/server/src/orchestration/decider.ts"
       ],
       "verdict": "converged",
       "delta": "Thread Fork Delta",
-      "note": "Take upstream, then apply Thread Fork Delta. MessagesTimeline.tsx and orchestration.ts also carry the Message Origin Delta; both must survive. decider.ts's hunk is a deliberate refusal — the bundled server has no fork session to resume."
+      "note": "Take upstream, then apply Thread Fork Delta. MessagesTimeline.tsx and orchestration.ts also carry the Message Origin Delta; both must survive. decider.ts's hunk is a deliberate refusal — the bundled server has no fork session to resume. MessagesTimeline.logic.ts holds the row-derivation half: a message whose Moatless turn number parses below the running turn has settled, so it keeps its meta row and stays forkable while a later turn runs, instead of folding into the active visual response. It reads parseMoatlessTurnNumber and must stay consistent with AssistantForkButton, which offers the action under the same comparison. An upstream turn id does not parse and keeps upstream's behaviour."
     },
     {
       "id": "chat-composer-gates",
-      "paths": ["apps/web/src/components/chat/ChatComposer.tsx"],
+      "paths": [
+        "apps/web/src/components/chat/ChatComposer.tsx",
+        "apps/web/src/components/chat/CompactComposerControlsMenu.tsx"
+      ],
       "verdict": "converged",
-      "note": "Take upstream, then re-state the two deltas `chat-surface-gates` describes: the runtime-mode picker lifted into a `runtimeModePicker` const gated on FEATURES.accessMode, and `phase === \"running\"` left out of collapsedComposerPrimaryActionDisabled. Upstream works in this file constantly and both deltas sit at stable anchors, so the conflict is usually the import block alone — keep both import lines."
+      "note": "Take upstream, then re-state the two deltas `chat-surface-gates` describes: the runtime-mode picker lifted into a `runtimeModePicker` const gated on FEATURES.accessMode, and `phase === \"running\"` left out of collapsedComposerPrimaryActionDisabled. Upstream works in this file constantly and both deltas sit at stable anchors, so the conflict is usually the import block alone — keep both import lines. CompactComposerControlsMenu.tsx is the same Access control at the narrow width and carries the same gate: the label and its MenuRadioGroup wrapped in one FEATURES.accessMode conditional. The two move together — gating one leaves the picker reachable at the other width."
     },
     {
       "id": "thread-fork-fork-files",
@@ -558,19 +563,49 @@
       "note": "Take upstream, then keep the fork's `*Only` availability filters — forgejoEnabledOnly, providerConfigurationOnly and assistantStreamingOnly, each an optional boolean on SettingsSearchItem read in filterAvailableSettingsSearchItems — plus the Moatless feature-flag read that feeds forgejoEnabled. This file is the second half of every gate in settings-surface-gates: gating a row in SettingsPanels does not reach the command palette, so a result for a hidden row still lands on the page at a hash for a control that is not rendered. When a merge gates a settings row, check whether upstream also gave it a searchable entry here."
     },
     {
+      "id": "sidebar-brand",
+      "paths": ["apps/web/src/components/sidebar/SidebarChrome.tsx"],
+      "verdict": "decide",
+      "note": "Upstream owns the file; the fork owns one span inside it. SidebarBrand's body is replaced wholesale by the single APP_BASE_NAME span (inventory moatless-branding, which is also the guard), and the T3Wordmark import goes with it. Take upstream everywhere else in the file, and read upstream's SidebarBrand hunk each merge for anything outside the replaced span. When upstream's only change here is brand-row styling — wordmark cap alignment, the wordmark/\"Code\" split — there is nothing to take and the file correctly lands unchanged; that is why this is `decide` and not `converged`, which would fail resolution-check every time upstream restyles the brand. Not a convergence item either: upstream's T3 wordmark and the fork's Moatless name never meet."
+    },
+    {
       "id": "sidebar-fork-chrome",
-      "paths": [
-        "apps/web/src/components/sidebar/SidebarChrome.tsx",
-        "apps/web/src/components/sidebar/SidebarThreadHeader.tsx"
-      ],
+      "paths": ["apps/web/src/components/sidebar/SidebarThreadHeader.tsx"],
       "verdict": "converged",
-      "note": "Take upstream, then re-apply the fork's chrome: APP_BASE_NAME branding in SidebarChrome (tripwire moatless-branding), and in SidebarThreadHeader the FEATURES.projectManagement gate on the New project button beside the fork-only SidebarThreadFilter. Upstream's compact-rail work rewrites the header's layout without touching either anchor, so the conflict is usually the import block alone — keep both fork import lines."
+      "note": "Take upstream, then re-apply the FEATURES.projectManagement gate on the New project button beside the fork-only SidebarThreadFilter. Upstream's compact-rail work rewrites the header's layout without touching either anchor, so the conflict is usually the import block alone — keep both fork import lines."
     },
     {
       "id": "root-route",
       "paths": ["apps/web/src/routes/__root.tsx"],
       "verdict": "converged",
       "note": "Take upstream, then keep `/login` in the chrome-less pathname list beside upstream's /pair and /connect. The fork's login route is its own full-page surface and must not render inside the app shell. Upstream's routing-recovery work — a notFoundComponent, and router.invalidate() in place of reset() so startup retries once the server is back — is additive and welcome; take all of it."
+    },
+    {
+      "id": "branch-toolbar-gates",
+      "paths": [
+        "apps/web/src/components/BranchToolbar.tsx",
+        "apps/web/src/components/BranchToolbarBranchSelector.tsx"
+      ],
+      "verdict": "converged",
+      "note": "Take upstream, then re-state `showWorkspaceControls`: `showGitControls && FEATURES.worktreeSelection`, substituted for `showGitControls` at every use that draws the workspace picker, plus the added conjunct on `canUsePreviousWorktree` so no picker means no hop and no thread-shell read for one. The branch selector itself is untouched by the gate. Upstream edits this strip steadily and each substitution is one identifier, so take upstream's structure and re-substitute rather than defending the fork's copy — and check for uses upstream has added, because a missed one puts the picker back at one width only."
+    },
+    {
+      "id": "thread-adoption-graft",
+      "paths": ["apps/web/src/state/threads.ts"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply the graft described in the Threads the shell listing does not carry entry: the fork passes adoptedEnvironmentSnapshotAtom where upstream passes environmentSnapshotAtom. Which call takes it is upstream's to move and has moved — #8309 gave createThreadEnvironmentAtoms a snapshot argument, and the graft went there from createEnvironmentThreadShellAtoms, which now reads threadEnvironment.snapshotAtom. So the delta is one substituted argument at whichever seam upstream currently feeds the snapshot through, and it must be the outermost one: everything layered above it — the optimistic lifecycle, cached turns, older-page loading — has to see the adopted thread too. Grafting lower leaves those reading the unadopted listing."
+    },
+    {
+      "id": "project-settings-panel",
+      "paths": ["apps/web/src/components/settings/ProjectSettingsPanel.tsx"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply the additive delta described in the Workspace settings on the project page entry: the workspace_settings flag read, and the Workspace sections rendered beside upstream's own. Upstream owns the icon row, its picker and the description beneath it, and widens both steadily — the monogram variant and the required projectName prop arrived together in #11845/#11993 — so take that side whole rather than defending the fork's copy of it."
+    },
+    {
+      "id": "git-vcs-driver-core-test",
+      "paths": ["apps/server/src/vcs/GitVcsDriverCore.test.ts"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply one verification adaptation, recorded here because it is the fork's only delta in apps/server outside auth.ts and rpc.ts and nothing else would catch its loss. Upstream's \"makes background upstream status fetches non-interactive\" case proves the environment by writing an SSH wrapper script to a temp dir and reading back what git handed it; that needs a working ssh on PATH and an executable temp dir, and the sandbox has neither reliably. The fork asserts the same thing one layer in: it intercepts ChildProcessSpawner, matches the status fetch by its `fetch --quiet --no-tags` args, records `command.options.env`, and checks the same key list minus GIT_SSH. Re-apply it whenever upstream rewrites the case; drop it if upstream stops shelling out to ssh for this."
     }
   ],
 
@@ -1157,7 +1192,7 @@
         "symbol": "ProjectWorkspaceSettings",
         "files": ["apps/web/src/components/settings/ProjectSettingsPanel.tsx"]
       },
-      "mustSurvive": "A project here is a Moatless Workspace, so upstream's /settings/projects page edits the Workspace itself: its icon, name and description, its repositories (add, remove, pick the primary), its image and setup commands, and its default model and effort, with Remove project deleting the Workspace. All of it is gated on the backend's workspace_settings feature flag — a deployment whose backend does not serve those reads keeps upstream's page unchanged. The fork delta on the two upstream files is additive: ProjectSettingsPanel.tsx renders ProjectWorkspaceSettings and the ProjectWorkspaceDangerRow second export beside upstream's own sections, and ProjectDefaultsSettings.tsx moves the Model, Workspace, Automatically pull and Agent browser access rows to environment scope when the flag is on, because none of them names something a Workspace has and the model comes from the Workspace's own default. Everything substantive lives under moatless/**; keep it that way so upstream restyling of the project page reaches it. A merge that re-indents or re-threads props through upstream's JSX to fit these in has taken the delta past additive."
+      "mustSurvive": "A project here is a Moatless Workspace, so upstream's /settings/projects page edits the Workspace itself: its icon, name and description, its repositories (add, remove, pick the primary), its image and setup commands, and its default model and effort, with Remove project deleting the Workspace. All of it is gated on the backend's workspace_settings feature flag — a deployment whose backend does not serve those reads keeps upstream's page unchanged. The fork delta on the two upstream files is additive: ProjectSettingsPanel.tsx renders ProjectWorkspaceSettings and the ProjectWorkspaceDangerRow second export beside upstream's own sections, and ProjectDefaultsSettings.tsx moves the Model, Workspace, Automatically pull and Agent browser access rows to environment scope when the flag is on, because none of them names something a Workspace has and the model comes from the Workspace's own default. Everything substantive lives under moatless/**; keep it that way so upstream restyling of the project page reaches it. A merge that re-indents or re-threads props through upstream's JSX to fit these in has taken the delta past additive. The icon row uses upstream's own ProjectIconPickerDialog and converts in both directions in workspaceDetail.ts — workspaceIconOverride out, workspaceIconFromOverride in. Neither is total and neither may become a cast: the Workspace API's icon has no monogram arm and widens colour to any string, so a monogram or an off-palette colour resolves to no icon and the automatic glyph. When upstream grows the picker a fourth mode, that mode joins the null branch; see gaps.md, Workspace icons cannot hold a monogram."
     },
     {
       "id": "moatless-provider-auth",

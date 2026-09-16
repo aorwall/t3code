@@ -18,15 +18,19 @@ import { connectionAtomRuntime } from "../connection/runtime";
 // client is holding that the listing left out.
 import { adoptedEnvironmentSnapshotAtom } from "../fork/adoptedThreadShells";
 
-export const threadEnvironment = createThreadEnvironmentAtoms(connectionAtomRuntime);
+export const threadEnvironment = createThreadEnvironmentAtoms(
+  connectionAtomRuntime,
+  // Fork: see the import above. The graft is the base snapshot upstream's
+  // optimistic lifecycle layers over, so an adopted thread gets both.
+  adoptedEnvironmentSnapshotAtom,
+);
 const environmentThreads = createEnvironmentThreadStateAtoms(connectionAtomRuntime);
 export const environmentThreadDetails = createEnvironmentThreadDetailAtoms(
   environmentThreads.stateAtom,
 );
 export const environmentThreadShells = createEnvironmentThreadShellAtoms({
   catalogValueAtom: environmentCatalog.catalogValueAtom,
-  // Fork: see the import above.
-  snapshotAtom: adoptedEnvironmentSnapshotAtom,
+  snapshotAtom: threadEnvironment.snapshotAtom,
 });
 
 const EMPTY_THREAD_STATE_ATOM = Atom.make(AsyncResult.success(EMPTY_ENVIRONMENT_THREAD_STATE)).pipe(

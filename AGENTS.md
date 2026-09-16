@@ -115,7 +115,7 @@ A plain `cp` is only safe when no server has the source open, and must bring the
 - **Do not run repo-wide checks.** No `vp check`, no `vp run -r test`, no `vp run -r typecheck` unless asked. CI owns the full suite.
 - Backend behavior changes ship with focused tests for that behavior.
 - The server is event-sourced and its async flows emit typed receipts. Wait on receipts and worker drains, never on sleeps or polling. A test that needs a timeout to pass is wrong.
-- Never drive a browser, simulator, or computer use without the developer asking for it. When they do ask for an integrated pass, use the `test-t3-app` (web) or `test-t3-mobile` (mobile) skill, once, from the primary agent after integrating. Subagents do not launch their own dev servers. Both skills are upstream's and still assume the bundled server and its pairing URLs, so against Moatless take the pairing half of `test-t3-app` as stale.
+- Never drive a browser, simulator, or computer use without the developer asking for it. When they do ask for an integrated pass, use the `test-t3-app` (web) or `test-t3-mobile` (mobile) skill, once, from the primary agent after integrating. Subagents do not launch their own dev servers. Both skills are upstream's and still assume the bundled server and its pairing URLs, so against Moatless take the pairing half of `test-t3-app` as stale. For an authorized mobile pass, a missing or outdated native client is a build step rather than a blocker: `node scripts/mobile-native-client.ts ensure <ios|android> <device-id>` on the simulator host before Metro.
 
 ## Pull requests
 

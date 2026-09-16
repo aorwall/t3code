@@ -212,3 +212,20 @@ export function workspaceIconOverride(
   if (color === undefined) return null;
   return { kind: "lucide", name: icon.name, color: color.value };
 }
+
+/**
+ * A picked glyph as the Workspace API stores one.
+ *
+ * The inverse of `workspaceIconOverride`, and no longer a cast: upstream's
+ * picker can return a monogram — letters plus a colour — and `WorkspaceIcon`
+ * has no arm for one, so there is no field to put the letters in. A monogram
+ * therefore saves as no icon, which is the same automatic glyph the project
+ * drew before the pick. See `docs/fork/gaps.md`, "Workspace icons cannot hold a
+ * monogram"; when the backend's schema grows a monogram arm, this branch and
+ * that entry go together.
+ */
+export function workspaceIconFromOverride(icon: ProjectIconOverride): WorkspaceIcon | null {
+  if (icon.kind === "emoji") return { kind: "emoji", emoji: icon.emoji };
+  if (icon.kind === "lucide") return { kind: "lucide", name: icon.name, color: icon.color };
+  return null;
+}
