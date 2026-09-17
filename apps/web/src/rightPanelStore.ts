@@ -128,7 +128,7 @@ interface RightPanelStoreState {
    */
   openProactive: (
     ref: ScopedThreadRef,
-    surface: Extract<RightPanelSurface, { kind: "diff" | "pull-request" }>,
+    surface: Extract<RightPanelSurface, { kind: "diff" | "pull-request" | "pull-requests" }>,
     expectedUserActionRevision: number,
   ) => boolean;
   open: (
@@ -510,7 +510,8 @@ export const useRightPanelStore = create<RightPanelStoreState>()(
           // always apply, and later user choices reject both proactive requests.
           if (
             surface.kind === "diff" &&
-            selectActiveRightPanel(state.byThreadKey, ref) === "pull-request"
+            (selectActiveRightPanel(state.byThreadKey, ref) === "pull-request" ||
+              selectActiveRightPanel(state.byThreadKey, ref) === "pull-requests")
           ) {
             return state;
           }

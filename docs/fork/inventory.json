@@ -363,9 +363,13 @@
     },
     {
       "id": "right-panel-surfaces",
-      "paths": ["apps/web/src/components/RightPanelTabs.tsx", "apps/web/src/rightPanelStore.ts"],
+      "paths": [
+        "apps/web/src/components/RightPanelTabs.tsx",
+        "apps/web/src/rightPanelStore.ts",
+        "apps/web/src/rightPanelStore.test.ts"
+      ],
       "verdict": "converged",
-      "note": "Take upstream, then re-apply the fork's right-panel deltas: the 'sandbox' RightPanelKind and its store action, the Sandbox entry in the surface launcher and the tab-bar '+' menu, the sandboxControl indicator riding that entry, and the per-surface gating described in the Sandbox lifecycle controls and Sandbox right-panel surface inventory entries. Upstream restructures the launcher — it went from cards to compact rows in #11111 — so the delta is what must survive, not a hunk to replay: put the indicator back on whatever element opens the Sandbox surface, additively, without threading a prop or re-indenting upstream's JSX."
+      "note": "Take upstream, then re-apply the fork's right-panel deltas: the 'sandbox' RightPanelKind and its store action, the Sandbox entry in the surface launcher and the tab-bar '+' menu, the sandboxControl indicator riding that entry, and the per-surface gating described in the Sandbox lifecycle controls and Sandbox right-panel surface inventory entries. Upstream restructures the launcher — it went from cards to compact rows in #11111 — so the delta is what must survive, not a hunk to replay: put the indicator back on whatever element opens the Sandbox surface, additively, without threading a prop or re-indenting upstream's JSX. rightPanelStore.test.ts holds the fork's own cases for the sandbox kind alongside upstream's; both sides add to it, so append rather than choosing a side."
     },
     {
       "id": "client-runtime-rpc-client",
@@ -616,6 +620,39 @@
       "paths": ["apps/server/src/vcs/GitVcsDriverCore.test.ts"],
       "verdict": "converged",
       "note": "Take upstream, then re-apply one verification adaptation, recorded here because it is the fork's only delta in apps/server outside auth.ts and rpc.ts and nothing else would catch its loss. Upstream's \"makes background upstream status fetches non-interactive\" case proves the environment by writing an SSH wrapper script to a temp dir and reading back what git handed it; that needs a working ssh on PATH and an executable temp dir, and the sandbox has neither reliably. The fork asserts the same thing one layer in: it intercepts ChildProcessSpawner, matches the status fetch by its `fetch --quiet --no-tags` args, records `command.options.env`, and checks the same key list minus GIT_SSH. Re-apply it whenever upstream rewrites the case; drop it if upstream stops shelling out to ssh for this."
+    },
+    {
+      "id": "command-palette-gates",
+      "paths": ["apps/web/src/components/CommandPalette.tsx"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply one line: `actionItems` is filtered through `paletteActionEnabled` where it is handed to `buildRootGroups`. The filter is deliberately at the handoff rather than at each `push`, so every block that builds an action stays byte-identical to upstream and carries through a merge untouched — see FEATURE_BY_PALETTE_ACTION in apps/web/src/fork/features.ts, which is keyed by the action's `value` for the same reason. When a merge gates a surface that also has a palette action, the value goes in that map, not in a conditional here. Losing the filter offers Add project and Search project contents, both of which call methods the backend refuses."
+    },
+    {
+      "id": "diff-panel-gates",
+      "paths": ["apps/web/src/components/DiffPanel.tsx"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-state two FEATURES gates, both additive. `FEATURES.turnDiffs` wraps the Latest turn item and the Turn submenu in the source dropdown — one fragment around two whole elements, never a re-indent of the Branch changes item beside them. `FEATURES.openInEditor` is an early `return` at the top of the `openInEditor` callback passed to the no-thread-ref branch, where upstream falls back to the desktop editor. Upstream restructures this panel's source menu regularly (#12139 changed its default to the working tree, #12190 collapsed files by default), so take that structure whole and re-wrap."
+    },
+    {
+      "id": "provider-settings-gates",
+      "paths": [
+        "apps/web/src/components/settings/ProviderSettingsPanel.tsx",
+        "apps/web/src/components/settings/ProviderInstanceCard.tsx"
+      ],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply the FEATURES.providerConfiguration gates described in the moatless-provider-auth entry, which is where the reasoning lives. In ProviderSettingsPanel: the driver list narrows to what `serverProviders` publishes, and the Add provider button is a `? … : null` around the whole Tooltip. In ProviderInstanceCard: the status row's control slot is a ternary between upstream's configuration controls and the fork's ProviderAuthAction, and ProviderAuthSetup owns its own section after upstream's setup block. Upstream restyles these rows often — the 2026-09-17 merge moved them from `sm:` breakpoints to `@min-[32rem]/settings-row:` container queries — so take upstream's classNames and keep the ternary around them, not the other way round."
+    },
+    {
+      "id": "chat-layout-route",
+      "paths": ["apps/web/src/routes/_chat.tsx"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-point the unauthenticated redirect in `beforeLoad`: the fork remembers where the viewer was with `rememberMoatlessAuthReturnTo` and redirects to `/login` (the fork's own route, inventory login-route) instead of upstream's `/pair`. Pairing is a desktop flow with no Moatless equivalent, and without the return-to the viewer lands on `/` after signing in rather than on the thread they followed a link to. Everything else in the file — the layout, the global shortcuts, the ThreadRouteView render — is upstream's and changes steadily; #12015 moved the whole thread view into this layout."
+    },
+    {
+      "id": "client-runtime-exports",
+      "paths": ["packages/client-runtime/package.json"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-add the fork's subpath exports. They are entries in the `exports` map for fork-only modules under `src/state/` — sandbox, scripts, servers, subtasks, thread-shell-lookup and thread-browse — and the package resolves a deep import only through this map, so a lost entry is a resolve failure in apps/web at build time rather than a silent drop. Upstream adds its own entries to the same map constantly, which is why both sides change the file; keep upstream's whole and append. The modules themselves are inventory thread-server-surfaces and the Moatless task-tree entries."
     }
   ],
 
@@ -722,11 +759,11 @@
         "apps/web/src/fork/unlistedThread.test.ts",
         "apps/web/src/state/threadShellLookup.ts",
         "apps/web/src/threadRoutes.ts",
-        "apps/web/src/routes/_chat.$environmentId.$threadId.tsx",
+        "apps/web/src/components/ThreadRouteView.tsx",
         "apps/web/src/state/threads.ts",
         "apps/web/src/components/settings/SettingsPanels.tsx"
       ],
-      "mustSurvive": "A Moatless shell listing is the open work a viewer follows, not every thread there is, so closed threads, threads followed by someone else, and subtasks all open by URL while absent from it. Three deltas hold that together and each is small in an upstream file. threadRoutes.ts takes an optional serverThreadAwaitingFirstAnswer that defaults to upstream's rule, so 'no shell row' stops meaning 'gone' before the environment has answered — without it the route redirects to / on the first frame of every unlisted thread. state/threads.ts passes adoptedEnvironmentSnapshotAtom where upstream passes environmentSnapshotAtom, which is the whole graft hook. SettingsPanels.tsx makes an archived row's title a link, because unarchiving was the only way back into a thread you may already read. The store in fork/adoptedThreadShells.ts must keep deciding what is missing against the listing's snapshot rather than the grafted one."
+      "mustSurvive": "A Moatless shell listing is the open work a viewer follows, not every thread there is, so closed threads, threads followed by someone else, and subtasks all open by URL while absent from it. Three deltas hold that together and each is small in an upstream file. threadRoutes.ts takes an optional serverThreadAwaitingFirstAnswer that defaults to upstream's rule, so 'no shell row' stops meaning 'gone' before the environment has answered — without it the route redirects to / on the first frame of every unlisted thread. The caller that supplies it is components/ThreadRouteView.tsx, upstream's own file since #12015, alongside `useAdoptedThread`; both read the server target's ref and pass null for a draft. state/threads.ts passes adoptedEnvironmentSnapshotAtom where upstream passes environmentSnapshotAtom, which is the whole graft hook. SettingsPanels.tsx makes an archived row's title a link, because unarchiving was the only way back into a thread you may already read. The store in fork/adoptedThreadShells.ts must keep deciding what is missing against the listing's snapshot rather than the grafted one."
     },
     {
       "id": "sidebar-thread-filter",
@@ -920,7 +957,7 @@
         "packages/client-runtime/src/state/threadCommands.ts",
         "apps/web/src/state/entities.ts",
         "apps/web/src/fork/unlistedThread.ts",
-        "apps/web/src/routes/_chat.$environmentId.$threadId.tsx",
+        "apps/web/src/components/ThreadRouteView.tsx",
         "apps/web/src/hooks/useThreadActions.ts",
         "apps/web/src/hooks/useThreadActionMenu.ts",
         "apps/web/src/components/Sidebar.tsx",
@@ -931,9 +968,9 @@
       ],
       "guard": {
         "symbol": "useAutoFollowThread",
-        "files": ["apps/web/src/routes/_chat.$environmentId.$threadId.tsx"]
+        "files": ["apps/web/src/components/ThreadRouteView.tsx"]
       },
-      "mustSurvive": "A Moatless listing is the open work a viewer follows, so a thread reached by link is readable and absent from the sidebar at the same time. Opening one follows it: `useAutoFollowThread` in fork/unlistedThread.ts dispatches `thread.follow` once per thread from the thread route, and the row stays in the sidebar after the route closes. Four conditions bound it, and each one is a bug that does not happen. It fires once per ref and never again after an unfollow, because the row menu's Unfollow acts on the thread the viewer is looking at and a re-follow on the next render would make that item do nothing. It decides against the listing's own snapshot rather than the grafted one, for the reason `missingThreadIds` gives \u2014 the graft is what put the thread on screen. It waits for a non-null snapshot, because a listing that has not answered yet was about to carry the thread. It skips a thread with an `archivedAt`, because the sidebar filters on `archivedAt === null` and a followed closed thread would be a follow with no row to unfollow it from. The way out is \"Unfollow thread\" in the per-thread menu, directly below the visibility item and above \"Archive thread\", on both surfaces `buildThreadActionMenuItems` serves; it opens the archive group when the visibility item is absent. It dispatches `thread.unfollow` with no confirmation, because the thread keeps running and only this viewer's listing changes. Both halves are gated on the `threadFollow` capability, so a server without it follows nothing and offers no item. Moatless makes the follow row the listing's membership (`Reach::Followed` over `task_follows`) and records a listing change on each write, so the sidebar updates live for that viewer alone; the bundled server refuses both commands."
+      "mustSurvive": "A Moatless listing is the open work a viewer follows, so a thread reached by link is readable and absent from the sidebar at the same time. Opening one follows it: `useAutoFollowThread` in fork/unlistedThread.ts dispatches `thread.follow` once per thread from the thread view, and the row stays in the sidebar after the route closes. Upstream's #12015 moved that view out of the route file and into components/ThreadRouteView.tsx, rendered by the `_chat` layout for both `/draft/$draftId` and `/$environmentId/$threadId`; the hook moved with it and takes `target.kind === \"server\" ? target.threadRef : null`, because a draft's reserved ref is the viewer's own work and the listing carries it without being asked. Four conditions bound it, and each one is a bug that does not happen. It fires once per ref and never again after an unfollow, because the row menu's Unfollow acts on the thread the viewer is looking at and a re-follow on the next render would make that item do nothing. It decides against the listing's own snapshot rather than the grafted one, for the reason `missingThreadIds` gives \u2014 the graft is what put the thread on screen. It waits for a non-null snapshot, because a listing that has not answered yet was about to carry the thread. It skips a thread with an `archivedAt`, because the sidebar filters on `archivedAt === null` and a followed closed thread would be a follow with no row to unfollow it from. The way out is \"Unfollow thread\" in the per-thread menu, directly below the visibility item and above \"Archive thread\", on both surfaces `buildThreadActionMenuItems` serves; it opens the archive group when the visibility item is absent. It dispatches `thread.unfollow` with no confirmation, because the thread keeps running and only this viewer's listing changes. Both halves are gated on the `threadFollow` capability, so a server without it follows nothing and offers no item. Moatless makes the follow row the listing's membership (`Reach::Followed` over `task_follows`) and records a listing change on each write, so the sidebar updates live for that viewer alone; the bundled server refuses both commands."
     },
     {
       "id": "thread-owner-name",

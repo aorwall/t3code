@@ -23,8 +23,6 @@ import {
   ChevronRight,
   FileDiff,
   Files,
-  GitPullRequest,
-  GitPullRequestArrow,
   Globe2,
   Plus,
   TerminalSquare,
@@ -76,6 +74,7 @@ import { FaviconImage } from "./preview/PreviewFaviconIcon";
 import { previewBridge } from "./preview/previewBridge";
 import { PierreEntryIcon } from "./chat/PierreEntryIcon";
 import { resolvePullRequestState } from "./pullRequest/pullRequestPresentation";
+import { PullRequestGlyph } from "~/components/pullRequest/pullRequestIcons";
 // Fork: sandbox surface gating for the right panel tabs.
 import { RightPanelDisabledState } from "./sandbox/RightPanelDisabledState";
 import {
@@ -418,7 +417,7 @@ function RightPanelEmptyState(props: {
     },
     {
       label: "Pull request",
-      icon: GitPullRequest,
+      icon: PullRequestGlyph.pullRequest,
       shortcut: "P",
       ...gate(props.pullRequestAvailable, SURFACE_UNAVAILABLE_HINTS.pullRequest, "pull-request"),
       onClick: props.onAddPullRequest,
@@ -426,7 +425,7 @@ function RightPanelEmptyState(props: {
     },
     {
       label: "Linked pull requests",
-      icon: GitPullRequestArrow,
+      icon: PullRequestGlyph.link,
       shortcut: "L",
       available: props.pullRequestsAvailable,
       disabledReason: SURFACE_UNAVAILABLE_HINTS.pullRequests,
@@ -785,7 +784,7 @@ function SurfaceIcon({
         />
       );
     case "pull-requests":
-      return <GitPullRequestArrow className="size-3 shrink-0" />;
+      return <PullRequestGlyph.link className="size-3 shrink-0" />;
     case "agents":
       return <Bot className="size-3 shrink-0" />;
     // Fork: the thread's sandbox.
@@ -877,8 +876,9 @@ function PullRequestSurfaceIcon({
           },
         }),
   ).data;
-  // Only state and draft reach the tab. A list seed cannot know mergeability, so feeding the
-  // full detail would flip an open tab to the conflict glyph the moment its read lands.
+  // The compact tab intentionally shows lifecycle and draft state only. Conflict warnings have
+  // their own presentation on surfaces that have mergeability, while this tab stays stable as
+  // detail data arrives.
   const status =
     linkedSnapshot !== null
       ? linkedSnapshot
@@ -886,7 +886,7 @@ function PullRequestSurfaceIcon({
         ? (seed ?? null)
         : { state: detail.state, isDraft: detail.isDraft };
   if (status === null) {
-    return <GitPullRequest className="size-3 shrink-0 text-muted-foreground" />;
+    return <PullRequestGlyph.pullRequest className="size-3 shrink-0 text-muted-foreground" />;
   }
   const presentation = resolvePullRequestState({ state: status.state, isDraft: status.isDraft });
   return <presentation.Icon className={cn("size-3 shrink-0", presentation.toneClassName)} />;
@@ -990,7 +990,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
     },
     {
       label: "Pull request",
-      icon: GitPullRequest,
+      icon: PullRequestGlyph.pullRequest,
       shortcut: "P",
       ...sandboxGate(
         props.pullRequestAvailable,
@@ -1001,7 +1001,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
     },
     {
       label: "Linked pull requests",
-      icon: GitPullRequestArrow,
+      icon: PullRequestGlyph.link,
       shortcut: "L",
       available: props.pullRequestsAvailable,
       disabledReason: SURFACE_DISABLED_REASONS.pullRequests,
