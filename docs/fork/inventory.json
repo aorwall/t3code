@@ -182,6 +182,16 @@
     }
   ],
 
+  "duplicateAddExceptions": [
+    {
+      "id": "orchestration-decode-boilerplate",
+      "path": "packages/contracts/src/orchestration.test.ts",
+      "line": "const command = yield* decodeOrchestrationCommand({",
+      "reason": "The fork's script-port test and upstream's monogram test both decode a command, and they sit at different nesting depths, so this one line of shared boilerplate is whitespace-identical while the two tests are entirely different. Both are wanted and no edit is correct; duplicate-adds.mjs compares trimmed lines and cannot tell this from a block kept twice.",
+      "retiredWhen": "Either test stops calling `decodeOrchestrationCommand` at the top of its body, or the two end up at the same nesting depth and the line stops colliding — at which point the check reports this entry stale and it should be deleted."
+    }
+  ],
+
   "pathPolicy": [
     {
       "id": "primary-auth",

@@ -34,17 +34,17 @@ Fork-owned. Most are dependency-free and runnable before `pnpm install`; the two
 that are not say so in the table below. Run them rather than performing the
 checks by hand.
 
-| Script                    | When             | What it answers                                                                                                                                                             |
-| ------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `preflight.mjs`           | before merging   | the range, which inventory entries have gone stale, the files this merge will actually stop on, and the ones git resolves silently — each with its verdict attached         |
-| `duplicate-adds.mjs`      | after merging    | lines both sides added that the merge kept twice — the clean-but-wrong resolution that leaves no marker behind                                                              |
-| `resolution-check.mjs`    | after resolving  | resolutions that landed as one side whole — a dropped fork delta or a dropped upstream change, in a file that may never have conflicted                                     |
-| `regen-route-tree.mjs`    | after resolving  | rewrites `apps/web/src/routeTree.gen.ts`, headlessly, whenever a route file conflict leaves it stale                                                                        |
-| `verify.mjs`              | after resolving  | tripwires, contract drift, format, lint, types and tests, in one pass that does not stop at the first failure and retries a test package alone before reporting it failed   |
-| `merge-stats.mjs`         | after committing | the tracker entry's numbers — upstream range, landed vs upstream-range file counts with the gap already explained, fork delta, and the conflict list restated with verdicts |
-| `inventory-check.mjs`     | any time         | does every inventory path still exist on the side its verdict claims                                                                                                        |
-| `tripwires.mjs`           | after merging    | deleted surfaces, re-deletions, and workflow state in GitHub                                                                                                                |
-| `unsupported-methods.mjs` | after merging    | which contract methods should declare `UnsupportedMethodError`, derived from both sides                                                                                     |
+| Script                    | When             | What it answers                                                                                                                                                                                     |
+| ------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `preflight.mjs`           | before merging   | the range, which inventory entries have gone stale, the files this merge will actually stop on, and the ones git resolves silently — each with its verdict attached                                 |
+| `duplicate-adds.mjs`      | after merging    | lines both sides added that the merge kept twice — the clean-but-wrong resolution that leaves no marker behind                                                                                      |
+| `resolution-check.mjs`    | after resolving  | resolutions that landed as one side whole — a dropped fork delta or a dropped upstream change, in a file that may never have conflicted                                                             |
+| `regen-route-tree.mjs`    | after resolving  | rewrites `apps/web/src/routeTree.gen.ts`, headlessly, whenever a route file conflict leaves it stale                                                                                                |
+| `verify.mjs`              | after resolving  | tripwires, contract drift, format, lint, types and tests, in one pass that does not stop at the first failure and retries a failing test package, then its failing file, before reporting it failed |
+| `merge-stats.mjs`         | after committing | the tracker entry's numbers — upstream range, landed vs upstream-range file counts with the gap already explained, fork delta, and the conflict list restated with verdicts                         |
+| `inventory-check.mjs`     | any time         | does every inventory path still exist on the side its verdict claims                                                                                                                                |
+| `tripwires.mjs`           | after merging    | deleted surfaces, re-deletions, and workflow state in GitHub                                                                                                                                        |
+| `unsupported-methods.mjs` | after merging    | which contract methods should declare `UnsupportedMethodError`, derived from both sides                                                                                                             |
 
 All live in `.agents/skills/fork-upstream-merge/scripts/`. `verify.mjs` runs
 `duplicate-adds.mjs`, `tripwires.mjs`, `resolution-check.mjs` and
@@ -275,6 +275,13 @@ git merge upstream/main
    `verify.mjs` runs it again later; running it here keeps the finding from
    costing a full typecheck-and-test pass.
 
+   A red result here means delete one copy. The three shapes that satisfy the
+   rule without being that are kept out of the exit code: a copy whose exact
+   text is in neither parent was written by the resolution rather than kept
+   twice, a bare call statement binds no name and is reported as weak evidence,
+   and a collision the rule cannot see past is declared in
+   `duplicateAddExceptions` in `docs/fork/inventory.json`.
+
 7. Check that nothing landed as one side whole:
 
    ```bash
@@ -430,10 +437,31 @@ except the tests; run the full command again once it is green.
 A test package that fails is retried alone before being reported: the packages
 `pnpm test` runs share one sandbox's CPU and memory, and a merge on a loaded
 machine reliably turns up a perf-budget miss or a timeout that has nothing to
-do with the merge. A package that passes alone is reported `flaky, passed
-alone`, not silently green — read it, but it does not block the merge on its
-own. A package that fails alone too keeps the step red and names it as
-confirmed.
+do with the merge. A package that passes alone is reported `failed in the full
+run, passed in isolation`, not silently green — read it, but it does not block
+the merge on its own.
+
+A package that fails that retry has its failing file run on its own before
+anything is called confirmed. Dropping the other packages does not stop a
+package contending with itself: `@t3tools/mobile` runs its 165 files
+concurrently either way. On 2026-09-13 a highlighting test failed the full run
+and the retry, passed in 1.5s as a single file, and the whole package passed on
+a re-run — while the report said `Confirmed failing alone, not machine noise`,
+which is the line a reader trusts to tell a regression from sandbox noise. The
+step now says which of four things happened, and only the last two are red:
+
+- `failed in the full run, passed in isolation` — the package passes once the
+  others are not running.
+- `Failed the retry, passed as a single file` — the package contends with
+  itself. Not a merge regression.
+- `Confirmed failing alone, not machine noise` — a single file failed by
+  itself, and the file is named.
+- `Failed the full run and the retry` with no file named — vitest printed no
+  `FAIL <path>` line, so nothing could be run on its own. Re-run the package by
+  hand; this is not confirmed in isolation.
+
+`--sequential` and `--package` use the same ladder, for the same reason: one
+package on its own is still its own files running concurrently.
 
 Run this **before** the classification and documentation steps, not after them.
 Its output is their input: the unsupported-method buckets are step 4's answer,
@@ -493,6 +521,15 @@ takes its exceptions from `unsupportedMethodExceptions` in
 the exit code alone. `scripts.run` is the standing one. Each entry carries the
 condition that retires it, and the script names an exception that has stopped
 firing so it gets deleted rather than accumulating.
+
+`duplicate-adds.mjs` reads `duplicateAddExceptions` from the same file the same
+way, for the collisions its rule cannot see past. The standing one is
+`packages/contracts/src/orchestration.test.ts`, where the fork's script-port
+test and upstream's monogram test share a line of decode boilerplate at
+different indentation: both tests are wanted, no edit is correct, and the check
+compares trimmed lines. An entry names the `path` and the trimmed `line`, and
+the check reports it stale when it scans that file and the line no longer
+collides.
 
 ### 4. Record what the merge found
 

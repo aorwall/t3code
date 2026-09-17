@@ -56,6 +56,16 @@
  * fails in the full run and passes alone is reported as flaky, not fixed
  * silently: the run is still worth a second look if the same package keeps
  * turning up.
+ *
+ * A package that fails that retry too then has its failing file run on its own,
+ * because dropping the other packages does not stop a package contending with
+ * itself: `@t3tools/mobile` runs 165 files concurrently either way. On
+ * 2026-09-13 a highlighting test failed the full run and the retry, passed in
+ * 1.5s as a single file, and the whole package passed on a re-run — and the
+ * label said "Confirmed failing alone, not machine noise", which is the one line
+ * a reader trusts to tell a regression from sandbox noise. A file that fails on
+ * its own is confirmed and keeps the step red; one that passes on its own is
+ * reported as having failed the retry and passed as a single file, and does not.
  */
 import * as NodeChildProcess from "node:child_process";
 import * as NodeFS from "node:fs";
@@ -297,44 +307,111 @@ function completedPackages(output) {
  *
  * Returns the raw status and signal rather than a boolean: the summary tells an
  * OOM kill from a failing test by reading them, and the web suite is the one
- * that gets OOM-killed.
+ * that gets OOM-killed. `files` narrows the run to those test files, which is
+ * what separates a package contending with itself from a real failure.
  */
-function runPackageAlone(pkg) {
-  const result = NodeChildProcess.spawnSync("vp", ["run", "--filter", pkg, "test"], {
-    cwd: REPO_ROOT,
-    stdio: "inherit",
-    env: heapEnv(),
-  });
-  return { status: result.status ?? 1, signal: result.signal };
+function runPackageAlone(pkg, files = []) {
+  return runCapturing("vp", ["run", "--filter", pkg, "test", ...files]);
 }
 
-const retryPackageAlone = (pkg) => runPackageAlone(pkg).status === 0;
+const ANSI = /\[[0-9;]*m/g;
+
+/**
+ * The test files vitest named as failing.
+ *
+ * Read off its `FAIL <path> > <suite> > <name>` lines, which it prints once per
+ * failing test and which carry the path this needs. A package whose failure has
+ * no such line — a setup crash, an unhandled rejection — yields nothing, and the
+ * caller reports that rather than guessing.
+ */
+const FAIL_FILE = /(?:^|\s)FAIL\s+(\S+\.(?:test|spec)\.[cm]?[jt]sx?)\b/;
+
+function failedFilesFromOutput(output) {
+  const files = new Set();
+  for (const line of output.replace(ANSI, "").split("\n")) {
+    const match = FAIL_FILE.exec(LABEL_LINE.exec(line)?.[2] ?? line);
+    if (match) files.add(match[1]);
+  }
+  return [...files];
+}
+
+/**
+ * How far a package's failure survived being run on its own.
+ *
+ *   passed          — the package passes once the other packages are not running.
+ *   confirmed       — a single failing file fails on its own. A finding.
+ *   load-sensitive  — the package fails alone and each failing file passes as a
+ *                     single file, so what it contends with is itself.
+ *   unidentified    — failed twice, and which file failed could not be read out
+ *                     of the output. Still a finding: something failed, and this
+ *                     cannot say it was the machine.
+ *
+ * Only `confirmed` and `unidentified` keep the step red. The distinction is the
+ * point of the whole path: a label that says a failure is real when it is load
+ * noise sends someone hunting a regression that does not exist.
+ */
+async function confirmPackageFailure(pkg) {
+  const alone = await runPackageAlone(pkg);
+  if ((alone.status ?? 1) === 0) return { pkg, verdict: "passed" };
+
+  const files = failedFilesFromOutput(alone.output);
+  if (files.length === 0)
+    return { pkg, verdict: "unidentified", status: alone.status, signal: alone.signal };
+
+  const failed = [];
+  for (const file of files) {
+    process.stdout.write(`\n${bold(cyan(`── retry ${pkg} ${file}`))}\n`);
+    const single = await runPackageAlone(pkg, [file]);
+    // A filter that matched nothing is not a pass. Vitest says so in one line,
+    // and treating it as green would turn a real failure into silence.
+    if (/No test files found/.test(single.output.replace(ANSI, ""))) {
+      return { pkg, verdict: "unidentified", status: alone.status, signal: alone.signal };
+    }
+    if ((single.status ?? 1) !== 0) failed.push(file);
+  }
+  return {
+    pkg,
+    verdict: failed.length > 0 ? "confirmed" : "load-sensitive",
+    files,
+    failed,
+    status: alone.status,
+    signal: alone.signal,
+  };
+}
+
+const isFinding = (entry) => entry.verdict === "confirmed" || entry.verdict === "unidentified";
 
 /**
  * Every test package, one at a time, with a ledger line as each one lands.
  *
- * There is no retry-alone path here and there does not need to be: a package
- * that fails under `--sequential` already ran alone, so the flakiness the retry
- * exists to absorb cannot arise. What a failure here means is what a failure in
- * the retry means — a real finding.
+ * A package that fails here is put through the same file-level confirmation the
+ * retry path uses. Running a package away from the others does not make it alone
+ * — its own files still run concurrently — so a `--sequential` failure is no more
+ * confirmed than a retry failure is, and saying otherwise is the same false
+ * label. Only a single file that fails by itself is a finding.
  *
  * The ledger line is the point of the mode as much as the memory ceiling is. It
  * is written before the next package starts, so a log cut off mid-run still says
  * which packages passed, which is exactly what an evicted run cannot otherwise
  * tell you.
  */
-function runPackagesSequentially(packages) {
+async function runPackagesSequentially(packages) {
   const ledger = [];
   for (const [index, pkg] of packages.entries()) {
     process.stdout.write(
       `\n${bold(cyan(`── ${pkg}`))} ${dim(`(${index + 1} of ${packages.length})`)}\n`,
     );
     const at = process.hrtime.bigint();
-    const { status, signal } = runPackageAlone(pkg);
+    const confirmation = await confirmPackageFailure(pkg);
     const seconds = Number(process.hrtime.bigint() - at) / 1e9;
-    const verdict = status === 0 ? green("PASS") : red(`FAIL(${signal ?? status})`);
-    process.stdout.write(`${bold(`PKG ${pkg}`)} ${verdict} ${dim(`${seconds.toFixed(0)}s`)}\n`);
-    ledger.push({ pkg, status, signal, seconds });
+    const mark =
+      confirmation.verdict === "passed"
+        ? green("PASS")
+        : isFinding(confirmation)
+          ? red(`FAIL(${confirmation.signal ?? confirmation.status})`)
+          : yellow("FAIL-LOAD");
+    process.stdout.write(`${bold(`PKG ${pkg}`)} ${mark} ${dim(`${seconds.toFixed(0)}s`)}\n`);
+    ledger.push({ ...confirmation, seconds });
   }
   return ledger;
 }
@@ -343,25 +420,31 @@ async function runTestStep(step, onlyPackage, sequential) {
   const started = process.hrtime.bigint();
   process.stdout.write(`\n${bold(cyan(`── ${step.name}`))} ${dim(step.what)}\n`);
 
-  // One package is already a single run, so there is nothing to attribute and
-  // nothing to retry alone — it is alone.
+  // One package is not one run: its own files still run concurrently, so a
+  // failure here goes through the same file-level confirmation as a retry.
   if (onlyPackage) {
-    const { status, signal } = runPackageAlone(onlyPackage);
+    const confirmation = await confirmPackageFailure(onlyPackage);
     const seconds = Number(process.hrtime.bigint() - started) / 1e9;
-    return { ...step, what: `${onlyPackage} only`, status, signal, seconds };
+    return {
+      ...step,
+      what: `${onlyPackage} only`,
+      status: isFinding(confirmation) ? (confirmation.status ?? 1) : 0,
+      signal: confirmation.signal,
+      seconds,
+      retried: confirmation.verdict === "passed" ? [] : [confirmation],
+    };
   }
 
   if (sequential) {
     // Sorted so two runs on the same tree list their packages in the same
     // order, which is what makes one run's log diffable against another's.
     const packages = [...workspacePackages().withTests].sort();
-    const ledger = runPackagesSequentially(packages);
+    const ledger = await runPackagesSequentially(packages);
     const seconds = Number(process.hrtime.bigint() - started) / 1e9;
-    const failing = ledger.filter((entry) => entry.status !== 0);
     return {
       ...step,
       what: `${packages.length} packages, one at a time`,
-      status: failing.length > 0 ? 1 : 0,
+      status: ledger.some(isFinding) ? 1 : 0,
       seconds,
       sequential: ledger,
     };
@@ -378,7 +461,7 @@ async function runTestStep(step, onlyPackage, sequential) {
   const skipped = [...workspacePackages().withTests].filter(
     (pkg) => !completedPackages(output).has(pkg),
   );
-  let skippedFailed = [];
+  const skippedFailed = [];
   if (skipped.length > 0) {
     process.stdout.write(
       `\n${yellow(`${skipped.length} package(s) declare a test script and did not finish: ${skipped.join(", ")}`)}\n` +
@@ -386,16 +469,18 @@ async function runTestStep(step, onlyPackage, sequential) {
     );
     for (const pkg of skipped) {
       process.stdout.write(`\n${bold(cyan(`── skipped ${pkg}`))}\n`);
-      if (runPackageAlone(pkg).status !== 0) skippedFailed.push(pkg);
+      const confirmation = await confirmPackageFailure(pkg);
+      if (confirmation.verdict !== "passed") skippedFailed.push(confirmation);
     }
   }
+  const skippedFindings = skippedFailed.filter(isFinding);
 
   const seconds = Number(process.hrtime.bigint() - started) / 1e9;
 
   if ((status ?? 1) === 0 || status === 137 || signal === "SIGKILL") {
     return {
       ...step,
-      status: skippedFailed.length > 0 ? 1 : (status ?? 1),
+      status: skippedFindings.length > 0 ? 1 : (status ?? 1),
       signal,
       seconds,
       skipped,
@@ -416,21 +501,67 @@ async function runTestStep(step, onlyPackage, sequential) {
   const retried = [];
   for (const pkg of failedPackages) {
     process.stdout.write(`\n${bold(cyan(`── retry ${pkg}`))}\n`);
-    retried.push({ pkg, passedAlone: retryPackageAlone(pkg) });
+    retried.push(await confirmPackageFailure(pkg));
   }
 
-  const stillFailing = retried.filter((entry) => !entry.passedAlone);
+  const findings = [...retried, ...skippedFailed].filter(isFinding);
   return {
     ...step,
     skipped,
     skippedFailed,
-    // Flaky packages that pass alone no longer fail the step; a package that
-    // fails alone too is a real finding and keeps the step red.
-    status: stillFailing.length > 0 || skippedFailed.length > 0 ? status || 1 : 0,
+    // A package that passes alone, and one whose failing file passes as a single
+    // file, no longer fail the step: neither is something to fix in the merge.
+    // A file that fails on its own keeps it red.
+    status: findings.length > 0 ? status || 1 : 0,
     signal,
     seconds,
     retried,
   };
+}
+
+/**
+ * What each verdict is worth to a reader, in the words they have to be able to
+ * trust. Only `confirmed` and `unidentified` are failures; the other two say
+ * what was observed and stop there.
+ */
+function confirmationNotes(entries) {
+  const of = (verdict) => entries.filter((entry) => entry.verdict === verdict);
+  const names = (group) => group.map((entry) => entry.pkg).join(", ");
+  const withFiles = (group) =>
+    group.map((entry) => {
+      const files = entry.failed?.length > 0 ? entry.failed : (entry.files ?? []);
+      return files.length > 0 ? `${entry.pkg} — ${files.join(", ")}` : entry.pkg;
+    });
+
+  const notes = [];
+  const flaky = of("passed");
+  if (flaky.length > 0) {
+    notes.push(
+      `${names(flaky)} failed in the full run, passed in isolation.`,
+      "Not a merge regression, but worth a second look if it keeps recurring.",
+    );
+  }
+  const loadSensitive = of("load-sensitive");
+  if (loadSensitive.length > 0) {
+    notes.push(
+      `Failed the retry, passed as a single file: ${withFiles(loadSensitive).join("; ")}`,
+      "The package's own files still run concurrently when it runs alone, so this",
+      "is contention inside the package rather than a merge regression.",
+    );
+  }
+  const confirmed = of("confirmed");
+  if (confirmed.length > 0) {
+    notes.push(`Confirmed failing alone, not machine noise: ${withFiles(confirmed).join("; ")}`);
+  }
+  const unidentified = of("unidentified");
+  if (unidentified.length > 0) {
+    notes.push(
+      `Failed the full run and the retry: ${names(unidentified)}`,
+      "Which file failed could not be read out of the output, so none was run on",
+      "its own — this is not confirmed in isolation. Re-run the package by hand.",
+    );
+  }
+  return notes;
 }
 
 function summarize(results) {
@@ -440,20 +571,25 @@ function summarize(results) {
   for (const result of results) {
     const took = `${result.seconds.toFixed(0)}s`;
 
-    // `--sequential` has its own shape: every package ran alone, so there is no
-    // skipped set to reconcile and no flaky set to forgive. Report the packages
-    // that failed and say plainly that each already ran in isolation, which is
-    // the question the retry path exists to answer.
+    // `--sequential` has its own shape: there is no skipped set to reconcile,
+    // because every package was run deliberately. The confirmation ladder is the
+    // same — running a package away from the others does not stop it contending
+    // with itself, which is the question the file-level retry exists to answer.
     if (result.sequential) {
-      const failing = result.sequential.filter((entry) => entry.status !== 0);
       const ran = `${result.sequential.length} package(s) ran one at a time`;
-      if (failing.length > 0) {
+      const notes = confirmationNotes(
+        result.sequential.filter((entry) => entry.verdict !== "passed"),
+      );
+      if (result.sequential.some(isFinding)) {
         section.fail(`${result.name} exited ${result.status} ${dim(took)}`, [
           ran,
-          `Failing: ${failing.map((entry) => entry.pkg).join(", ")}`,
-          "Each already ran alone, so these are findings rather than load noise.",
+          ...notes,
           `Re-run one: node ${SCRIPTS}/verify.mjs --only test --package <name>`,
         ]);
+        continue;
+      }
+      if (notes.length > 0) {
+        section.warn(`${result.name} ${dim(took)} — ${ran}, none confirmed failing`, notes);
         continue;
       }
       section.ok(`${result.name} ${dim(took)} — ${ran}`);
@@ -469,35 +605,23 @@ function summarize(results) {
         "Each was run alone instead. A green step without this line means every package ran.",
       );
     }
-    const retried = result.retried ?? [];
-    const flaky = retried.filter((entry) => entry.passedAlone);
-    if (flaky.length > 0) {
-      notes.push(
-        `${flaky.map((entry) => entry.pkg).join(", ")} failed in the full run, passed in isolation.`,
-        "Not a merge regression, but worth a second look if it keeps recurring.",
-      );
-    }
 
-    // Both paths to a confirmed failure: a package that failed the full run and
-    // failed its retry, and a package that never finished the full run and
-    // failed when run alone. Reporting one list and returning hid a confirmed
-    // desktop failure behind a skipped-package failure on 2026-09-07.
-    const failing = [
-      ...retried.filter((entry) => !entry.passedAlone).map((entry) => entry.pkg),
-      ...(result.skippedFailed ?? []),
-    ];
-    if (failing.length > 0) {
-      section.fail(`${result.name} exited ${result.status || 1} ${dim(took)}`, [
-        ...notes,
-        `Confirmed failing alone, not machine noise: ${failing.join(", ")}`,
-      ]);
+    // Both paths to a failure: a package that failed the full run and failed its
+    // retry, and a package that never finished the full run and failed when run
+    // alone. Reporting one list and returning hid a confirmed desktop failure
+    // behind a skipped-package failure on 2026-09-07.
+    const entries = [...(result.retried ?? []), ...(result.skippedFailed ?? [])];
+    notes.push(...confirmationNotes(entries));
+
+    if (entries.some(isFinding)) {
+      section.fail(`${result.name} exited ${result.status || 1} ${dim(took)}`, notes);
       continue;
     }
     if (notes.length > 0) {
       const headline =
         result.skipped?.length > 0
           ? `${result.skipped.length} package(s) needed a run of their own`
-          : "flaky, passed alone";
+          : "failed under load, not on its own";
       section.warn(`${result.name} ${dim(took)} — ${headline}`, notes);
       continue;
     }
@@ -589,8 +713,13 @@ runMain(async () => {
     );
     return 1;
   }
-  const flakyNote = results.some((result) => result.retried?.some((entry) => entry.passedAlone))
-    ? ` ${yellow("(some packages were flaky under load and passed on retry)")}`
+  const loadNoise = results.some((result) =>
+    [...(result.retried ?? []), ...(result.skippedFailed ?? []), ...(result.sequential ?? [])].some(
+      (entry) => entry.verdict === "passed" || entry.verdict === "load-sensitive",
+    ),
+  );
+  const flakyNote = loadNoise
+    ? ` ${yellow("(some packages failed under load and passed when run on their own)")}`
     : "";
   const fastNote = fast
     ? ` ${yellow("Tests did not run — this is not a merge's final verification.")}`

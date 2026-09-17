@@ -106,6 +106,18 @@ export function loadInventory(ref = null) {
     if (!entry.retiredWhen)
       problems.push(`unsupportedMethodExceptions ${entry.id}: no retiredWhen`);
   }
+  for (const entry of raw.duplicateAddExceptions ?? []) {
+    if (!entry.id) problems.push("duplicateAddExceptions: an entry has no id");
+    if (!entry.path) problems.push(`duplicateAddExceptions ${entry.id}: no path`);
+    if (!entry.line) problems.push(`duplicateAddExceptions ${entry.id}: no line`);
+    if (entry.line !== undefined && entry.line !== entry.line.trim()) {
+      // The check compares whitespace-normalized lines, so an entry carrying its
+      // own indentation matches nothing and reads as a rule that stopped working.
+      problems.push(`duplicateAddExceptions ${entry.id}: line must be trimmed`);
+    }
+    if (!entry.reason) problems.push(`duplicateAddExceptions ${entry.id}: no reason`);
+    if (!entry.retiredWhen) problems.push(`duplicateAddExceptions ${entry.id}: no retiredWhen`);
+  }
   if (problems.length > 0) {
     throw new Error(`docs/fork/inventory.json is malformed:\n  - ${problems.join("\n  - ")}`);
   }
