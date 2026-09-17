@@ -28,6 +28,110 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-17 — merged upstream to 6d1d54944, upstream moved the thread route's whole body into a component and three fork deltas moved with it
+
+- Upstream: `6d1d549441` from base `0bf2d6b010` (`50` commits).
+- Landed: `410` files from `git diff --stat HEAD^1 HEAD` against `407` in the
+  upstream range (`0bf2d6b010..HEAD^2`); fork delta `777` files from
+  `git diff --stat HEAD^2 HEAD`. The gap of 3 is this file, `gaps.md` and
+  `inventory.json`. Everything in the range landed.
+- Conflicts: 8 files, each resolved with the verdict `preflight.mjs` printed.
+  - **`apps/web/src/routes/_chat.$environmentId.$threadId.tsx` (unlisted) —
+    upstream deleted the file's contents out from under three fork deltas.**
+    #12015 moved the entire route body into a new upstream file,
+    `apps/web/src/components/ThreadRouteView.tsx`, rendered by the `_chat`
+    layout so a draft's promotion keeps the same `ChatView` mounted; the route
+    file is now a seven-line stub. Took the stub whole and moved
+    `useAdoptedThread`, `useAutoFollowThread` and the
+    `serverThreadAwaitingFirstAnswer` argument into `ThreadRouteView.tsx`,
+    reading `target.kind === "server" ? target.threadRef : null` — a draft's
+    reserved ref is the viewer's own work and the listing carries it without
+    being asked. Re-pointed the `unlisted-thread-adoption` and `thread-follow`
+    inventory entries (paths, guard and both `mustSurvive` texts) at the new
+    file. **The fork's own delta guard is what caught this**: with the entries
+    still naming the route file, `features.test.ts` failed on
+    `useAutoFollowThread` missing from a file that is now a stub. Nothing else
+    would have — the merge was clean, typecheck was green, and the route would
+    simply have stopped adopting.
+  - `apps/web/src/components/chat/MessagesTimeline.tsx`
+    (`converged — message-origin-upstream-files`, 4 hunks): kept `GitForkIcon`
+    and dropped upstream's now-unused `GitPullRequestIcon` import, and merged
+    both sides of `TimelineRowActivityState`, its `useMemo` body and its
+    dependency array rather than choosing a side.
+  - `apps/web/src/components/ThreadStatusIndicators.tsx`
+    (`converged — thread-status-indicators`): fork's
+    `visibleThreadPullRequests` memo above upstream's new
+    `resolveThreadPullRequestBadgePresentation` early return — hooks first, so
+    the memo cannot end up after a conditional `return null`.
+  - `apps/web/src/components/settings/ProviderInstanceCard.tsx` (unlisted,
+    inside `moatless-provider-auth`, so `decide, then add an entry`): kept the
+    `FEATURES.providerConfiguration` ternary with upstream's new container-query
+    classNames inside it. Now listed as `provider-settings-gates`.
+  - `apps/web/src/components/settings/SettingsPanels.tsx`
+    (`converged — settings-surface-gates`): upstream rewrote the
+    `proactive-panels` description's semantics; re-stated the fork's browser
+    clause onto upstream's new text rather than keeping the old sentence.
+  - `BranchToolbar.tsx` (`branch-toolbar-gates`) and `RightPanelTabs.tsx`
+    (`right-panel-surfaces`): import blocks only, both sides kept.
+  - `pnpm-lock.yaml` (`theirs — lockfile`): `git checkout --theirs` then `vp i`,
+    and **the re-derived lockfile is committed**. See the caveat below.
+- Sweep: no upstream addition hit an owned-surface keyword, and no workflow was
+  added, changed or renamed. No route file was added, deleted or renamed
+  upstream either, so `regen-route-tree.mjs` correctly skipped — #12015 moved
+  code out of a route, not the route itself.
+- **`resolution-check` listed eight unlisted paths both sides changed; seven
+  carried a real fork delta and are now listed.** Five new `pathPolicy` entries
+  — `command-palette-gates` (the `paletteActionEnabled` filter at the
+  `buildRootGroups` handoff), `diff-panel-gates` (`FEATURES.turnDiffs` around
+  the turn menu, `FEATURES.openInEditor` as an early return),
+  `provider-settings-gates` (both provider files),
+  `chat-layout-route` (`/pair` → `/login` with a remembered return-to) and
+  `client-runtime-exports` (six fork subpath exports, where a lost entry is a
+  build-time resolve failure) — plus `rightPanelStore.test.ts` added to
+  `right-panel-surfaces`. The eighth, the thread route stub, resolved to
+  upstream byte for byte, so the `theirs` fallback is already correct for it.
+- Unsupported methods: ADD 0, DROP 0, so `rpc.ts` and `auth.ts` are untouched.
+  Upstream added no WebSocket method in this range — the new work rides existing
+  payloads (`review.getDiffPreview` gained an optional `file` input and a `files`
+  stat array, `orchestration` gained a `reasoning` message role with
+  `thread.message.reasoning.*` commands behind a `reasoningMessages` opt-in).
+  `KEEP 2` and the five known exceptions are unchanged.
+- Six backend behaviours were recorded in [gaps.md](./gaps.md): four under
+  _Runtime fixes upstream made to its own server_ — large sparse checkouts on
+  the fast checkpoint path (#12154), flushing checkpoint objects and refs before
+  publishing (#10944), keeping a ready checkpoint when a later placeholder
+  arrives (#8432), and keeping VCS waits off turn completion (#11970) — and two
+  under _Settlement rules Moatless owns_: settling on the pull-request event
+  rather than the next sweep (#12161), and recording a cancelled setup's
+  settlement before rollback (#12176). #12017 and #12033 are device-hub only,
+  which Moatless does not run at all, so neither was recorded.
+- Also in gaps.md: upstream #12175 makes every keybinding command a searchable
+  settings row pointing at `/settings/keybindings`, a page `serverAdministration`
+  gates out of the sidebar and redirects on a typed URL. The rows still match in
+  settings search. Left as-is — the same shape as the six `snap-shot-*` rows —
+  and the one-line fix that closes both is noted there, to be made outside a
+  merge.
+- Verification: all 9 `verify.mjs` checks pass, tests in all 15 packages. Two
+  findings on the way, and one caveat:
+  - `typecheck`: `TS2552: Cannot find name 'label'` in
+    `ThreadStatusIndicators.tsx`. #11104/#11180 hoisted `label` onto the
+    presentation object; the fork's multi-link popover branch still read the
+    removed local. One-word fix to `presentation.label`. **Grep the typecheck log
+    for `: error TS`** — it is otherwise dominated by TS suggestions.
+  - The two web test failures were this and the delta guard above, nothing else.
+  - **`vp i` needs a raised heap in this sandbox.** It dies with
+    `Ineffective mark-compacts near heap limit` at ~2 GB, because the cgroup caps
+    memory at 12 GB while `free` reports the host's 15 GB and Node sizes its
+    default heap from the host. Run it as
+    `NODE_OPTIONS=--max-old-space-size=6144 vp i`.
+  - **`--force-with-lease` does not work as SKILL.md documents it here.** The
+    bare form fails `(stale info)` even after
+    `git fetch origin "+refs/heads/$b:refs/remotes/origin/$b"`, because
+    `remote.origin.fetch` is only `+refs/heads/main:…` so the branch has no
+    lease-eligible tracking ref. Read the remote SHA with `git ls-remote origin
+"refs/heads/$b"` and pass it explicitly as
+    `--force-with-lease="refs/heads/$b:$sha"` — read, never guessed.
+
 ### 2026-09-16 — merged upstream to 0bf2d6b01, upstream's new icon variant broke a fork-only page that borrows upstream's picker
 
 - Upstream: `0bf2d6b01` from base `5623089ae` (`45` commits).

@@ -184,7 +184,15 @@ what a person loses, which is the part the derivation cannot tell you:
   `projectSettingsOverrides` record (#11176, a per-project patch over seventeen
   scopable keys). Both read fine and neither can be saved, which is the same
   refusal one level deeper rather than a new gap — see _Capabilities are
-  reported_ for the capability half.
+  reported_ for the capability half. The 2026-09-17 merge added upstream #12175,
+  which turns every keybinding command into a searchable row pointing at
+  `/settings/keybindings`; `settingsPathEnabled` keeps the page out of the
+  sidebar and `settings.tsx`'s `beforeLoad` redirects a typed URL, but the rows
+  still match in settings search and land on that redirect. Left upstream on
+  purpose, the same way the six `snap-shot-*` rows are — see _Window capture_.
+  The fix that closes both at once is a `settingsPathEnabled(item.to)` filter in
+  `filterAvailableSettingsSearchItems`, which is a behaviour change to make
+  outside a merge.
 - **Diagnostics** — `server.getTraceDiagnostics`, `getProcessDiagnostics`,
   `getProcessResourceHistory`, `getResourceTelemetryHistory`, `signalProcess`,
   `retryResourceTelemetry`, `subscribeResourceTelemetry`. Holds open
@@ -742,8 +750,29 @@ A decider rule Moatless would still benefit from reproducing arrived on
 2026-08-16 in `apps/server/src/orchestration/decider.ts`: settling a snoozed
 thread takes effect at once rather than waiting for the wake time.
 
+Two more arrived in the 2026-09-17 merge, both about _when_ the settlement is
+recorded rather than what it decides:
+
+- **A linked pull request should settle its thread at once.** #12161 gave
+  `ThreadSettlementReactor` a per-thread sweep and drives it from the
+  `thread.pull-request-linked` and `thread.pull-request-synced` events, so a
+  thread whose PR merged settles on the event instead of waiting for the next
+  periodic sweep (`apps/server/src/orchestration/ThreadSettlementReactor.ts`,
+  with the propagation half in `PullRequestSyncReactor.ts` and
+  `PullRequestService.ts`). Moatless settles only on an explicit override
+  today, so the applicable part is the shape: a settlement decision belongs on
+  the event that changed the answer, not on a timer.
+- **A cancelled setup should record its settlement before it rolls back.**
+  #12176 made the cancellation path in `apps/server/src/ws.ts` uninterruptible
+  around the record-and-rollback, because the interrupt that cancels a worktree
+  setup otherwise eats the settlement and leaves the thread mid-setup. Moatless
+  cancels its own sandbox setup, where the same interrupt lands in the same
+  place.
+
 - **Closes when:** the backend's settlement decision reads pin and snooze state,
-  and settles a snoozed thread immediately.
+  settles a snoozed thread immediately, settles on the pull-request event rather
+  than on the next sweep, and records a cancelled setup's settlement before
+  rolling it back.
 - **Then here:** nothing to delete — this one is behaviour to reproduce, not a
   placeholder to remove.
 
@@ -967,6 +996,34 @@ Eight more arrived in the 2026-09-16 merge:
   feeds are decided out here, but Moatless does its own GitHub reads behind
   `pullRequests.summary` and the task binding, so the budgeting half applies.
 
+Four more arrived in the 2026-09-17 merge, all on the checkpoint path:
+
+- **A large sparse checkout should stay on the fast checkpoint path.** #12154
+  streams `git ls-files --full-name --sparse -z -v` under a 4 KiB output cap
+  instead of buffering the whole listing, probes once whether this git knows
+  `add --sparse`, and pins `sparse.expectFilesOutsideOfPatterns=false` on the
+  index commands (`apps/server/src/vcs/GitVcsDriver.ts`, `VcsProcess.ts`,
+  `processRunner.ts`). Without it a sparse checkout large enough to blow the
+  output limit silently drops to the slow path on every checkpoint. Moatless
+  checks repositories out into sandboxes and records its own checkpoints.
+- **A checkpoint should be flushed before it is published.** #10944 writes the
+  objects and refs to disk before the checkpoint is announced
+  (`apps/server/src/vcs/GitVcsDriver.ts`), so a reader that acts on the
+  announcement cannot find a ref pointing at an object that is not there yet.
+  The failure is a race, so it is rare, unreproducible and permanent when it
+  lands.
+- **A ready checkpoint should survive a later placeholder.** #8432 stopped a
+  placeholder that arrives after the real checkpoint from overwriting it
+  (`apps/server/src/orchestration/Layers/ProjectionPipeline.ts`). The symptom is
+  a checkpoint that reverts to pending and never comes back, which reads as
+  losing the restore point rather than as an ordering bug.
+- **A VCS wait should not hold a turn open.** #11970 took the VCS wait off the
+  turn-completion path (`orchestration/Layers/ProviderRuntimeIngestion.ts` and
+  `orchestration/decider.ts`), so a slow git call between the provider's last
+  event and the turn being marked done no longer keeps the turn live. Moatless
+  decides turn completion itself and runs git in a sandbox, where that call is
+  slower than upstream's.
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
   compaction path queues in-flight user messages, its review diffs report
@@ -984,7 +1041,10 @@ Eight more arrived in the 2026-09-16 merge:
   checkout skip work already done, its git processes are bounded with the long
   operations exempt, it releases a preview host whose request went unanswered,
   it names the setting behind a missing provider executable, its health checks
-  clean up what they unpack, and its GitHub reads are budgeted and cached.
+  clean up what they unpack, its GitHub reads are budgeted and cached, a large
+  sparse checkout stays on its fast checkpoint path, its checkpoints are flushed
+  before they are published and survive a late placeholder, and a VCS wait no
+  longer holds a turn open.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
