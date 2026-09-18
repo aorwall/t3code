@@ -42,6 +42,71 @@ export const yellow = paint("33");
 export const cyan = paint("36");
 
 /**
+ * The heap every node process this repo starts has to be given.
+ *
+ * Node sizes its default heap from the host's memory and never sees a cgroup
+ * limit, so on a capped pod both directions are wrong by default: the default
+ * is too small for the web test suite and for `pnpm`'s own resolution pass —
+ * `vp i` dies with `Ineffective mark-compacts near heap limit` and a bare exit
+ * 1 — while a hardcoded ceiling is a promise the kernel has not agreed to, and
+ * one process claiming the whole cap gets the pod evicted rather than the
+ * process OOM-killed. Take a share of the real cap instead.
+ *
+ * Every step that runs node goes through this, install included. Install used
+ * to be the exception, and it is the one that runs first.
+ */
+const HEAP_FLOOR_MB = 4096;
+const HEAP_CEILING_MB = 12288;
+
+export function heapMb() {
+  const cap = cgroupMemoryLimitMb();
+  if (cap === null) return HEAP_CEILING_MB;
+  // Half, so that two of these side by side still fit inside the cap — the
+  // parallel test step runs more than one node process at a time.
+  const share = Math.floor(cap / 2);
+  return Math.max(HEAP_FLOOR_MB, Math.min(HEAP_CEILING_MB, share));
+}
+
+/** The pod's memory cap in MB, or `null` when uncapped or unreadable. */
+export function cgroupMemoryLimitMb() {
+  const sources = ["/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"];
+  for (const source of sources) {
+    let raw;
+    try {
+      raw = NodeFS.readFileSync(source, "utf8").trim();
+    } catch {
+      continue;
+    }
+    // cgroup v2 writes "max" when uncapped; v1 writes a number near 2^63.
+    if (raw === "max") return null;
+    const bytes = Number(raw);
+    if (!Number.isFinite(bytes) || bytes <= 0 || bytes > Number.MAX_SAFE_INTEGER) continue;
+    const mb = Math.floor(bytes / 1024 / 1024);
+    // A v1 "unlimited" sentinel is a real number; treat an implausible cap as none.
+    if (mb > 1024 * 1024) return null;
+    return mb;
+  }
+  return null;
+}
+
+/** Names the cap the heap was derived from, so a surprising number explains itself. */
+export function capNote() {
+  const cap = cgroupMemoryLimitMb();
+  return cap === null ? " (no pod memory cap found)" : `, half of this pod's ${cap}MB cap`;
+}
+
+/** `process.env` with the derived heap appended to whatever `NODE_OPTIONS` already says. */
+export function heapEnv(heap = heapMb()) {
+  return {
+    ...process.env,
+    NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --max-old-space-size=${heap}`.trim(),
+  };
+}
+
+/** The shapes V8 prints on its way out of memory. A bare exit 1 never says "memory". */
+export const OUT_OF_MEMORY = /mark-compacts near heap limit|heap out of memory|JavaScript heap/i;
+
+/**
  * Run a command and return trimmed stdout. Throws on non-zero exit unless
  * `allowFailure`, which is what callers want for `git grep` (exit 1 just means
  * "no matches") and for probing a ref that may not be fetched.

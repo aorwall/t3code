@@ -28,6 +28,30 @@ declares a refusal that can never fire.
 So each entry names its check. When the check passes, the gap and its
 placeholder leave the tree in the same commit.
 
+## Marking a package this register already explains
+
+An entry about a workspace package whose test suite is expected to be red can
+carry two more slots, and `verify.mjs` prints `known gap: <heading>` on that
+package's failure line when it does:
+
+- **Package:** the workspace package name, exactly as `package.json` spells it.
+- **Open while:** one command, in backticks, that **exits nonzero while this gap
+  is open**. That polarity is the whole contract of the slot.
+
+The command is what makes the marker safe. Matching a failing package against
+the heading above it would keep printing "known gap" long after the gap closed,
+which excuses the next real regression in the same package — so the marker is
+gated on something runnable that stops failing when the gap does.
+
+Neither existing slot can hold that command. **Check:** means "what to run to
+see the state" and its polarity varies between entries; **Closes when:** is
+prose about backend state. Both keep their meanings.
+
+An entry with neither slot is not consulted and its failure reads exactly as it
+would with no register at all, so backfilling is incremental rather than a
+precondition. The marker is a label on a red step, not an excuse: a known gap
+still fails the run.
+
 ## Moatless
 
 ### Capabilities are reported, but not the ones the newer surfaces need
@@ -1241,38 +1265,6 @@ commit. This is a rule, not a repair: **land upstream with a merge commit.** A
 cherry-pick moves the code without moving the base, and every later merge pays
 for it.
 
-### Nothing builds the web app before a merge is pushed
-
-`verify.mjs` runs the fork derivations, format, lint, types and every test
-suite, and none of those is a build. Upstream's `t3code:third-party-licenses`
-plugin runs in `generateBundle`, so it is only reachable from a real
-`vp build`, and it hard-fails on any bundled package whose license declaration
-or notice text it cannot resolve.
-
-What it costs: the 2026-09-13 merge passed every check here and broke the
-`Build & push moatless-t3` workflow on its first CI run, after the branch was
-pushed and the PR was open. Three packages the fork's own `mermaid` edge drags
-in — `khroma` through mermaid, `fastdom` and `strictdom` through cytoscape
-under it — are packages upstream never bundles, so upstream's
-`third-party-licenses.config.json` has nothing to say about them. Any
-dependency the fork adds that upstream does not have can do this again, and
-every local check stays green while it does.
-
-What holds it open: nothing fork-owned. `verify.mjs` simply has no build step,
-and the fix is one more step in it rather than a stand-in to delete. The three
-`packageOverrides` entries at the end of `third-party-licenses.config.json` are
-the fork delta this produced; they are covered by the `mermaid-diagrams`
-inventory entry and by the `third-party-licenses-config` path policy, and they
-stay as long as the mermaid edge does.
-
-- **Check:** `pnpm --filter @t3tools/web build` succeeds, and
-  `apps/web/dist/third-party-licenses.json` carries `khroma`, `fastdom` and
-  `strictdom` with a license and a notice each.
-- **Closes when:** `verify.mjs` runs that build as its own step, reachable with
-  `--only build`, so a merge finds this before the push rather than after it.
-- **Then here:** delete this entry. Nothing else to delete — the overrides are
-  the fork's own dependency edge, not a stand-in for a backend capability.
-
 ### `pnpm test` does not test every package
 
 `vp run -r test` leaves packages out, and it exits 0 without them. On
@@ -1337,6 +1329,10 @@ given a valid path, which the runner does not do. The repo pins
 `"node": "^24.13.1"`; the machine that hit this ran v25.6.0, and `pnpm` warns
 about it on every command.
 
+- **Package:** `@t3tools/web`
+- **Open while:** `node -e 'process.exit(process.version.startsWith("v24") ? 0 : 1)'`
+  — the gap is the machine's node, so the marker appears on exactly the machines
+  that have it.
 - **Check:** run the file on Node 24. It passes.
 - **Then here:** nothing to delete — this is a version mismatch, not fork code.
   Listed so the next reader does not chase it as a merge regression.
@@ -1354,6 +1350,10 @@ clean tree.
 Nothing here is a fork target: `electron-desktop` in `inventory.json` says the
 desktop app is kept in tree and is not a compliance target.
 
+- **Package:** `@t3tools/desktop`
+- **Open while:** `pkg-config --exists libsecret-1` — it exits nonzero exactly
+  when the library the suite needs is absent, so the marker retires itself the
+  day the image carries it.
 - **Check:** `pkg-config --exists libsecret-1`. Installing `libsecret-1-dev`
   makes the suite green.
 - **Then here:** nothing to delete — this is a missing system library, not fork

@@ -111,6 +111,50 @@ function checkGuards(inventory, report) {
   }
 }
 
+const INVENTORY_PROSE = "docs/fork/upstream-merge-inventory.md";
+
+/**
+ * Every delta an entry names has a section in the prose inventory.
+ *
+ * A `converged` verdict says "take upstream, then re-apply <delta>", and the
+ * delta itself — what must survive and why — is written in
+ * `upstream-merge-inventory.md`. When a delta is named in the JSON and has no
+ * section there, resolving a conflict in the files it owns means working from
+ * the `mustSurvive` line alone, which is a summary rather than the reasoning.
+ * Two deltas were in that state for three merges before anyone noticed, because
+ * nothing compares the two files.
+ */
+function checkDeltaSections(inventory, report) {
+  const section = report.section("Named deltas vs the prose inventory");
+  const prose = NodeFS.readFileSync(NodePath.resolve(REPO_ROOT, INVENTORY_PROSE), "utf8");
+  const headings = new Set(
+    [...prose.matchAll(/^#{2,3}\s+(.*\S)\s*$/gm)].map((match) => match[1].trim()),
+  );
+
+  const named = new Map();
+  const ids = new Set();
+  for (const group of [inventory.pathPolicy, inventory.inventory]) {
+    for (const entry of group ?? []) {
+      ids.add(entry.id);
+      if (entry.delta) named.set(entry.delta, entry.id);
+    }
+  }
+  if (named.size === 0) return section.info("no entry names a delta");
+
+  for (const [delta, id] of [...named].sort()) {
+    if (headings.has(delta)) section.ok(`${delta} (${id})`);
+    // A delta may also name another inventory entry, whose `mustSurvive` is
+    // then the description. `third-party-licenses-config` points at
+    // `mermaid-diagrams` that way.
+    else if (ids.has(delta)) section.ok(`${delta} (${id}) — described by the ${delta} entry`);
+    else
+      section.fail(`${delta} has no section in ${INVENTORY_PROSE} — named by ${id}`, [
+        "A merge resolving those files has only the JSON's mustSurvive line to work from.",
+        "Write the section, or rename the delta to the heading that already covers it.",
+      ]);
+  }
+}
+
 function checkDeletedPaths(inventory, report, ref) {
   const section = report.section("Upstream paths the fork deletes");
   for (const path of inventory.deletedUpstreamPaths.paths) {
@@ -135,6 +179,7 @@ export function runInventoryChecks(inventory, report, ref) {
   checkPathPolicy(inventory, report, ref);
   checkInventoryPaths(inventory, report);
   checkGuards(inventory, report);
+  checkDeltaSections(inventory, report);
   checkDeletedPaths(inventory, report, ref);
 }
 

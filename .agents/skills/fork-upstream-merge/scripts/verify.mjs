@@ -66,12 +66,29 @@
  * a reader trusts to tell a regression from sandbox noise. A file that fails on
  * its own is confirmed and keeps the step red; one that passes on its own is
  * reported as having failed the retry and passed as a single file, and does not.
+ *
+ * A confirmed failure that `docs/fork/gaps.md` already accounts for says so on
+ * the failure line — `known gap: <heading>` — but only while the gap's own
+ * `**Open while:**` command still fails. See `knownGaps` below.
  */
 import * as NodeChildProcess from "node:child_process";
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
 
-import { REPO_ROOT, Report, bold, cyan, dim, green, red, runMain, yellow } from "./lib.mjs";
+import {
+  REPO_ROOT,
+  Report,
+  bold,
+  capNote,
+  cyan,
+  dim,
+  green,
+  heapEnv,
+  heapMb,
+  red,
+  runMain,
+  yellow,
+} from "./lib.mjs";
 
 const SCRIPTS = ".agents/skills/fork-upstream-merge/scripts";
 
@@ -119,6 +136,25 @@ const STEPS = [
   { name: "lint", argv: ["pnpm", "lint"], what: "lint rules" },
   { name: "typecheck", argv: ["pnpm", "typecheck"], what: "types across every workspace" },
   {
+    // The only step that runs a real bundler, and the only one that can see
+    // what a bundler sees. Upstream's `t3code:third-party-licenses` plugin runs
+    // in `generateBundle`, so it is unreachable from typecheck and test, and it
+    // hard-fails on any bundled package whose license it cannot resolve — every
+    // dependency edge the fork has and upstream does not is a candidate.
+    //
+    // The 2026-09-13 merge passed all eight checks here and broke
+    // `Build & push moatless-t3` on its first CI run, after the branch was
+    // pushed and the PR was open: the fork's `mermaid` edge bundles `khroma`,
+    // `fastdom` and `strictdom`, which upstream never bundles and its
+    // `third-party-licenses.config.json` therefore says nothing about.
+    //
+    // `apps/web` only. It is the fork's one shipped client, and the other apps
+    // add minutes to every pass for bundles no deployment pulls.
+    name: "build",
+    argv: ["vp", "run", "--filter", "@t3tools/web", "build"],
+    what: "the production web bundle and its license derivation",
+  },
+  {
     name: "test",
     slow: true,
     // Same as `pnpm test` (`"test": "vp run -r test"`), called directly so
@@ -130,65 +166,12 @@ const STEPS = [
   },
 ];
 
-/** The web suite exceeds node's default heap; see the header. */
-const HEAP_FLOOR_MB = 4096;
-const HEAP_CEILING_MB = 12288;
-
 /**
- * The heap ceiling handed to each test process.
- *
- * Node sizes its default heap from the host's memory and never sees a cgroup
- * limit, so on a capped pod a hardcoded ceiling is a promise the kernel has
- * not agreed to: one suite claims the whole budget, the pod is evicted rather
- * than the process OOM-killed, and the run dies with no partial result and no
- * readable log. Take a share of the real cap instead, leaving the rest for the
- * task runner, pnpm, and whatever else shares the pod.
+ * The web suite exceeds node's default heap; see the header. The derivation is
+ * in `lib.mjs` because the install that has to precede this needs the same
+ * number — `install.mjs` is the other caller.
  */
-function heapMb() {
-  const cap = cgroupMemoryLimitMb();
-  if (cap === null) return HEAP_CEILING_MB;
-  // Half, so that two of these side by side still fit inside the cap — the
-  // parallel step runs more than one test process at a time.
-  const share = Math.floor(cap / 2);
-  return Math.max(HEAP_FLOOR_MB, Math.min(HEAP_CEILING_MB, share));
-}
-
-/** The pod's memory cap in MB, or `null` when uncapped or unreadable. */
-function cgroupMemoryLimitMb() {
-  const sources = ["/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"];
-  for (const source of sources) {
-    let raw;
-    try {
-      raw = NodeFS.readFileSync(source, "utf8").trim();
-    } catch {
-      continue;
-    }
-    // cgroup v2 writes "max" when uncapped; v1 writes a number near 2^63.
-    if (raw === "max") return null;
-    const bytes = Number(raw);
-    if (!Number.isFinite(bytes) || bytes <= 0 || bytes > Number.MAX_SAFE_INTEGER) continue;
-    const mb = Math.floor(bytes / 1024 / 1024);
-    // A v1 "unlimited" sentinel is a real number; treat an implausible cap as none.
-    if (mb > 1024 * 1024) return null;
-    return mb;
-  }
-  return null;
-}
-
 const HEAP_MB = heapMb();
-
-/** Names the cap the heap was derived from, so a surprising number explains itself. */
-function capNote() {
-  const cap = cgroupMemoryLimitMb();
-  return cap === null ? " (no pod memory cap found)" : `, half of this pod's ${cap}MB cap`;
-}
-
-function heapEnv() {
-  return {
-    ...process.env,
-    NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --max-old-space-size=${HEAP_MB}`.trim(),
-  };
-}
 
 function run(step) {
   const started = process.hrtime.bigint();
@@ -416,6 +399,29 @@ async function runPackagesSequentially(packages) {
   return ledger;
 }
 
+/**
+ * Draws a line under the parallel pass before anything is re-run.
+ *
+ * `vp run -r test` kills the packages still running when one of them fails, so
+ * the parallel log can carry a real-looking `FAIL` for a package that was cut
+ * off mid-file and passes on its own. On 2026-09-11 four packages were re-run
+ * alone and all passed, while a truncated `apps/mobile` failure stayed in the
+ * log above the retries with nothing marking it superseded — and it cost a
+ * diagnosis pass on a test neither side of the merge touched.
+ *
+ * The summary line already says which verdict each package earned. This says it
+ * where the misleading output is, for the reader scrolling rather than jumping
+ * to the end.
+ */
+function supersededBanner(packages) {
+  return (
+    `${yellow("── everything above this line is the parallel pass")}\n` +
+    `${dim(`Its output for ${packages.join(", ")} is superseded by the runs below: \`vp run -r test\``)}\n` +
+    `${dim("stops the packages still running when one fails, so a FAIL up there can belong to a")}\n` +
+    `${dim("package that was truncated mid-file. Read the runs below and the summary, not the log above.")}\n`
+  );
+}
+
 async function runTestStep(step, onlyPackage, sequential) {
   const started = process.hrtime.bigint();
   process.stdout.write(`\n${bold(cyan(`── ${step.name}`))} ${dim(step.what)}\n`);
@@ -464,11 +470,14 @@ async function runTestStep(step, onlyPackage, sequential) {
   const skippedFailed = [];
   if (skipped.length > 0) {
     process.stdout.write(
-      `\n${yellow(`${skipped.length} package(s) declare a test script and did not finish: ${skipped.join(", ")}`)}\n` +
+      `\n${supersededBanner(skipped)}` +
+        `\n${yellow(`${skipped.length} package(s) declare a test script and did not finish: ${skipped.join(", ")}`)}\n` +
         `${dim("running each alone — `vp run -r test` skips or truncates them")}\n`,
     );
     for (const pkg of skipped) {
-      process.stdout.write(`\n${bold(cyan(`── skipped ${pkg}`))}\n`);
+      process.stdout.write(
+        `\n${bold(cyan(`── skipped ${pkg}`))} ${dim("supersedes its truncated output in the parallel pass above")}\n`,
+      );
       const confirmation = await confirmPackageFailure(pkg);
       if (confirmation.verdict !== "passed") skippedFailed.push(confirmation);
     }
@@ -496,11 +505,14 @@ async function runTestStep(step, onlyPackage, sequential) {
   }
 
   process.stdout.write(
-    `\n${dim(`retrying ${failedPackages.size} failing package(s) alone: ${[...failedPackages].join(", ")}`)}\n`,
+    `\n${supersededBanner([...failedPackages])}` +
+      `\n${dim(`retrying ${failedPackages.size} failing package(s) alone: ${[...failedPackages].join(", ")}`)}\n`,
   );
   const retried = [];
   for (const pkg of failedPackages) {
-    process.stdout.write(`\n${bold(cyan(`── retry ${pkg}`))}\n`);
+    process.stdout.write(
+      `\n${bold(cyan(`── retry ${pkg}`))} ${dim("supersedes its output in the parallel pass above")}\n`,
+    );
     retried.push(await confirmPackageFailure(pkg));
   }
 
@@ -517,6 +529,89 @@ async function runTestStep(step, onlyPackage, sequential) {
     seconds,
     retried,
   };
+}
+
+const GAPS_PATH = "docs/fork/gaps.md";
+
+/**
+ * The package-scoped entries in the gaps register.
+ *
+ * `docs/fork/gaps.md` already lists the packages expected to be red — the
+ * libsecret entry says it exists "so the next merge does not chase it as a
+ * regression" — but nothing connected the register to the failure, so it only
+ * worked on a reader who had already opened it. Two slots connect them:
+ *
+ *   **Package:**    the workspace package the entry is about.
+ *   **Open while:** a command that exits nonzero while the gap is open.
+ *
+ * The predicate is what makes the marker safe to print. Matching a failing
+ * package against heading prose would keep saying "known gap" long after the
+ * gap closed, which excuses the next real regression in the same package. A
+ * command that has to fail for the marker to appear stops on its own.
+ *
+ * Neither existing slot can host it. `**Check:**` means "what to run to see the
+ * state" and its polarity varies between entries; `**Closes when:**` is prose
+ * about backend state. So this is a third slot, and the two keep their meanings.
+ */
+function knownGaps() {
+  let text;
+  try {
+    text = NodeFS.readFileSync(NodePath.join(REPO_ROOT, GAPS_PATH), "utf8");
+  } catch {
+    return [];
+  }
+  const entries = [];
+  let current = null;
+  for (const line of text.split("\n")) {
+    const heading = /^###\s+(.*\S)\s*$/.exec(line);
+    if (heading) {
+      current = { heading: heading[1], pkg: null, predicate: null };
+      entries.push(current);
+      continue;
+    }
+    if (!current) continue;
+    const pkg = /^\s*-?\s*\*\*Package:\*\*\s*`?(\S+?)`?\s*$/.exec(line);
+    if (pkg) current.pkg = pkg[1];
+    const open = /^\s*-?\s*\*\*Open while:\*\*\s*`([^`]+)`/.exec(line);
+    if (open) current.predicate = open[1];
+  }
+  // Fail closed: an entry missing either slot is not consulted, so the backfill
+  // is incremental and an un-backfilled failure reads exactly as it does now.
+  return entries.filter((entry) => entry.pkg && entry.predicate);
+}
+
+let gapsCache = null;
+
+/** The register entry that already explains this package's failure, or `null`. */
+function knownGapFor(pkg) {
+  gapsCache ??= knownGaps();
+  for (const gap of gapsCache) {
+    if (gap.pkg !== pkg) continue;
+    const probe = NodeChildProcess.spawnSync("sh", ["-c", gap.predicate], {
+      cwd: REPO_ROOT,
+      stdio: "ignore",
+      timeout: 60_000,
+    });
+    // A predicate that could not be run says nothing either way, and a marker
+    // printed on no evidence is the failure mode this design exists to avoid.
+    if (probe.error) continue;
+    if ((probe.status ?? 1) !== 0) return gap;
+  }
+  return null;
+}
+
+function gapNotes(entries) {
+  const notes = [];
+  for (const entry of entries) {
+    const gap = knownGapFor(entry.pkg);
+    if (!gap) continue;
+    notes.push(
+      `known gap: ${gap.heading}`,
+      `  \`${gap.predicate}\` still fails, so ${entry.pkg} is the registered failure` +
+        ` rather than a new one. ${GAPS_PATH} has the reasoning.`,
+    );
+  }
+  return notes;
 }
 
 /**
@@ -552,6 +647,7 @@ function confirmationNotes(entries) {
   const confirmed = of("confirmed");
   if (confirmed.length > 0) {
     notes.push(`Confirmed failing alone, not machine noise: ${withFiles(confirmed).join("; ")}`);
+    notes.push(...gapNotes(confirmed));
   }
   const unidentified = of("unidentified");
   if (unidentified.length > 0) {
@@ -559,6 +655,7 @@ function confirmationNotes(entries) {
       `Failed the full run and the retry: ${names(unidentified)}`,
       "Which file failed could not be read out of the output, so none was run on",
       "its own — this is not confirmed in isolation. Re-run the package by hand.",
+      ...gapNotes(unidentified),
     );
   }
   return notes;

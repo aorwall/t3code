@@ -56,6 +56,8 @@ const BACKEND_APIS = [
   "repos/soaplabs/moatless/contents/crates/t3code/src/lib.rs",
 ];
 const BACKEND_CONTENTS = "repos/soaplabs/moatless/contents/";
+/** The crate's source root, read only to tell a moved file from an unusable `gh`. */
+const BACKEND_SRC = "repos/soaplabs/moatless/contents/crates/t3code/src";
 
 const read = (relative) => NodeFS.readFileSync(NodePath.resolve(REPO_ROOT, relative), "utf8");
 
@@ -189,6 +191,36 @@ function fetchBackend(api) {
     .join("\n");
 }
 
+/**
+ * Why the dispatch read came back empty, in the words that decide what to do
+ * next.
+ *
+ * Every move of the dispatch file — inline in `lib.rs`, then `rpc/dispatch.rs`,
+ * then `rpc/dispatch/routing.rs` — produced exactly the message an absent
+ * credential produces, so each one cost a diagnosis pass against `gh` before
+ * anyone thought to look at the crate. One more read separates them: if the
+ * crate's own source directory lists, the credentials are fine and the arms
+ * have moved again, and the fix is a path in `BACKEND_APIS` above.
+ */
+function dispatchReadFailure() {
+  const listing = ghRead(BACKEND_SRC, ".[] | .name");
+  if (!listing) {
+    return [
+      `${yellow("warning")} could not read the Moatless repository at all; reporting the contract side only.`,
+      `  Neither \`moat gh\` nor \`gh\` could read ${BACKEND_SRC}.`,
+      "  Needs an authenticated gh with access to soaplabs/moatless. Retry, or run with --offline.",
+    ];
+  }
+  return [
+    `${yellow("warning")} the backend dispatch is not where this script looks; reporting the contract side only.`,
+    `  ${BACKEND_SRC} reads fine, so this is not a credential problem — the arms have moved.`,
+    "  None of these held a match arm:",
+    ...BACKEND_APIS.map((api) => `    ${api.replace(BACKEND_CONTENTS, "")}`),
+    `  Found there now: ${listing.split("\n").filter(Boolean).join(", ")}`,
+    "  Point BACKEND_APIS in this script at the new location and re-run.",
+  ];
+}
+
 function parseBackend() {
   let source = "";
   for (const api of BACKEND_APIS) {
@@ -248,10 +280,7 @@ runMain(async () => {
 
   const backend = parseBackend();
   if (!backend) {
-    process.stderr.write(
-      `\n${yellow("warning")} could not read the backend dispatch; reporting the contract side only.\n` +
-        `  Needs an authenticated gh. Retry, or run with --offline.\n`,
-    );
+    process.stderr.write(`\n${dispatchReadFailure().join("\n")}\n`);
     list("Declaring UnsupportedMethodError", declared.sort(), cyan);
     return 2;
   }

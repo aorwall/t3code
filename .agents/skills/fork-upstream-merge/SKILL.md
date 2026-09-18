@@ -17,8 +17,9 @@ file is ours or theirs, or changing code in a way that grows the fork delta.
   checks. Do not answer merge questions by reading it end to end; the scripts
   below apply it for you and print the answer beside each affected path.
 - **`docs/fork/upstream-merge-inventory.md`** — the part that is not data: the
-  four re-application deltas, where the unsupported-method set comes from, and
-  the reasoning behind the path policy rule.
+  re-application deltas, where the unsupported-method set comes from, and the
+  reasoning behind the path policy rule. Every delta an `inventory.json` entry
+  names has a section here, and `inventory-check.mjs` fails when one does not.
 - **`docs/fork/upstream-merge-log.md`** — the append-only merge decision tracker.
 - **`docs/fork/gaps.md`** — the register of work that is not done, on the
   Moatless backend or in this repository.
@@ -34,17 +35,18 @@ Fork-owned. Most are dependency-free and runnable before `pnpm install`; the two
 that are not say so in the table below. Run them rather than performing the
 checks by hand.
 
-| Script                    | When             | What it answers                                                                                                                                                                                     |
-| ------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `preflight.mjs`           | before merging   | the range, which inventory entries have gone stale, the files this merge will actually stop on, and the ones git resolves silently — each with its verdict attached                                 |
-| `duplicate-adds.mjs`      | after merging    | lines both sides added that the merge kept twice — the clean-but-wrong resolution that leaves no marker behind                                                                                      |
-| `resolution-check.mjs`    | after resolving  | resolutions that landed as one side whole — a dropped fork delta or a dropped upstream change, in a file that may never have conflicted                                                             |
-| `regen-route-tree.mjs`    | after resolving  | rewrites `apps/web/src/routeTree.gen.ts`, headlessly, whenever a route file conflict leaves it stale                                                                                                |
-| `verify.mjs`              | after resolving  | tripwires, contract drift, format, lint, types and tests, in one pass that does not stop at the first failure and retries a failing test package, then its failing file, before reporting it failed |
-| `merge-stats.mjs`         | after committing | the tracker entry's numbers — upstream range, landed vs upstream-range file counts with the gap already explained, fork delta, and the conflict list restated with verdicts                         |
-| `inventory-check.mjs`     | any time         | does every inventory path still exist on the side its verdict claims                                                                                                                                |
-| `tripwires.mjs`           | after merging    | deleted surfaces, re-deletions, and workflow state in GitHub                                                                                                                                        |
-| `unsupported-methods.mjs` | after merging    | which contract methods should declare `UnsupportedMethodError`, derived from both sides                                                                                                             |
+| Script                    | When             | What it answers                                                                                                                                                                        |
+| ------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `preflight.mjs`           | before merging   | the range, which inventory entries have gone stale, the files this merge will actually stop on, and the ones git resolves silently — each with its verdict attached                    |
+| `install.mjs`             | before anything  | `vp install` under the heap node will not give itself, and which of the two failures it was when it fails                                                                              |
+| `duplicate-adds.mjs`      | after merging    | lines both sides added that the merge kept twice — the clean-but-wrong resolution that leaves no marker behind                                                                         |
+| `resolution-check.mjs`    | after resolving  | resolutions that landed as one side whole — a dropped fork delta or a dropped upstream change, in a file that may never have conflicted                                                |
+| `regen-route-tree.mjs`    | after resolving  | rewrites `apps/web/src/routeTree.gen.ts`, headlessly, whenever a route file conflict leaves it stale                                                                                   |
+| `verify.mjs`              | after resolving  | tripwires, contract drift, format, lint, types, the web build and tests, in one pass that does not stop at the first failure and retries a failing test package, then its failing file |
+| `merge-stats.mjs`         | after committing | the tracker entry's numbers — upstream range, landed vs upstream-range file counts with the gap already explained, fork delta, and the conflict list restated with verdicts            |
+| `inventory-check.mjs`     | any time         | does every inventory path still exist on the side its verdict claims                                                                                                                   |
+| `tripwires.mjs`           | after merging    | deleted surfaces, re-deletions, and workflow state in GitHub                                                                                                                           |
+| `unsupported-methods.mjs` | after merging    | which contract methods should declare `UnsupportedMethodError`, derived from both sides                                                                                                |
 
 All live in `.agents/skills/fork-upstream-merge/scripts/`. `verify.mjs` runs
 `duplicate-adds.mjs`, `tripwires.mjs`, `resolution-check.mjs` and
@@ -54,6 +56,14 @@ running one on its own.
 "dependency-free": both need `vp install` to have already run — the first
 because it calls `@tanstack/router-generator` directly, the second because it
 only makes sense once a merge commit exists.
+
+`install.mjs` is the install those two wait on, and it is a wrapper rather than
+a convenience: pnpm's resolution pass over this workspace exceeds node's default
+heap on a capped sandbox and dies as a bare exit 1 whose output never says the
+word memory. Use it in place of a plain `vp i` here — it runs the install under
+the same derived heap `verify.mjs` gives the tests, and on a failure says
+whether it ran out of memory or the manifests are actually broken. Arguments
+pass through, so `install.mjs --frozen-lockfile` works.
 
 `verify.mjs --fast` drops the test step and keeps everything else. The full pass
 is about thirteen minutes and the tests are most of it, so a merge with anything
@@ -202,6 +212,18 @@ A fresh clone has only `origin`, and this is where that surfaces: the script
 refuses with the `git remote add upstream …` line to run. Expect it in a new
 sandbox.
 
+**Once that remote exists, pass `-R soaplabs/t3code` to every `gh` read.** `gh`
+resolves a repository by preferring a remote named `upstream` over `origin`, so
+from the moment the merge is set up, `moat gh pr checks <n>`, `pr view`, `run
+list` and every other passthrough answer about `pingdotgg/t3code`. PR numbers
+collide across the two repositories, so this does not error — it returns a
+plausible answer about a stranger's PR. On 2026-09-15 that produced a reported
+"all checks pass" for soaplabs/t3code#170 from an unrelated closed upstream PR;
+the fork's PR had no checks at all. The four write operations
+(`pr create`, `pr comment`, `pr reply`, `issue comment`) go through the Moatless
+backend and resolve `origin` correctly, which is why everything you create lands
+in the right place while only the reads are wrong.
+
 It fetches upstream (un-shallowing the clone first, which a sandbox needs — a
 shallow clone reports an empty merge-base and silently turns the whole upstream
 range into "new"), then prints the range, every stale inventory entry, the
@@ -254,9 +276,30 @@ git merge upstream/main
    route-file conflict with a stale `routeTree.gen.ts` left behind is a
    typecheck failure at step 3, not a merge failure now — catch it here.
 
-5. Resolve `pnpm-lock.yaml` by taking upstream's and re-installing —
-   `git checkout --theirs pnpm-lock.yaml && vp i`. It conflicts on every merge,
-   and `vp i` re-derives the fork's own edges. Never hand-merge it.
+5. **Re-derive `pnpm-lock.yaml` on every upstream merge, whether or not it
+   conflicted, and commit the result.** Take upstream's copy and re-install:
+
+   ```bash
+   git checkout --theirs pnpm-lock.yaml   # only when it conflicted
+   node .agents/skills/fork-upstream-merge/scripts/install.mjs
+   ```
+
+   Never hand-merge it. Upstream's lockfile does not carry the fork's own edges
+   — `packages/moatless-api`, the `mermaid` tree — so upstream's copy taken
+   whole fails `--frozen-lockfile` in CI, and only a real install puts them
+   back.
+
+   **The merge where it does not conflict is the dangerous one.** The verdict
+   is `theirs`, so git will happily auto-merge the file to upstream's copy
+   whole and say nothing; step 6's `resolution-check.mjs` exempts plain
+   `theirs` paths by design; and lint, typecheck and test all pass because the
+   working tree installed from the re-derived lockfile rather than the
+   committed one. On 2026-09-16 that shipped a lockfile missing both fork edges
+   to `main`, and CI found it at image build after the PR had merged. Step 8
+   tells you to keep a _later_ `vp i` rewrite out of the `--amend`; that is
+   true only once this step's result is already in the commit. Get it in first.
+
+   `verify.mjs --only lockfile` is the two-second check that this landed.
 
 6. With everything resolved but before committing, check what git resolved on
    its own:
@@ -317,6 +360,10 @@ git merge upstream/main
    tree for as long as verification and documentation take. In this sandbox only
    committed history and uncommitted non-gitignored changes survive a restart. A
    scratch file does not help: gitignored artifacts do not survive either.
+   **A scratch ledger named `*.log` is the one that catches people** —
+   `.gitignore` matches it (line 41), so a running log of the merge's decisions
+   written there is outside the snapshot and a restart takes it with
+   `node_modules`. Name the file `.out` or anything else git tracks.
 
    **Push the branch as soon as that commit exists**, and after each `--amend`.
    Committing survives a restart; it does not survive the sandbox being
@@ -363,16 +410,19 @@ git merge upstream/main
    are always these, in this order:
 
    ```bash
-   vp i && git checkout -- pnpm-lock.yaml   # install, then undo the rewrite it just made
-   git status                                # merge state: mid-merge, or committed?
-   git grep -n '<<<<<<<'                     # markers left behind
+   I=.agents/skills/fork-upstream-merge/scripts/install.mjs
+   node $I && git checkout -- pnpm-lock.yaml   # install, then undo the rewrite it just made
+   git status                                  # merge state: mid-merge, or committed?
+   git grep -n '<<<<<<<'                       # markers left behind
    node .agents/skills/fork-upstream-merge/scripts/resolution-check.mjs
    ```
 
-   The first line is one command on purpose. `vp i` is not optional — a restart
-   leaves `node_modules` empty and every later step needs it — and it rewrites
-   `pnpm-lock.yaml` every time it runs, so the restore belongs to it rather than
-   to the `--amend` that comes minutes later and has to remember.
+   The install line is one command on purpose. The install is not optional — a
+   restart leaves `node_modules` empty and every later step needs it — and it
+   rewrites `pnpm-lock.yaml` every time it runs, so the restore belongs to it
+   rather than to the `--amend` that comes minutes later and has to remember.
+   The restore is only correct once step 5's re-derivation is committed; if it
+   is not, go back and do step 5 instead.
 
    The last two cover the two ways a resolution disappears. A conflicted file
    comes back with its markers and `git grep` finds it; a file edited as
@@ -415,11 +465,23 @@ node .agents/skills/fork-upstream-merge/scripts/verify.mjs
 ```
 
 One command: duplicated adds, tripwires and off-repository state, resolutions
-against both parents, the unsupported-method derivation, format, lint, types,
-and every workspace test suite. It keeps going after a failure and reports them together, so a formatting
+against both parents, the unsupported-method derivation, the lockfile, format,
+lint, types, the production web build, and every workspace test suite. It keeps
+going after a failure and reports them together, so a formatting
 nit does not hide the type errors behind it — and it raises the heap the web
 suite needs, whose failure mode is otherwise an exit 137 that reads like a real
 test failure.
+
+The `build` step is there for a class of breakage nothing above it can see.
+Upstream's `t3code:third-party-licenses` plugin runs in `generateBundle`, so it
+is reachable only from a real `vp build`, and it hard-fails on any bundled
+package whose license it cannot resolve — which is every dependency the fork
+adds that upstream does not bundle. It is also the step that resolves the
+module graph end to end, which is what an auto-merged import of a symbol
+upstream has just made module-private needs: neither file conflicts, so nothing
+earlier in the merge mentions it. Both breakages have reached `main` and been
+caught by the image-build workflow, after the push and with the PR already
+open. It costs about 1m20s, so `--fast` keeps it.
 
 That heap is derived from the pod's cgroup cap, not hardcoded, and this is the
 one number not to raise by hand. Node sizes its default heap from the host's
@@ -462,6 +524,18 @@ step now says which of four things happened, and only the last two are red:
 
 `--sequential` and `--package` use the same ladder, for the same reason: one
 package on its own is still its own files running concurrently.
+
+A failing package that `docs/fork/gaps.md` already explains says so on its own
+line — `known gap: <heading>`, with the predicate that decided it. The register
+is where the reason lives, but it only works if you open it, and a merge reading
+a red package has no cue to. So the marker is derived rather than remembered:
+`verify.mjs` reads the `**Package:**` and `**Open while:**` slots out of the
+register and runs the predicate, which exits nonzero only while the gap is
+actually open. An entry without both slots prints nothing, so backfilling them
+is incremental. **The marker does not make the step green** — a known gap is
+still a failure, it just stops costing a diagnosis pass. See
+_Marking a package this register already explains_ in `docs/fork/gaps.md` for
+how to write the two slots.
 
 Run this **before** the classification and documentation steps, not after them.
 Its output is their input: the unsupported-method buckets are step 4's answer,

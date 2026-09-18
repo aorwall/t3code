@@ -98,10 +98,11 @@ path segment, `**` crosses separators.
 
 ## Re-application deltas
 
-Four upstream files carry fork work that cannot be reduced to a verdict, because
+Some upstream files carry fork work that cannot be reduced to a verdict, because
 the delta has to be re-stated against whatever upstream now looks like rather
 than replayed as a patch. These are the entries whose `converged` verdict points
-here.
+here, and every delta an entry names has a section below —
+`inventory-check.mjs` fails when one does not.
 
 ### Web Vite Delta
 
@@ -225,6 +226,118 @@ model-written and arrives over the wire.
 If upstream grows any per-language branch in `pre`, a fence-renderer registry,
 or mermaid support of its own, drop this delta rather than porting it — see the
 `rendered-fences` convergence entry.
+
+### Thread Fork Delta
+
+A Moatless Task can be cut at an earlier turn and continued as a new Task.
+Upstream has no such command, so every file below gains something. The fork
+files it reaches are `apps/web/src/fork/threadFork.ts` and
+`apps/web/src/components/chat/ThreadForkDialog.tsx`. Take upstream first, then
+re-state:
+
+- **`contracts/src/orchestration.ts`** — the `thread.fork` command and its
+  payload. **`client-runtime`'s `commands.ts` and `threadCommands.ts`** — the
+  dispatch path for it, in the same shape as the commands beside it.
+- **`MessagesTimeline.tsx`** — a fork icon beside the copy button on an
+  assistant message's hover controls, and `MessagesTimeline.logic.ts`'s row
+  derivation behind it. Behavior that must survive: the icon stays on a message
+  from an already-ended turn while a later turn runs, and hides only on messages
+  from the running turn — cutting below the open turn is allowed, cutting at or
+  into it is not, which is the backend's own gate restated. A message whose
+  Moatless turn number parses below the running turn has settled, so it keeps
+  its meta row instead of folding into the active visual response, and
+  `AssistantForkButton` offers the action under that same comparison. An
+  upstream turn id does not parse and keeps upstream's behavior.
+- **`ChatView.tsx`** — the dialog's mount point, and the navigation to the new
+  thread through the same wait-for-started-thread and cleanup-on-failure path
+  starting a thread from a proposed plan already uses.
+- **`apps/server/src/orchestration/decider.ts`** — a deliberate refusal. The
+  bundled server has no fork session to resume and must not fabricate a
+  session-less copy. That hunk is not an oversight to complete.
+
+`MessagesTimeline.logic.ts` is the one to check after a merge that auto-merged.
+It holds behavior upstream can rewrite around without conflicting, and the
+fork's own vitest is the only check that sees it — `resolution-check.mjs` reads
+conflict-set paths and this file may never appear in one.
+
+### Thread Visibility Delta
+
+A Moatless Task can be made readable by everyone signed in. Upstream's threads
+are single-viewer, so the whole item is fork work. Take upstream first, then
+re-state:
+
+- **`contracts/src/orchestration.ts` and `environment.ts`** — the
+  `thread.visibility.set` command, the `visibility` field on a thread row, and
+  the `threadVisibility` capability. The item is gated on the capability because
+  it covers both halves: a server sending neither leaves the item out rather
+  than showing a control it cannot label.
+- **`useThreadActions.ts`, `useThreadActionMenu.ts`, `threadActionMenu.logic.ts`
+  and `Sidebar.tsx`** — one menu item on both surfaces, labelled for the level
+  the click moves to ("Make public" on a private thread) because a row carries
+  no badge. It sits directly above "Archive thread" and opens that group, so it
+  takes the group separator `archive` otherwise carries. Upstream's own tail
+  tests assert archive's position — "groups project settings with utility
+  actions before archive" and "keeps archive last" — so both need the fork's
+  one-item shift re-applied rather than reverted.
+- Going public confirms first, going private does not. Public is not read-only
+  on Moatless: `ScopeContext::can_control` treats it as the whole control grant,
+  so a public thread hands every signed-in viewer its turns, terminal, scripts
+  and sandbox. **The confirmation copy says so and must keep saying so.**
+- The level is sent whole rather than toggled, so two clients that disagree
+  about the current value cannot flip each other's write.
+- **`decider.ts`** — a refusal; the bundled server has no per-thread read grant
+  to move. `LegacySidebar.tsx` builds its own menu array and is deliberately
+  left without the item.
+
+### Thread Follow Delta
+
+A Moatless listing is the open work a viewer follows, so a thread reached by
+link is readable and absent from the sidebar at the same time. Opening one
+follows it. The fork file is `apps/web/src/fork/unlistedThread.ts`; take
+upstream first, then re-state:
+
+- **`ThreadRouteView.tsx`** — the `useAutoFollowThread` call. Upstream's #12015
+  moved this view out of the route file, and the hook moved with it; it takes
+  `target.kind === "server" ? target.threadRef : null`, because a draft's
+  reserved ref is the viewer's own work and the listing carries it unasked.
+  `inventory.json` guards the symbol in this file for that reason.
+- Four conditions bound the auto-follow, and each one is a bug that does not
+  happen: it fires once per ref and never after an unfollow, or the menu's
+  Unfollow would do nothing on the next render; it decides against the listing's
+  own snapshot rather than the grafted one, because the graft is what put the
+  thread on screen; it waits for a non-null snapshot, because a listing that has
+  not answered was about to carry the thread; and it skips a thread with an
+  `archivedAt`, because the sidebar filters those out and a followed closed
+  thread is a follow with no row to undo it from.
+- **The menu files and `Sidebar.tsx`** — "Unfollow thread" directly below the
+  visibility item and above "Archive thread", on both surfaces
+  `buildThreadActionMenuItems` serves, opening the archive group when the
+  visibility item is absent. Upstream's archive-tail tests need the fork's
+  two-item shift re-applied. No confirmation: the thread keeps running and only
+  this viewer's listing changes.
+- Both halves are gated on the `threadFollow` capability, and **`decider.ts`**
+  refuses both commands — the bundled server lists every thread it stores and
+  has no per-viewer listing to move one into.
+
+### Thread Owner Name Delta
+
+A Moatless sidebar lists work other people started, so a row that is not yours
+says whose it is. Two upstream files. Take upstream first, then re-state:
+
+- **`contracts/src/orchestration.ts`** — `ownerName` on
+  `OrchestrationThreadShell` only, beside `visibility`.
+- **`Sidebar.tsx`** — two elements inside `SidebarThreadRow`: the name on the
+  card meta line directly left of the environment and provider glyphs,
+  truncated, and the whole name on the owner line of the row tooltip. Additive,
+  and outside upstream's aria-hidden icon cluster.
+
+No capability gates this. The client is never told which user it is signed in
+as, so the server decides: Moatless sends the name only when the Task's owner is
+not the viewer, and null otherwise, which means absence and null both read as
+"yours, or a server that does not send it" and a row without one renders exactly
+as upstream's does. The slim settled and snoozed rows are deliberately left
+without it — they carry no provider glyph either, and their point is a quiet
+tail.
 
 ## Deriving the unsupported set
 
