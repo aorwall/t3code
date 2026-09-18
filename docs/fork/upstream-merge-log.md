@@ -28,6 +28,63 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-18 — merged upstream to 994654198, a quiet merge whose only judgement call was that a new settings page needed no fork gate
+
+- Upstream: `994654198` from base `6d1d549441` (`50` commits).
+- Landed: `304` files from `git diff --stat HEAD^1 HEAD` against `303` in the
+  upstream range (`6d1d549441..HEAD^2`); fork delta `777` files from
+  `git diff --stat HEAD^2 HEAD`. The gap of 1 is `inventory.json`. Everything in
+  the range landed.
+- Conflicts: 6 files, each resolved with the verdict `preflight.mjs` printed.
+  Five were one hunk each; none needed a verdict reconsidered.
+  - `apps/web/src/components/ChatView.tsx`
+    (`converged — thread-fork-upstream-files`): #12306 added
+    `activeWorktreePath !== null` to the "Revert files too" button, on the same
+    line the fork gates with `FEATURES.checkpointFileRestore`. Kept both as a
+    conjunction rather than choosing a side — the upstream condition is about a
+    shared workspace and the fork's is about what Moatless serves, and they are
+    not the same question.
+  - `apps/web/src/components/BranchToolbar.tsx`
+    (`converged — branch-toolbar-gates`): took upstream's
+    `canUsePreviousWorktree` including its new `!forceNewWorktree` conjunct and
+    re-substituted `showWorkspaceControls`. Checked upstream's own uses of
+    `showGitControls` against the fork's — ten each, same shape, so #12179 added
+    no new place the picker needed gating.
+  - `apps/web/src/components/files/FilePreviewPanel.tsx`
+    (`decide — file-preview-panel`): #10909 restructured the read — it now runs
+    for media and PDFs too, so a folder is knowable as a folder — and added
+    `isDirectory` / `previewPath`. Took that whole and re-stated the
+    `onRetargetFile` effect between the read and the new derivation. The
+    `frameRevision` half of the entry was not in the conflict and was checked
+    separately.
+  - `apps/web/src/components/settings/SettingsSidebarNav.tsx`
+    (`converged — settings-surface-gates`) and
+    `apps/web/src/hooks/useThreadActions.ts`
+    (`converged — thread-visibility-upstream-files`): both sides added an import
+    to the same list. Kept both.
+  - `apps/web/src/routeTree.gen.ts` (unlisted): regenerated with
+    `regen-route-tree.mjs`, not hand-resolved.
+- Sweep: the three new `apps/mobile/src/features/connection/` files
+  (`ConnectionFormField`, `ConnectionTraceId`, `LocalEnvironmentList`) matched
+  the concern pattern and are false positives — all three are upstream
+  extracting shared mobile components out of files it already owned (#12364,
+  #12371, #12365), with no fork delta in any of them. Taken as `theirs`, no
+  inventory entry added.
+- Judgement call worth knowing about: #11598's new `/settings/storage` page is
+  deliberately **not** in `FEATURE_BY_SETTINGS_PATH`. It self-gates on two new
+  capability booleans Moatless does not report and renders a
+  `SettingsScopeNotice`, so a flag would duplicate a decision the wire already
+  makes and would have to be deleted again later. Reasoning is in
+  [the gaps register](./gaps.md) under _Capabilities are reported_.
+- Contract drift: `unsupported-methods.mjs` reported ADD 0 / DROP 0. The two new
+  methods in the range (`pullRequests.filesViewed`, `setFilesViewed`, #7721)
+  declare `PullRequestRpcError` and so arrived already refusing. The
+  `orchestration-decode-boilerplate` duplicate-add exception went stale — the
+  colliding line is gone — and was deleted from `inventory.json` in this merge.
+- Verification: `verify.mjs` all 9 checks green on the first full pass, tests
+  included (333 files, 5071 tests). No flaky retries, no caveats. `vp i` needed
+  `NODE_OPTIONS=--max-old-space-size=6144` to get past an OOM on this pod.
+
 ### 2026-09-17 — merged upstream to 6d1d54944, upstream moved the thread route's whole body into a component and three fork deltas moved with it
 
 - Upstream: `6d1d549441` from base `0bf2d6b010` (`50` commits).

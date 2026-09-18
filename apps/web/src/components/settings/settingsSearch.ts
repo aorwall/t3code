@@ -30,6 +30,7 @@ export type SettingsPath =
   // moved here to avoid colliding on the same route.
   | "/settings/browser"
   | "/settings/source-control"
+  | "/settings/storage"
   | "/settings/connections"
   | "/settings/archived"
   | MoatlessAdminPath;
@@ -147,6 +148,7 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/version-control": "Version control",
   "/settings/browser": "Browser",
   "/settings/source-control": "Source Control",
+  "/settings/storage": "Storage",
   "/settings/connections": "Connections",
   "/settings/archived": "Archive",
   "/settings/loops": "Loops",
@@ -189,6 +191,22 @@ const KEYBINDING_SEARCH_ITEMS = STATIC_KEYBINDING_COMMANDS.toSorted((left, right
  * that may not be mounted point at their nearest stable section instead.
  */
 export const SETTINGS_SEARCH_ITEMS = [
+  {
+    id: "storage-worktrees",
+    title: "Worktree cleanup",
+    to: "/settings/storage",
+    scope: "project-defaults",
+    searchTerms: [
+      "disk storage delete deleted archived threads old inactive merged unchanged worktrees retention days project inherit off custom",
+    ],
+  },
+  {
+    id: "storage-artifacts",
+    title: "Artifacts and logs",
+    to: "/settings/storage",
+    scope: "environment-defaults",
+    searchTerms: ["disk storage browser screenshots captures rotated logs cleanup retention"],
+  },
   {
     id: "project-defaults",
     title: "Project defaults and overrides",
@@ -971,6 +989,7 @@ const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScop
   // because the fork's /settings/integrations is a Moatless admin page.
   "/settings/browser": null,
   "/settings/source-control": "environment-defaults",
+  "/settings/storage": "project-defaults",
   "/settings/connections": "connections",
   "/settings/archived": "project-defaults",
   // Fork: the Moatless admin pages administer the deployment, not a selected

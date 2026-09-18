@@ -44,12 +44,29 @@ not report is every boolean added since that handshake was written —
 `threadPinning` (upstream, 2026-08-06), `threadPinReorder` (upstream,
 2026-08-08), `threadTitleRegeneration`, `serverSelfUpdate`,
 `serverSelfUpdateProgress` and `agentActivityPublishing` (upstream,
-2026-08-16), `questionAttachments` (upstream, 2026-09-08) and
-`projectSettingsOverrides` (upstream, 2026-09-09) — so each of those
+2026-08-16), `questionAttachments` (upstream, 2026-09-08),
+`projectSettingsOverrides` (upstream, 2026-09-09) and
+`requiredWorktreeBootstrap`, `storageCleanup` and `projectWorktreeCleanup`
+(upstream, 2026-09-18) — so each of those
 surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
 statement from the deployment. That is correct for the ones the backend does not
 implement and stale the day it does.
+
+The last two are the first pair where an absent capability hides a whole page
+rather than one control, and they are worth knowing about because they are the
+reason that page needed no fork gate. #11598 added automatic storage cleanup —
+worktree and transcript retention rules, per machine and per project — with a
+`/settings/storage` page and a server-side sweeper
+(`apps/server/src/storageCleanup.ts`). `StorageSettings.tsx` reads
+`capabilities.storageCleanup` and `capabilities.projectWorktreeCleanup` itself
+and returns a `SettingsScopeNotice` when either is absent, so on Moatless the
+nav item is present and the page explains that the connected environment does
+not support cleanup. That is upstream's own mechanism reaching the outcome a
+`FEATURES` flag would have bought, which is why `/settings/storage` is
+deliberately absent from `FEATURE_BY_SETTINGS_PATH` — adding a flag there would
+duplicate a decision the wire already makes, and would have to be deleted again
+the day the capability is reported.
 
 `projectSettingsOverrides` is the one to know about, because it is the first of
 these the client degrades around rather than hides. Upstream's scoped-settings
@@ -113,7 +130,10 @@ matching flag_ played out twice over. Reach for a capability over a flag wheneve
 the answer varies by deployment; keep the flag when it cannot.
 
 - **Closes when:** the backend reports each new thread-lifecycle boolean it comes
-  to implement, and drops or contract-registers the two fork-invented keys.
+  to implement, and drops or contract-registers the two fork-invented keys. Check
+  by deriving the set rather than reading the list above:
+  `git grep -oE '^  [a-zA-Z]+: Schema.optionalKey' packages/contracts/src/environment.ts`
+  against what `crates/t3code/src/lib.rs` actually sends.
 - **Then here:** for a boolean that gates a `FEATURES` flag (pinning is the near
   one — see _Settlement rules Moatless owns_), delete the flag and its gates when
   the backend reports it true. `threadPullRequests` is the worked example: the
@@ -228,6 +248,16 @@ what a person loses, which is the part the derivation cannot tell you:
   model does not currently have a place for. The setup script half is the
   exception worth reading on its own — see _A script runs on the backend_ below,
   where `async: false` is recorded as backend behavior rather than a refusal.
+  The 2026-09-18 merge widened what the flag holds back rather than what it
+  refuses: #12179 lets one prompt start a thread per selected model, each in its
+  own worktree, and the picker that chooses those models is the same
+  `worktree` send-mode control the flag already gates, so on Moatless the
+  multi-model fan-out is simply not offered. The same commit added a
+  `requiredWorktreeBootstrap` capability for servers that reject a required
+  worktree instead of falling back to the project checkout — absent here, and
+  covered by _Capabilities are reported_ above. If Moatless ever runs several
+  sandboxes from one prompt, this is the upstream surface to serve rather than
+  a new one to design.
 - **Content search** — `projects.searchContents`. Path search, read and list are
   all served, so "Go to file" works and "search in files" does not. Holds open
   `workspaceSearchContents`.
@@ -298,7 +328,14 @@ what a person loses, which is the part the derivation cannot tell you:
   derivation reports no entry to add. Its settings UI mounts inside
   `ConnectionsSettings.tsx`, so `FEATURES.connections` hides it too. Routing
   means nothing before the group underneath it is served, so it closes with the
-  rest and not separately. Closes when
+  rest and not separately. Grown once more in the 2026-09-18 merge by
+  **per-file viewed state** (upstream #7721): `pullRequests.filesViewed` and
+  `pullRequests.setFilesViewed` record which files in a PR a reviewer has
+  checked off, persisted server-side so the marks survive a reload and follow the
+  reviewer between clients. Both declare `PullRequestRpcError` and so arrived
+  already refusing, which is why the derivation reported nothing to add. Same
+  conclusion as routing: it is a refinement of a panel the capability keeps off.
+  Closes when
   the backend reports `capabilities.pullRequests: true` and dispatches the rest.
 - **Usage writes** — `server.refreshUsageRates` (#9146-era usage-pricing work,
   `apps/server/src/usage/usagePricing.ts`), which re-fetches provider price
@@ -1024,6 +1061,65 @@ Four more arrived in the 2026-09-17 merge, all on the checkpoint path:
   decides turn completion itself and runs git in a sandbox, where that call is
   slower than upstream's.
 
+Eight more arrived in the 2026-09-18 merge, five of them on the checkpoint and
+usage paths the previous merge already opened:
+
+- **A file rewind should be refused when the workspace is shared.** #12306 made
+  `CheckpointReactor` reject a file-restoring rewind whose cwd is shared with
+  another thread or with a nested repository owner, because a checkpoint holds
+  the whole checkout and restoring one erases a sibling's uncommitted work
+  (`apps/server/src/orchestration/Layers/CheckpointReactor.ts`). Moatless gives
+  each task its own sandbox, so the sharing case is rarer — but a workspace with
+  nested repositories has the same parent-and-nested overlap inside one task, and
+  that half applies directly. The client half of this landed here as a merge
+  conflict: upstream added `activeWorktreePath !== null` to the "Revert files
+  too" button, which now sits alongside `FEATURES.checkpointFileRestore`.
+- **A checkpoint should still be captured when the baseline lookup fails.**
+  #12307 stopped `CheckpointReactor` from skipping capture entirely when it
+  cannot resolve a baseline, which is the case that silently leaves a turn with
+  no restore point at all.
+- **A file-search refresh should not run inside checkpoint processing.** #12308
+  moved the refresh out of the checkpoint path, where it extended every capture
+  by an index walk.
+- **A checkpoint should survive an empty nested repository.** #12181 taught the
+  capture path that git cannot stage an embedded repository until it has a
+  commit, discovering those only after staging fails so an ordinary checkpoint
+  pays no extra scan — and cleared a stale private index lock left behind by a
+  forced process termination (`apps/server/src/vcs/GitVcsDriver.ts`). Moatless
+  checks repositories out into sandboxes where forced termination is the normal
+  end of a task, so the lock half is the one to copy first.
+- **A provider event log should be bounded before it is serialized.** #12305
+  gave `EventNdjsonLogger` a traversal bound and made it log decoded frames
+  rather than a second copy of every token delta, with failing accessors
+  contained so they cannot escape into provider processing
+  (`apps/server/src/provider/Layers/EventNdjsonLogger.ts`). Any backend that
+  writes a provider event log to disk grows it proportionally to tokens streamed
+  until it does this.
+- **Usage totals should survive transcript cleanup.** #12304 keeps canonical
+  paths and source fingerprints stable across a root cleanup, so a moved
+  transcript is not counted twice and saved totals are not lost
+  (`apps/server/src/usage/UsageService.ts`). #10315 is the shared half: when two
+  summaries claim one fingerprint the most recently read one wins and the rest
+  have that provider's buckets dropped, with environment ids breaking ties so the
+  winner is stable (`packages/shared/src/usageMerge.ts`). Moatless serves
+  `server.getUsageSummary` itself, so both apply — see also the usage bullet in
+  the 2026-09-13 group, which is the same surface.
+- **Codex image attachments should be passed by path.** #11050 stopped inlining
+  images as base64 into the turn/start request, so the request no longer scales
+  with attachment size, and restricted the inlining to images because anything
+  else reaches the agent through the path line in the prompt
+  (`apps/server/src/provider/Layers/CodexAdapter.ts`). Moatless drives provider
+  CLIs with its own adapters and a sandbox adds a hop, so an oversized request is
+  more expensive there, not less.
+- **Storage should be reclaimed on a schedule the deployment sets.** #11598's
+  `apps/server/src/storageCleanup.ts` sweeps worktrees and transcripts against
+  retention rules held per machine and per project, with a workspace lease so two
+  servers cannot sweep the same directory
+  (`apps/server/src/workspace/workspaceLease.ts`). The settings surface and its
+  two capabilities are covered by _Capabilities are reported_ above; this bullet
+  is the sweeper behind it, which is the part Moatless would have to build. A
+  sandbox per task bounds the worktree half, but transcripts outlive the sandbox.
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
   compaction path queues in-flight user messages, its review diffs report
@@ -1043,8 +1139,14 @@ Four more arrived in the 2026-09-17 merge, all on the checkpoint path:
   it names the setting behind a missing provider executable, its health checks
   clean up what they unpack, its GitHub reads are budgeted and cached, a large
   sparse checkout stays on its fast checkpoint path, its checkpoints are flushed
-  before they are published and survive a late placeholder, and a VCS wait no
-  longer holds a turn open.
+  before they are published and survive a late placeholder, a VCS wait no
+  longer holds a turn open, a file rewind is refused on a shared or nested-owner
+  cwd, a checkpoint is captured when the baseline lookup fails and survives an
+  empty nested repository, its file-search refresh is off the checkpoint path,
+  its provider event log is bounded before serialization, its usage totals
+  survive transcript cleanup and its shared scans resolve to the newest, it
+  passes provider image attachments by path, and it sweeps stale worktrees and
+  transcripts against retention rules it reports a capability for.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
