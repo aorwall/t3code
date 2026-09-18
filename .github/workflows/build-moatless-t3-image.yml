@@ -2,10 +2,11 @@
 # `aorwall/moatless-t3` on Docker Hub, where the Moatless Helm chart pulls it
 # from.
 #
-# This is a fork-only workflow and the one active workflow in this repository —
-# every workflow inherited from upstream is suffixed `.disabled` because it
-# needs Blacksmith runners this fork does not have. See the README in this
-# directory.
+# This is a fork-only workflow, one of the two that are active in this
+# repository — `typecheck.yml` is the other. Every workflow inherited from
+# upstream sits on disk exactly as upstream wrote it and is switched off in
+# GitHub's Actions settings, because it asks for runner labels nothing answers
+# here. See the README in this directory.
 #
 # What runs when:
 #   pull_request       build only, no registry credentials, no push. This is

@@ -1,0 +1,77 @@
+# Typecheck the whole workspace on every pull request and every push to main.
+#
+# This is a fork-only workflow. It exists because the sentence "CI owns the full
+# suite" is not true here: every workflow inherited from upstream is switched off
+# in GitHub's Actions settings (see the README in this directory), so before this
+# file the only job on a push to main was the image build — a `vp build`, which
+# does not typecheck. A type error therefore reached `main` unnoticed (#109, a
+# `ChangeRequestStatusIcon` call missing a required prop) and was found by a
+# maintainer typechecking by hand days later.
+#
+# It deliberately does not run the tests. `pnpm test` is roughly thirteen minutes
+# on a machine larger than this runner, and the parallel pass is what gets a
+# 4 CPU / 8 GiB box evicted. Tests stay local and targeted; see AGENTS.md.
+#
+# Runner: `staging-runners-large`, the same org-scoped ARC scale set the image
+# build uses — 4 CPU and 8 GiB, defined in soaplabs/soap-platform-gitops under
+# `apps/nonprod/arc-runner-large-set`. Do not change this to `ubuntu-latest`:
+# GitHub-hosted labels are not answered in this repository at all, and a job
+# asking for one dies in about 30 seconds with no runner assigned and no step
+# recorded. The set's egress allowlist permits only 443/TCP, which every fetch
+# below respects.
+
+name: Typecheck
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: typecheck-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  typecheck:
+    name: Typecheck
+    runs-on: ${{ vars.CI_RUNNER || 'staging-runners-large' }}
+    timeout-minutes: 30
+    env:
+      CI: "1"
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+      # Electron's postinstall fetches a ~100 MB binary this job never launches.
+      ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+      # Node sizes its default heap from the host's memory and never sees the
+      # pod's cap, so on a capped runner it will happily grow past it and be
+      # killed. Half of this set's 8 GiB, the same share the merge tooling's
+      # `heapMb` derives — enough for the two concurrent tsgo processes
+      # `pnpm typecheck` runs, and leaving the other half for everything else.
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          # `engines.node` in the root package.json is the single source.
+          node-version-file: package.json
+
+      # pnpm's version comes from the `packageManager` field, not from a pin
+      # here, so this cannot drift from what a developer's install resolves.
+      - run: corepack enable
+
+      # The full workspace: every project has to be installed for a `-r`
+      # typecheck to mean anything. Dependency build scripts stay off because
+      # `node-pty`, which only `apps/server` declares, compiles through node-gyp
+      # and this runner image carries no `make`. A package's `.d.ts` files ship
+      # in its tarball, so nothing those builds produce is a typecheck input.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+
+      # `--ignore-scripts` also skips this repo's own `prepare`, which patches
+      # the TypeScript binary `pnpm typecheck` then runs. Run it by hand.
+      - run: pnpm run prepare
+
+      - run: pnpm typecheck

@@ -1,8 +1,9 @@
 # Workflows in this fork
 
-One workflow runs here. Every workflow inherited from upstream sits on disk
-exactly as upstream wrote it and is switched off in GitHub's Actions settings
-instead — `state: disabled_manually` on the workflow, not a change to the file.
+Two workflows run here, both fork-only. Every workflow inherited from upstream
+sits on disk exactly as upstream wrote it and is switched off in GitHub's Actions
+settings instead — `state: disabled_manually` on the workflow, not a change to
+the file.
 
 That state lives in GitHub, not in this repository, so it does not survive a
 re-fork and a clone cannot show it to you. Read it back with:
@@ -12,19 +13,31 @@ gh api repos/soaplabs/t3code/actions/workflows \
   --jq '.workflows[] | [.state, .path] | @tsv'
 ```
 
-Everything except `build-moatless-t3-image.yml` must report
+Everything except `build-moatless-t3-image.yml` and `typecheck.yml` must report
 `disabled_manually`.
 
-## The one that runs
+## The two that run
 
 | Workflow                      | Runner                                                   | What it does                                                                                                 |
 | ----------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `build-moatless-t3-image.yml` | `vars.DOCKER_BUILD_RUNNER`, else `staging-runners-large` | Builds `apps/web` into a static nginx image and publishes `aorwall/moatless-t3` for the Moatless Helm chart. |
+| `typecheck.yml`               | `vars.CI_RUNNER`, else `staging-runners-large`           | `pnpm typecheck` over the whole workspace, on every pull request and every push to `main`.                   |
 
-It is fork-only — upstream has no equivalent, so there is nothing for a merge to
-conflict with. Pull requests build without publishing, which is also the only
-place `docker/nginx.conf` is executed before it reaches a cluster. See
+Both are fork-only — upstream has no equivalent of either, so there is nothing
+for a merge to conflict with.
+
+Pull requests build the image without publishing, which is also the only place
+`docker/nginx.conf` is executed before it reaches a cluster. See
 [`docker/README.md`](../../docker/README.md).
+
+`typecheck.yml` is the answer to a narrower question: what stops a type error
+from reaching `main`. The image build runs `vp build`, which does not typecheck,
+so until this workflow existed nothing did — #109 landed with a
+`ChangeRequestStatusIcon` call missing a required prop and was found by a
+maintainer typechecking by hand. It deliberately stops at types. `pnpm test` is
+about thirteen minutes on a machine larger than this runner, and its parallel
+pass is exactly what evicts a 4 CPU / 8 GiB box, so the test suite is still
+local and targeted rather than something a push proves.
 
 To publish it needs `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` on this
 repository, with write access to the `aorwall` namespace. Neither is read on the
@@ -103,7 +116,7 @@ Two separate causes:
   would have made it true.)
 
 The practical effect was a permanent red X on every PR from workflows that could
-never have passed, and no signal from the one that mattered.
+never have passed, and no signal from the ones that mattered.
 
 ## Re-enabling
 
@@ -138,7 +151,9 @@ rename covers a file that did not exist when the decision was made, and upstream
 has added four in five months. The check in
 [the merge inventory](../../docs/fork/upstream-merge-inventory.md) catches it.
 
-Until CI is restored, verification is local and manual:
-`pnpm typecheck && pnpm test && pnpm lint && pnpm fmt:check`. The image workflow
-does not stand in for that — it proves `apps/web` builds and the nginx config
-parses, and nothing about the rest of the monorepo.
+Until upstream's CI is restored, the rest of verification is local and manual:
+`pnpm test && pnpm lint && pnpm fmt:check`. The two workflows above do not stand
+in for it. Between them they prove that the workspace typechecks, that
+`apps/web` builds, and that the nginx config parses — **no test runs anywhere
+but a developer's machine**, and neither lint nor formatting is enforced on
+`main`.

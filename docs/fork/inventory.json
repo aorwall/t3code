@@ -523,9 +523,13 @@
     },
     {
       "id": "fork-only-workflows",
-      "paths": [".github/workflows/build-moatless-t3-image.yml", ".github/workflows/README.md"],
+      "paths": [
+        ".github/workflows/build-moatless-t3-image.yml",
+        ".github/workflows/typecheck.yml",
+        ".github/workflows/README.md"
+      ],
       "verdict": "ours",
-      "note": "Fork-only workflows."
+      "note": "Fork-only workflows. Upstream has no equivalent of either: it publishes no image, and its own typechecking runs inside ci.yml on Blacksmith runners this fork cannot reach. typecheck.yml is the only thing standing between a type error and main — the image build runs `vp build`, which does not typecheck."
     },
     {
       "id": "fork-only-loops",
