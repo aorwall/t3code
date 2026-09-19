@@ -620,6 +620,25 @@ honours it — see _Runtime fixes upstream made to its own server_ below.
   form dropped, decide per field whether to carry it; the port is the fork's, the
   URL is upstream's.
 
+A thread can also declare scripts of its own, which is the second method running
+the derivation backwards. A Moatless agent that brings up a dev server registers
+it for that task alone, stored beside the thread's state rather than on its
+project, so no project listing can show it. `scripts.listForThread` answers with
+every script one thread can run — its project's, with the thread's own merged
+over them — and the header's Run control lists that. `apps/server` refuses the
+method, as it does `scripts.run`, so the same "keep the union entry" rule
+applies. The read is gated on the `taskScripts` capability and falls back to the
+project's own scripts whenever it is absent, in flight or failed. Editing stays
+on `project.meta.update`, which writes a project's list and cannot reach a
+thread's script, so the control offers no Edit on a task-scoped row.
+
+- **Closed by:** nothing outstanding on the client. Declaring and removing a
+  thread's script is the backend's `moat tasks scripts` CLI and its HTTP route;
+  no UI writes one.
+- **Watch on merge:** upstream has no per-thread script, so a merge that changes
+  how `ProjectScriptsControl` receives its rows has to keep the merged list
+  reaching it.
+
 ### A subtask is a Moatless concept, and only T3's own server refuses it
 
 `subtasks.list` runs the derivation backwards for the same reason `scripts.run`

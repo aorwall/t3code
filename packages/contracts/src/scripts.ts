@@ -17,10 +17,17 @@
  * the project either way — but does not offer to run them, and answers
  * `scripts.run` with `UnsupportedMethodError`.
  *
+ * `scripts.listForThread` is the fork's second path, under the `taskScripts`
+ * capability. A Moatless thread may declare scripts of its own — an agent
+ * registering the dev server it just brought up — which no project carries and
+ * so no project listing can show. The method answers with what that one thread
+ * can run.
+ *
  * @module Scripts
  */
 import { Schema } from "effect";
 import { ThreadId, TrimmedNonEmptyString } from "./baseSchemas.ts";
+import { ProjectScript } from "./orchestration.ts";
 // Fork: `previewTabId` on the result below is a preview tab id.
 import { PreviewTabId } from "./preview.ts";
 
@@ -64,3 +71,45 @@ export const ScriptsRunResult = Schema.Struct({
   previewTabId: Schema.optional(Schema.NullOr(PreviewTabId)),
 });
 export type ScriptsRunResult = typeof ScriptsRunResult.Type;
+
+/**
+ * Fork (Moatless). Where a script was declared, which decides who may edit it.
+ *
+ * A `workspace` script is declared on the project and runs for every thread in
+ * it; it is edited through `project.meta.update` like any other project field.
+ * A `task` script is declared on one thread, stored beside that thread's own
+ * state, and runs only there — so a client offers no project-level edit for
+ * one, since writing the project's list back would not touch it.
+ */
+export const ScriptScope = Schema.Literals(["workspace", "task"]);
+export type ScriptScope = typeof ScriptScope.Type;
+
+/**
+ * Fork (Moatless). One script a thread can run: the same shape a project lists,
+ * plus where it came from.
+ */
+export const ThreadScript = Schema.Struct({
+  ...ProjectScript.fields,
+  scope: ScriptScope,
+});
+export type ThreadScript = typeof ThreadScript.Type;
+
+export const ScriptsListForThreadInput = Schema.Struct({
+  threadId: ThreadId,
+});
+export type ScriptsListForThreadInput = typeof ScriptsListForThreadInput.Type;
+
+/**
+ * Every script the named thread can run: its project's, with the thread's own
+ * merged over them.
+ *
+ * A thread script shadows a project script sharing its id, so the list is what
+ * `scripts.run` will actually run rather than the union of two declarations. A
+ * thread whose own scripts could not be read answers with its project's alone,
+ * because a stopped sandbox is the ordinary case and the project's scripts are
+ * still true.
+ */
+export const ScriptsListForThreadResult = Schema.Struct({
+  scripts: Schema.Array(ThreadScript),
+});
+export type ScriptsListForThreadResult = typeof ScriptsListForThreadResult.Type;

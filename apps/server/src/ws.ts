@@ -3638,6 +3638,21 @@ const makeWsRpcLayer = (
             ),
             { "rpc.aggregate": "scripts" },
           ),
+        // Fork: a thread here declares no scripts of its own — a project's list
+        // is every script there is — so this server declares no `taskScripts`
+        // capability and refuses rather than echoing the project's list back
+        // under a second name.
+        [WS_METHODS.scriptsListForThread]: (_input) =>
+          observeRpcEffect(
+            WS_METHODS.scriptsListForThread,
+            Effect.fail(
+              new UnsupportedMethodError({
+                method: WS_METHODS.scriptsListForThread,
+                message: "This environment has no per-thread scripts.",
+              }),
+            ),
+            { "rpc.aggregate": "scripts" },
+          ),
         // Fork: this server has no sandbox whose lifecycle could move, and it
         // declares no `sandboxStatusPush` capability, so no client subscribes
         // here. Silent rather than an error, like the server-status twin below.

@@ -62,6 +62,9 @@ interface ChatHeaderProps {
   // Fork addition (Moatless). Whether the viewer may add/edit/delete this
   // project's scripts; false for a read-only git-synced workspace.
   activeProjectScriptsEditable: boolean;
+  // Fork addition (Moatless). Which of `activeProjectScripts` this thread
+  // declared for itself; see `ProjectScriptsControl`'s prop of the same name.
+  activeTaskScopedScriptIds: ReadonlySet<string>;
   preferredScriptId: string | null;
   keybindings: ResolvedKeybindingsConfig;
   availableEditors: ReadonlyArray<EditorId>;
@@ -132,6 +135,7 @@ export const ChatHeader = memo(function ChatHeader({
   openInCwd,
   activeProjectScripts,
   activeProjectScriptsEditable,
+  activeTaskScopedScriptIds,
   preferredScriptId,
   keybindings,
   availableEditors,
@@ -421,6 +425,7 @@ export const ChatHeader = memo(function ChatHeader({
             keybindings={keybindings}
             preferredScriptId={preferredScriptId}
             editable={activeProjectScriptsEditable}
+            taskScopedScriptIds={activeTaskScopedScriptIds}
             onRunScript={onRunProjectScript}
             onAddScript={onAddProjectScript}
             onUpdateScript={onUpdateProjectScript}

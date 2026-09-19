@@ -123,6 +123,8 @@ import { AsyncResult } from "effect/unstable/reactivity";
 import { isElectron } from "../env";
 import { FEATURES } from "../fork/features";
 import { parseMoatlessTurnNumber } from "../fork/threadFork";
+// Fork: the scripts one thread can run, its own declarations included.
+import { useThreadScripts } from "../fork/threadScripts";
 import { readLocalApi } from "../localApi";
 import { useDiffPanelStore } from "../diffPanelStore";
 import {
@@ -2206,6 +2208,15 @@ export default function ChatView(props: ChatViewProps) {
     () => (activeProject ? resolveProjectScripts(settings, activeProject) : []),
     [activeProject, settings],
   );
+  // Fork: what the header lists and runs — the thread's own scripts over its
+  // project's. The add/edit/delete handlers below stay on
+  // `activeProjectScripts`, which is the list a project write replaces; a
+  // thread's own script is not in it and is not editable that way.
+  const activeThreadScripts = useThreadScripts({
+    environmentId: activeThread?.environmentId ?? null,
+    threadId: activeThread?.id ?? null,
+    projectScripts: activeProjectScripts,
+  });
   // A project added by cloning exists before its files do. The draft stays
   // editable throughout; only sending waits for the clone, and a failed
   // clone offers its retry right where the user is looking.
@@ -7242,7 +7253,8 @@ export default function ChatView(props: ChatViewProps) {
 
       const scriptId = projectScriptIdFromCommand(command);
       if (!scriptId || !activeProject) return;
-      const script = activeProjectScripts.find((entry) => entry.id === scriptId);
+      // Fork: a keybinding reaches the thread's own scripts too.
+      const script = activeThreadScripts.scripts.find((entry) => entry.id === scriptId);
       if (!script) return;
       event.preventDefault();
       event.stopPropagation();
@@ -7253,7 +7265,8 @@ export default function ChatView(props: ChatViewProps) {
   }, [
     activeProject,
     activeRightPanelSurface,
-    activeProjectScripts,
+    // Fork: replaces upstream's `activeProjectScripts`.
+    activeThreadScripts,
     addTerminalSurface,
     activeThreadRef,
     activeThreadPinned,
@@ -10260,9 +10273,11 @@ export default function ChatView(props: ChatViewProps) {
             isServerThread={isServerThread}
             activeProject={activeProject}
             openInCwd={gitCwd}
-            activeProjectScripts={activeProjectScripts}
+            // Fork: the thread's own scripts over its project's.
+            activeProjectScripts={activeThreadScripts.scripts}
             // Fork: the backend says per workspace whether scripts can be edited.
             activeProjectScriptsEditable={activeProject?.scriptsEditable ?? false}
+            activeTaskScopedScriptIds={activeThreadScripts.taskScopedIds}
             preferredScriptId={
               activeProject ? (lastInvokedScriptByProjectId[activeProject.id] ?? null) : null
             }

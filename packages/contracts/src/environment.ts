@@ -172,6 +172,11 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
       one today), so clients show the scripts but not the control that runs
       them, and never send scripts.run under version skew. */
   workspaceScripts: Schema.optionalKey(Schema.Boolean),
+  /** Fork: server understands scripts.listForThread — a thread may declare
+      scripts of its own, on top of its project's. Absent on servers where a
+      project's list is every script there is, so clients show that list alone
+      and never send scripts.listForThread under version skew. */
+  taskScripts: Schema.optionalKey(Schema.Boolean),
   /** Fork: server understands sandbox.subscribeStatus — it pushes a thread's sandbox
       lifecycle status instead of only answering a read. Absent on servers that
       serve `sandbox.status` alone, where a client that wants a live indicator

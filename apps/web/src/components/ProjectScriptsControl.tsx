@@ -43,6 +43,9 @@ export type { NewProjectScriptInput, ProjectScriptActionResult };
 
 const NO_FILE_SCRIPTS: ReadonlyArray<T3ProjectFileScript> = [];
 
+// Fork: default for the fork-only `taskScopedScriptIds` prop below.
+const NO_TASK_SCRIPT_IDS: ReadonlySet<string> = new Set<string>();
+
 interface ProjectScriptsControlProps {
   scripts: ReadonlyArray<ProjectScript>;
   /** Scripts declared in the project's checked-in t3.json, offered for import. */
@@ -56,6 +59,13 @@ interface ProjectScriptsControlProps {
    * shows only run affordances, no Add/Edit/Delete/import.
    */
   editable: boolean;
+  /**
+   * Fork addition (Moatless). Which of `scripts` the thread declared for
+   * itself rather than inheriting from the project. They are absent from the
+   * project's own list, so the Add/Edit path — which writes that list back —
+   * cannot reach one, and no Edit button is offered for it.
+   */
+  taskScopedScriptIds?: ReadonlySet<string>;
   onRunScript: (script: ProjectScript) => void;
   onAddScript: (input: NewProjectScriptInput) => Promise<ProjectScriptActionResult>;
   onUpdateScript: (
@@ -71,6 +81,7 @@ export default function ProjectScriptsControl({
   keybindings,
   preferredScriptId = null,
   editable,
+  taskScopedScriptIds = NO_TASK_SCRIPT_IDS,
   onRunScript,
   onAddScript,
   onUpdateScript,
@@ -209,6 +220,8 @@ export default function ProjectScriptsControl({
                   keybindings,
                   commandForProjectScript(script.id),
                 );
+                // Fork: a script the thread declared for itself.
+                const taskScoped = taskScopedScriptIds.has(script.id);
                 return (
                   <MenuItem
                     key={script.id}
@@ -219,13 +232,21 @@ export default function ProjectScriptsControl({
                     <span className="truncate">
                       {script.runOnWorktreeCreate ? `${script.name} (setup)` : script.name}
                     </span>
+                    {/* Fork: say which scripts came from the thread, since the
+                        row is otherwise identical to a project's. */}
+                    {taskScoped && (
+                      <span className="shrink-0 rounded-sm border border-border/60 px-1 font-mono text-[.65rem] text-muted-foreground">
+                        task
+                      </span>
+                    )}
                     <span className="relative ms-auto flex h-6 min-w-6 items-center justify-end">
                       {shortcutLabel && (
                         <MenuShortcut className="ms-0 transition-opacity group-hover:opacity-0 group-focus-visible:opacity-0">
                           {shortcutLabel}
                         </MenuShortcut>
                       )}
-                      {editable && (
+                      {/* Fork: `!taskScoped` — see `taskScopedScriptIds`. */}
+                      {editable && !taskScoped && (
                         <Button
                           type="button"
                           variant="ghost"

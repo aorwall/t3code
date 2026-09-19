@@ -287,7 +287,12 @@ import { SubtasksListInput, SubtasksListResult } from "./subtasks.ts";
 import { ThreadBrowseInput, ThreadBrowseResult } from "./threadBrowse.ts";
 // Fork: one thread's listing row by id, a fork-only surface.
 import { ThreadShellGetInput, ThreadShellGetResult } from "./threadShellLookup.ts";
-import { ScriptsRunInput, ScriptsRunResult } from "./scripts.ts";
+import {
+  ScriptsListForThreadInput,
+  ScriptsListForThreadResult,
+  ScriptsRunInput,
+  ScriptsRunResult,
+} from "./scripts.ts";
 import { UsagePricing, UsageReadError, UsageSummary, UsageSummaryInput } from "./usage.ts";
 import { ServerSettings, ServerSettingsError, ServerSettingsPatch } from "./settings.ts";
 import {
@@ -400,6 +405,9 @@ export const WS_METHODS = {
 
   // Thread script methods
   scriptsRun: "scripts.run",
+  // Fork: the scripts one thread can run, its own included; upstream has no
+  // script a thread declares for itself.
+  scriptsListForThread: "scripts.listForThread",
 
   // Sandbox methods
   sandboxStatus: "sandbox.status",
@@ -1476,6 +1484,26 @@ export const WsScriptsRunRpc = Rpc.make(WS_METHODS.scriptsRun, {
   ]),
 });
 
+/**
+ * Fork: the scripts one thread can run, its own declarations included.
+ *
+ * Declared with `UnsupportedMethodError` because a thread that declares scripts
+ * for itself is a Moatless concept: `apps/server` answers with it, and every
+ * environment without the `taskScripts` capability does too, so a client that
+ * asks under version skew has something to decode. A client that receives that
+ * error shows the project's own script list, which every environment serves.
+ *
+ * Fork: `unsupported-methods.mjs` reports this method under DROP once Moatless
+ * dispatches it, because it reads Moatless's own dispatch, not `apps/server`'s.
+ * The union member stays regardless — see "A script runs on the backend" in
+ * docs/fork/gaps.md.
+ */
+export const WsScriptsListForThreadRpc = Rpc.make(WS_METHODS.scriptsListForThread, {
+  payload: ScriptsListForThreadInput,
+  success: ScriptsListForThreadResult,
+  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
+});
+
 export const WsSandboxStatusRpc = Rpc.make(WS_METHODS.sandboxStatus, {
   payload: SandboxStatusInput,
   success: SandboxStatusResult,
@@ -1923,6 +1951,8 @@ export const WsRpcGroup = RpcGroup.make(
   // Fork: the listing rows a filter names.
   WsThreadsBrowseRpc,
   WsScriptsRunRpc,
+  // Fork: the scripts one thread can run, its own included.
+  WsScriptsListForThreadRpc,
   WsSandboxStatusRpc,
   // Fork: sandbox lifecycle push.
   WsSandboxSubscribeStatusRpc,
