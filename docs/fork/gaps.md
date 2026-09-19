@@ -1144,6 +1144,67 @@ usage paths the previous merge already opened:
   is the sweeper behind it, which is the part Moatless would have to build. A
   sandbox per task bounds the worktree half, but transcripts outlive the sandbox.
 
+Nine more arrived in the 2026-09-19 merge:
+
+- **A pull request diff too large to hold should not be cached.** #12523 caps a
+  cached diff at 512 KiB of patch text, counting UTF-16 storage, and invalidates
+  an oversized entry the cache is already holding
+  (`apps/server/src/pullRequest/PullRequestService.ts`). Moatless derives
+  `pullRequests.summary` itself, and a diff cache with a capacity but no size
+  bound is how one enormous pull request pins memory for the life of the process.
+- **A checkpoint's git commands should be retried when the failure is a lock or
+  a vanished file.** #11665 classifies `…lock: file exists` and
+  `no such file or directory` stderr as transient, carries the verdict as a
+  `retryable` field on `VcsProcessExitError` (`packages/contracts/src/vcs.ts`),
+  and retries the checkpoint-capture operation twice at 75 ms while keeping the
+  private index and recovery's outer deadline
+  (`apps/server/src/vcs/VcsProcess.ts`). The race is an agent writing files while
+  a checkpoint is captured, which a sandbox makes more likely rather than less.
+- **A failed settings write should put the secrets back.** #12487 turned the
+  secret writes behind `serverSettings` into a change list applied around the
+  settings file, with a rollback over the writes already made, so a persistence
+  failure no longer leaves a provider key removed or overwritten with nothing to
+  restore it from (`apps/server/src/serverSettings.ts`). Moatless stores provider
+  credentials itself, and this failure is silent until the provider is next used.
+- **A fetch failure should be explained without echoing the remote.** #12485 maps
+  four recognised stderr shapes — authentication, unreachable host, missing
+  repository, locked ref — onto fixed sentences and leaves anything unrecognised
+  as the generic message, because fetch stderr can carry credentials from the
+  remote URL (`fetchFailureDetail` in `apps/server/src/vcs/GitVcsDriverCore.ts`).
+  Both halves are the point: a persisted error is exactly what a token leaks into.
+- **A branch switch should not be readable as a path checkout.** #10574 appends
+  `--` to `git checkout <ref>`, so a selection whose ref no longer exists cannot
+  be taken as a pathspec and restore files over local edits
+  (`apps/server/src/vcs/GitVcsDriverCore.ts`). One argument, with losing
+  uncommitted work behind it.
+- **Rate limits from a tolerated read should still be recorded.** #12486 keeps
+  the Bitbucket rate-limit headers from optional pull-request reads instead of
+  discarding the accounting along with the error
+  (`pullRequest/BitbucketPullRequestProvider.ts`, `sourceControl/BitbucketApi.ts`).
+  Bitbucket is not a fork target; the shape is — wherever Moatless swallows an
+  optional host read, the budget was spent whether or not the caller wanted the
+  answer.
+- **An evicted preview host should be able to register again.** #12535 completes
+  the RPC stream on eviction rather than shutting the queue down, so a desktop
+  that was merely slow to answer can re-register, and serializes the
+  live-generation check with the offer so a route cannot outlive its generation
+  (`apps/server/src/mcp/PreviewAutomationBroker.ts`). This is the follow-up to
+  the preview-host bullet in the 2026-09-16 group. The client half landed here,
+  in `packages/client-runtime/src/rpc/client.ts`.
+- **A server should export log records, not only traces and metrics.** #12493
+  adds an `otlpLogsUrl` and lifts the shared `otlpResource` out so all three
+  signals report one service identity (`apps/server/src/config.ts`,
+  `observability/Layers/Observability.ts`). The fork already exports client spans
+  to a Moatless collector; this is the server-side half, and the shared resource
+  is what makes the three joinable at the collector.
+- **Pull request reads should be batched rather than fanned out.** #11825 reworked
+  the GitHub provider so a preview costs far fewer requests, with a measurement
+  script to prove it (`apps/server/scripts/measure-pr-preview.ts`,
+  `pullRequest/GitHubPullRequestCli.ts`, `pullRequest/gitHubPullRequestJson.ts`).
+  Sits beside the GitHub budgeting bullet in the 2026-09-16 group: most of the
+  surface is decided out here, but Moatless does its own GitHub reads behind
+  `pullRequests.summary`.
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
   compaction path queues in-flight user messages, its review diffs report
@@ -1169,8 +1230,15 @@ usage paths the previous merge already opened:
   empty nested repository, its file-search refresh is off the checkpoint path,
   its provider event log is bounded before serialization, its usage totals
   survive transcript cleanup and its shared scans resolve to the newest, it
-  passes provider image attachments by path, and it sweeps stale worktrees and
-  transcripts against retention rules it reports a capability for.
+  passes provider image attachments by path, it sweeps stale worktrees and
+  transcripts against retention rules it reports a capability for, it neither
+  caches nor keeps an oversized pull request diff, its checkpoint git commands
+  are retried on a lock or a vanished file, a failed settings write rolls its
+  secret changes back, a fetch failure is explained without echoing remote
+  stderr, a branch switch cannot be read as a pathspec, rate limits survive a
+  tolerated host read, an evicted preview host can register again, its log
+  records are exported over OTLP under the same resource as its traces, and its
+  pull request reads are batched rather than fanned out.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
@@ -1252,6 +1320,15 @@ server, and whether this fork's mobile client can reach a Moatless backend at
 all is unknown — so its scope note says the assumption is unverified rather
 than substituting a procedure nobody has run. Answering that question is the
 work; documenting it is the easy part that follows.
+
+The 2026-09-19 merge widened it. Upstream rewrote `test-t3-app` around a Browser
+panel driven from the desktop app (#12414) and gave the mobile client a device
+panel that views and controls an agent's devices over a device stream (#12531,
+`apps/mobile/src/features/devices/`). Both are paired-device surfaces: each
+assumes the bundled server brokering between a client and a registered device,
+which is what device pairing is decided out for above. The scope notes were
+re-applied over the rewritten skills rather than extended — saying more would
+mean asserting something about Moatless that nobody has checked.
 
 ### Merges must be merge commits
 

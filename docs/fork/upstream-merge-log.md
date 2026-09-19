@@ -28,6 +28,61 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-19 — merged upstream to 5378f87f9, where upstream rebuilt the fork's client tracer under its own name and a fork delta retired into it
+
+- Upstream: `5378f87f9` from base `994654198` (`51` commits).
+- Landed: `4232` files from `git diff --stat HEAD^1 HEAD` against `4233` in the
+  upstream range (`994654198..HEAD^2`); fork delta `777` files from
+  `git diff --stat HEAD^2 HEAD`. The gap of 1 is `apps/server/src/cli/pair.ts`,
+  the modify/delete below. The landed count is the whole tree because the range
+  includes `d547e3b12` / `e3c85ead6`, the Effect rc.115 and Alchemy beta.78
+  upgrades and their reference sync.
+- Conflicts: 5 files, each resolved with the verdict `preflight.mjs` printed.
+  - `apps/web/src/lib/runtime.ts` (unlisted) — resolved `theirs`, as a
+    convergence. #12332 reimplemented the fork's `ClientTracingLive` upstream as
+    `observability/clientTracer.ts`, identical in behaviour, and in the same
+    change removed the `activeDelegate` binding the fork's layer read. The fork
+    block auto-merged into `observability/clientTracing.ts` referencing a symbol
+    that no longer exists — the "neither side wrote this" failure, caught by
+    typecheck rather than by any merge rule. Deleted the fork layer and took
+    upstream's side of all three hunks; both files are now byte-identical to
+    upstream and the `clientTracing.ts` delta is gone.
+  - `.agents/skills/test-t3-app/SKILL.md` and `.agents/skills/test-t3-mobile/SKILL.md`
+    (`converged — upstream-test-skills`): #12414 rewrote the first around the
+    desktop Browser panel. Took both upstream whole and re-applied the scope
+    notes under the headings, which is all these entries ask for.
+  - `apps/server/src/cli/pair.ts` (unlisted, modify/delete): `git rm -f` — it is
+    in `deletedUpstreamPaths`, and #12493 only touched it to add a config field.
+  - `pnpm-lock.yaml` (`theirs — lockfile`): `--theirs` then `install.mjs`, which
+    put the fork's `moatless-api` and `mermaid` edges back (+1490 lines).
+- Unlisted and auto-merged, decided rather than accepted: `apps/server/src/bin.ts`
+  merged correctly — the two `pairCommand` lines stayed absent — but it had no
+  inventory entry, so deleting `cli/pair.ts` and keeping this file's references
+  to it was one build failure away with nothing to catch it. Added
+  `server-cli-entrypoint` (`converged`) in the same merge.
+- Sweep: 5 new upstream files matched the concern patterns, all relay or CI
+  infrastructure this fork does not deploy — `.github/scripts/relay-state-output.test.cjs`,
+  the two `infra/relay/migrations/postgres/20260918175607_long_thread_ids/` files,
+  and `infra/relay/src/clientConfig{,.test}.ts` (#12401, #12484, #12519). Taken
+  as `theirs`, no inventory entry.
+- Stale inventory found by verification, not by preflight: `tripwires` reported
+  `.github/workflows/typecheck.yml` as an inherited workflow active again. It is
+  fork-authored and deliberately on — `offRepo.allowedActiveWorkflows` was never
+  updated when it landed. Confirmed against
+  `repos/soaplabs/t3code/actions/workflows` (4 active, exactly the allowlist plus
+  this one) and added it to the entry.
+- Also fixed: #9917 deleted `SidebarGroupLabel` from `components/ui/sidebar.tsx`
+  and the fork's `SettingsSidebarNav.tsx` was its only caller, which failed both
+  typecheck and build. Inlined the label locally rather than re-exporting it from
+  an upstream-owned file, which would conflict on every merge.
+- Contract drift: `unsupported-methods.mjs` reported ADD 0 / DROP 0. Nothing in
+  `packages/contracts/src/rpc.ts` changed.
+- Verification: `verify.mjs` all 10 checks green on the final full pass, tests
+  included (334 files, 5144 tests). Tripwires: Clerk 4, pairing 96, session
+  bootstrap 8, 5 known deletions, 4 active workflows. Nine upstream server fixes
+  from this range are in [the gaps register](./gaps.md) under _Runtime fixes
+  upstream made to its own server_.
+
 ### 2026-09-18 — merged upstream to 994654198, a quiet merge whose only judgement call was that a new settings page needed no fork gate
 
 - Upstream: `994654198` from base `6d1d549441` (`50` commits).

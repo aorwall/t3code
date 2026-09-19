@@ -80,6 +80,7 @@
     "workflowsApi": "repos/soaplabs/t3code/actions/workflows",
     "allowedActiveWorkflows": [
       ".github/workflows/build-moatless-t3-image.yml",
+      ".github/workflows/typecheck.yml",
       "dynamic/dependabot/dependabot-updates",
       "dynamic/dependabot/update-graph"
     ],
@@ -389,6 +390,12 @@
       "paths": ["apps/server/src/ws.ts", "apps/server/src/auth/RpcAuthorization.ts"],
       "verdict": "converged",
       "note": "Take upstream, then re-add the hosted-environment method entries: servers.*, sandbox.status, sandbox.start, and sandbox.stop."
+    },
+    {
+      "id": "server-cli-entrypoint",
+      "paths": ["apps/server/src/bin.ts"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-drop the two `pairCommand` lines — the `./cli/pair.ts` import and the entry in the command list. This is the companion to the deletedUpstreamPaths entry for apps/server/src/cli/pair.ts: deleting the module without dropping its two references here is a build failure, and taking upstream's side of this file whole restores a command whose module does not exist. Moatless replaces device pairing, so the command has nothing to talk to. Drop this entry if the fork ever restores cli/pair.ts."
     },
     {
       "id": "fork-registry",
