@@ -11,8 +11,7 @@ import { primaryEnvironmentHttpLayer } from "../environments/primary/httpLayer";
 import { browserCryptoLayer } from "../cloud/dpop";
 import { managedRelayClientLayer } from "../cloud/managedRelayLayer";
 import { resolveCloudPublicConfig, resolveRelayTracingConfig } from "../cloud/publicConfig";
-// Fork: added import — the environment tracer this runtime installs below.
-import { ClientTracingLive } from "../observability/clientTracing";
+import * as ClientTracer from "../observability/clientTracer";
 
 function configuredRelayUrl(): string {
   return resolveCloudPublicConfig().relayUrl ?? "http://relay.invalid";
@@ -31,8 +30,7 @@ type RuntimeLayerSource =
   | typeof browserCryptoLayer
   | typeof Socket.layerWebSocketConstructorGlobal
   | typeof relayTracingLayer
-  // Fork: added member — see the `ClientTracingLive` entry in `runtimeLayer`.
-  | typeof ClientTracingLive
+  | typeof ClientTracer.layer
   | ReturnType<typeof managedRelayClientLayer>;
 
 const primaryHttpRuntime = ManagedRuntime.make(
@@ -60,14 +58,8 @@ const runtimeLayer = Layer.mergeAll(
   httpClientLayer,
   browserCryptoLayer,
   Socket.layerWebSocketConstructorGlobal,
+  ClientTracer.layer,
   relayTracingLayer,
-  // Fork: added entry. `configureClientTracing` (called from `__root.tsx`)
-  // builds the OTLP delegate, but nothing installed the `Tracer.Tracer` that
-  // routes spans to it, so every span the client made was dropped — including
-  // the `traceId`/`spanId` it puts on each RPC frame, which left the Moatless
-  // backend's spans parented to a trace nobody ever exported. The relay tracer
-  // above is unaffected: `withRelayClientTracing` still overrides this locally.
-  ClientTracingLive,
   managedRelayClientLayer(configuredRelayUrl()).pipe(
     Layer.provide(Layer.mergeAll(httpClientLayer, browserCryptoLayer)),
   ),

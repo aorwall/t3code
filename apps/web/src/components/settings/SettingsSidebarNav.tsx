@@ -38,7 +38,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -395,7 +394,15 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
               from non-admins entirely, not merely deprioritized. */}
           {!isSearching && isAdmin ? (
             <>
-              <SidebarGroupLabel>Administration</SidebarGroupLabel>
+              {/* Fork: upstream deleted `SidebarGroupLabel` as unused in #9917.
+                  The fork's admin group was its only caller, so the label is
+                  inlined here rather than re-added to upstream's ui/sidebar. */}
+              <div
+                data-slot="sidebar-group-label"
+                className="flex h-8 shrink-0 items-center rounded-lg px-2 font-medium text-sidebar-foreground text-xs group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0"
+              >
+                Administration
+              </div>
               <SidebarMenu>
                 {ADMINISTRATION_NAV_ITEMS.filter((item) => settingsPathEnabled(item.to)).map(
                   renderNavItem,
