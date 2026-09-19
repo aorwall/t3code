@@ -2,7 +2,7 @@
 # Fork-only, and listed in docs/fork/inventory.json as `moatless-loops`.
 on: schedule
 name: Upstream Merge
-workspace: T3 Code Fork
+workspace: t3code
 agentType: claude-code
 model: opus
 tags:
