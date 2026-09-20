@@ -28,6 +28,36 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-20 — merged upstream to 7445aa733, a merge with no conflicts at all
+
+- Upstream: `7445aa733` from base `5378f87f9` (`21` commits).
+- Landed: `154` files from `git diff --stat HEAD^1 HEAD` against `154` in the
+  upstream range (`5378f87f9..HEAD^2`); fork delta `776` files from
+  `git diff --stat HEAD^2 HEAD`. No gap — `merge-stats.mjs` reports an exact
+  match, nothing landed that upstream did not change and nothing was dropped.
+- Conflicts: none. `preflight.mjs` forecast 0 conflicts and 8 files touched by
+  both sides; `git merge` stopped on nothing. All 8 auto-merged files were
+  checked by hand against both parents and each carries upstream's change intact
+  beside its fork delta — the two `decide` paths
+  (`apps/web/src/components/preview/PreviewView.tsx` and its test) took #12636's
+  synchronous `capturePreviewAnnotationScreenshot`, which does not touch the
+  `FEATURES.browserHistory` gate.
+- Sweep: no keyword hits on new upstream files, no new upstream workflows, no
+  modify/delete conflicts, no stale inventory entries.
+- Lockfile: upstream changed three manifests (`apps/mobile/package.json`,
+  `packages/shared/package.json`, `pnpm-workspace.yaml`) and did not touch
+  `pnpm-lock.yaml`. Re-derived it per step 5 anyway; the install produced no
+  change, so the committed lockfile is already the one those manifests resolve
+  to. `verify.mjs --only lockfile` agrees.
+- Contracts: `unsupported-methods.mjs` reports ADD 0 and DROP 0, so no union
+  entry in `packages/contracts/src/rpc.ts` changed. The 5 known exceptions and
+  the 2 conditional KEEP arms are unchanged.
+- Verification: `verify.mjs` — all 10 checks pass. The `t3` test package failed
+  under load and passed in isolation; not a merge regression.
+- Found and not done: four upstream server behaviours worth reproducing, under
+  [Runtime fixes upstream made to its own server](./gaps.md) in the 2026-09-20
+  group.
+
 ### 2026-09-19 — merged upstream to 5378f87f9, where upstream rebuilt the fork's client tracer under its own name and a fork delta retired into it
 
 - Upstream: `5378f87f9` from base `994654198` (`51` commits).
