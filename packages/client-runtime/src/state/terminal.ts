@@ -1,4 +1,4 @@
-import { type TerminalSummary, WS_METHODS } from "@t3tools/contracts";
+import { WS_METHODS } from "@t3tools/contracts";
 import * as Stream from "effect/Stream";
 import { Atom } from "effect/unstable/reactivity";
 
@@ -13,6 +13,8 @@ import { subscribe, type EnvironmentRpcInput } from "../rpc/client.ts";
 import {
   applyTerminalAttachStreamEvent,
   applyTerminalMetadataStreamEvent,
+  // Fork: see the scan below.
+  EMPTY_TERMINAL_METADATA_STATE,
   nextTerminalAttachSeedState,
 } from "./terminalSession.ts";
 
@@ -54,7 +56,9 @@ export function createTerminalEnvironmentAtoms<R, E>(
       label: "environment-data:terminal:metadata",
       subscribe: (_input: null) =>
         subscribe(WS_METHODS.subscribeTerminalMetadata, {}).pipe(
-          Stream.scan([] as ReadonlyArray<TerminalSummary>, applyTerminalMetadataStreamEvent),
+          // Fork: the scan carries the environment's announcements beside the
+          // listing; see `TerminalMetadataState`.
+          Stream.scan(EMPTY_TERMINAL_METADATA_STATE, applyTerminalMetadataStreamEvent),
         ),
     }),
     open: createEnvironmentRpcCommand(runtime, {

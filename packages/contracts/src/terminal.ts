@@ -138,6 +138,10 @@ const TerminalMetadataSnapshotEvent = Schema.Struct({
 const TerminalMetadataUpsertEvent = Schema.Struct({
   type: Schema.Literal("upsert"),
   terminal: TerminalSummary,
+  // Fork: Moatless sets this on the upsert for a session its environment
+  // started — a script run outside any client — and on nothing else. Every
+  // other upsert is a status change on a session someone already knows about.
+  announced: Schema.optional(Schema.Boolean),
 });
 
 const TerminalMetadataRemoveEvent = Schema.Struct({

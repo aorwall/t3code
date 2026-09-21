@@ -1045,6 +1045,21 @@
       }
     },
     {
+      "id": "announced-terminal-drawer",
+      "name": "Announced terminal drawer",
+      "paths": [
+        "apps/web/src/fork/announcedTerminals.ts",
+        "apps/web/src/fork/announcedTerminals.test.ts",
+        "packages/contracts/src/terminal.ts",
+        "packages/client-runtime/src/state/terminalSession.ts",
+        "packages/client-runtime/src/state/terminal.ts",
+        "apps/web/src/state/terminalSessions.ts",
+        "apps/mobile/src/state/use-terminal-session.ts",
+        "apps/web/src/components/ChatView.tsx"
+      ],
+      "mustSurvive": "Moatless starts terminal sessions nobody on this side asked for: scripts.run and `moat tasks scripts run` open one on the Task's sandbox, and it exists to be watched. The backend sets `announced` on the metadata upsert for exactly those starts and on nothing else, so applyTerminalMetadataStreamEvent scans to a TerminalMetadataState carrying the listing plus the last announcement and a stream-wide announcedOpens count, rather than to the bare summary array upstream returns — which is why every reader of that atom takes .terminals, on mobile as well as web. ChatView raises the drawer for the announced terminal with ensureTerminal({ open: true, active: true }), under the same proactivePanelsEnabled setting as the announced preview tab beside it but held back on isMobileViewport rather than the right panel's sheet breakpoint, since a bottom drawer is not a right-panel surface, and only when the count moves while the view watches that same thread: arriving at a thread is not an announcement, and neither is the snapshot a reconnect replays, which would otherwise reopen every session the viewer had closed. A server that never sets the field leaves the count at 0 and the drawer behaves exactly as upstream's."
+    },
+    {
       "id": "project-script-editing-capability",
       "name": "Project-script editing capability",
       "paths": [

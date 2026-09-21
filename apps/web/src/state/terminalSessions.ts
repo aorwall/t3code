@@ -147,9 +147,10 @@ export function useAttachedTerminalSession(input: {
       return EMPTY_TERMINAL_SESSION_STATE;
     }
     const summary =
-      (metadata.data === null
+      // Fork: the metadata scan now carries announcements beside the listing.
+      (metadata.data == null
         ? null
-        : terminalMetadataIndex(metadata.data)
+        : terminalMetadataIndex(metadata.data.terminals)
             .byThreadId.get(input.terminal.threadId)
             ?.find((terminal) => terminal.terminalId === input.terminal?.terminalId)) ?? null;
     const state = combineTerminalSessionState(summary, attach.data ?? EMPTY_TERMINAL_BUFFER_STATE);
@@ -170,7 +171,13 @@ export function useKnownTerminalSessions(input: {
         }),
   );
   return useMemo(
-    () => selectKnownTerminalSessions(metadata.data, input.environmentId, input.threadId),
+    () =>
+      // Fork: see the listing read above.
+      selectKnownTerminalSessions(
+        metadata.data?.terminals ?? null,
+        input.environmentId,
+        input.threadId,
+      ),
     [input.environmentId, input.threadId, metadata.data],
   );
 }

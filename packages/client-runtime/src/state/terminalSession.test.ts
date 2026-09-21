@@ -8,6 +8,8 @@ import {
   combineTerminalSessionState,
   DEFAULT_MAX_TERMINAL_BUFFER_BYTES,
   EMPTY_TERMINAL_BUFFER_STATE,
+  // Fork: the metadata scan's seed, which carries announcements too.
+  EMPTY_TERMINAL_METADATA_STATE,
   INITIAL_TERMINAL_OUTPUT_CURSOR,
   nextTerminalAttachSeedState,
   readTerminalOutputUpdate,
@@ -37,7 +39,7 @@ const BASE_SNAPSHOT: TerminalSessionSnapshot = {
 
 describe("terminal session reducers", () => {
   it("prefers live attach status over stale metadata after the attach stream starts", () => {
-    const summary = applyTerminalMetadataStreamEvent([], {
+    const summary = applyTerminalMetadataStreamEvent(EMPTY_TERMINAL_METADATA_STATE, {
       type: "snapshot",
       terminals: [
         {
@@ -54,7 +56,7 @@ describe("terminal session reducers", () => {
           label: BASE_SNAPSHOT.label,
         },
       ],
-    })[0]!;
+    }).terminals[0]!;
     const attached = applyTerminalAttachStreamEvent(EMPTY_TERMINAL_BUFFER_STATE, {
       type: "error",
       threadId: TARGET.threadId,
@@ -70,7 +72,7 @@ describe("terminal session reducers", () => {
   });
 
   it("uses metadata status before an attach stream has emitted", () => {
-    const summary = applyTerminalMetadataStreamEvent([], {
+    const summary = applyTerminalMetadataStreamEvent(EMPTY_TERMINAL_METADATA_STATE, {
       type: "snapshot",
       terminals: [
         {
@@ -87,7 +89,7 @@ describe("terminal session reducers", () => {
           label: BASE_SNAPSHOT.label,
         },
       ],
-    })[0]!;
+    }).terminals[0]!;
 
     expect(combineTerminalSessionState(summary, EMPTY_TERMINAL_BUFFER_STATE).status).toBe(
       "running",
@@ -177,7 +179,7 @@ describe("terminal session reducers", () => {
   });
 
   it("reduces terminal metadata snapshots, upserts, and removals", () => {
-    const initial = applyTerminalMetadataStreamEvent([], {
+    const initial = applyTerminalMetadataStreamEvent(EMPTY_TERMINAL_METADATA_STATE, {
       type: "snapshot",
       terminals: [
         {
@@ -198,7 +200,7 @@ describe("terminal session reducers", () => {
     const updated = applyTerminalMetadataStreamEvent(initial, {
       type: "upsert",
       terminal: {
-        ...initial[0]!,
+        ...initial.terminals[0]!,
         hasRunningSubprocess: true,
       },
     });
@@ -208,9 +210,59 @@ describe("terminal session reducers", () => {
       terminalId: TARGET.terminalId,
     });
 
-    expect(updated).toHaveLength(1);
-    expect(updated[0]?.hasRunningSubprocess).toBe(true);
-    expect(removed).toEqual([]);
+    expect(updated.terminals).toHaveLength(1);
+    expect(updated.terminals[0]?.hasRunningSubprocess).toBe(true);
+    expect(removed.terminals).toEqual([]);
+  });
+
+  // Fork: the drawer opens on the count, so what must hold is that only an
+  // announced upsert moves it — a status change on a session and the snapshot a
+  // reconnect replays both leave it where it was.
+  it("counts only the upserts the environment announced", () => {
+    const summary = {
+      threadId: BASE_SNAPSHOT.threadId,
+      terminalId: BASE_SNAPSHOT.terminalId,
+      cwd: BASE_SNAPSHOT.cwd,
+      worktreePath: BASE_SNAPSHOT.worktreePath,
+      status: BASE_SNAPSHOT.status,
+      pid: BASE_SNAPSHOT.pid,
+      exitCode: BASE_SNAPSHOT.exitCode,
+      exitSignal: BASE_SNAPSHOT.exitSignal,
+      updatedAt: BASE_SNAPSHOT.updatedAt,
+      hasRunningSubprocess: false,
+      label: BASE_SNAPSHOT.label,
+    };
+
+    const announced = applyTerminalMetadataStreamEvent(EMPTY_TERMINAL_METADATA_STATE, {
+      type: "upsert",
+      terminal: summary,
+      announced: true,
+    });
+    expect(announced.announcedOpens).toBe(1);
+    expect(announced.announced).toEqual({
+      threadId: summary.threadId,
+      terminalId: summary.terminalId,
+    });
+
+    const statusChanged = applyTerminalMetadataStreamEvent(announced, {
+      type: "upsert",
+      terminal: { ...summary, hasRunningSubprocess: true },
+    });
+    const reseeded = applyTerminalMetadataStreamEvent(statusChanged, {
+      type: "snapshot",
+      terminals: [summary],
+    });
+    expect(statusChanged.announcedOpens).toBe(1);
+    expect(reseeded.announcedOpens).toBe(1);
+
+    // The same terminal started again is a second event, not a repeat of the
+    // first: an id that did not change would leave the drawer shut.
+    const restarted = applyTerminalMetadataStreamEvent(reseeded, {
+      type: "upsert",
+      terminal: summary,
+      announced: true,
+    });
+    expect(restarted.announcedOpens).toBe(2);
   });
 
   it("caps retained output by UTF-8 byte length", () => {

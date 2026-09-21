@@ -48,7 +48,8 @@ export function useAttachedTerminalSession(input: {
       return EMPTY_LEGACY_TERMINAL_SESSION_STATE;
     }
     const summary =
-      metadata.data?.find(
+      // Fork: the metadata scan now carries announcements beside the listing.
+      metadata.data?.terminals.find(
         (terminal) =>
           terminal.threadId === input.terminal?.threadId &&
           terminal.terminalId === input.terminal?.terminalId,
@@ -77,7 +78,8 @@ export function useKnownTerminalSessions(input: {
     if (input.environmentId === null) {
       return [];
     }
-    return (metadata.data ?? [])
+    // Fork: see the listing read above.
+    return (metadata.data?.terminals ?? [])
       .filter((summary) => input.threadId === null || summary.threadId === input.threadId)
       .map((summary) => ({
         target: {

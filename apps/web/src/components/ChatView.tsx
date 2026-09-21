@@ -121,6 +121,8 @@ import * as Cause from "effect/Cause";
 import * as Schema from "effect/Schema";
 import { AsyncResult } from "effect/unstable/reactivity";
 import { isElectron } from "../env";
+// Fork: the terminal the environment raised for this thread, if any.
+import { useAnnouncedTerminal } from "../fork/announcedTerminals";
 import { FEATURES } from "../fork/features";
 import { parseMoatlessTurnNumber } from "../fork/threadFork";
 // Fork: the scripts one thread can run, its own declarations included.
@@ -5176,6 +5178,54 @@ export default function ChatView(props: ChatViewProps) {
     clientSettingsHydrated,
     settings.proactivePanelsEnabled,
     shouldUseRightPanelSheet,
+  ]);
+
+  // Fork: raise the drawer for a terminal this client was told about rather
+  // than asked for. A script run from `moat tasks scripts run` opens a session
+  // on the thread's sandbox, and it is there to be watched — but nothing here
+  // clicked for it, so without this it runs to completion behind a closed
+  // drawer. Same setting as the preview panel above, but gated on
+  // `isMobileViewport` rather than the sheet breakpoint: this drawer is not a
+  // right-panel surface, and the width where it stops leaving room for the
+  // conversation is a phone's.
+  const announcedTerminal = useAnnouncedTerminal({
+    environmentId: activeThreadEnvironmentId,
+    threadId: activeThreadId,
+  });
+  const announcedTerminalObservationRef = useRef<{
+    threadKey: string;
+    opens: number;
+  } | null>(null);
+  useEffect(() => {
+    if (activeThreadKey === null || activeThreadRef === null) {
+      announcedTerminalObservationRef.current = null;
+      return;
+    }
+    const previousObservation = announcedTerminalObservationRef.current;
+    announcedTerminalObservationRef.current = {
+      threadKey: activeThreadKey,
+      opens: announcedTerminal.opens,
+    };
+    // Arriving at a thread is not an announcement: only a count that moved
+    // while this view watched the same thread is one.
+    if (previousObservation?.threadKey !== activeThreadKey) return;
+    if (previousObservation.opens >= announcedTerminal.opens) return;
+    if (announcedTerminal.terminalId === null || !clientSettingsHydrated) return;
+    if (!settings.proactivePanelsEnabled || isMobileViewport) return;
+
+    storeEnsureTerminal(activeThreadRef, announcedTerminal.terminalId, {
+      open: true,
+      active: true,
+    });
+  }, [
+    activeThreadKey,
+    activeThreadRef,
+    announcedTerminal.opens,
+    announcedTerminal.terminalId,
+    clientSettingsHydrated,
+    isMobileViewport,
+    settings.proactivePanelsEnabled,
+    storeEnsureTerminal,
   ]);
 
   const closePreviewPanel = useCallback(() => {

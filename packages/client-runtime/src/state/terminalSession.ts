@@ -191,23 +191,61 @@ export function applyTerminalAttachStreamEvent(
   }
 }
 
+// Fork: the stream carries announcements as well as summaries, and a scan that
+// returned the summaries alone would drop them — an announcement is an event,
+// and the array it arrives beside is state. See `TerminalMetadataState`.
+export interface TerminalMetadataState {
+  readonly terminals: ReadonlyArray<TerminalSummary>;
+  /**
+   * The session the environment last raised, and how many it has raised on this
+   * stream. A viewer opens its drawer when the count moves, so two starts of
+   * one terminal have to read as two events rather than one unchanged id.
+   */
+  readonly announced: { readonly threadId: string; readonly terminalId: string } | null;
+  readonly announcedOpens: number;
+}
+
+export const EMPTY_TERMINAL_METADATA_STATE: TerminalMetadataState = {
+  terminals: [],
+  announced: null,
+  announcedOpens: 0,
+};
+
 export function applyTerminalMetadataStreamEvent(
-  current: ReadonlyArray<TerminalSummary>,
+  current: TerminalMetadataState,
   event: TerminalMetadataStreamEvent,
-): ReadonlyArray<TerminalSummary> {
+): TerminalMetadataState {
   if (event.type === "snapshot") {
-    return event.terminals;
+    // Fork: a snapshot reseeds the listing and announces nothing. It is also
+    // what a reconnect replays, so raising a drawer here would reopen every
+    // session the viewer had closed.
+    return { ...current, terminals: event.terminals };
   }
   if (event.type === "remove") {
-    return current.filter(
-      (terminal) =>
-        terminal.threadId !== event.threadId || terminal.terminalId !== event.terminalId,
-    );
+    return {
+      ...current,
+      terminals: current.terminals.filter(
+        (terminal) =>
+          terminal.threadId !== event.threadId || terminal.terminalId !== event.terminalId,
+      ),
+    };
   }
-  const next = current.filter(
+  const next = current.terminals.filter(
     (terminal) =>
       terminal.threadId !== event.terminal.threadId ||
       terminal.terminalId !== event.terminal.terminalId,
   );
-  return [...next, event.terminal];
+  const terminals = [...next, event.terminal];
+  // Fork: only an announced upsert moves the count.
+  if (event.announced !== true) {
+    return { ...current, terminals };
+  }
+  return {
+    terminals,
+    announced: {
+      threadId: event.terminal.threadId,
+      terminalId: event.terminal.terminalId,
+    },
+    announcedOpens: current.announcedOpens + 1,
+  };
 }
