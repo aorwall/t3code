@@ -1205,6 +1205,41 @@ Nine more arrived in the 2026-09-19 merge:
   surface is decided out here, but Moatless does its own GitHub reads behind
   `pullRequests.summary`.
 
+Four more arrived in the 2026-09-20 merge:
+
+- **An agent that dies during session start should report its own stderr.**
+  #12625 buffers the ACP child's stderr and, when `cursor-agent` exits before the
+  session handshake completes, raises the captured text instead of the generic
+  session-start failure (`apps/server/src/provider/acp/AcpStderr.ts`,
+  `provider/Layers/CursorAdapter.ts`). Moatless launches its own agent processes
+  in a sandbox, so the same failure — a bad credential, a missing binary, a
+  refused network — reaches a person as "could not start the session" with the
+  one line that explained it discarded.
+- **An empty provider home should resolve to the default, not to a fresh one.**
+  #12624 treats a Claude account whose `homePath` is set but empty as `~/.claude`
+  rather than an unset home, so the account shares session continuation with the
+  default rather than starting its own transcript directory
+  (`apps/server/src/provider/Drivers/ClaudeDriver.ts`). Moatless resolves
+  provider homes itself; the symptom is a resumed thread that has forgotten
+  everything, on an account that merely had a blank field.
+- **A provider permission prompt should be approvable, not just displayed.**
+  #7861 adds a `permission` provider-request kind and a `permission_approval`
+  canonical request type (`packages/contracts/src/orchestration.ts`,
+  `providerRuntime.ts`) and has the Codex adapter raise app permission requests
+  through the ordinary approval path
+  (`apps/server/src/provider/Layers/CodexProvider.ts`). Both contract members
+  landed in this merge, so the client and mobile halves are already here;
+  Moatless has to emit the request for the surface to light up, and until it does
+  a Codex permission prompt stalls the turn with nothing to answer it.
+- **An editor installed outside `PATH` should still be launchable.** #12439 falls
+  back from `isCommandAvailable` to the platform's install locations — macOS
+  `Applications` bundles, JetBrains Toolbox scripts, Windows program directories
+  — before declaring an editor absent (`packages/shared/src/editor.ts`,
+  `apps/server/src/process/externalLauncher.ts`). Moot while
+  `FEATURES.openInEditor` is off, and recorded because it is the detection
+  Moatless would need the day it dispatches `shell.openInEditor`: a GUI editor is
+  normally not on the `PATH` of the process asking about it.
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
   compaction path queues in-flight user messages, its review diffs report
@@ -1237,8 +1272,11 @@ Nine more arrived in the 2026-09-19 merge:
   secret changes back, a fetch failure is explained without echoing remote
   stderr, a branch switch cannot be read as a pathspec, rate limits survive a
   tolerated host read, an evicted preview host can register again, its log
-  records are exported over OTLP under the same resource as its traces, and its
-  pull request reads are batched rather than fanned out.
+  records are exported over OTLP under the same resource as its traces, its
+  pull request reads are batched rather than fanned out, an agent that dies
+  during session start surfaces its own stderr, an empty provider home resolves
+  to the default rather than a fresh one, it emits `permission` provider
+  requests for approval, and its editor detection looks past `PATH`.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
