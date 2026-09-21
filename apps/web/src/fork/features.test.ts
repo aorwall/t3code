@@ -90,6 +90,17 @@ describe("the palette action map", () => {
  * finding: the inventory entry needs re-pointing at the file's new home.
  */
 const WEB_SOURCE_PREFIX = "apps/web/src/";
+const FORK_SOURCE_PREFIX = "apps/web/src/fork/";
+
+/** A glob key is relative to this file, and a sibling comes back as `./name.ts`
+    rather than `../fork/name.ts` — so a guard on a fork-only file reads as a
+    file that no longer exists unless both shapes resolve. */
+function repoPath(specifier: string): string {
+  return specifier.startsWith("../")
+    ? `${WEB_SOURCE_PREFIX}${specifier.slice("../".length)}`
+    : `${FORK_SOURCE_PREFIX}${specifier.replace(/^\.\//, "")}`;
+}
+
 const webSources: Record<string, string> = Object.fromEntries(
   Object.entries(
     import.meta.glob("../**/*.{ts,tsx}", {
@@ -97,10 +108,7 @@ const webSources: Record<string, string> = Object.fromEntries(
       import: "default",
       eager: true,
     }) as Record<string, string>,
-  ).map(([specifier, source]) => [
-    `${WEB_SOURCE_PREFIX}${specifier.replace(/^\.\.\//, "")}`,
-    source,
-  ]),
+  ).map(([specifier, source]) => [repoPath(specifier), source]),
 );
 
 // Read as text rather than as a JSON module: `node:fs` is not available to this

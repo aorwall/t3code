@@ -615,6 +615,30 @@
       "note": "Take upstream, then re-state `showWorkspaceControls`: `showGitControls && FEATURES.worktreeSelection`, substituted for `showGitControls` at every use that draws the workspace picker, plus the added conjunct on `canUsePreviousWorktree` so no picker means no hop and no thread-shell read for one. The branch selector itself is untouched by the gate. Upstream edits this strip steadily and each substitution is one identifier, so take upstream's structure and re-substitute rather than defending the fork's copy — and check for uses upstream has added, because a missed one puts the picker back at one width only."
     },
     {
+      "id": "project-scripts-control",
+      "paths": [
+        "apps/web/src/components/ProjectScriptsControl.tsx",
+        "apps/web/src/components/chat/ChatHeader.tsx"
+      ],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply three things. In ProjectScriptsControl: the `taskScoped` const and its `task` badge on a row the thread declared, `editable && !taskScoped` on the per-script Edit button, and `editable` on the t3.json import items and every Add action — including the one the collapsed menu offers when a project has no scripts at all. In ChatHeader: the `editable` and `taskScopedScriptIds` props, and `FEATURES.openInEditor &&` folded into `showOpenInPicker` rather than onto the picker, so the collapsed menu's separator and its trigger agree there is no picker. Upstream moves this control's rows between presentations — it extracted `scriptItems` and a portalled `headerActions` on 2026-09-20 for the collapsed header menu — so take upstream's structure and re-apply the gates at whatever anchor it now has. See the `task-scoped-scripts`, `project-script-editing-capability` and `open-in-editor-gate` inventory entries for what each gate is standing in for."
+    },
+    {
+      "id": "open-in-editor-gate-files",
+      "paths": [
+        "apps/web/src/components/GitActionsControl.tsx",
+        "apps/web/src/components/ChatMarkdown.test.tsx"
+      ],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply the two one-expression deltas the `open-in-editor-gate` inventory entry describes: `disabled={!FEATURES.openInEditor}` on the commit dialog's changed-file row, whose only action is an editor open, and the `vi.mock` of `../fork/features` that turns the flag on for ChatMarkdown's tests, since a link with no action renders as a menu button and upstream's href assertions need the anchor."
+    },
+    {
+      "id": "draft-hero-headline",
+      "paths": ["apps/web/src/components/chat/DraftHeroHeadline.tsx"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-wrap the project picker's New project item and the separator above it in `FEATURES.projectManagement`. One fragment around upstream's two elements; do not re-indent anything else in the menu. See the `navigation-gates` inventory entry."
+    },
+    {
       "id": "thread-adoption-graft",
       "paths": ["apps/web/src/state/threads.ts"],
       "verdict": "converged",
