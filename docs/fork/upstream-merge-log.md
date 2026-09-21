@@ -28,6 +28,65 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-21 — merged upstream to 5781b5240, where upstream restructured the chat header around the fork's script deltas
+
+- Upstream: `5781b5240` from base `7445aa733` (`41` commits).
+- Landed: `191` files from `git diff --stat HEAD^1 HEAD` against `192` in the
+  upstream range (`7445aa733..HEAD^2`); fork delta `786` files from
+  `git diff --stat HEAD^2 HEAD`. The gap of 1 is `apps/server/src/cli/pair.ts`,
+  the modify/delete below.
+- Branch point: `main`. PR #182 (`merge/upstream-2026-09-20`) had merged hours
+  earlier, so there was nothing open to stack on, but local `main` was three
+  commits behind it and was fast-forwarded before branching. A run that finds a
+  merge PR still open now stacks on it — see _Where this merge branches from_ in
+  the skill.
+- Conflicts: 4 files, each resolved with the verdict `preflight.mjs` printed.
+  - `apps/server/src/cli/pair.ts` (`deletedUpstreamPaths`) — modify/delete from
+    #12657; kept deleted. `apps/server/src/bin.ts` references neither
+    `pairCommand` nor `cli/pair`.
+  - `apps/web/src/components/BranchToolbar.tsx` (converged —
+    [branch-toolbar-gates](./inventory.json)) — both sides added an import;
+    kept both. `showWorkspaceControls` and its uses survive.
+  - `apps/web/src/components/ProjectScriptsControl.tsx` and
+    `apps/web/src/components/chat/ChatHeader.tsx` — unlisted, decided
+    `converged`. Upstream extracted a shared `scriptItems` const for its new
+    menu presentation and moved the header's controls into a `headerActions`
+    fragment, so the fork's deltas had no anchor left: the `task` badge, the
+    `editable && !taskScoped` Edit suppression, the `editable` guards on the
+    import and Add items, the two `ProjectScriptsControl` props and
+    `FEATURES.openInEditor` were re-applied onto upstream's structure rather
+    than kept as the fork's copy of it.
+- Inventory: three entries added for the five files `resolution-check.mjs`
+  reported as unlisted — `project-scripts-control`, `open-in-editor-gate-files`
+  and `draft-hero-headline`, all `converged`.
+- Sweep: one hit — `apps/web/src/components/device/DeviceHostUpdates.tsx`, new
+  from #12817, inside the device-hub concern. Taken as-is with no gate: its
+  three call sites are `DevicePanel`, `DeviceSetup` and
+  `DeviceIntegrationSettings`, and all three are already behind
+  `FEATURES.deviceHub`. No new upstream workflows, no stale inventory entries.
+- Lockfile: re-derived per step 5. `install.mjs` produced no diff, so the
+  auto-merged lockfile already equals the re-derived one.
+- Contracts: `unsupported-methods.mjs` reports ADD 0 and DROP 0, so no union
+  entry in `packages/contracts/src/rpc.ts` changed. The 6 known exceptions and
+  the 2 conditional KEEP arms are unchanged.
+- Verification: `verify.mjs` — 8 of 10 checks passed on the first pass, both
+  failures fixed here.
+  - `typecheck`: #12545 added `dataUpdatedAt` to `EnvironmentQueryView`
+    (`apps/web/src/state/query.ts`), and the fork's two sandbox hooks build that
+    view by hand rather than returning `useEnvironmentQuery`'s — both now pass
+    the field through.
+  - `test`: `@t3tools/web` `src/fork/features.test.ts`, the `task-scoped-scripts`
+    delta guard, read as "the file no longer exists". Not this merge —
+    `import.meta.glob` keys a sibling as `./name.ts` and only the `../` shape
+    was normalized, so every guard on a file in `src/fork/` had been unchecked
+    since the guard landed. `repoPath` now resolves both shapes and the guard
+    passes against the symbol it names.
+  - `@t3tools/mobile` failed the full run and passed in isolation; not a merge
+    regression.
+- Found and not done: two upstream server behaviours worth reproducing, under
+  [Runtime fixes upstream made to its own server](./gaps.md) in the 2026-09-21
+  group, plus the per-signal OTLP split folded into the #12493 bullet there.
+
 ### 2026-09-20 — merged upstream to 7445aa733, a merge with no conflicts at all
 
 - Upstream: `7445aa733` from base `5378f87f9` (`21` commits).

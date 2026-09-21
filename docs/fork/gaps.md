@@ -1215,7 +1215,11 @@ Nine more arrived in the 2026-09-19 merge:
   signals report one service identity (`apps/server/src/config.ts`,
   `observability/Layers/Observability.ts`). The fork already exports client spans
   to a Moatless collector; this is the server-side half, and the shared resource
-  is what makes the three joinable at the collector.
+  is what makes the three joinable at the collector. #12657 then split the export
+  settings per signal (`packages/shared/src/observability.ts`,
+  `apps/server/src/config.ts`), so traces, metrics and logs each carry their own
+  endpoint and headers — which is what lets one signal go to a different
+  collector, or be turned off, without the other two following it.
 - **Pull request reads should be batched rather than fanned out.** #11825 reworked
   the GitHub provider so a preview costs far fewer requests, with a measurement
   script to prove it (`apps/server/scripts/measure-pr-preview.ts`,
@@ -1259,6 +1263,30 @@ Four more arrived in the 2026-09-20 merge:
   Moatless would need the day it dispatches `shell.openInEditor`: a GUI editor is
   normally not on the `PATH` of the process asking about it.
 
+Two more arrived in the 2026-09-21 merge:
+
+- **A raised attachment count should not raise the image budget.** #12620 lifts
+  the per-message cap from 8 attachments to 100 and adds an 80 MiB aggregate
+  image budget beside the existing 10 MiB per-image one, derived once in
+  `getProviderAttachmentLimitError` (`packages/contracts/src/orchestration.ts`)
+  and applied twice by the server — before decoding, and again as each data URL
+  is decoded, so a client whose declared `sizeBytes` is wrong is still caught
+  (`apps/server/src/orchestration/Normalizer.ts`). The contract half landed in
+  this merge, so the composer here already offers the higher count while the
+  aggregate check stays on the server side: Moatless normalizes turns itself,
+  and without it a hundred images at the per-image limit is a gigabyte of base64
+  bound for a sandbox.
+- **Tearing a host down and reclaiming its tooling should be idempotent.**
+  #12807 treats shutting down an iOS simulator that is already off as success
+  rather than a failure, and #12819 prunes obsolete managed tool versions while
+  keeping the current, previous, active and half-installed ones
+  (`apps/server/src/device/deviceToolMaintenance.ts`). Moot while
+  `FEATURES.deviceHub` is off and none of the `device.*` methods are dispatched,
+  and recorded because Moatless tears down sandboxes and installs managed
+  tooling on its own schedule: a teardown that errors on an already-stopped
+  resource strands the record it was meant to clear, and a reclaim with no
+  liveness check deletes the version something is running from.
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
   compaction path queues in-flight user messages, its review diffs report
@@ -1295,7 +1323,9 @@ Four more arrived in the 2026-09-20 merge:
   pull request reads are batched rather than fanned out, an agent that dies
   during session start surfaces its own stderr, an empty provider home resolves
   to the default rather than a fresh one, it emits `permission` provider
-  requests for approval, and its editor detection looks past `PATH`.
+  requests for approval, its editor detection looks past `PATH`, its attachment
+  budget bounds total image bytes rather than only the file count, and its
+  teardown and managed-tooling reclaim are safe to repeat.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

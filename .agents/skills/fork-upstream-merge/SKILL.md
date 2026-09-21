@@ -202,6 +202,57 @@ of it at once makes that worse, not faster.
 
 ## Upstream Merge Procedure
 
+### 0. Where this merge branches from
+
+A merge branches from whatever already carries the fork's most recent upstream
+merge, and that is not always `main`. One command says which case you are in:
+
+```bash
+moat gh pr list -R soaplabs/t3code --state open --json number,title,headRefName \
+  --jq '.[] | select(.headRefName | startswith("merge/upstream-"))'
+```
+
+**Nothing open** — sync `main` and branch from it:
+
+```bash
+git switch main && git pull --ff-only
+```
+
+Do this every run, including in a sandbox that looks freshly cloned. A stale
+`main` is not merely behind: the merge-base is behind with it, so
+`preflight.mjs` forecasts a range whose earlier half has already been resolved
+and merged, and the merge stops on files that are identical to upstream on the
+real `main`.
+
+**A merge PR is open** — stack on it instead of waiting for it. Branch from that
+PR's head:
+
+```bash
+b=merge/upstream-2026-09-19            # the open PR's head branch
+git fetch origin "+refs/heads/$b:refs/remotes/origin/$b"
+git switch -c merge/upstream-$(date -u +%Y-%m-%d) "origin/$b"
+```
+
+and open this run's PR against that branch rather than `main`:
+
+```bash
+moat gh pr create --base "$b" --title … --body …
+```
+
+The open PR's merge commit is already in this branch's history, so the
+merge-base has moved with it and `preflight.mjs` forecasts only what upstream
+added since — its conflicts are not resolved a second time, and its fork deltas
+are not re-decided. GitHub retargets the stacked PR onto `main` when the one
+below it merges, so nothing needs rebasing by hand afterwards. Name the PR it
+stacks on in the body, so a reviewer merges them bottom-up.
+
+Stack on what is pushed, never on a local branch an earlier run left behind: a
+new sandbox has only the pushed state, and a local-only branch makes a PR whose
+base does not exist on the remote. Do not merge the open PR yourself to clear
+the way — that is the same "do not merge" rule the loop prompt states, and
+merging it unreviewed to unblock a later merge is the one way a bad resolution
+reaches `main` with nobody having read it.
+
 ### 1. Before merging
 
 ```bash
