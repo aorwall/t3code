@@ -21,7 +21,7 @@ schedule:
 The `fork-upstream-merge` skill is loaded in this session and holds the
 procedure. This prompt says only what an unattended run changes.
 
-## Stop before you start
+## Stack on an open merge PR
 
 Look for a merge PR an earlier run left open:
 
@@ -30,7 +30,11 @@ moat gh pr list -R soaplabs/t3code --state open --json number,title,headRefName 
   --jq '.[] | select(.headRefName | startswith("merge/upstream-"))'
 ```
 
-When one is open, say so in one line and stop.
+When one is open, stack this run on it rather than stopping: branch from its
+head and open this run's PR against that branch. _Where this merge branches
+from_ in the skill has the commands and the reason. Do not merge the open PR to
+clear the way. When it has merged since the last run, sync `main` first — the
+same section says why a stale one is not merely slower.
 
 When `preflight.mjs` reports no new upstream commits, say so in one line and
 stop. Nothing to merge is a normal result.
