@@ -28,6 +28,40 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-22 — merged upstream to 5a61f50cc, where upstream moved t3.json resolution under the gated project rows
+
+- Upstream: `5a61f50cc` from base `5781b5240` (`18` commits).
+- Landed: `93` files from `git diff --stat HEAD^1 HEAD` against `92` in the
+  upstream range (`5781b5240..HEAD^2`); fork delta `786` files from
+  `git diff --stat HEAD^2 HEAD`. The gap of 1 is `docs/fork/inventory.json`, the
+  new entry below.
+- Branch point: `main`, nothing open to stack on.
+- Conflicts: three.
+  - `AGENTS.md` (`decide` — agent-instructions): upstream replaced its Taste
+    prose with bullets. Kept the fork's paragraph and re-stated the four facts
+    that were new in the fork's voice; dropped the two upstream bullets the fork
+    already says further down. The `shadcn/no-restyle` sentence is re-stated
+    with the fork's caveat that upstream's ceiling gate runs in CI the fork
+    disables.
+  - `apps/web/src/components/settings/ProjectDefaultsSettings.tsx` (unlisted,
+    now `project-defaults-settings`): #12954 moved t3.json resolution into
+    `resolveProjectSettings` and re-based the rows on an `effective` value,
+    deleting the `useT3ProjectFileState` block the fork's gate sat beside. Took
+    upstream whole and re-wrapped. #12955's new **Worktree submodules** row
+    joined the gated set by the entry's own test — a Workspace has no local
+    worktree to populate submodules into — so the gate is five rows now, not
+    four.
+  - `pnpm-lock.yaml` (`theirs`): upstream's copy, then `install.mjs`.
+- Sweep: no owned-concern keyword hits in new upstream files; no new upstream
+  workflow. Tripwires steady at 4 / 98 / 8 and the 5 known deletions; 4 active
+  workflows, all allowed.
+- Unsupported methods: ADD and DROP both empty, KEEP unchanged at two.
+- Verification: `verify.mjs` — `fmt:check` failed on the re-wrapped rows,
+  fixed with `vp fmt` and amended; full pass otherwise green, tests included.
+- Gaps: the worktree-submodules setting extends _Preparing a worktree behind a
+  progress stream_; its clone-time half and #12877's manual tool update are new
+  under _Runtime fixes upstream made to its own server_ and _The device hub_.
+
 ### 2026-09-21 — merged upstream to 5781b5240, where upstream restructured the chat header around the fork's script deltas
 
 - Upstream: `5781b5240` from base `7445aa733` (`41` commits).

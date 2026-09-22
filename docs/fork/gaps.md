@@ -281,7 +281,16 @@ what a person loses, which is the part the derivation cannot tell you:
   worktree instead of falling back to the project checkout — absent here, and
   covered by _Capabilities are reported_ above. If Moatless ever runs several
   sandboxes from one prompt, this is the upstream surface to serve rather than
-  a new one to design.
+  a new one to design. The 2026-09-22 merge added a second inert control rather
+  than a refusal: #12955 put a **Worktree submodules** row on the project
+  settings page, writing a `worktreeSubmodules` setting that decides whether a
+  new worktree runs `submodule update` recursively, one level, or not at all.
+  Moatless cuts no worktree, so the setting governs nothing it does; the row is
+  gated at a project scope with the other four (inventory
+  `project-defaults-settings`) and left at an environment scope, where it is
+  still a deployment default that the backend ignores. The clone-time half is
+  worth serving on its own — see the submodule bullet under _Runtime fixes
+  upstream made to its own server_.
 - **Content search** — `projects.searchContents`. Path search, read and list are
   all served, so "Go to file" works and "search in files" does not. Holds open
   `workspaceSearchContents`.
@@ -448,7 +457,11 @@ what a person loses, which is the part the derivation cannot tell you:
   open the nine union entries and that flag. Closes when the backend runs a
   simulator host for a task, which is a real question and not a stub — the hub
   needs Xcode or the Android SDK on the host it drives, and its stream is a
-  second connection beside the RPC one.
+  second connection beside the RPC one. #12877 grew the Devices section a manual
+  update control — a tool version's detail row now offers the update the
+  automatic maintenance pass would have made, carried as an `updateTool` input on
+  `device.list` and a `supportsToolUpdate` boolean on `DeviceServiceState` — so
+  the flag holds back one more control and nothing else changes.
 - **Desktop and host lifecycle** — `server.updateServer`,
   `updateServerWithProgress`, `commitDesktopUpdate`, `getBackgroundPolicy`,
   `subscribeBackgroundPolicy`, `reportHostPowerState`, `cloud.installRelayClient`,
@@ -1287,6 +1300,22 @@ Two more arrived in the 2026-09-21 merge:
   resource strands the record it was meant to clear, and a reclaim with no
   liveness check deletes the version something is running from.
 
+One more arrived in the 2026-09-22 merge:
+
+- **A repository should say how deep its submodules are cloned.** Upstream reads
+  a `worktreeSubmodules` preference — `recursive`, `top-level` or `none` — from
+  the project's `t3.json` and the resolved settings, and `GitVcsDriverCore`
+  passes it through to the `submodule update` it runs on a new worktree
+  (`apps/server/src/vcs/GitVcsDriverCore.ts` and
+  `packages/contracts/src/t3ProjectFile.ts`, #12953/#12955). Moatless clones and
+  checks a repository out
+  into every sandbox, which is where the same preference would apply, and it is
+  on the critical path of starting a task: a monorepo with heavy nested
+  submodules pays for all of them on every sandbox unless the repository can
+  say `top-level` or `none`. The default is `recursive`, so honouring the
+  setting is the only change — nothing breaks while it is ignored, it is just
+  slower than the repository asked for.
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
   compaction path queues in-flight user messages, its review diffs report
@@ -1324,8 +1353,9 @@ Two more arrived in the 2026-09-21 merge:
   during session start surfaces its own stderr, an empty provider home resolves
   to the default rather than a fresh one, it emits `permission` provider
   requests for approval, its editor detection looks past `PATH`, its attachment
-  budget bounds total image bytes rather than only the file count, and its
-  teardown and managed-tooling reclaim are safe to repeat.
+  budget bounds total image bytes rather than only the file count, its
+  teardown and managed-tooling reclaim are safe to repeat, and its sandbox
+  checkout honours the repository's submodule depth preference.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

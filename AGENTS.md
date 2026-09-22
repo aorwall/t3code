@@ -131,6 +131,10 @@ A plain `cp` is only safe when no server has the source open, and must bring the
 
 Ambitious ideas, simple systems, software that feels obvious. Do not preserve complexity just because it already exists, and do not introduce machinery because it looks architecturally impressive. Understand the real constraint, then fight for the smallest model that makes the correct behavior unsurprising. Measure twice, cut once — and yagni.
 
+Complexity belongs at the adapter boundary: orchestration stays pure and the UI stays dumb. Prefer inferred types to annotations, and treat `any` as the enemy. Comments say how a thing is used and move when the code moves; they describe functions rather than annotating every line.
+
+`apps/web/src/components/ui` exports own their look. Pick a `variant` or a `size`; do not restyle one with `className`. If none fits, add a variant to the component rather than classes at the call site. Layout classes — width, flex, margin, position — belong on the parent. `vp lint apps/web/src` reports violations as `shadcn/no-restyle` warnings and `vp lint:restyle-ceiling` keeps the count from growing; upstream runs that gate in CI, which this fork does not (see Verifying).
+
 People drive agents through this UI all day and notice a dropped frame, a lying spinner, and a stale label. Upstream's performance discipline is worth keeping: watch what you send over the socket, how long lists render, and what the GPU is asked to paint. No continuously repainting animations — they peg the GPU on high-refresh displays.
 
 Security matters but is not worth over-indexing on for dev-mode and maintainer-only features.
