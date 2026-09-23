@@ -8,6 +8,7 @@ import {
   ThreadWorktreeIndicator,
   linkedPullRequestSnapshotStatus,
 } from "./ThreadStatusIndicators";
+import { InlineButton } from "./ui/button";
 
 describe("ThreadWorktreeIndicator", () => {
   it("renders the worktree folder and branch in an accessible label", () => {
@@ -67,7 +68,7 @@ describe("a badge for several pull requests", () => {
   function badgeMarkup(pullRequests: ReadonlyArray<ThreadPullRequestLink>): string {
     return renderToStaticMarkup(
       <ThreadPullRequestBadgeControl
-        variant="ghost"
+        render={<InlineButton />}
         badge={{ kind: "pull-request", others: pullRequests.length - 1, state: "open" }}
         number={pullRequests[0]?.number}
         url={pullRequests[0]?.url}

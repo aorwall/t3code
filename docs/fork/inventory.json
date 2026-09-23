@@ -657,6 +657,12 @@
       "note": "Take upstream, then re-apply the additive delta described in the Workspace settings on the project page entry: the workspace_settings flag read as `workspaceOwnsProjectDefaults`, and `{workspaceOwnsProjectDefaults ? null : (…)}` around each row whose key names nothing a Moatless Workspace has. Wrap whole `<SettingsRow>` elements, never a re-indent of the rows beside them, and gate each row on its own rather than a run of adjacent ones so an upstream row inserted between two of them is not silently swept in. Upstream owns how these rows resolve their value and has restructured that — #12954 moved t3.json resolution into resolveProjectSettings and the rows onto the `effective` settings — so take that side whole and re-wrap. Apply the same test to every row upstream adds here: worktreeSubmodules joined the gated set on 2026-09-22 because a Workspace has no local git worktree to populate submodules into."
     },
     {
+      "id": "project-actions-list",
+      "paths": ["apps/web/src/components/settings/ProjectActionsList.tsx"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply two additive deltas. The `editable` prop — optional, defaulting to upstream's always-editable behavior — wrapping the per-script Edit button in `{editable ? (…) : null}`, per the `project-script-editing-capability` inventory entry. And the `preview · :<port>` badge that reads `script.port` where upstream reads `previewUrl`, per `project-script-port-field`. Take upstream's own styling of the Edit button whole: it restyles this row steadily (#13029 moved it to `variant=\"ghost-muted\"` with an opacity-on-hover className), and the gate is a wrapper around whatever button upstream now ships, never a fork copy of it."
+    },
+    {
       "id": "git-vcs-driver-core-test",
       "paths": ["apps/server/src/vcs/GitVcsDriverCore.test.ts"],
       "verdict": "converged",
@@ -678,10 +684,12 @@
       "id": "provider-settings-gates",
       "paths": [
         "apps/web/src/components/settings/ProviderSettingsPanel.tsx",
-        "apps/web/src/components/settings/ProviderInstanceCard.tsx"
+        "apps/web/src/components/settings/ProviderInstanceCard.tsx",
+        "apps/web/src/components/settings/ProviderModelsSection.tsx",
+        "apps/web/src/components/settings/ProviderSettingsPanel.environment.test.tsx"
       ],
       "verdict": "converged",
-      "note": "Take upstream, then re-apply the FEATURES.providerConfiguration gates described in the moatless-provider-auth entry, which is where the reasoning lives. In ProviderSettingsPanel: the driver list narrows to what `serverProviders` publishes, and the Add provider button is a `? … : null` around the whole Tooltip. In ProviderInstanceCard: the status row's control slot is a ternary between upstream's configuration controls and the fork's ProviderAuthAction, and ProviderAuthSetup owns its own section after upstream's setup block. Upstream restyles these rows often — the 2026-09-17 merge moved them from `sm:` breakpoints to `@min-[32rem]/settings-row:` container queries — so take upstream's classNames and keep the ternary around them, not the other way round."
+      "note": "Take upstream, then re-apply the FEATURES.providerConfiguration gates described in the moatless-provider-auth entry, which is where the reasoning lives. In ProviderSettingsPanel: the driver list narrows to what `serverProviders` publishes, and the Add provider button is a `? … : null` around the whole Tooltip. In ProviderInstanceCard: the status row's control slot is a ternary between upstream's configuration controls and the fork's ProviderAuthAction, and ProviderAuthSetup owns its own section after upstream's setup block. In ProviderModelsSection: the flag folds into upstream's `driverKind === \"antigravity\" ? null :` head, because adding a custom model writes providerInstances; hiding, ordering and favouriting below it are client settings and stay ungated. Upstream restyles these rows often — the 2026-09-17 merge moved them from `sm:` breakpoints to `@min-[32rem]/settings-row:` container queries — so take upstream's classNames and keep the ternary around them, not the other way round."
     },
     {
       "id": "chat-layout-route",

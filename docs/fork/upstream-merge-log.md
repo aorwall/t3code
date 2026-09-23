@@ -28,6 +28,79 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-23 — merged upstream to aca3c87cd, where upstream rewrote the diff scope menu as radio groups and gave the status badge a `render` prop
+
+- Upstream: `aca3c87cd` from base `5a61f50cc` (`62` commits).
+- Landed: `339` files from `git diff --stat HEAD^1 HEAD` against `335` in the
+  upstream range (`5a61f50cc..HEAD^2`); fork delta `786` files from
+  `git diff --stat HEAD^2 HEAD`. The gap of 4 is this entry, the two
+  `docs/fork` files below, and
+  `apps/web/src/components/ThreadStatusIndicators.test.tsx` — it auto-merged
+  clean while still passing the `variant` prop upstream deleted, so nothing
+  flagged it and the fix rode in on the fork's side.
+- Branch point: `main`, nothing open to stack on.
+- Conflicts: 6 files, each resolved with the verdict `preflight.mjs` printed.
+  - `apps/web/src/components/DiffPanel.tsx` (converged — diff-panel-gates):
+    upstream replaced the scope dropdown's items with `DropdownMenuRadioGroup` /
+    `DropdownMenuRadioItem` and moved the per-turn list into a submenu. Took
+    that whole and re-applied the two `FEATURES.turnDiffs` gates at their new
+    anchors — one around the **Latest turn** radio item, one around the whole
+    **Turn** submenu.
+  - `apps/web/src/components/LegacySidebar.tsx` (converged —
+    mobile-touch-upstream-files): upstream deleted the add-project button's
+    icon-color className. Took upstream's button and kept the fork's
+    `FEATURES.projectManagement` wrapper around it.
+  - `apps/web/src/components/ThreadStatusIndicators.tsx` (converged —
+    thread-status-indicators): upstream swapped the badge's `variant` for a
+    `render` prop and extracted `PullRequestBadge`. The fork's several-links
+    popover became a sibling `PullRequestLinksBadge` that branches before
+    delegating, and both it and upstream's badge now render a shared
+    `PullRequestBadgeFace` — extracted because the two otherwise duplicate the
+    icon-and-text span and `duplicate-adds.mjs` reads that as a merge artifact.
+  - `apps/web/src/components/settings/ProjectActionsList.tsx` (unlisted, inside
+    a fork-owned concern, so decide-then-add-entry): #13029 restyled the Edit
+    button to `variant="ghost-muted"` with an opacity-on-hover className. Took
+    upstream's button and kept the `editable` wrapper. New
+    [`project-actions-list`](./inventory.json) entry.
+  - `apps/web/src/components/settings/ProjectDefaultsSettings.tsx` (converged —
+    project-defaults-settings): took upstream whole and re-applied the five
+    `workspaceOwnsProjectDefaults` gates. Upstream now renders the model and
+    workspace rows from both a `category === "project"` and a
+    `category === "general"` branch, so each gate exists twice.
+  - `apps/web/src/components/settings/ProjectSettingsPanel.tsx` (converged —
+    project-settings-panel): upstream's new info Alert is unconditional and
+    first; its new `<ProjectDefaultsSettings category="project" />` section is
+    gated on `workspaceSettings`, as a sibling rather than a fragment around
+    the fork's branch, because folding it in would have re-indented upstream's
+    JSX.
+- Inventory: two entries besides `project-actions-list`.
+  `provider-settings-gates` gained `ProviderModelsSection.tsx` and
+  `ProviderSettingsPanel.environment.test.tsx`, both carrying
+  `FEATURES.providerConfiguration` deltas and both listed `unlisted` by the
+  forecast. `ThreadRouteView.tsx`, `ProjectActionsSettings.tsx`,
+  `attachmentUploadQueue.{ts,test.ts}` and `routes/settings.tsx` are still
+  unlisted in `pathPolicy`; each carries a delta an `inventory` concern already
+  describes, and none conflicted.
+- Sweep: one hit, `apps/server/src/provider/ProviderAuthFlow.ts` and its test,
+  new from #12983 on the keyword `auth`. A false positive for the auth-session
+  concern: this is a provider CLI's own sign-in on `apps/server`, not the user
+  session. Taken as-is, and recorded under _Provider setup_ in the gaps because
+  it adds `provider.auth.respond`. No new upstream workflows, no stale
+  inventory entries.
+- Unsupported methods: ADD and DROP both empty, KEEP unchanged at two.
+  `provider.auth.respond` needed no union edit — it took
+  `ProviderSetupRpcError`, which already carries `UnsupportedMethodError`.
+- Lockfile: auto-merged, then re-derived with `install.mjs`, which moved
+  `type-fest` from 5.7.0 to 5.10.0 in two msw snapshot blocks and nothing else.
+  The fork's `moatless-api` and `mermaid` edges survive.
+- Verification: `verify.mjs` — `fmt:check` failed on the re-applied
+  `DropdownMenuRadioGroup` in DiffPanel, fixed with `vp fmt` and amended; full
+  pass otherwise green, tests included.
+- Gaps: _Provider setup_ names `provider.auth.respond` as its tenth method, and
+  _Runtime fixes upstream made to its own server_ gained six — a provider-CLI
+  compatibility advisory, a cache-bypassing explicit provider refresh, and four
+  pieces of GitHub-quota work on pull request reads.
+
 ### 2026-09-22 — merged upstream to 5a61f50cc, where upstream moved t3.json resolution under the gated project rows
 
 - Upstream: `5a61f50cc` from base `5781b5240` (`18` commits).

@@ -15,8 +15,8 @@ import {
   type ThreadPullRequestBadge,
 } from "@t3tools/shared/threadPullRequests";
 import { FolderGit2Icon, TerminalIcon } from "lucide-react";
-import { useMemo, type MouseEvent } from "react";
-import { buttonVariants, InlineButton } from "./ui/button";
+import { useRender } from "@base-ui/react/use-render";
+import { useMemo, type MouseEvent, type ReactElement } from "react";
 import { cn } from "../lib/utils";
 import { useEnvironment, usePrimaryEnvironmentId } from "../state/environments";
 import { EnvironmentMachineIcon } from "./EnvironmentMachineIcon";
@@ -193,9 +193,14 @@ export function resolveThreadPullRequestBadgePresentation({
   };
 }
 
-/** The complete linked-PR control shared by the sidebar and composer footer. */
+/**
+ * The linked-PR badge shared by the sidebar and composer footer. The badge owns what it shows:
+ * the state glyph and number at the meta size, in the state's color. The caller owns the control
+ * it sits in through `render` (an inline link in a sidebar row, a toolbar control in the
+ * composer), and the badge fills in the link or stack button behavior.
+ */
 export function ThreadPullRequestBadgeControl({
-  variant,
+  render,
   badge,
   number,
   url,
@@ -205,7 +210,7 @@ export function ThreadPullRequestBadgeControl({
   onOpenPullRequest,
   onOpenLink,
 }: {
-  variant: "underline" | "ghost";
+  render: ReactElement<{ render?: useRender.RenderProp }>;
   badge: ThreadPullRequestBadge | null;
   number?: number | undefined;
   url?: string | undefined;
@@ -213,7 +218,7 @@ export function ThreadPullRequestBadgeControl({
   /** Fork: the links the badge lists. Supply `onOpenLink` with them. */
   pullRequests?: ReadonlyArray<ThreadPullRequestLink> | undefined;
   onOpenStack: () => void;
-  onOpenPullRequest: (event: MouseEvent<HTMLAnchorElement>) => void;
+  onOpenPullRequest: (event: MouseEvent<HTMLElement>) => void;
   /** Fork: opens one listed link. */
   onOpenLink?:
     | ((event: MouseEvent<HTMLAnchorElement>, link: ThreadPullRequestLink) => void)
@@ -222,85 +227,138 @@ export function ThreadPullRequestBadgeControl({
   const listed = useMemo(() => visibleThreadPullRequests(pullRequests ?? []), [pullRequests]);
   const presentation = resolveThreadPullRequestBadgePresentation({ badge, number, url, status });
   if (presentation === null) return null;
-  const isStack = badge?.kind === "stack";
-  const className = cn(
-    variant === "ghost"
-      ? buttonVariants({ variant: "ghost", size: "xs" })
-      : "inline-flex shrink-0 cursor-pointer items-center gap-0.5 whitespace-nowrap border-b border-transparent hover:border-current focus-visible:outline-2 focus-visible:outline-ring",
-    "text-xs tabular-nums",
-    variant === "ghost" &&
-      "font-normal text-xs! active:scale-100 [--control-icon-color:currentColor]",
-    presentation.toneClassName,
-  );
-  const content = (
-    <>
-      <presentation.Icon aria-hidden className="size-3 shrink-0" />
-      {presentation.text}
-    </>
-  );
   // Fork: several links that are not one stack. Upstream's badge is a link to
   // the primary and the `+N` beside it names the rest with nothing behind it,
   // so the fork puts the sidebar hover's list under the badge instead.
-  if (!isStack && onOpenLink !== undefined && listed.length > 1) {
+  if (badge?.kind !== "stack" && onOpenLink !== undefined && listed.length > 1) {
     return (
-      <Popover>
-        <PopoverTrigger
-          render={
-            <InlineButton
-              className={className}
-              aria-label={presentation.label}
-              onPointerDown={(event) => event.stopPropagation()}
-              onClick={(event) => event.stopPropagation()}
-            />
-          }
-        >
-          {content}
-        </PopoverTrigger>
-        <PopoverPopup
-          side="top"
-          align="start"
-          tooltipStyle
-          className="max-w-[min(30rem,calc(100vw-2rem))]"
-        >
-          <div className="py-0.5 text-muted-foreground text-xs">
-            <ThreadPullRequestsMiniList pullRequests={listed} onSelect={onOpenLink} />
-          </div>
-        </PopoverPopup>
-      </Popover>
+      <PullRequestLinksBadge
+        render={render}
+        presentation={presentation}
+        links={listed}
+        onSelect={onOpenLink}
+      />
     );
   }
   return (
+    <PullRequestBadge
+      render={render}
+      presentation={presentation}
+      isStack={badge?.kind === "stack"}
+      url={url}
+      onOpenStack={onOpenStack}
+      onOpenPullRequest={onOpenPullRequest}
+    />
+  );
+}
+
+function PullRequestBadge({
+  render,
+  presentation,
+  isStack,
+  url,
+  onOpenStack,
+  onOpenPullRequest,
+}: {
+  render: ReactElement<{ render?: useRender.RenderProp }>;
+  presentation: NonNullable<ReturnType<typeof resolveThreadPullRequestBadgePresentation>>;
+  isStack: boolean;
+  url: string | undefined;
+  onOpenStack: () => void;
+  onOpenPullRequest: (event: MouseEvent<HTMLElement>) => void;
+}) {
+  const onClick = isStack
+    ? (event: MouseEvent<HTMLElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onOpenStack();
+      }
+    : onOpenPullRequest;
+  const element = isStack ? (
+    <button type="button" />
+  ) : (
+    <a href={url} target="_blank" rel="noopener noreferrer" />
+  );
+  // The caller's control (InlineButton, ComposerControl) renders as the link or stack button
+  // through its own render prop; useRender merges the badge's behavior into it.
+  const control = useRender({
+    render,
+    props: {
+      render: element,
+      "aria-label": presentation.label,
+      onPointerDown: (event: MouseEvent<HTMLElement>) => event.stopPropagation(),
+      onClick,
+    },
+  });
+  return (
     <Tooltip>
-      <TooltipTrigger
-        render={
-          isStack ? (
-            <InlineButton
-              className={className}
-              aria-label={presentation.label}
-              onPointerDown={(event) => event.stopPropagation()}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                onOpenStack();
-              }}
-            />
-          ) : (
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={className}
-              aria-label={presentation.label}
-              onPointerDown={(event) => event.stopPropagation()}
-              onClick={onOpenPullRequest}
-            />
-          )
-        }
-      >
-        {content}
+      <TooltipTrigger render={control}>
+        <PullRequestBadgeFace presentation={presentation} />
       </TooltipTrigger>
       <TooltipPopup side="top">{presentation.label}</TooltipPopup>
     </Tooltip>
+  );
+}
+
+/**
+ * Fork: the glyph and number the badge shows, shared by the link badge above and the list badge
+ * below so the two read identically. Extracted rather than copied: upstream owns these styles
+ * and restyles them (#13175 moved them to the meta size), and a second copy drifts silently.
+ */
+function PullRequestBadgeFace({
+  presentation,
+}: {
+  presentation: NonNullable<ReturnType<typeof resolveThreadPullRequestBadgePresentation>>;
+}) {
+  return (
+    <span className={cn("contents font-normal text-xs tabular-nums", presentation.toneClassName)}>
+      <presentation.Icon aria-hidden className="size-3 shrink-0" />
+      {presentation.text}
+    </span>
+  );
+}
+
+/**
+ * Fork: the same badge, opening the list of links instead of one of them. A Task binds every
+ * pull request its agent opened and they rarely stack, so the badge is a popover over the
+ * sidebar hover's list rather than a link to a primary the `+N` says nothing about.
+ */
+function PullRequestLinksBadge({
+  render,
+  presentation,
+  links,
+  onSelect,
+}: {
+  render: ReactElement<{ render?: useRender.RenderProp }>;
+  presentation: NonNullable<ReturnType<typeof resolveThreadPullRequestBadgePresentation>>;
+  links: ReadonlyArray<ThreadPullRequestLink>;
+  onSelect: (event: MouseEvent<HTMLAnchorElement>, link: ThreadPullRequestLink) => void;
+}) {
+  const control = useRender({
+    render,
+    props: {
+      render: <button type="button" />,
+      "aria-label": presentation.label,
+      onPointerDown: (event: MouseEvent<HTMLElement>) => event.stopPropagation(),
+      onClick: (event: MouseEvent<HTMLElement>) => event.stopPropagation(),
+    },
+  });
+  return (
+    <Popover>
+      <PopoverTrigger render={control}>
+        <PullRequestBadgeFace presentation={presentation} />
+      </PopoverTrigger>
+      <PopoverPopup
+        side="top"
+        align="start"
+        tooltipStyle
+        className="max-w-[min(30rem,calc(100vw-2rem))]"
+      >
+        <div className="py-0.5 text-muted-foreground text-xs">
+          <ThreadPullRequestsMiniList pullRequests={links} onSelect={onSelect} />
+        </div>
+      </PopoverPopup>
+    </Popover>
   );
 }
 
