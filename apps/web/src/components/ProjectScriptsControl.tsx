@@ -181,8 +181,8 @@ export default function ProjectScriptsControl({
             onClick={() => void importFileScript(fileScript)}
           >
             <ScriptIcon icon={fileScript.icon ?? "play"} className="size-4" />
-            <MenuItemLabel className="truncate">{fileScript.name}</MenuItemLabel>
-            <MenuShortcut className="ms-auto">
+            <MenuItemLabel>{fileScript.name}</MenuItemLabel>
+            <MenuShortcut>
               <DownloadIcon className="size-3.5" aria-label="Import" />
             </MenuShortcut>
           </MenuItem>
@@ -208,7 +208,7 @@ export default function ProjectScriptsControl({
             onClick={() => onRunScript(script)}
           >
             <ScriptIcon icon={script.icon} className="size-4" />
-            <MenuItemLabel className="truncate">
+            <MenuItemLabel>
               {script.runOnWorktreeCreate ? `${script.name} (setup)` : script.name}
             </MenuItemLabel>
             {/* Fork: say which scripts came from the thread, since the
@@ -279,7 +279,7 @@ export default function ProjectScriptsControl({
               onClick={() => onRunScript(primaryScript)}
             >
               <ScriptIcon icon={primaryScript.icon} className="size-4" />
-              <MenuItemLabel className="truncate">Run {primaryScript.name}</MenuItemLabel>
+              <MenuItemLabel>Run {primaryScript.name}</MenuItemLabel>
               <MenuShortcut>
                 {shortcutLabelForCommand(keybindings, commandForProjectScript(primaryScript.id))}
               </MenuShortcut>
@@ -296,9 +296,7 @@ export default function ProjectScriptsControl({
                 <ScriptIcon icon="play" className="size-4" />
                 <MenuItemLabel>Project actions</MenuItemLabel>
               </MenuSubTrigger>
-              <MenuSubPopup className="min-w-32 max-w-[calc(100vw-2rem)]">
-                {scriptItems}
-              </MenuSubPopup>
+              <MenuSubPopup>{scriptItems}</MenuSubPopup>
             </MenuSub>
           ) : /* Fork: `editable ?` — a read-only workspace offers no way to add one. */
           editable ? (

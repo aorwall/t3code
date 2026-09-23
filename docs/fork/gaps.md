@@ -391,13 +391,17 @@ what a person loses, which is the part the derivation cannot tell you:
   backend reports its sandbox host's CPU and memory, which is only worth doing
   if a deployment ever offers a choice of machines.
 - **Provider setup** — the redesigned provider editor's authenticate-and-install
-  flow: `provider.auth.start` / `.complete` / `.cancel` / `.logout` /
-  `.subscribe` and `provider.install.start` / `.cancel` / `.subscribe` /
+  flow: `provider.auth.start` / `.respond` / `.complete` / `.cancel` / `.logout`
+  / `.subscribe` and `provider.install.start` / `.cancel` / `.subscribe` /
   `.remove`, new upstream in the 2026-09-03 merge with the Google Antigravity ACP
   agent (#9348) and the provider-editor/models-list redesign (#8508). They drive
   a provider CLI login and a CLI install on the machine the server runs on;
   Moatless runs providers in its own sandboxes and serves none of them, so all
-  nine share `ProviderSetupRpcError`, which now carries `UnsupportedMethodError`.
+  ten share `ProviderSetupRpcError`, which now carries `UnsupportedMethodError`.
+  `provider.auth.respond` arrived in the 2026-09-23 merge with #12983, which
+  made a sign-in flow interactive — the server asks, the client answers through
+  that method — and needed no union edit of its own because the method took the
+  same error type as the other nine.
   The editor still reads and the models list renders; the auth and install
   actions inside it resolve to a refusal. Closes if Moatless ever manages
   provider credentials on the client's behalf.
@@ -1316,6 +1320,51 @@ One more arrived in the 2026-09-22 merge:
   setting is the only change — nothing breaks while it is ignored, it is just
   slower than the repository asked for.
 
+Six more arrived in the 2026-09-23 merge, four of them GitHub-quota work:
+
+- **A provider CLI's version should be checked against a compatibility range.**
+  Upstream's `providerCompatibility.ts` reads a per-driver policy off the model
+  manifest — a `t3CodeRange`, a recommended version and a list of version ranges
+  each carrying `supported` / `unsupported` / `broken` — and attaches a
+  `compatibilityAdvisory` to the `ServerProvider` it publishes, which the
+  composer renders above the input (#13130). Moatless installs the provider CLIs
+  in its own sandboxes and reports them, so it is the side that knows the
+  version; without an advisory a user on a broken CLI sees only the failure it
+  produces.
+- **An explicit provider refresh should bypass the server's own caches.**
+  Upstream splits `server.refreshProviders` by its existing `refreshModels`
+  flag: a user-initiated refresh force-refreshes the model manifest and the
+  provider version cache, while workspace discovery and the background status
+  poll keep their timers (`apps/server/src/ws.ts`, #13109). The flag is already
+  on the contract, so on Moatless the distinction is served or not served
+  entirely in the backend: a Refresh button that returns the same cached answer
+  is the symptom.
+- **A GitHub pull-request probe should not ask for an owner-qualified head.**
+  `gh pr list --head` filters on the bare ref name and answers an `owner:branch`
+  selector with nothing while still spending a GraphQL call, so upstream drops
+  the qualified selectors on GitHub and widens the remaining probe to 100 —
+  GitHub prices `first:100` like `first:1` — leaving the owner check to the
+  match it already does (`apps/server/src/git/GitManager.ts`, #13200).
+- **A background PR sweep should read summaries in one batched request.**
+  Upstream batches `gh pr view` reads behind a 10ms request window and a GraphQL
+  query built per batch, and widened the sync reactor's concurrency from 8 to 25
+  so a sweep's reads land in the same window
+  (`apps/server/src/pullRequest/GitHubPullRequestCli.ts` and
+  `orchestration/PullRequestSyncReactor.ts`, #13198).
+- **A settlement sweep should not re-query a PR it would not settle anyway.**
+  Upstream computes `wouldSettle` — does any thread in the group actually settle
+  under its project's `sidebarAutoSettleAfterDays` / `sidebarAutoSettleOnMerge`
+  — before paying for the uncached re-query that guards the reused-branch race,
+  so a resumed thread with settle-on-merge off stops hitting the host every
+  minute (`apps/server/src/orchestration/ThreadSettlementReactor.ts`, #13189).
+- **A pull request's diff should start at the merge base.** Upstream's
+  `readRangeContext` moved its diff stat and patch from `base..HEAD` to
+  `base...HEAD` while leaving the commit log two-dot, so a PR description
+  written after the base branch advanced describes the branch's own changes
+  rather than everything it is behind
+  (`apps/server/src/vcs/GitVcsDriverCore.ts`, #13170). Moatless derives its own
+  PR diffs, and this is a one-character fix on each command.
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
   compaction path queues in-flight user messages, its review diffs report
@@ -1354,8 +1403,13 @@ One more arrived in the 2026-09-22 merge:
   to the default rather than a fresh one, it emits `permission` provider
   requests for approval, its editor detection looks past `PATH`, its attachment
   budget bounds total image bytes rather than only the file count, its
-  teardown and managed-tooling reclaim are safe to repeat, and its sandbox
-  checkout honours the repository's submodule depth preference.
+  teardown and managed-tooling reclaim are safe to repeat, its sandbox
+  checkout honours the repository's submodule depth preference, it publishes a
+  compatibility advisory for the provider CLI version it installed, an explicit
+  provider refresh bypasses its own caches, its GitHub head probes drop the
+  owner qualifier, its background pull-request summaries are read in one batched
+  request, a settlement sweep re-queries only a pull request it would settle,
+  and its pull request diffs start at the merge base.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
