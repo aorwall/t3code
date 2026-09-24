@@ -621,369 +621,10 @@
         }
       }
     },
-    "/api/sandbox/v1/tasks/{task_id}/server/status": {
-      "get": {
-        "tags": ["sandbox"],
-        "summary": "Get server status for all servers in a task's sandbox.",
-        "operationId": "server_status_handler",
-        "parameters": [
-          {
-            "name": "task_id",
-            "in": "path",
-            "description": "Task identifier",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Server status",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServerStatusResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/sandbox/v1/tasks/{task_id}/servers/config": {
-      "get": {
-        "tags": ["sandbox"],
-        "summary": "List the overrides currently in effect, read off the sandbox's workspace.",
-        "description": "Separate from `GET /servers` because it needs a live sandbox: there is no\npersisted copy to fall back on, so a stopped sandbox has no answer.",
-        "operationId": "list_server_config_handler",
-        "parameters": [
-          {
-            "name": "task_id",
-            "in": "path",
-            "description": "Task identifier",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Overrides in effect",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServerOverridesResponse"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Sandbox not reachable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/sandbox/v1/tasks/{task_id}/servers/{server_name}": {
-      "patch": {
-        "tags": ["sandbox"],
-        "summary": "Update one preview server's start command / env and (by default) restart it.",
-        "operationId": "update_server_config_handler",
-        "parameters": [
-          {
-            "name": "task_id",
-            "in": "path",
-            "description": "Task identifier",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "server_name",
-            "in": "path",
-            "description": "Server name",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateServerConfigRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Override applied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServerConfigResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid env key or server name",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No such server on this task",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Field requires a redeploy to change",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Sandbox not reachable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/sandbox/v1/tasks/{task_id}/servers/{server_name}/logs": {
-      "get": {
-        "tags": ["sandbox"],
-        "summary": "Stream server logs via SSE.",
-        "description": "Returns a Server-Sent Events stream of log lines for the given server.\nPass `?previous=true` to fetch logs from a crashed/restarted container, and\n`?follow=false` to end the stream after the buffered lines instead of\nwaiting for more. The response body cannot be represented in OpenAPI (SSE\nstreaming).",
-        "operationId": "server_logs_handler",
-        "parameters": [
-          {
-            "name": "task_id",
-            "in": "path",
-            "description": "Task identifier",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "server_name",
-            "in": "path",
-            "description": "Server name",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "previous",
-            "in": "query",
-            "description": "Fetch logs from previous container instance",
-            "required": true,
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "follow",
-            "in": "query",
-            "description": "Keep the stream open for new lines (default true)",
-            "required": false,
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "tail",
-            "in": "query",
-            "description": "Number of trailing lines to start from (default 500)",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "SSE stream of server log lines"
-          },
-          "500": {
-            "description": "Internal error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/sandbox/v1/tasks/{task_id}/servers/{server_name}/override": {
-      "delete": {
-        "tags": ["sandbox"],
-        "summary": "Drop a server's override and restart it on the workspace's configuration.",
-        "operationId": "reset_server_config_handler",
-        "parameters": [
-          {
-            "name": "task_id",
-            "in": "path",
-            "description": "Task identifier",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "server_name",
-            "in": "path",
-            "description": "Server name",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Override cleared",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServerConfigResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No such server on this task",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Sandbox not reachable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/sandbox/v1/tasks/{task_id}/servers/{server_name}/restart": {
-      "post": {
-        "tags": ["sandbox"],
-        "summary": "Restart one preview server in place, leaving its override as-is.",
-        "operationId": "restart_server_handler",
-        "parameters": [
-          {
-            "name": "task_id",
-            "in": "path",
-            "description": "Task identifier",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "server_name",
-            "in": "path",
-            "description": "Server name",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Server restarted",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServerConfigResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No such server on this task",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Sandbox not reachable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/sandbox/v1/tasks/{task_id}/status": {
       "get": {
         "tags": ["sandbox"],
-        "summary": "Get full sandbox status including servers and Agent status.",
+        "summary": "Get full sandbox status including Agent status.",
         "operationId": "sandbox_status_handler",
         "parameters": [
           {
@@ -6825,7 +6466,7 @@
           {
             "name": "types",
             "in": "query",
-            "description": "Comma-separated event type filter (e.g., `?types=sandbox,server,agent`).",
+            "description": "Comma-separated event type filter (e.g., `?types=sandbox,agent,message`).",
             "required": false,
             "schema": {
               "type": ["string", "null"]
@@ -11080,12 +10721,6 @@
               }
             ]
           },
-          "servers": {
-            "type": ["array", "null"],
-            "items": {
-              "$ref": "#/components/schemas/ServerConfig"
-            }
-          },
           "setupCommands": {
             "type": ["array", "null"],
             "items": {
@@ -11161,7 +10796,7 @@
       "EventType": {
         "type": "string",
         "description": "Top-level event types.\n\nSerializes to the exact strings the frontend `EventTypeSchema` expects.\nRenamed: \"environment\" → \"sandbox\" to avoid confusion with K8s environments.",
-        "enum": ["task", "taskTurn", "sandbox", "agent", "server", "resources", "message"]
+        "enum": ["task", "taskTurn", "sandbox", "agent", "resources", "message"]
       },
       "ExitPlanModeInput": {
         "type": "object",
@@ -12881,8 +12516,6 @@
           "install",
           "updateRepositoryConfig",
           "getRepositoryConfig",
-          "startOrRestartPreviewServer",
-          "getPreviewServerLogs",
           "navigatePreview",
           "clickElement",
           "evaluateJavaScript",
@@ -13893,7 +13526,7 @@
       "SandboxStatusFullResponse": {
         "type": "object",
         "description": "Full sandbox status response to frontend (matches TS `SandboxStatusFullResponse`)",
-        "required": ["sandboxStatus", "sandboxError", "agentStatus", "servers"],
+        "required": ["sandboxStatus", "sandboxError", "agentStatus"],
         "properties": {
           "agentStatus": {
             "oneOf": [
@@ -13967,12 +13600,6 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ScheduledJobInfo"
-            }
-          },
-          "servers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ServerEntry"
             }
           }
         }
@@ -14502,291 +14129,6 @@
             }
           }
         }
-      },
-      "ServerCapabilities": {
-        "type": "object",
-        "description": "Server capabilities (deterministic from server name)",
-        "required": ["addressBar", "inspector", "reload", "openExternal", "viewport", "console"],
-        "properties": {
-          "addressBar": {
-            "type": "boolean"
-          },
-          "console": {
-            "type": "boolean"
-          },
-          "inspector": {
-            "type": "boolean"
-          },
-          "openExternal": {
-            "type": "boolean"
-          },
-          "reload": {
-            "type": "boolean"
-          },
-          "viewport": {
-            "type": "boolean"
-          }
-        }
-      },
-      "ServerConfig": {
-        "type": "object",
-        "description": "Server config entry.",
-        "required": ["name"],
-        "properties": {
-          "autoReload": {
-            "type": "boolean"
-          },
-          "default": {
-            "type": "boolean"
-          },
-          "dockerImage": {
-            "type": ["string", "null"],
-            "description": "Per-server Docker image. Falls back to `sandbox_image` if not set."
-          },
-          "enableInspector": {
-            "type": "boolean"
-          },
-          "envVars": {
-            "type": "object",
-            "description": "Per-server environment variables.",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "propertyNames": {
-              "type": "string"
-            }
-          },
-          "label": {
-            "type": ["string", "null"]
-          },
-          "name": {
-            "type": "string"
-          },
-          "port": {
-            "type": ["integer", "null"],
-            "format": "int32",
-            "description": "Absent until the backend allocates one on the next provision.",
-            "minimum": 0
-          },
-          "resources": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/ResourceConfig",
-                "description": "Per-server resource requests/limits. Falls back to the repo-wide\n`resources` when unset. Only `requests`/`limits` apply; the storage\nfields are repo-wide and ignored here."
-              }
-            ]
-          },
-          "startCommands": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "startupTimeoutSeconds": {
-            "type": ["integer", "null"],
-            "format": "int32",
-            "minimum": 0
-          }
-        }
-      },
-      "ServerConfigResponse": {
-        "type": "object",
-        "description": "Result of a live server config change or restart.",
-        "required": ["serverName", "configOverride", "generation", "restarted"],
-        "properties": {
-          "configOverride": {
-            "$ref": "#/components/schemas/ServerOverride",
-            "description": "The override after the call — empty when it was reset."
-          },
-          "generation": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Sidecar restart generation after the call.",
-            "minimum": 0
-          },
-          "restarted": {
-            "type": "boolean"
-          },
-          "serverName": {
-            "type": "string"
-          }
-        }
-      },
-      "ServerEntry": {
-        "type": "object",
-        "description": "Single server entry in the workspace status response",
-        "required": ["name", "label", "port", "status", "default", "capabilities"],
-        "properties": {
-          "capabilities": {
-            "$ref": "#/components/schemas/ServerCapabilities"
-          },
-          "default": {
-            "type": "boolean"
-          },
-          "detail": {
-            "type": ["string", "null"]
-          },
-          "error": {
-            "type": ["string", "null"]
-          },
-          "label": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "port": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 0
-          },
-          "status": {
-            "$ref": "#/components/schemas/ServerStatus"
-          },
-          "url": {
-            "type": ["string", "null"]
-          }
-        }
-      },
-      "ServerEventPayload": {
-        "type": "object",
-        "description": "Server event payload — matches frontend `ServerEventPayloadSchema`.",
-        "required": ["serverName", "status"],
-        "properties": {
-          "message": {
-            "type": "string",
-            "description": "Human-readable contextual detail (e.g. \"`ContainerCreating`\", \"`CrashLoopBackOff`\").\nAlways set by the publisher. `#[serde(default)]` handles old events without this field."
-          },
-          "serverName": {
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/ServerSubType"
-          }
-        }
-      },
-      "ServerOverride": {
-        "type": "object",
-        "description": "A live override of one preview server's start command and env.\nCallers send the complete state; the sandbox replaces it without merging.",
-        "properties": {
-          "env": {
-            "type": "object",
-            "description": "Applied after the configured server environment, so these values win.",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "propertyNames": {
-              "type": "string"
-            }
-          },
-          "startCommand": {
-            "type": ["string", "null"],
-            "description": "Replaces the configured start command; `None` uses the workspace command."
-          },
-          "unsetEnv": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Removes variables injected through the container spec; sourcing an env file cannot unset them."
-          }
-        }
-      },
-      "ServerOverrideEntry": {
-        "type": "object",
-        "description": "One server's override as it currently exists on the workspace volume.",
-        "required": ["serverName", "configOverride", "generation"],
-        "properties": {
-          "configOverride": {
-            "$ref": "#/components/schemas/ServerOverride"
-          },
-          "generation": {
-            "type": "integer",
-            "format": "int64",
-            "description": "The counter the sidecar watches; `0` means it has never been restarted.",
-            "minimum": 0
-          },
-          "serverName": {
-            "type": "string"
-          }
-        }
-      },
-      "ServerOverridesResponse": {
-        "type": "object",
-        "description": "Every override in effect on a task. Servers with no override are omitted.\n\nRead from the sandbox's workspace volume, which is the only place an\noverride exists — a stopped sandbox cannot answer this.",
-        "required": ["overrides"],
-        "properties": {
-          "overrides": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ServerOverrideEntry"
-            }
-          }
-        }
-      },
-      "ServerSnapshot": {
-        "type": "object",
-        "description": "Server snapshot from sandbox GET /status",
-        "required": ["name", "status"],
-        "properties": {
-          "builtin": {
-            "type": "boolean"
-          },
-          "default": {
-            "type": "boolean"
-          },
-          "enable_inspector": {
-            "type": "boolean"
-          },
-          "error": {
-            "type": ["string", "null"]
-          },
-          "label": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "pid": {
-            "type": ["integer", "null"],
-            "format": "int32",
-            "minimum": 0
-          },
-          "port": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 0
-          },
-          "status": {
-            "$ref": "#/components/schemas/ServerStatus"
-          }
-        }
-      },
-      "ServerStatus": {
-        "type": "string",
-        "description": "Matches TS `ServerStatusEnumSchema`: 'stopped' | 'installing' | 'starting' | 'started' | 'failed'",
-        "enum": ["stopped", "installing", "starting", "started", "failed"]
-      },
-      "ServerStatusResponse": {
-        "type": "object",
-        "description": "Server status response proxied from sandbox pod.",
-        "required": ["servers"],
-        "properties": {
-          "servers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ServerSnapshot"
-            }
-          }
-        }
-      },
-      "ServerSubType": {
-        "type": "string",
-        "description": "Server sub-types — server container lifecycle.\n\n`Failed` covers all error conditions (was: Failed, Error, Timeout — consolidated).",
-        "enum": ["installing", "starting", "started", "stopped", "failed"]
       },
       "SessionResponse": {
         "type": "object",
@@ -16535,50 +15877,6 @@
         },
         "additionalProperties": false
       },
-      "UpdateServerConfigRequest": {
-        "type": "object",
-        "description": "Update one preview server's live config.\n\nOnly fields that a sidecar can pick up on an in-place restart are accepted.\n`port` and `dockerImage` are declared so a caller that sends them gets an\nexplicit \"redeploy required\" instead of a silent no-op.",
-        "properties": {
-          "dockerImage": {
-            "type": ["string", "null"],
-            "description": "Not applicable live — the image is the container's identity."
-          },
-          "env": {
-            "type": ["object", "null"],
-            "description": "Env entries to set, merged into any existing override.",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "propertyNames": {
-              "type": "string"
-            }
-          },
-          "port": {
-            "type": ["integer", "null"],
-            "format": "int32",
-            "description": "Not applicable live — the port is wired into the Service and\n`IngressRoute` at provision time.",
-            "minimum": 0
-          },
-          "restart": {
-            "type": "boolean",
-            "description": "Restart the server so the change takes effect (default `true`)."
-          },
-          "startCommands": {
-            "type": ["array", "null"],
-            "items": {
-              "type": "string"
-            },
-            "description": "Replaces the workspace's start command. Joined with `&&`, as at\nprovision time."
-          },
-          "unsetEnv": {
-            "type": ["array", "null"],
-            "items": {
-              "type": "string"
-            },
-            "description": "Keys to remove from the server's environment. Also drops them from the\noverride's `env`, so setting and unsetting the same key is coherent."
-          }
-        }
-      },
       "UpdateSubscription": {
         "type": "object",
         "properties": {
@@ -16741,12 +16039,6 @@
                 "description": "Change the workspace's access scope (`global` or `user`). When set,\n`owner_user_id` is re-resolved from the new scope. Requesting `global`\nrequires admin."
               }
             ]
-          },
-          "servers": {
-            "type": ["array", "null"],
-            "items": {
-              "$ref": "#/components/schemas/ServerConfig"
-            }
           },
           "setupCommands": {
             "type": ["array", "null"],
@@ -17275,12 +16567,6 @@
           },
           "scope": {
             "$ref": "#/components/schemas/Scope"
-          },
-          "servers": {
-            "type": ["array", "null"],
-            "items": {
-              "$ref": "#/components/schemas/ServerConfig"
-            }
           },
           "setupCommands": {
             "type": ["array", "null"],

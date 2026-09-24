@@ -105,8 +105,6 @@ interface RightPanelTabsProps {
   activeSurfaceId: string | null;
   pendingSurfaceIds: ReadonlySet<string>;
   previewSessions: Readonly<Record<string, PreviewSessionSnapshot>>;
-  /** Fork: labels a preview tab by the ThreadServer it belongs to. Absent where there are none. */
-  previewServerLabelsByOrigin?: ReadonlyMap<string, string>;
   desktopByTabId: Readonly<Record<string, DesktopPreviewOverlay>>;
   /**
    * Maps a server session tab id to the desktop runtime tab id the Electron
@@ -179,9 +177,6 @@ export function shouldOpenDefaultBrowserProfileFromMenuClick(
 ): boolean {
   return pointerType !== "touch";
 }
-
-// Fork: preview-server label map for thread-server surfaces upstream does not have.
-const EMPTY_PREVIEW_SERVER_LABELS: ReadonlyMap<string, string> = new Map();
 
 const SURFACE_DISABLED_REASONS = {
   browser: "Browser previews are not available in this runtime.",
@@ -671,7 +666,6 @@ function RightPanelEmptyState(props: {
 function surfaceTitle(
   surface: RightPanelSurface,
   sessions: Readonly<Record<string, PreviewSessionSnapshot>>,
-  previewServerLabelsByOrigin: ReadonlyMap<string, string>,
   terminalLabelsById: ReadonlyMap<string, string>,
 ): string {
   switch (surface.kind) {
@@ -702,12 +696,6 @@ function surfaceTitle(
     case "preview": {
       const snapshot = surface.resourceId ? sessions[surface.resourceId] : null;
       if (!snapshot || snapshot.navStatus._tag === "Idle") return "Browser";
-      try {
-        const serverLabel = previewServerLabelsByOrigin.get(new URL(snapshot.navStatus.url).origin);
-        if (serverLabel) return serverLabel;
-      } catch {
-        // Fall through to the existing title/host fallbacks.
-      }
       if (snapshot.navStatus.title.trim().length > 0) return snapshot.navStatus.title;
       try {
         return new URL(snapshot.navStatus.url).host || "Browser";
@@ -1249,12 +1237,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             {props.surfaces.map((surface) => {
               const active = surface.id === props.activeSurfaceId;
               const pending = props.pendingSurfaceIds.has(surface.id);
-              const title = surfaceTitle(
-                surface,
-                props.previewSessions,
-                props.previewServerLabelsByOrigin ?? EMPTY_PREVIEW_SERVER_LABELS,
-                props.terminalLabelsById,
-              );
+              const title = surfaceTitle(surface, props.previewSessions, props.terminalLabelsById);
               const previewTabId = previewTabIdOf(surface, props.previewSessions);
               // Desktop state is keyed by the session id, but desktop actions
               // must be addressed with the runtime id.

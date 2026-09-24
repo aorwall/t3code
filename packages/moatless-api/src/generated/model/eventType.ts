@@ -19,7 +19,6 @@ export const EventType = {
   taskTurn: "taskTurn",
   sandbox: "sandbox",
   agent: "agent",
-  server: "server",
   resources: "resources",
   message: "message",
 } as const;

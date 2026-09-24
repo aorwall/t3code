@@ -1,6 +1,6 @@
 /**
  * Fork-only. The web app's binding of the subtask atoms to its connection
- * runtime, the same shape `state/servers.ts` has.
+ * runtime, the same shape `state/sandbox.ts` has.
  */
 import { createSubtasksEnvironmentAtoms } from "@t3tools/client-runtime/state/subtasks";
 

@@ -3604,15 +3604,6 @@ const makeWsRpcLayer = (
             ),
             { "rpc.aggregate": "preview" },
           ),
-        // Thread servers are containers a hosted environment declares and runs.
-        // This server runs threads directly on the machine it is on, so it
-        // declares none — the honest answer is an empty list rather than an
-        // unsupported method, and the subscriptions have nothing to report.
-        // A hosted environment answers these methods with real data.
-        [WS_METHODS.serversList]: (_input) =>
-          observeRpcEffect(WS_METHODS.serversList, Effect.succeed({ servers: [] }), {
-            "rpc.aggregate": "servers",
-          }),
         [WS_METHODS.sandboxStatus]: (_input) =>
           observeRpcEffect(
             WS_METHODS.sandboxStatus,
@@ -3745,7 +3736,7 @@ const makeWsRpcLayer = (
           ),
         // Fork: this server has no sandbox whose lifecycle could move, and it
         // declares no `sandboxStatusPush` capability, so no client subscribes
-        // here. Silent rather than an error, like the server-status twin below.
+        // here. Silent rather than an error.
         [WS_METHODS.sandboxSubscribeStatus]: (_input) =>
           observeRpcStream(WS_METHODS.sandboxSubscribeStatus, Stream.never, {
             "rpc.aggregate": "sandbox",
@@ -3753,14 +3744,6 @@ const makeWsRpcLayer = (
         [WS_METHODS.sandboxSubscribeDetail]: (_input) =>
           observeRpcStream(WS_METHODS.sandboxSubscribeDetail, Stream.never, {
             "rpc.aggregate": "sandbox",
-          }),
-        [WS_METHODS.subscribeServerStatus]: (_input) =>
-          observeRpcStream(WS_METHODS.subscribeServerStatus, Stream.never, {
-            "rpc.aggregate": "servers",
-          }),
-        [WS_METHODS.serversSubscribeLogs]: (_input) =>
-          observeRpcStream(WS_METHODS.serversSubscribeLogs, Stream.never, {
-            "rpc.aggregate": "servers",
           }),
         [WS_METHODS.subscribeServerConfig]: (input) =>
           observeRpcStreamEffect(

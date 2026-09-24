@@ -7,7 +7,6 @@
  */
 import type { ResourceConfig } from "./resourceConfig.ts";
 import type { Scope } from "./scope.ts";
-import type { ServerConfig } from "./serverConfig.ts";
 import type { WorkspaceIcon } from "./workspaceIcon.ts";
 import type { WorkspaceRepoResponse } from "./workspaceRepoResponse.ts";
 import type { WorkspaceResponseEnvVars } from "./workspaceResponseEnvVars.ts";
@@ -62,8 +61,6 @@ export interface WorkspaceResponse {
   /** @nullable */
   sandboxServiceAccount?: string | null;
   scope: Scope;
-  /** @nullable */
-  servers?: ServerConfig[] | null;
   /** @nullable */
   setupCommands?: string[] | null;
   /**

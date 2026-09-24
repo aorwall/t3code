@@ -159,7 +159,6 @@ export const RPC_REQUIRED_SCOPES = {
   [WS_METHODS.previewAutomationFocusHost]: AuthOrchestrationOperateScope,
   [WS_METHODS.subscribePreviewEvents]: AuthOrchestrationReadScope,
   [WS_METHODS.subscribeDiscoveredLocalServers]: AuthOrchestrationReadScope,
-  [WS_METHODS.serversList]: AuthOrchestrationReadScope,
   // Fork: the threads a thread spawned, a read like any other thread read.
   [WS_METHODS.subtasksList]: AuthOrchestrationReadScope,
   // Fork: one thread's listing row, the same read the listing itself is.
@@ -180,8 +179,6 @@ export const RPC_REQUIRED_SCOPES = {
   [WS_METHODS.sandboxRedeploy]: AuthOrchestrationOperateScope,
   [WS_METHODS.sandboxCleanup]: AuthOrchestrationOperateScope,
   [WS_METHODS.sandboxSetIdleTimeout]: AuthOrchestrationOperateScope,
-  [WS_METHODS.subscribeServerStatus]: AuthOrchestrationReadScope,
-  [WS_METHODS.serversSubscribeLogs]: AuthOrchestrationReadScope,
   [WS_METHODS.deviceConfigure]: AuthOrchestrationOperateScope,
   [WS_METHODS.deviceTestHost]: AuthOrchestrationOperateScope,
   [WS_METHODS.deviceList]: AuthOrchestrationReadScope,

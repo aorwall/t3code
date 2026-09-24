@@ -12,52 +12,17 @@ import { describe, expect, it } from "vite-plus/test";
 
 import previewList from "../fixtures/moatless/preview-list.json" with { type: "json" };
 import previewListEmpty from "../fixtures/moatless/preview-list-empty.json" with { type: "json" };
-import serversList from "../fixtures/moatless/servers-list.json" with { type: "json" };
-import serversListNeverProvisioned from "../fixtures/moatless/servers-list-never-provisioned.json" with { type: "json" };
 import subtasksList from "../fixtures/moatless/subtasks-list.json" with { type: "json" };
 import subtasksListEmpty from "../fixtures/moatless/subtasks-list-empty.json" with { type: "json" };
 import threadsGetShell from "../fixtures/moatless/threads-get-shell.json" with { type: "json" };
 import threadsGetShellAbsent from "../fixtures/moatless/threads-get-shell-absent.json" with { type: "json" };
 import { PreviewListResult } from "./preview.ts";
-import { ServersListResult } from "./servers.ts";
 import { SubtasksListResult } from "./subtasks.ts";
 import { ThreadShellGetResult } from "./threadShellLookup.ts";
 
-const decodeServersList = Schema.decodeUnknownSync(ServersListResult);
 const decodePreviewList = Schema.decodeUnknownSync(PreviewListResult);
 const decodeSubtasksList = Schema.decodeUnknownSync(SubtasksListResult);
 const decodeThreadShell = Schema.decodeUnknownSync(ThreadShellGetResult);
-
-describe("Moatless servers.list", () => {
-  it("decodes a running environment, including a starting and a failed server", () => {
-    const result = decodeServersList(serversList);
-
-    expect(result.servers.map((server) => server.status)).toEqual([
-      "started",
-      "starting",
-      "failed",
-    ]);
-    // `error` and `detail` are required and nullable, never absent — a client
-    // decoding a struct does not get to treat a missing key as null.
-    expect(result.servers[0]?.error).toBeNull();
-    expect(result.servers[2]?.detail).toBe("bash: line 1: vp: command not found");
-  });
-
-  /**
-   * Config-first means the servers a repository declares are listed before any
-   * container exists to observe. Nothing has been provisioned here, so the
-   * status is what the resolver falls back to rather than something it read,
-   * and the URL is the ingress hostname that will serve the port once there is
-   * something behind it — not a promise that anything answers there now.
-   */
-  it("decodes the config-first list of an environment that was never provisioned", () => {
-    const result = decodeServersList(serversListNeverProvisioned);
-
-    expect(result.servers).toHaveLength(1);
-    expect(result.servers[0]?.status).toBe("starting");
-    expect(result.servers[0]?.url).not.toBeNull();
-  });
-});
 
 describe("Moatless subtasks.list", () => {
   it("decodes both parent edges, in spawn order, with the nullable fields written as null", () => {

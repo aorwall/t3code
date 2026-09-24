@@ -8,7 +8,7 @@
 
 export type ListTaskEventsParams = {
   /**
-   * Comma-separated event type filter (e.g., `?types=sandbox,server,agent`).
+   * Comma-separated event type filter (e.g., `?types=sandbox,agent,message`).
    * @nullable
    */
   types?: string | null;

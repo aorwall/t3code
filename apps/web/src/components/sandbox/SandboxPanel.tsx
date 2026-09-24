@@ -33,16 +33,13 @@ import type {
   SandboxRuntimeStatus,
   SandboxStatusResult,
   ScopedThreadRef,
-  ThreadServer,
 } from "@t3tools/contracts";
 import {
   ArrowUpCircleIcon,
-  ExternalLinkIcon,
   LoaderCircleIcon,
   PlayIcon,
   RefreshCwIcon,
   RotateCcwIcon,
-  ScrollTextIcon,
   SquareIcon,
   Trash2Icon,
 } from "lucide-react";
@@ -57,9 +54,6 @@ import { useAtomCommand } from "~/state/use-atom-command";
 import { Button } from "../ui/button";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../ui/menu";
 import { ScrollArea } from "../ui/scroll-area";
-import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
-import { useThreadPreviewServers } from "../preview/useThreadPreviewServers";
-import { SandboxServerLogs } from "./SandboxServerLogs";
 import {
   SandboxDot,
   SandboxEmpty,
@@ -114,14 +108,6 @@ const CONTAINER_TONES = {
   unknown: "muted",
 } as const;
 
-const SERVER_TONES = {
-  started: "success",
-  starting: "info",
-  installing: "info",
-  stopped: "muted",
-  failed: "danger",
-} as const;
-
 const ACTION_LABELS: Record<SandboxAction, string> = {
   start: "Start",
   stop: "Stop",
@@ -174,7 +160,6 @@ export function SandboxPanel({ threadRef }: { readonly threadRef: ScopedThreadRe
   // indicator can never disagree about what state the sandbox is in.
   const { status } = useSandboxAvailability(threadRef);
   const detail = useSandboxDetail(threadRef);
-  const servers = useThreadPreviewServers(threadRef);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -222,7 +207,6 @@ export function SandboxPanel({ threadRef }: { readonly threadRef: ScopedThreadRe
               {status.data?.commands?.length ? (
                 <CommandsSection commands={status.data.commands} />
               ) : null}
-              <ServersSection threadRef={threadRef} servers={servers.servers} />
             </div>
           </div>
         </div>
@@ -522,82 +506,6 @@ function CommandsSection({ commands }: { readonly commands: ReadonlyArray<Comman
           </SandboxNote>
         </SandboxEntry>
       ))}
-    </SandboxSection>
-  );
-}
-
-function ServersSection({
-  threadRef,
-  servers,
-}: {
-  readonly threadRef: ScopedThreadRef;
-  readonly servers: ReadonlyArray<ThreadServer>;
-}) {
-  const [openLog, setOpenLog] = useState<string | null>(null);
-
-  return (
-    <SandboxSection title="Servers">
-      {servers.length === 0 ? (
-        <SandboxEmpty label="This repository declares no servers." />
-      ) : (
-        servers.map((server) => (
-          <SandboxEntry
-            key={server.name}
-            title={
-              <span className="flex min-w-0 items-center gap-2">
-                <SandboxDot tone={SERVER_TONES[server.status]} />
-                <span className="min-w-0 truncate">{server.label}</span>
-                <span className="shrink-0 text-[11px] text-muted-foreground">:{server.port}</span>
-              </span>
-            }
-            badge={
-              <span className="flex shrink-0 items-center gap-0.5">
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        aria-label={`${openLog === server.name ? "Hide" : "Show"} ${server.label} logs`}
-                        size="icon-micro"
-                        variant="ghost-muted"
-                        onClick={() =>
-                          setOpenLog((current) => (current === server.name ? null : server.name))
-                        }
-                      />
-                    }
-                  >
-                    <ScrollTextIcon />
-                  </TooltipTrigger>
-                  <TooltipPopup side="top">Logs</TooltipPopup>
-                </Tooltip>
-                {server.url === null ? null : (
-                  <Tooltip>
-                    <TooltipTrigger
-                      render={
-                        <Button
-                          aria-label={`Open ${server.label}`}
-                          size="icon-micro"
-                          variant="ghost-muted"
-                          render={
-                            <a href={server.url} target="_blank" rel="noreferrer noopener">
-                              <ExternalLinkIcon />
-                            </a>
-                          }
-                        />
-                      }
-                    />
-                    <TooltipPopup side="top">{server.url}</TooltipPopup>
-                  </Tooltip>
-                )}
-              </span>
-            }
-          >
-            {server.error ? <SandboxNote tone="danger">{server.error}</SandboxNote> : null}
-            {openLog === server.name ? (
-              <SandboxServerLogs threadRef={threadRef} name={server.name} />
-            ) : null}
-          </SandboxEntry>
-        ))
-      )}
     </SandboxSection>
   );
 }

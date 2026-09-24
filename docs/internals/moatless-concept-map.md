@@ -30,7 +30,7 @@ The two systems agree on the middle of the model and disagree at both ends.
 | T3 Code                          | Moatless                       |     | Note                                                                                                                                                                                                                                                                                    |
 | -------------------------------- | ------------------------------ | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Project                          | **Repository**                 | ≈   | T3 project ≈ one repo checkout. Moatless splits this in two: `Repository` (the git connection) and `Workspace` (repos + run-config). T3 has no `Workspace`.                                                                                                                             |
-| —                                | **Workspace**                  | +   | Composition of ≥1 repos plus docker image, setup commands, env, servers, resources. T3's nearest thing is `t3.json`, which is repo-local and not a server-side entity.                                                                                                                  |
+| —                                | **Workspace**                  | +   | Composition of ≥1 repos plus docker image, setup commands, env, Scripts, resources. T3's nearest thing is `t3.json`, which is repo-local and not a server-side entity.                                                                                                                  |
 | —                                | **WorkspaceRepo**              | +   | A repo's _placement_ in a workspace (branch override, mount subdir, primary flag). T3 is single-repo-per-project; multi-root is not modelled.                                                                                                                                           |
 | Thread                           | **Task**                       | =   | The one clean isomorphism. `threadId ↔ task.taskId`, `projectId ↔ task.repositoryId`.                                                                                                                                                                                                   |
 | Turn                             | **Turn** / `Run`               | =   | Moatless persists `task_turns`; `turnNumber` is on every message. `Run` is the runtime-internal twin (one `run_id` per idle→running edge).                                                                                                                                              |
@@ -111,7 +111,7 @@ exist".
 | `server.getTraceDiagnostics`       | —                                                                                    | ∅   | No trace diagnostics endpoint.                                                                                                                                                                                         |
 | `server.getProcessDiagnostics`     | `GET /api/sandbox/v1/tasks/{id}/status`                                              | ≈   | `SandboxStatusFullResponse` carries `backgroundProcesses`, `containerDiagnostics`, `scheduledJobs`, `runtimeEvents`. Real overlap — but scoped to one task's sandbox, not to the server process tree.                  |
 | `server.getProcessResourceHistory` | `resources` field + `Resources` event type                                           | ≈   | Resource samples are emitted as events and carried on the status response. No history query with a window.                                                                                                             |
-| `server.signalProcess`             | `POST .../restart`, `.../stop`, `.../servers/{name}/restart`                         | ≈   | Coarse lifecycle verbs instead of signalling a pid.                                                                                                                                                                    |
+| `server.signalProcess`             | `POST .../restart`, `.../stop`                                                       | ≈   | Coarse lifecycle verbs instead of signalling a pid.                                                                                                                                                                    |
 
 ### 3.2 Orchestration (7)
 
@@ -140,34 +140,33 @@ This is the largest wholesale gap in the contract: 9 of 70 methods with nothing 
 **These are two different things wearing the same word.** T3's `preview.*` is the
 **in-app browser tab** — `PreviewSessionSnapshot` is `{threadId, tabId, navStatus,
 canGoBack, canGoForward, viewport}`, and `apps/server/src/preview/Manager.ts` drives a
-real web contents view. Moatless's "preview server" is the **process serving the app**.
+real web contents view. On Moatless the **process serving the app** is a Script.
 
 In T3 the process side is a different subsystem entirely: a `ProjectScript` (from
 `t3.json`) runs in a **terminal**, and `PortScanner.ts` discovers the resulting
 listener — `DiscoveredLocalServer` carries `{host, port, url, processName, pid,
 terminal: {threadId, terminalId}}`, linking the port back to the terminal that opened
-it. Declared-vs-discovered is the real difference, and it lands on
-`subscribeDiscoveredLocalServers`, not on `preview.open`.
+it. A Moatless Script declares its port instead, so declared-vs-discovered is the
+real difference, and it lands on `subscribeDiscoveredLocalServers`, not on
+`preview.open`.
 
-| T3 method                           | Moatless                                           |     |                                                                                                                                                                                                                      |
-| ----------------------------------- | -------------------------------------------------- | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `preview.open`                      | —                                                  | ∅   | Opens a browser tab. Moatless's preview panel is client-side over `task.siteUrl`; there is no server-side browser session to open.                                                                                   |
-| `preview.navigate`                  | —                                                  | ∅   | "                                                                                                                                                                                                                    |
-| `preview.resize`                    | —                                                  | ∅   | "                                                                                                                                                                                                                    |
-| `preview.refresh`                   | —                                                  | ∅   | Reloads the page. (`servers/{name}/restart` restarts the _process_ — a different operation, see the row below.)                                                                                                      |
-| `preview.close`                     | —                                                  | ∅   | Closes the tab.                                                                                                                                                                                                      |
-| `preview.list`                      | —                                                  | ∅   | Lists open tabs, not servers.                                                                                                                                                                                        |
-| `preview.reportStatus`              | —                                                  | ∅   | Client→server nav-status report for the tab.                                                                                                                                                                         |
-| `previewAutomation.connect` ◆       | —                                                  | ∅   | **No browser automation.** No accessibility tree, no tool-call bridge into the preview page.                                                                                                                         |
-| `previewAutomation.respond`         | —                                                  | ∅   | "                                                                                                                                                                                                                    |
-| `previewAutomation.focusHost`       | —                                                  | ∅   | "                                                                                                                                                                                                                    |
-| `subscribePreviewEvents` ◆          | —                                                  | ∅   | Tab lifecycle events.                                                                                                                                                                                                |
-| `subscribeDiscoveredLocalServers` ◆ | `GET .../server/status` + firehose `?types=server` | ≈   | **The one real correspondence in this group.** Both answer "what is serving, and is it up". T3 discovers by port-scanning a machine; Moatless reads a declared list per sandbox. Same answer, opposite epistemology. |
-| —                                   | `GET/PATCH/DELETE .../servers[/{name}][/override]` | +   | Per-server start-command/env **override**, persisted to the workspace volume and applied by bumping a generation counter so the sidecar re-execs without recreating the pod. T3 has no equivalent live-reconfigure.  |
-| —                                   | `GET .../servers/{name}/logs` (SSE)                | +   | Per-server log streaming. T3 gets this via terminal instead.                                                                                                                                                         |
+| T3 method                           | Moatless |     |                                                                                                                                                    |
+| ----------------------------------- | -------- | --- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `preview.open`                      | —        | ∅   | Opens a browser tab. Moatless's preview panel is client-side over `task.siteUrl`; there is no server-side browser session to open.                 |
+| `preview.navigate`                  | —        | ∅   | "                                                                                                                                                  |
+| `preview.resize`                    | —        | ∅   | "                                                                                                                                                  |
+| `preview.refresh`                   | —        | ∅   | Reloads the page.                                                                                                                                  |
+| `preview.close`                     | —        | ∅   | Closes the tab.                                                                                                                                    |
+| `preview.list`                      | —        | ∅   | Lists open tabs, not servers.                                                                                                                      |
+| `preview.reportStatus`              | —        | ∅   | Client→server nav-status report for the tab.                                                                                                       |
+| `previewAutomation.connect` ◆       | —        | ∅   | **No browser automation.** No accessibility tree, no tool-call bridge into the preview page.                                                       |
+| `previewAutomation.respond`         | —        | ∅   | "                                                                                                                                                  |
+| `previewAutomation.focusHost`       | —        | ∅   | "                                                                                                                                                  |
+| `subscribePreviewEvents` ◆          | —        | ∅   | Tab lifecycle events.                                                                                                                              |
+| `subscribeDiscoveredLocalServers` ◆ | —        | ∅   | T3 discovers servers by port-scanning a machine. Moatless has no discovery: a Script declares its port, and `scripts.run` returns its preview URL. |
 
 > **Do not map against `packages/sandbox-api-contract`.** That package declares a
-> richer sandbox HTTP surface — `/server/start`, `/server/stop`, `/command`,
+> richer sandbox HTTP surface — `/command`,
 > `/git-status`, `/git-changes`, `/git-diff`, `/current-commit-hash`,
 > `/read-file-with-changes` — and **nothing imports it**. `grep` finds no source
 > reference outside the package itself and `bun.lock`; the live sandbox surface is
@@ -347,7 +346,7 @@ document that does not exist and cannot be patched atomically.
 
 T3 assumes one environment hosting _many_ threads. Moatless gives **one sandbox per
 task**, with its own lifecycle, TTL, cost, and stop reason. Anything T3 models as
-server-wide — process diagnostics, preview servers, the file tree, VCS status — is in
+server-wide — process diagnostics, running Scripts, the file tree, VCS status — is in
 Moatless _per-thread_. Every such method needs a `taskId` T3's signature does not carry.
 
 ### 6.4 Worktrees vs. sandboxes solve the same problem at different layers

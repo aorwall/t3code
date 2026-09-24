@@ -275,14 +275,6 @@ import {
   SandboxSetIdleTimeoutInput,
   SandboxSetIdleTimeoutResult,
 } from "./sandboxDetail.ts";
-import {
-  ServerLogLine,
-  ServerLogsSubscribeInput,
-  ServersListInput,
-  ServersListResult,
-  ServerStatusSnapshot,
-  ServerStatusSubscribeInput,
-} from "./servers.ts";
 // Fork: the threads a thread spawned, a fork-only surface.
 import { SubtasksListInput, SubtasksListResult } from "./subtasks.ts";
 // Fork: the listing rows a filter names, a fork-only surface.
@@ -392,10 +384,6 @@ export const WS_METHODS = {
   previewAutomationConnect: "previewAutomation.connect",
   previewAutomationRespond: "previewAutomation.respond",
   previewAutomationFocusHost: "previewAutomation.focusHost",
-
-  // Thread server methods
-  serversList: "servers.list",
-  serversSubscribeLogs: "servers.subscribeLogs",
 
   // Fork: the threads a thread spawned; upstream has no task tree.
   subtasksList: "subtasks.list",
@@ -512,7 +500,6 @@ export const WS_METHODS = {
   subscribeTerminalEvents: "subscribeTerminalEvents",
   subscribeTerminalMetadata: "subscribeTerminalMetadata",
   subscribePreviewEvents: "subscribePreviewEvents",
-  subscribeServerStatus: "subscribeServerStatus",
   subscribeDiscoveredLocalServers: "subscribeDiscoveredLocalServers",
   subscribeDeviceState: "subscribeDeviceState",
   subscribeServerConfig: "subscribeServerConfig",
@@ -1401,12 +1388,6 @@ const WsSubscribePreviewEventsRpc = Rpc.make(WS_METHODS.subscribePreviewEvents, 
   stream: true,
 });
 
-export const WsServersListRpc = Rpc.make(WS_METHODS.serversList, {
-  payload: ServersListInput,
-  success: ServersListResult,
-  error: EnvironmentAuthorizationError,
-});
-
 /**
  * Fork: the child threads of a thread — tasks it created, and forks of it.
  *
@@ -1614,24 +1595,6 @@ export const WsSandboxSetIdleTimeoutRpc = Rpc.make(WS_METHODS.sandboxSetIdleTime
   payload: SandboxSetIdleTimeoutInput,
   success: SandboxSetIdleTimeoutResult,
   error: EnvironmentAuthorizationError,
-});
-
-/**
- * Pushes a whole list whenever it changes. An idle subscription is silent,
- * so the absence of a message means nothing moved rather than nothing is known.
- */
-export const WsSubscribeServerStatusRpc = Rpc.make(WS_METHODS.subscribeServerStatus, {
-  payload: ServerStatusSubscribeInput,
-  success: ServerStatusSnapshot,
-  error: EnvironmentAuthorizationError,
-  stream: true,
-});
-
-export const WsServersSubscribeLogsRpc = Rpc.make(WS_METHODS.serversSubscribeLogs, {
-  payload: ServerLogsSubscribeInput,
-  success: ServerLogLine,
-  error: EnvironmentAuthorizationError,
-  stream: true,
 });
 
 const WsSubscribeDiscoveredLocalServersRpc = Rpc.make(WS_METHODS.subscribeDiscoveredLocalServers, {
@@ -1954,7 +1917,6 @@ export const WsRpcGroup = RpcGroup.make(
   WsPreviewAutomationRespondRpc,
   WsPreviewAutomationFocusHostRpc,
   WsSubscribePreviewEventsRpc,
-  WsServersListRpc,
   // Fork: the threads a thread spawned.
   WsSubtasksListRpc,
   // Fork: one thread's listing row, for a thread no listing carried.
@@ -1976,8 +1938,6 @@ export const WsRpcGroup = RpcGroup.make(
   WsSandboxRedeployRpc,
   WsSandboxCleanupRpc,
   WsSandboxSetIdleTimeoutRpc,
-  WsSubscribeServerStatusRpc,
-  WsServersSubscribeLogsRpc,
   WsSubscribeDiscoveredLocalServersRpc,
   WsDeviceConfigureRpc,
   WsDeviceListRpc,

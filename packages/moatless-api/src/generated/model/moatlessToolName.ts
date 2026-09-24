@@ -16,8 +16,6 @@ export const MoatlessToolName = {
   install: "install",
   updateRepositoryConfig: "updateRepositoryConfig",
   getRepositoryConfig: "getRepositoryConfig",
-  startOrRestartPreviewServer: "startOrRestartPreviewServer",
-  getPreviewServerLogs: "getPreviewServerLogs",
   navigatePreview: "navigatePreview",
   clickElement: "clickElement",
   evaluateJavaScript: "evaluateJavaScript",

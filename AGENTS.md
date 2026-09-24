@@ -10,7 +10,7 @@ So most of what upstream's product is built around is not this fork's product. T
 
 - **Auth.** A Moatless cookie session and a fork-only `/login`. No T3 backend session exchange, no pairing.
 - **Backend contract.** The client may assume only what Moatless implements. Methods it does not serve declare `UnsupportedMethodError` — see [docs/internals/client-server-contract.md](./docs/internals/client-server-contract.md).
-- **Fork-only surfaces.** Thread servers and sandbox lifecycle, hosted iframe preview, message-origin chips, and a surface-gating registry in `apps/web/src/fork/` that hides what Moatless cannot serve.
+- **Fork-only surfaces.** Sandbox lifecycle, hosted iframe preview, message-origin chips, and a surface-gating registry in `apps/web/src/fork/` that hides what Moatless cannot serve.
 - **A browser on a phone.** Upstream's phone story is the native app; ours is `apps/web` reached from mobile Safari or Chrome, which is why the sidebar drawer and touch context menus exist.
 - **CI.** Every workflow inherited from upstream is disabled in GitHub, not in the tree.
 

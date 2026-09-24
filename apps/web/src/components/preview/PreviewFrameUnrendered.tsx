@@ -51,13 +51,13 @@ export function PreviewFrameUnrendered({
  * The timer restarts on every navigation, so following a link inside the frame
  * does not carry a stale verdict forward.
  */
-export function useFrameUnrenderedHint(url: string, serverStarted: boolean): boolean {
+export function useFrameUnrenderedHint(url: string): boolean {
   const [elapsed, setElapsed] = useState(false);
   useEffect(() => {
     setElapsed(false);
-    if (url === "" || !serverStarted) return;
+    if (url === "") return;
     const timer = window.setTimeout(() => setElapsed(true), FRAME_UNRENDERED_HINT_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [serverStarted, url]);
+  }, [url]);
   return elapsed;
 }

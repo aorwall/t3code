@@ -2,7 +2,7 @@
  * Sandbox - Schemas for a thread's hosted execution environment lifecycle.
  *
  * This surface is only about whether the environment exists and whether it is
- * available. Preview server declarations and runtime rows live in `servers.ts`.
+ * available.
  *
  * @module Sandbox
  */

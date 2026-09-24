@@ -43,7 +43,6 @@ export * from "./previewAutomation.ts";
 export * from "./sandbox.ts";
 // Fork: the sandbox panel's wider read; upstream has no sandbox to describe.
 export * from "./sandboxDetail.ts";
-export * from "./servers.ts";
 // Fork: the threads a thread spawned; upstream has no task tree.
 export * from "./subtasks.ts";
 // Fork: one thread's listing row by id, for threads no listing carries.

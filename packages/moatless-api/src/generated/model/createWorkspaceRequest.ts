@@ -8,7 +8,6 @@
 import type { CreateWorkspaceRequestEnvVars } from "./createWorkspaceRequestEnvVars.ts";
 import type { ResourceConfig } from "./resourceConfig.ts";
 import type { Scope } from "./scope.ts";
-import type { ServerConfig } from "./serverConfig.ts";
 import type { WorkspaceIcon } from "./workspaceIcon.ts";
 import type { WorkspaceRepoInput } from "./workspaceRepoInput.ts";
 
@@ -41,8 +40,6 @@ export interface CreateWorkspaceRequest {
   /** @nullable */
   sandboxServiceAccount?: string | null;
   scope?: null | Scope;
-  /** @nullable */
-  servers?: ServerConfig[] | null;
   /** @nullable */
   setupCommands?: string[] | null;
   /** @nullable */

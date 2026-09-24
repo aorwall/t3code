@@ -219,8 +219,6 @@ vi.mock("~/browser/annotationTheme", () => ({
   readPreviewAnnotationTheme: () => annotationTheme,
 }));
 
-vi.mock("./useFramedServerStatus", () => ({ useFramedServerStatus: () => null }));
-vi.mock("./PreviewServerNotStarted", () => ({ PreviewServerNotStarted: () => null }));
 vi.mock("./PreviewFrameUnrendered", () => ({
   PreviewFrameUnrendered: () => null,
   useFrameUnrenderedHint: () => false,

@@ -593,7 +593,7 @@ something **T3's server** cannot, because running a project's script means
 hosting it in a sandbox terminal and publishing the port it serves, and a server
 running threads on the local machine owns no sandbox to do it in. It answers
 `UnsupportedMethodError` from `apps/server/src/ws.ts`, beside the
-`serversList` / `sandboxStatus` stubs.
+`sandboxStatus` stub.
 
 That inversion is a trap for the next merge. `unsupported-methods.mjs` reads the
 backend's dispatch and this contract, and knows nothing about which _server_
@@ -669,7 +669,7 @@ thread's own activities and is upstream's concept too. A **subtask** is a Task
 another Task created, or a fork of one — a thread in its own right, with a route
 to open it — and upstream has no task tree at all. So the backend dispatches the
 method and `apps/server` answers `UnsupportedMethodError` unconditionally, beside
-the `serversList` / `sandboxStatus` / `scriptsRun` stubs.
+the `sandboxStatus` / `scriptsRun` stubs.
 
 - **Keep the union entry** for as long as `apps/server` answers the method with
   `UnsupportedMethodError`, whatever `unsupported-methods.mjs` reports it under.
@@ -697,7 +697,7 @@ badge the client cannot show.
 
 So the method answers with the listing's own row for one thread by id, and
 `apps/server` answers `UnsupportedMethodError` unconditionally, beside the
-`serversList` / `sandboxStatus` / `scriptsRun` / `subtasksList` stubs.
+`sandboxStatus` / `scriptsRun` / `subtasksList` stubs.
 
 - **Keep the union entry** for as long as `apps/server` answers the method with
   `UnsupportedMethodError`, whatever `unsupported-methods.mjs` reports it under.
@@ -720,8 +720,8 @@ administrator who has to see what a deployment is doing cannot get there from a
 listing scoped to their own follows. So the method answers a browse — by owner,
 by tag, or both, optionally including closed work — with the listing's own rows
 under the reader's ordinary read rules, and `apps/server` answers
-`UnsupportedMethodError` unconditionally, beside the `serversList` /
-`sandboxStatus` / `scriptsRun` / `subtasksList` / `threadsGetShell` stubs.
+`UnsupportedMethodError` unconditionally, beside the `sandboxStatus` /
+`scriptsRun` / `subtasksList` / `threadsGetShell` stubs.
 
 - **Keep the union entry** for as long as `apps/server` answers the method with
   `UnsupportedMethodError`, whatever `unsupported-methods.mjs` reports it under.

@@ -274,7 +274,7 @@
       "id": "fork-authored-plans",
       "paths": [".plans/**"],
       "verdict": "ours",
-      "note": "Upstream deleted .plans/** entirely on 2026-08-20 (PR #7665, \"move implementation plans out of repository\"), so nothing upstream owns lives under this path anymore. The 2026-08-20 merge took upstream's deletion cleanly (the fork had not touched those files, so it was a non-conflicting delete) and left only the four fork-authored plans: moatless-adapter.md, moatless-convergence.md, preview-servers-in-t3-web.md, completed/moatless-admin-in-t3.md. Was two entries (fork-authored-plans: ours, upstream-plans: theirs) until upstream's deletion made the split moot."
+      "note": "Upstream deleted .plans/** entirely on 2026-08-20 (PR #7665, \"move implementation plans out of repository\"), so nothing upstream owns lives under this path anymore. The 2026-08-20 merge took upstream's deletion cleanly (the fork had not touched those files, so it was a non-conflicting delete) and left only the fork-authored plans: moatless-adapter.md, moatless-convergence.md, completed/moatless-admin-in-t3.md. Was two entries (fork-authored-plans: ours, upstream-plans: theirs) until upstream's deletion made the split moot."
     },
     {
       "id": "moatless-admin-integrations-route",
@@ -302,18 +302,15 @@
       "note": "Upstream owns this file and appends to it as its own bundle changes. Take upstream, then re-append the fork's three `packageOverrides` entries at the end of the array: `khroma` with `license: \"MIT\"` and no notice — it declares no license but ships its own `license` file, so only the declaration is missing — and `fastdom` and `strictdom` with `generatedNotice` MIT and their README copyright lines, since both declare MIT and ship no notice file at all. All three arrive through the fork's `mermaid` edge, which upstream does not have, so upstream will never carry them. Nothing in `verify.mjs` reaches this: the plugin runs in `generateBundle`, so only `pnpm --filter @t3tools/web build` fails when they are missing."
     },
     {
-      "id": "thread-server-surfaces",
+      "id": "sandbox-state-surfaces",
       "paths": [
-        "apps/web/src/state/servers.ts",
         "apps/web/src/state/sandbox.ts",
-        "packages/contracts/src/servers.ts",
         "packages/contracts/src/sandbox.ts",
         "packages/contracts/fixtures/moatless/**",
-        "packages/client-runtime/src/state/servers.ts",
         "packages/client-runtime/src/state/sandbox.ts"
       ],
       "verdict": "ours",
-      "note": "Thread-server and sandbox lifecycle surfaces. None of these exist upstream. The thread-server UI components listed here until 2026-08-08 (apps/web/src/components/servers/**, added in #13) are gone; what renders a ThreadServer now lives under components/preview/ and is covered by fork-preview-files."
+      "note": "Sandbox lifecycle surfaces. None of these exist upstream."
     },
     {
       "id": "fork-browser-files",
@@ -337,16 +334,9 @@
     },
     {
       "id": "fork-preview-files",
-      "paths": [
-        "apps/web/src/components/preview/PreviewServerCard.tsx",
-        "apps/web/src/components/preview/PreviewServerNotStarted.tsx",
-        "apps/web/src/components/preview/useFramedServerStatus.ts",
-        "apps/web/src/components/preview/framedServerReload*.ts",
-        "apps/web/src/components/preview/PreviewFrameMoreMenu.tsx",
-        "apps/web/src/components/preview/useThreadPreviewServers.ts"
-      ],
+      "paths": ["apps/web/src/components/preview/PreviewFrameMoreMenu.tsx"],
       "verdict": "ours",
-      "note": "Each renders or reasons about ThreadServer, a Moatless concept upstream does not have. PreviewFrameMoreMenu.tsx is a deliberate sibling of upstream's PreviewMoreMenu.tsx, not a fork of it — keep upstream's file at zero delta.",
+      "note": "A deliberate sibling of upstream's PreviewMoreMenu.tsx, not a fork of it — keep upstream's file at zero delta.",
       "verified": "2026-08-06"
     },
     {
@@ -376,7 +366,7 @@
       "id": "client-runtime-rpc-client",
       "paths": ["packages/client-runtime/src/rpc/client.ts"],
       "verdict": "converged",
-      "note": "Upstream's file. Re-add the four fork subscription tags to EnvironmentSubscriptionRpcTag: subscribeServerStatus, serversSubscribeLogs, sandboxSubscribeStatus and sandboxSubscribeDetail. The conflict here is additive on both sides every time upstream adds a stream of its own, so keep both blocks — this merge collided with upstream's subscribeDeviceState."
+      "note": "Upstream's file. Re-add the two fork subscription tags to EnvironmentSubscriptionRpcTag: sandboxSubscribeStatus and sandboxSubscribeDetail. The conflict here is additive on both sides every time upstream adds a stream of its own, so keep both blocks — this merge collided with upstream's subscribeDeviceState."
     },
     {
       "id": "thread-status-indicators",
@@ -391,13 +381,13 @@
       "id": "contracts-rpc-auth",
       "paths": ["packages/contracts/src/rpc.ts", "packages/contracts/src/auth.ts"],
       "verdict": "converged",
-      "note": "Take upstream, then re-apply UnsupportedMethodError, its unsupported-method error unions, and servers.* wiring. Recompute the unions — never hand-edit."
+      "note": "Take upstream, then re-apply UnsupportedMethodError and its unsupported-method error unions. Recompute the unions — never hand-edit."
     },
     {
       "id": "server-hosted-env-stubs",
       "paths": ["apps/server/src/ws.ts", "apps/server/src/auth/RpcAuthorization.ts"],
       "verdict": "converged",
-      "note": "Take upstream, then re-add the hosted-environment method entries: servers.*, sandbox.status, sandbox.start, and sandbox.stop."
+      "note": "Take upstream, then re-add the hosted-environment method entries: sandbox.status, sandbox.start, and sandbox.stop."
     },
     {
       "id": "server-cli-entrypoint",
@@ -713,7 +703,7 @@
       "id": "client-runtime-exports",
       "paths": ["packages/client-runtime/package.json"],
       "verdict": "converged",
-      "note": "Take upstream, then re-add the fork's subpath exports. They are entries in the `exports` map for fork-only modules under `src/state/` — sandbox, scripts, servers, subtasks, thread-shell-lookup and thread-browse — and the package resolves a deep import only through this map, so a lost entry is a resolve failure in apps/web at build time rather than a silent drop. Upstream adds its own entries to the same map constantly, which is why both sides change the file; keep upstream's whole and append. The modules themselves are inventory thread-server-surfaces and the Moatless task-tree entries."
+      "note": "Take upstream, then re-add the fork's subpath exports. They are entries in the `exports` map for fork-only modules under `src/state/` — sandbox, scripts, subtasks, thread-shell-lookup and thread-browse — and the package resolves a deep import only through this map, so a lost entry is a resolve failure in apps/web at build time rather than a silent drop. Upstream adds its own entries to the same map constantly, which is why both sides change the file; keep upstream's whole and append. The modules themselves are inventory sandbox-state-surfaces and the Moatless task-tree entries."
     }
   ],
 
@@ -760,10 +750,9 @@
         "docs/internals/moatless-concept-map.md",
         ".plans/moatless-adapter.md",
         ".plans/moatless-convergence.md",
-        ".plans/preview-servers-in-t3-web.md",
         ".plans/completed/moatless-admin-in-t3.md"
       ],
-      "mustSurvive": "Keep ours. Only those four plans are ours; upstream owns the rest of .plans/**, and only fork-upstream-merge and test-moatless-web are ours under .agents/skills/."
+      "mustSurvive": "Keep ours. Only those three plans are ours; upstream owns the rest of .plans/**, and only fork-upstream-merge and test-moatless-web are ours under .agents/skills/."
     },
     {
       "id": "moatless-loops",
@@ -775,7 +764,6 @@
       "id": "hosted-env-contract",
       "name": "Hosted-environment contract group",
       "paths": [
-        "packages/contracts/src/servers.ts",
         "packages/contracts/src/sandbox.ts",
         "packages/contracts/src/rpc.ts",
         "packages/contracts/src/index.ts",
@@ -785,13 +773,12 @@
         "packages/contracts/src/threadBrowse.ts",
         "packages/contracts/fixtures/moatless/**"
       ],
-      "mustSurvive": "Keep fork methods: server list, server status subscription, server log subscription, sandbox status, sandbox status subscription, sandbox start, sandbox stop, and subtasks.list. Keep sandbox lifecycle schemas separate from server list schemas. sandbox.subscribeStatus is gated on the sandboxStatusPush capability: absent, the client polls sandbox.status instead, so both paths have to keep working. subtasks.ts, threadShellLookup.ts and threadBrowse.ts are fork-only, and subtasks.list, threads.getShell and threads.browse each keep their UnsupportedMethodError union entry for as long as apps/server refuses the method, whatever unsupported-methods.mjs reports. threads.getShell and threads.browse both return the listing's own OrchestrationThreadShell and must keep doing so: a thread fetched by id, or reached through a browse, has to be indistinguishable from the same thread delivered by the listing. Every field of ThreadBrowseInput is optional and the backend refuses a browse that names neither an ownerUserId nor a tag, so the schema cannot express 'list everything'."
+      "mustSurvive": "Keep fork methods: sandbox status, sandbox status subscription, sandbox start, sandbox stop, and subtasks.list. sandbox.subscribeStatus is gated on the sandboxStatusPush capability: absent, the client polls sandbox.status instead, so both paths have to keep working. subtasks.ts, threadShellLookup.ts and threadBrowse.ts are fork-only, and subtasks.list, threads.getShell and threads.browse each keep their UnsupportedMethodError union entry for as long as apps/server refuses the method, whatever unsupported-methods.mjs reports. threads.getShell and threads.browse both return the listing's own OrchestrationThreadShell and must keep doing so: a thread fetched by id, or reached through a browse, has to be indistinguishable from the same thread delivered by the listing. Every field of ThreadBrowseInput is optional and the backend refuses a browse that names neither an ownerUserId nor a tag, so the schema cannot express 'list everything'."
     },
     {
-      "id": "server-state-client-runtime",
-      "name": "Server state in client runtime",
+      "id": "sandbox-subtask-state-client-runtime",
+      "name": "Sandbox and subtask state in client runtime",
       "paths": [
-        "packages/client-runtime/src/state/servers.ts",
         "packages/client-runtime/src/state/sandbox.ts",
         "packages/client-runtime/src/state/subtasks.ts",
         "packages/client-runtime/src/state/threadShellLookup.ts",
@@ -799,7 +786,7 @@
         "packages/client-runtime/src/rpc/client.ts",
         "packages/client-runtime/package.json"
       ],
-      "mustSurvive": "Keep fork server, sandbox lifecycle and subtask state surfaces separate. sandbox exposes both status (polled query, the fallback) and statusStream (the pushed subscription); dropping either leaves one class of server without a live indicator. The subscription tag is also listed in EnvironmentSubscriptionRpcTag in rpc/client.ts, an upstream file. subtasks is a query on a refresh interval, not a subscription: a child task settles at the pace of a task, not of a container probe. threadShellLookup is a query with no refresh at all: it is how the client learns a row the listing never sent, and once it has one nothing is pushing changes to re-read. threadBrowse is a query on a refresh interval, because nothing pushes a change to a listing the viewer does not follow: the fork deliberately did not widen orchestration.subscribeShell for it, so the browse stays out of the snapshot every other surface reads."
+      "mustSurvive": "Keep fork sandbox lifecycle and subtask state surfaces separate. sandbox exposes both status (polled query, the fallback) and statusStream (the pushed subscription); dropping either leaves the sandbox without a live indicator. The subscription tag is also listed in EnvironmentSubscriptionRpcTag in rpc/client.ts, an upstream file. subtasks is a query on a refresh interval, not a subscription: a child task settles at the pace of a task, not of a container probe. threadShellLookup is a query with no refresh at all: it is how the client learns a row the listing never sent, and once it has one nothing is pushing changes to re-read. threadBrowse is a query on a refresh interval, because nothing pushes a change to a listing the viewer does not follow: the fork deliberately did not widen orchestration.subscribeShell for it, so the browse stays out of the snapshot every other surface reads."
     },
     {
       "id": "subtasks-agents-panel",
@@ -845,18 +832,6 @@
       "mustSurvive": "The sidebar's thread header carries a filter beside the project scope: an administrator narrows the list to one owner and/or one tag, and anyone includes closed threads. The two halves are different reads and must stay that way. Owner and tag go to threads.browse, which replaces the listing rather than adding to it, because a filter narrows; closed threads come from orchestration.getArchivedShellSnapshot, which is the viewer's own followed-and-closed half, appended and deduped on environmentId:id because the adoption graft can already have put an open closed thread into the listing and React would see one key twice. With a browse active the closed toggle is inside its payload instead. The browse is read in fork/browsedThreadShells.ts and deliberately NOT grafted through adoptedEnvironmentSnapshotAtom: that snapshot feeds the command palette, the thread index and the first-run gate, and pointing those at somebody else's work is not what a sidebar filter means. threadBrowseInput writes a fixed key order and omits an unset field, because the atom family keys on JSON.stringify of the input and a second spelling of one filter is a second polling subscription. It returns null unless an owner or a tag is set, so includeClosed alone never issues a browse. The browse only fans out to environments whose descriptor carries threadBrowse, and with none it is forced to null so a persisted filter cannot empty the sidebar with nothing to explain it. Sidebar.tsx gates drag-reorder and pin-placement on !isBrowsing, since a browsed list is somebody else's work in the server's order and the next refresh replaces it; its empty state says the filter matched nothing rather than 'none yet'. Reset shows whenever any part of the filter is set, including for a demoted administrator whose owner and tag selects are hidden — otherwise a persisted filter has no way out. tagsQuery lives with the administration reads because the keys are one namespace, even though no settings page reads it."
     },
     {
-      "id": "servers-right-panel",
-      "name": "Servers view in right panel",
-      "paths": [
-        "apps/web/src/state/servers.ts",
-        "apps/web/src/components/RightPanelTabs.tsx",
-        "apps/web/src/rightPanelStore.ts",
-        "apps/web/src/components/ChatView.tsx",
-        "apps/web/src/AppRoot.tsx"
-      ],
-      "mustSurvive": "Keep fork UI unless upstream ships an equivalent. The dedicated components/servers/ directory is gone — server rendering folded into components/preview/."
-    },
-    {
       "id": "hosted-web-preview",
       "name": "Hosted web preview",
       "paths": [
@@ -865,13 +840,13 @@
         "apps/web/src/previewStateStore.ts",
         "apps/web/src/previewRuntimeCapability.test.ts"
       ],
-      "mustSurvive": "Preview renders in a hosted iframe rather than a native browser surface, and a frame that loaded before its server was serving is replaced when the server reaches started (useFramedServerReload in PreviewView.tsx — a webview reloads itself, a frame does not). Upstream owns most files and works in them; take upstream and re-state the iframe behavior on top. Also surviving (2026-08-07): a framed page can be annotated — four gates on the existing framed flag in PreviewView.tsx, each // Fork: marked and additive. Drop the whole delta once upstream ships a web preview."
+      "mustSurvive": "Preview renders in a hosted iframe rather than a native browser surface. Upstream owns most files and works in them; take upstream and re-state the iframe behavior on top. Also surviving (2026-08-07): a framed page can be annotated — four gates on the existing framed flag in PreviewView.tsx, each // Fork: marked and additive. Drop the whole delta once upstream ships a web preview."
     },
     {
       "id": "hosted-env-stubs",
       "name": "Upstream-server hosted-env stubs",
       "paths": ["apps/server/src/ws.ts", "apps/server/src/auth/RpcAuthorization.ts"],
-      "mustSurvive": "Converged; re-add servers.*, sandbox.status, sandbox.start, and sandbox.stop entries. Drop these first if upstream ships server-shaped support."
+      "mustSurvive": "Converged; re-add sandbox.status, sandbox.start, and sandbox.stop entries. Drop these first if upstream ships server-shaped support."
     },
     {
       "id": "sandbox-lifecycle-controls",
@@ -880,7 +855,6 @@
         "apps/web/src/components/SandboxStatusControl.tsx",
         "apps/web/src/components/SandboxedRightPanelTabs.tsx",
         "apps/web/src/components/sandbox/**",
-        "apps/web/src/components/preview/useThreadPreviewServers.ts",
         "apps/web/src/components/ChatView.tsx",
         "apps/web/src/components/RightPanelTabs.tsx",
         "apps/web/src/components/chat/ChatHeader.tsx"
@@ -902,7 +876,7 @@
         "apps/web/src/components/RightPanelTabs.tsx",
         "apps/web/src/components/ChatView.tsx"
       ],
-      "mustSurvive": "Keep the 'sandbox' RightPanelKind and everything behind it until upstream has a machine to describe. sandbox.detail is deliberately a second projection beside sandbox.status rather than more keys on it: every client holds the status subscription open for its indicator, and only the one client with the panel open should pay for the wider read. Every runtime-sourced key is absent rather than empty, and the panel drops the section instead of rendering a blank one; a docker-compose deployment publishes no containers and no events, so it shows Status, Image, Idle stop, Commands and Servers alone. The whole surface is gated on the sandboxDetail capability, and the contract file is fork-only so the schema stays out of a file every upstream merge touches. The Servers section carries no per-server restart because the backend serves none; pod-granularity restart is the Status section's Restart button."
+      "mustSurvive": "Keep the 'sandbox' RightPanelKind and everything behind it until upstream has a machine to describe. sandbox.detail is deliberately a second projection beside sandbox.status rather than more keys on it: every client holds the status subscription open for its indicator, and only the one client with the panel open should pay for the wider read. Every runtime-sourced key is absent rather than empty, and the panel drops the section instead of rendering a blank one; a docker-compose deployment publishes no containers and no events, so it shows Status, Image, Idle stop and Commands alone. The whole surface is gated on the sandboxDetail capability, and the contract file is fork-only so the schema stays out of a file every upstream merge touches. Restart is pod-granularity, the Status section's Restart button."
     },
     {
       "id": "unsupported-method-error",
@@ -1406,7 +1380,7 @@
       "id": "browser-history-gate",
       "name": "Recently used gate in the browser empty state",
       "paths": ["apps/web/src/components/preview/PreviewView.tsx", "apps/web/src/fork/features.ts"],
-      "mustSurvive": "The browser's empty state never offers a \"Recently used\" URL. Browser history is keyed by project and read by every thread of that project, while a thread server's URL names the sandbox of the task that raised it (https://task--5733.…), so one thread's entries point every other thread at a sandbox it does not own and at a host that stops with that task. One additive FEATURES.browserHistory gate on the recentEntries prop PreviewView hands PreviewEmptyState. The gate sits at that call site rather than inside PreviewEmptyState deliberately: the component and upstream's three recents tests in PreviewEmptyState.test.tsx stay at zero delta, and the fork hands it an empty list instead. browserHistoryStore still records visits and titles, and PreviewView's title effect still reads useThreadRecentHistory — this gates the surface, not the writes. Drop the flag and the gate once a recorded entry can name a page a second thread of the project can reach.",
+      "mustSurvive": "The browser's empty state never offers a \"Recently used\" URL. Browser history is keyed by project and read by every thread of that project, while a thread's own preview URL names the sandbox of the task that raised it (https://task--5733.…) — a script's published port, for instance — so one thread's entries point every other thread at a sandbox it does not own and at a host that stops with that task. One additive FEATURES.browserHistory gate on the recentEntries prop PreviewView hands PreviewEmptyState. The gate sits at that call site rather than inside PreviewEmptyState deliberately, and the fork hands it an empty list instead. browserHistoryStore still records visits and titles, and PreviewView's title effect still reads useThreadRecentHistory — this gates the surface, not the writes. Drop the flag and the gate once a recorded entry can name a page a second thread of the project can reach.",
       "guard": {
         "symbol": "FEATURES.browserHistory",
         "files": ["apps/web/src/components/preview/PreviewView.tsx"]
@@ -1432,12 +1406,6 @@
       "name": "Allowed hosts",
       "watchFor": "Upstream consolidation on T3CODE_DEV_ALLOWED_HOSTS.",
       "action": "Drop the T3CODE_ALLOWED_HOSTS alias once deployments inject upstream's name."
-    },
-    {
-      "id": "thread-servers",
-      "name": "Thread servers",
-      "watchFor": "Any upstream concept of a server owned by a thread, especially in WS_METHODS.",
-      "action": "Prefer upstream; remove fork group, stubs first."
     },
     {
       "id": "hosted-preview",

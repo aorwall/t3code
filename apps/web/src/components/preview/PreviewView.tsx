@@ -70,9 +70,6 @@ import { readPreviewAnnotationTheme } from "~/browser/annotationTheme";
 import { BrowserSettingsReadError } from "~/browser/openFileInPreview";
 import { PreviewUnreachable } from "./PreviewUnreachable";
 import { PreviewFrameUnrendered, useFrameUnrenderedHint } from "./PreviewFrameUnrendered";
-import { PreviewServerNotStarted } from "./PreviewServerNotStarted";
-import { useFramedServerReload } from "./framedServerReload";
-import { useFramedServerStatus } from "./useFramedServerStatus";
 import { revealInFileExplorerLabel } from "./fileExplorerLabel";
 import { shouldShowPreviewEmptyState } from "./previewEmptyStateLogic";
 import { Badge } from "~/components/ui/badge";
@@ -205,18 +202,8 @@ export function PreviewView({
   const panelRect = useBrowserSurfaceStore((state) =>
     runtimeTabId ? (state.byTabId[runtimeTabId]?.rect ?? null) : null,
   );
-  // What a frame cannot say about itself, its server can. Nothing consults
-  // this on the desktop app, where the page reports its own failures.
-  const framedServer = useFramedServerStatus(framed ? threadRef : null, url);
-  // Fork: a frame that loaded before its server was serving keeps the dead page
-  // after the status overlay clears, so it is replaced on the transition.
-  useFramedServerReload(framed ? runtimeTabId : null, framedServer?.status ?? null);
-  const frameHintElapsed = useFrameUnrenderedHint(
-    framed ? url : "",
-    framedServer?.status === "started",
-  );
-  const showFrameUnrenderedHint =
-    framed && frameHintElapsed && !showEmptyState && framedServer?.status === "started";
+  const frameHintElapsed = useFrameUnrenderedHint(framed ? url : "");
+  const showFrameUnrenderedHint = framed && frameHintElapsed && !showEmptyState;
 
   const navUrl = navStatus._tag === "Success" ? navStatus.url : null;
   const navTitle = navStatus._tag === "Success" ? navStatus.title : null;
@@ -953,8 +940,8 @@ export function PreviewView({
         {showEmptyState ? (
           <PreviewEmptyState
             threadRef={threadRef}
-            // Fork: FEATURES.browserHistory off — the empty state offers this
-            // thread's preview servers and never the project's URL history.
+            // Fork: FEATURES.browserHistory off — the empty state never offers
+            // the project's URL history.
             recentEntries={FEATURES.browserHistory ? recentHistoryEntries : []}
             onRemoveRecent={(url) => removeUrlForThread(threadRef, url)}
             onOpenUrl={(next) => void handleOpenServerUrl(next)}
@@ -981,14 +968,6 @@ export function PreviewView({
               code={navStatus.code}
               description={navStatus.description}
               onReload={handleRefresh}
-            />
-          </div>
-        ) : null}
-        {framedServer && framedServer.status !== "started" ? (
-          <div className="absolute inset-0 z-10 bg-background">
-            <PreviewServerNotStarted
-              server={framedServer}
-              onOpenInBrowser={tabId ? handleOpenInBrowser : undefined}
             />
           </div>
         ) : null}

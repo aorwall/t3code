@@ -208,7 +208,6 @@ import { addBrowserSurface } from "./preview/addBrowserSurface";
 import { closePreviewSession } from "./preview/closePreviewSession";
 import { ThreadPreviewMiniPlayer } from "./preview/ThreadPreviewMiniPlayer";
 import { subscribePreviewAction } from "./preview/previewActionBus";
-import { useThreadPreviewServers } from "./preview/useThreadPreviewServers";
 // Fork: the preview sync runs for the thread on screen, not for an open panel.
 import { useOptionalPreviewSession } from "./preview/usePreviewSession";
 import { makeWorkspaceFileDropHandlers } from "./chat/workspaceFileDrop";
@@ -2061,19 +2060,6 @@ export default function ChatView(props: ChatViewProps) {
   // Fork: held open for the thread on screen, not just for an open preview
   // panel — see `useOptionalPreviewSession`.
   useOptionalPreviewSession(isPreviewSupportedInRuntime() ? activeThreadRef : null);
-  const { servers: activePreviewServers } = useThreadPreviewServers(activeThreadRef);
-  const activePreviewServerLabelsByOrigin = useMemo(() => {
-    const labels = new Map<string, string>();
-    for (const server of activePreviewServers) {
-      if (server.url === null) continue;
-      try {
-        labels.set(new URL(server.url).origin, server.label);
-      } catch {
-        // Ignore malformed server URLs from older or failing backends.
-      }
-    }
-    return labels;
-  }, [activePreviewServers]);
   const activePreviewServerEpoch = activePreviewState.serverEpoch;
   const resolvePreviewRuntimeTabId = useMemo(
     () =>
@@ -10859,7 +10845,6 @@ export default function ChatView(props: ChatViewProps) {
           activeSurfaceId={renderedRightPanelSurface?.id ?? null}
           pendingSurfaceIds={pendingFileSurfaceIds}
           previewSessions={activePreviewState.sessions}
-          previewServerLabelsByOrigin={activePreviewServerLabelsByOrigin}
           desktopByTabId={activePreviewState.desktopByTabId}
           previewRuntimeTabId={resolvePreviewRuntimeTabId}
           terminalLabelsById={activeTerminalLabelsById}
@@ -10921,7 +10906,6 @@ export default function ChatView(props: ChatViewProps) {
             activeSurfaceId={renderedRightPanelSurface?.id ?? null}
             pendingSurfaceIds={pendingFileSurfaceIds}
             previewSessions={activePreviewState.sessions}
-            previewServerLabelsByOrigin={activePreviewServerLabelsByOrigin}
             desktopByTabId={activePreviewState.desktopByTabId}
             previewRuntimeTabId={resolvePreviewRuntimeTabId}
             terminalLabelsById={activeTerminalLabelsById}

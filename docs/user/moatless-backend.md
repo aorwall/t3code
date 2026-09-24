@@ -486,7 +486,7 @@ The protocol kernel does not create the product behavior behind the method names
 - **native core:** environment probe/config, orchestration snapshots and commands,
   Task/message live state, server lifecycle, auth access;
 - **direct application adapters:** Workspace/Task listing, file access, assets,
-  current diffs, Sandbox controls, configured servers;
+  current diffs, Sandbox controls, Workspace Scripts;
 - **new Moatless backend/Sandbox products:** checkpoint/revert, optional PTY,
   placement-aware Git operations, PR preparation, richer pending interactions, durable
   replay;
@@ -647,10 +647,10 @@ The authoritative Moatless vocabulary is:
 | Moatless entity                | Important fields/behavior                                                                                                                               |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Repository                     | Git pointer: remote, host, name, default branch. It does not own run configuration.                                                                     |
-| Workspace                      | Reusable run composition: zero or more `WorkspaceRepo` placements plus image, setup, env, servers, resources, and network profile.                      |
+| Workspace                      | Reusable run composition: zero or more `WorkspaceRepo` placements plus image, setup, env, Scripts, resources, and network profile.                      |
 | WorkspaceRepo                  | Repository placement with branch override, mount name, primary flag, and ordering.                                                                      |
 | Task                           | Central conversation/work unit with open/closed/error state, scope, visibility, owner, cost, tags, TTL, relations, Bindings, and Sandbox desired state. |
-| Sandbox                        | Exactly one ephemeral isolated runtime per Task. It materializes the Workspace and runs servers and an Agent.                                           |
+| Sandbox                        | Exactly one ephemeral isolated runtime per Task. It materializes the Workspace and runs Scripts and an Agent.                                           |
 | Turn                           | Persisted user-message/agent-response lifecycle unit. The Sandbox calls the active invocation a Run.                                                    |
 | Session                        | Resumable Agent CLI conversation spanning Turns. Codex calls this a thread only within Codex-specific code.                                             |
 | Agent harness                  | Fixed Task-level execution implementation: `claude-code` or `codex`.                                                                                    |
@@ -687,7 +687,7 @@ where their meaning remains different.
 | Proposed plan           | `ExitPlanMode` request/plan            | Map the typed pending interaction and plan content; the exact lifecycle differs and needs a richer shared interaction shape.                                                                                                                              |
 | Approval                | Agent permission or pending input      | Moatless currently specializes `AskUserQuestion` and `ExitPlanMode`. Add a harness-neutral pending-interaction DTO before claiming all T3 approval decisions.                                                                                             |
 | Checkpoint              | No direct entity                       | Moatless has current git change data, not per-Turn checkpoint refs/revert. This is an M+ feature.                                                                                                                                                         |
-| Project script          | Workspace setup/server config          | Setup commands map to Workspace setup. Preview scripts map more naturally to configured Workspace servers. Ad-hoc scripts can remain client conveniences.                                                                                                 |
+| Project script          | Workspace setup/Scripts                | Setup commands map to Workspace setup. Project scripts map to Workspace Scripts, which run in the Sandbox and may publish a port. Ad-hoc scripts can remain client conveniences.                                                                          |
 | Command (RPC)           | RPC mutation                           | Moatless `Command` means a slash-command preset. In docs and code, qualify T3 writes as RPC/orchestration commands and Moatless commands as slash commands.                                                                                               |
 | Source-control provider | Git host                               | Use Moatless's qualified term.                                                                                                                                                                                                                            |
 | T3 Connect              | Deployment access method               | Not a Moatless domain entity. A gateway may be reached directly, through existing infrastructure, or later through T3 Connect.                                                                                                                            |
@@ -750,7 +750,7 @@ groups:
 1. `EnvironmentRpcGroup` — probe, config, lifecycle, auth access.
 2. `ConversationRpcGroup` — shell/list snapshots, Task detail, Turns, messages.
 3. `WorkspaceFilesRpcGroup` — task-addressed tree/read/write/search/diff.
-4. `PreviewRpcGroup` — Task servers, preview sessions, inspector bridge.
+4. `PreviewRpcGroup` — preview sessions, inspector bridge.
 5. `TerminalRpcGroup` — optional PTY.
 6. `VcsRpcGroup` — optional task-addressed Git actions.
 7. `MoatlessControlRpcGroup` — Task/Sandbox lifecycle and metadata.
@@ -929,15 +929,15 @@ and an explicit deployment policy that can disable terminals.
 | `preview.open`                    | Adapt        | Resolve a configured/running Task server from Sandbox status and create client/gateway preview-tab state.                                                         |
 | `preview.navigate`                | Client       | Navigation within an authorized proxied server URL is client session state. Persist only if cross-device restoration is a requirement.                            |
 | `preview.resize`                  | Client       | Device viewport/zoom is presentation state.                                                                                                                       |
-| `preview.refresh`                 | Client       | Reload the iframe/webview. A separate explicit server restart already exists in Moatless.                                                                         |
-| `preview.close`                   | Client       | Close the preview tab/session without stopping the Workspace server.                                                                                              |
-| `preview.list`                    | Adapt        | Combine Moatless server status/config with client preview tabs. Do not imply that every configured server is an open tab.                                         |
-| `preview.reportStatus`            | Client/Adapt | Track iframe reachability in the gateway only when other clients/agents consume it; backend Sandbox status remains authoritative for the server process.          |
+| `preview.refresh`                 | Client       | Reload the iframe/webview.                                                                                                                                        |
+| `preview.close`                   | Client       | Close the preview tab/session without stopping the Script that serves it.                                                                                         |
+| `preview.list`                    | Adapt        | Combine running Scripts' published ports with client preview tabs. Do not imply that every Script with a port is an open tab.                                     |
+| `preview.reportStatus`            | Client/Adapt | Track iframe reachability in the gateway only when other clients/agents consume it; the Script's terminal session remains authoritative for the process.          |
 | `previewAutomation.connect`       | T3+          | Reuse T3's host bridge for cursor/automation where possible. Moatless has an inspector overlay and element contexts, but no identical RPC automation host stream. |
 | `previewAutomation.respond`       | T3+          | Gateway relay to the selected connected preview host; keep Task/server/client ids in the address.                                                                 |
 | `previewAutomation.focusHost`     | Client/Adapt | Focus the correct T3 preview surface; optionally notify the gateway for automation routing.                                                                       |
 | `subscribePreviewEvents`          | Adapt        | Map `server.*`, Sandbox status, URL/config changes, and client preview-session changes.                                                                           |
-| `subscribeDiscoveredLocalServers` | Direct       | Map the Task's Sandbox server list/status/URLs. Rename it in Moatless mode because these servers are remote to the browser, not local.                            |
+| `subscribeDiscoveredLocalServers` | No           | Moatless has no port discovery. A running Script's port is published at the Task's preview hostname and returned by `scripts.run`.                                |
 
 Port from the Moatless frontend: server-status overlay, inspector-unavailable state,
 console/event/log tabs, streamed server logs, server restart/config override/reset,
@@ -996,28 +996,28 @@ mutation support lands.
 These are all 20 client-dispatchable variants carried by
 `orchestration.dispatchCommand`.
 
-| T3 command                    | Disposition   | Moatless operation and semantic notes                                                                                                                                                                                                                   |
-| ----------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `project.create`              | Partial + T3+ | Create a Workspace. The T3 command lacks Repository placements and run configuration, so the full Moatless create flow needs a native Workspace command/schema. Do not convert `workspaceRoot` into a Workspace.                                        |
-| `project.meta.update`         | Partial + T3+ | Update Workspace name and default-model-like UI preference. Workspace repos, image, setup, env, servers, resources, scope, source/override state need native fields. T3 project scripts can translate to setup/server config only when semantics match. |
-| `project.delete`              | Direct        | Delete the Workspace after showing affected Tasks and backend constraints. `force` must not silently delete Tasks or Sandboxes unless the Moatless API defines that cascade.                                                                            |
-| `thread.create`               | Direct/Adapt  | Create a Task in the selected Workspace. Map title, Agent harness/model/mode, branch, and optional first message. Generate the backend id server-side and return the mapping instead of requiring Moatless to accept a T3-generated Task id.            |
-| `thread.delete`               | Direct        | `DELETE /api/v1/tasks/{taskId}`. This permanently removes the Task after strict Sandbox cleanup; retain T3's confirmation UX.                                                                                                                           |
-| `thread.archive`              | Direct        | Close Task. UI copy and events must say Close/Closed in Moatless mode. Closing deactivates Bindings and is more meaningful than a cosmetic archive.                                                                                                     |
-| `thread.unarchive`            | Direct        | Reopen Task. Reopening does not necessarily start its Sandbox.                                                                                                                                                                                          |
-| `thread.settle`               | M+ optional   | Add per-user Task triage state if the inbox workflow is desired. It must not change global Task status.                                                                                                                                                 |
-| `thread.unsettle`             | M+ optional   | Clear/override the same per-user triage state; new activity may automatically reactivate it.                                                                                                                                                            |
-| `thread.snooze`               | M+ optional   | Add per-user `snoozedUntil` and optional wake reason/condition. It remains an open Task.                                                                                                                                                                |
-| `thread.unsnooze`             | M+ optional   | Clear the personal snooze state.                                                                                                                                                                                                                        |
-| `thread.meta.update`          | Partial + M+  | Task name/description can update now. Existing Task Agent harness is immutable by design; model/mode are selected per Turn. Branch mutation on a provisioned multi-repo Workspace needs a typed backend operation. `worktreePath` is never mapped.      |
-| `thread.runtime-mode.set`     | M+ or Client  | Persist a harness-neutral permission policy only after Moatless defines one. Until then keep a next-message UI preference and do not advertise unsupported values.                                                                                      |
-| `thread.interaction-mode.set` | Adapt         | Map `default`/`plan` to the next Turn's `edit`/`plan` `agentMode`. Moatless accepts mode on create/send; the selector can be client draft state unless backend persistence is added.                                                                    |
-| `thread.turn.start`           | Direct/Adapt  | Existing Task: upload attachments, then `POST /messages` with text, model, Agent mode, contexts, resume/start-fresh. Bootstrap: create Task with Workspace/harness/branch and first message. Preserve optimistic message UUID reconciliation.           |
-| `thread.turn.interrupt`       | Direct        | `POST /tasks/{taskId}/stop` currently stops Agent and Sandbox. If T3 must interrupt only the active Run while keeping preview servers alive, add a separate Agent-interrupt primitive.                                                                  |
-| `thread.approval.respond`     | Partial + T3+ | For `ExitPlanMode` and supported tool responses, post the typed `toolUseId`, `toolName`, and `toolResponse`. `acceptForSession` and generic command/file approval require an explicit Moatless permission-interaction contract.                         |
-| `thread.user-input.respond`   | Direct/Adapt  | Convert answers to the pending `AskUserQuestion` tool response and post through `/messages`. Validate the request id/tool id is still pending.                                                                                                          |
-| `thread.checkpoint.revert`    | M+            | Add atomic per-Turn checkpoint/revert in the Task Sandbox, including multi-repo placement, conflict, stale Sandbox, and event semantics.                                                                                                                |
-| `thread.session.stop`         | Partial       | The current Task stop endpoint stops the Sandbox as well as the Agent. Use it only with accurate UI wording; add Agent-only stop if preserving running servers is required.                                                                             |
+| T3 command                    | Disposition   | Moatless operation and semantic notes                                                                                                                                                                                                                 |
+| ----------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `project.create`              | Partial + T3+ | Create a Workspace. The T3 command lacks Repository placements and run configuration, so the full Moatless create flow needs a native Workspace command/schema. Do not convert `workspaceRoot` into a Workspace.                                      |
+| `project.meta.update`         | Partial + T3+ | Update Workspace name and default-model-like UI preference. Workspace repos, image, setup, env, Scripts, resources, scope, source/override state need native fields. T3 project scripts can translate to Workspace Scripts only when semantics match. |
+| `project.delete`              | Direct        | Delete the Workspace after showing affected Tasks and backend constraints. `force` must not silently delete Tasks or Sandboxes unless the Moatless API defines that cascade.                                                                          |
+| `thread.create`               | Direct/Adapt  | Create a Task in the selected Workspace. Map title, Agent harness/model/mode, branch, and optional first message. Generate the backend id server-side and return the mapping instead of requiring Moatless to accept a T3-generated Task id.          |
+| `thread.delete`               | Direct        | `DELETE /api/v1/tasks/{taskId}`. This permanently removes the Task after strict Sandbox cleanup; retain T3's confirmation UX.                                                                                                                         |
+| `thread.archive`              | Direct        | Close Task. UI copy and events must say Close/Closed in Moatless mode. Closing deactivates Bindings and is more meaningful than a cosmetic archive.                                                                                                   |
+| `thread.unarchive`            | Direct        | Reopen Task. Reopening does not necessarily start its Sandbox.                                                                                                                                                                                        |
+| `thread.settle`               | M+ optional   | Add per-user Task triage state if the inbox workflow is desired. It must not change global Task status.                                                                                                                                               |
+| `thread.unsettle`             | M+ optional   | Clear/override the same per-user triage state; new activity may automatically reactivate it.                                                                                                                                                          |
+| `thread.snooze`               | M+ optional   | Add per-user `snoozedUntil` and optional wake reason/condition. It remains an open Task.                                                                                                                                                              |
+| `thread.unsnooze`             | M+ optional   | Clear the personal snooze state.                                                                                                                                                                                                                      |
+| `thread.meta.update`          | Partial + M+  | Task name/description can update now. Existing Task Agent harness is immutable by design; model/mode are selected per Turn. Branch mutation on a provisioned multi-repo Workspace needs a typed backend operation. `worktreePath` is never mapped.    |
+| `thread.runtime-mode.set`     | M+ or Client  | Persist a harness-neutral permission policy only after Moatless defines one. Until then keep a next-message UI preference and do not advertise unsupported values.                                                                                    |
+| `thread.interaction-mode.set` | Adapt         | Map `default`/`plan` to the next Turn's `edit`/`plan` `agentMode`. Moatless accepts mode on create/send; the selector can be client draft state unless backend persistence is added.                                                                  |
+| `thread.turn.start`           | Direct/Adapt  | Existing Task: upload attachments, then `POST /messages` with text, model, Agent mode, contexts, resume/start-fresh. Bootstrap: create Task with Workspace/harness/branch and first message. Preserve optimistic message UUID reconciliation.         |
+| `thread.turn.interrupt`       | Direct        | `POST /tasks/{taskId}/stop` currently stops Agent and Sandbox. If T3 must interrupt only the active Run while keeping running Scripts alive, add a separate Agent-interrupt primitive.                                                                |
+| `thread.approval.respond`     | Partial + T3+ | For `ExitPlanMode` and supported tool responses, post the typed `toolUseId`, `toolName`, and `toolResponse`. `acceptForSession` and generic command/file approval require an explicit Moatless permission-interaction contract.                       |
+| `thread.user-input.respond`   | Direct/Adapt  | Convert answers to the pending `AskUserQuestion` tool response and post through `/messages`. Validate the request id/tool id is still pending.                                                                                                        |
+| `thread.checkpoint.revert`    | M+            | Add atomic per-Turn checkpoint/revert in the Task Sandbox, including multi-repo placement, conflict, stale Sandbox, and event semantics.                                                                                                              |
+| `thread.session.stop`         | Partial       | The current Task stop endpoint stops the Sandbox as well as the Agent. Use it only with accurate UI wording; add Agent-only stop if preserving running servers is required.                                                                           |
 
 ### Command idempotency
 
@@ -1211,7 +1211,7 @@ clients. "Keep" means the existing T3 experience can remain with data/labels ada
 | Clone repository into Project     | Register/verify Repository, then create/add it to a Workspace.                                                                                    |
 | Publish local repository          | Hide until Moatless supports blank-Workspace publishing.                                                                                          |
 | Project title/default model       | Workspace name plus a client default for new Tasks. Model is selected from the Agent catalog at Task creation.                                    |
-| Project setup/run/preview scripts | Map setup commands and configured servers to Workspace run config. Keep ad-hoc client shortcuts separately.                                       |
+| Project setup/run/preview scripts | Map setup commands and Workspace Scripts to Workspace run config. Keep ad-hoc client shortcuts separately.                                        |
 | Create Thread                     | Create Task with Workspace, Agent harness, model, mode, primary branch, optional additional repo choices/contexts, visibility, and first message. |
 | Create worktree per Thread        | Omit. Task Sandbox isolation replaces this workflow.                                                                                              |
 | Rename Thread                     | Update Task name/description.                                                                                                                     |
@@ -1320,12 +1320,12 @@ processes belong in Sandbox diagnostics, not in a fake read-only terminal.
 | Refresh/open externally                | Keep when server capability allows.                                         |
 | Device sizes and viewport resize       | Keep client-side.                                                           |
 | Zoom                                   | Keep client-side.                                                           |
-| Discovered server cards                | Map configured/discovered Task servers.                                     |
+| Discovered server cards                | Not mapped: Moatless has no port discovery.                                 |
 | Loading/unreachable states             | Combine iframe reachability with Sandbox/server status.                     |
 | Agent browser cursor                   | Keep through T3 preview automation if the host bridge is connected.         |
 | Element picker/inspector               | Port Moatless overlay and emit element context to composer.                 |
 | Console logs                           | Port the Moatless preview bridge.                                           |
-| Event log                              | Port Sandbox/server events.                                                 |
+| Event log                              | Port Sandbox events.                                                        |
 | Server logs                            | Direct current endpoint; preserve bounded/tail behavior.                    |
 | Server status/start/restart            | Map explicit server control endpoints.                                      |
 | Live server command/env override/reset | Add T3 UI for the existing Moatless config endpoints.                       |
@@ -1455,25 +1455,24 @@ These are not transport gaps; they are product surfaces to add to the T3 applica
 
 ### Core daily workflow — highest priority
 
-| Moatless capability                                       | Required T3 addition                                                                                                           |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Task open/closed/error, start/stop/close/reopen/delete    | Moatless Task status/actions in header, sidebar, command palette, and confirmations.                                           |
-| Sandbox desired vs observed lifecycle                     | Status model that distinguishes desired state, observed Sandbox state, Agent state, stop reason, timestamps, and errors.       |
-| Provision/restart/redeploy/cleanup                        | Task Sandbox action menu with progress and authorization.                                                                      |
-| Full Sandbox status                                       | Diagnostics panel for resources, container state, runtime events, background processes, and scheduled jobs.                    |
-| Workspace server config/status/log/restart/override/reset | Expanded Preview server management.                                                                                            |
-| Task visibility/scope/owner                               | Task sharing/access controls using Moatless rules; public grants read/interact, not control.                                   |
-| Follow/unfollow and read receipt                          | Personal follow/unread controls and sidebar derivation.                                                                        |
-| Tags and TTL                                              | Metadata editor/filter, idle Sandbox TTL, inactive Task TTL.                                                                   |
-| Cost and Task statistics                                  | Cost display, token chart, model, tool-call and Skill aggregates.                                                              |
-| Task relations                                            | Parent/source/related Task section and navigation.                                                                             |
-| Rich Messages                                             | Content blocks, tools/results, thinking, usage, external sources, subagents, queued/pending state, sender/session/source Task. |
-| Pending messages                                          | Queue display, cancellation if later supported, optimistic reconciliation.                                                     |
-| Resume/start fresh                                        | Per-Turn Session control.                                                                                                      |
-| Uploads and contexts                                      | File upload, element, preview URL, and uploaded-file context UX.                                                               |
-| Task-addressed file tree/read/write/search                | Replace `cwd` calls with execution target; support multi-repo mounts and git overlays.                                         |
-| Bindings and Task connections                             | External-source badges, Binding list, external replies/reactions, and Task reply.                                              |
-| Feedback                                                  | Feedback action and history.                                                                                                   |
+| Moatless capability                                    | Required T3 addition                                                                                                           |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| Task open/closed/error, start/stop/close/reopen/delete | Moatless Task status/actions in header, sidebar, command palette, and confirmations.                                           |
+| Sandbox desired vs observed lifecycle                  | Status model that distinguishes desired state, observed Sandbox state, Agent state, stop reason, timestamps, and errors.       |
+| Provision/restart/redeploy/cleanup                     | Task Sandbox action menu with progress and authorization.                                                                      |
+| Full Sandbox status                                    | Diagnostics panel for resources, container state, runtime events, background processes, and scheduled jobs.                    |
+| Task visibility/scope/owner                            | Task sharing/access controls using Moatless rules; public grants read/interact, not control.                                   |
+| Follow/unfollow and read receipt                       | Personal follow/unread controls and sidebar derivation.                                                                        |
+| Tags and TTL                                           | Metadata editor/filter, idle Sandbox TTL, inactive Task TTL.                                                                   |
+| Cost and Task statistics                               | Cost display, token chart, model, tool-call and Skill aggregates.                                                              |
+| Task relations                                         | Parent/source/related Task section and navigation.                                                                             |
+| Rich Messages                                          | Content blocks, tools/results, thinking, usage, external sources, subagents, queued/pending state, sender/session/source Task. |
+| Pending messages                                       | Queue display, cancellation if later supported, optimistic reconciliation.                                                     |
+| Resume/start fresh                                     | Per-Turn Session control.                                                                                                      |
+| Uploads and contexts                                   | File upload, element, preview URL, and uploaded-file context UX.                                                               |
+| Task-addressed file tree/read/write/search             | Replace `cwd` calls with execution target; support multi-repo mounts and git overlays.                                         |
+| Bindings and Task connections                          | External-source badges, Binding list, external replies/reactions, and Task reply.                                              |
+| Feedback                                               | Feedback action and history.                                                                                                   |
 
 ### Workspace and repository management
 
@@ -1481,7 +1480,7 @@ These are not transport gaps; they are product surfaces to add to the T3 applica
 | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | Blank/single/multi-repo Workspaces                                                                    | Workspace list/editor and multi-repo Task creation.                                          |
 | WorkspaceRepo mount/branch/primary/order                                                              | Placement editor and placement-aware files/Git UI.                                           |
-| Image, Docker access, service account, system prompt, setup, env, servers, resources, network profile | Run-configuration editor with secret-safe handling and deployment-policy gates.              |
+| Image, Docker access, service account, system prompt, setup, env, Scripts, resources, network profile | Run-configuration editor with secret-safe handling and deployment-policy gates.              |
 | Git-declared Workspace source                                                                         | Source/provenance banner, read-only state, Override, explicit reset-to-git and sync results. |
 | Repository CRUD/access verification/branches                                                          | Repository admin/settings surface.                                                           |
 | Convert Repository to template                                                                        | Explicit template action if this product workflow remains supported.                         |
@@ -1551,7 +1550,7 @@ their dependencies and design system make that economical.
    approval, command permission, file change, allowed-for-session, expiry, and response.
 5. **Per-user Task triage.** Settled and snoozed state is useful for an inbox-oriented
    multi-user UI. Store it separately from global Task lifecycle.
-6. **Agent-only interrupt/stop.** Preserve a running Sandbox and preview servers while
+6. **Agent-only interrupt/stop.** Preserve a running Sandbox and its Scripts while
    interrupting the current Run when desired.
 7. **Normalized PR/Binding resolution.** Resolve a ref/URL/external subject to Binding,
    Repository, Workspace, branch, and existing/new Task workflow.
@@ -1586,7 +1585,7 @@ extended Project-compatible row or a native Workspace row:
 | kind                  | blank/single/multi                                                                              |
 | repository placements | `repos[]`, enriched with Repository name/remote/host                                            |
 | primary repository    | placement where `isPrimary`                                                                     |
-| run config summary    | image, setup, servers, resources, network profile                                               |
+| run config summary    | image, setup, Scripts, resources, network profile                                               |
 | source/provenance     | manual/git, source repository/key/config path, override state                                   |
 | scope/owner           | Workspace `scope`, `ownerUserId`                                                                |
 | default Agent/model   | client preference or future explicit Workspace default; not inferred from historical Tasks      |
@@ -1661,8 +1660,7 @@ already support lazy detail.
 | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `task.created/open/closed/updated/metadata.updated`                       | Upsert/remove Task shell row and refresh changed metadata if payload is incomplete.                                                                       |
 | `taskTurn.active/completed/error/stopped/turn_interrupted`                | Update latest Turn and Session/Agent presentation.                                                                                                        |
-| `sandbox.<status>`                                                        | Update observed lifecycle/error; invalidate file/server caches on generation/recreation.                                                                  |
-| `server.installing/starting/started/stopped/failed`                       | Update Preview server row and Activity.                                                                                                                   |
+| `sandbox.<status>`                                                        | Update observed lifecycle/error; invalidate file caches on generation/recreation.                                                                         |
 | `resources.*`                                                             | Update current metrics; rate-limit UI emissions.                                                                                                          |
 | `agent.started/stopped/completed/error/pending_response`                  | Update Agent/Session state and pending interaction hints.                                                                                                 |
 | `agent.session_init`                                                      | Store provider Session id when payload supplies it.                                                                                                       |
@@ -1727,33 +1725,33 @@ Moatless send contract.
 
 The current generated document contains exactly 164 HTTP operations:
 
-| OpenAPI tag         |   Count | Product responsibility / T3 destination                                             |
-| ------------------- | ------: | ----------------------------------------------------------------------------------- |
-| `provider-settings` |      20 | Codex and Git-host credentials/installations; Settings and admin.                   |
-| `tasks`             |      18 | Task list/create/metadata/lifecycle/access/personal state/statistics; core UI.      |
-| `sandbox`           |      18 | Task files, lifecycle, live/full status, servers/config/logs; Task Workspace panel. |
-| `workspaces`        |      10 | Workspace CRUD/composition/provenance; Workspace management.                        |
-| `users`             |       9 | Admin user/provider identity operations.                                            |
-| `repositories`      |       9 | Repository CRUD/branches/access/template/config sync.                               |
-| `auth`              |       9 | Session/profile/password/token/auth mode.                                           |
-| `adapters`          |       9 | Adapter inventory/connections/webhooks/send.                                        |
-| `teams`             |       8 | Team/member admin; not resource authorization.                                      |
-| `plugins`           |       8 | Plugin CRUD/effective list/Skills/Activations.                                      |
-| `secrets`           |       7 | Secret resolution and scoped CRUD/validation.                                       |
-| `linear`            |       7 | Linear issue/label/comment/lookup/GraphQL integration.                              |
-| `task-bindings`     |       6 | Bindings, external reactions, per-message and Task replies.                         |
-| `loops`             |       6 | Loop CRUD and recent Tasks.                                                         |
-| `messages`          |       5 | Messages, pending queue, tool detail, subagent transcript.                          |
-| `github`            |       3 | Issue comment, PR creation, review-comment reply.                                   |
-| `api-keys`          |       3 | User API-key list/create/revoke.                                                    |
-| `file-storage`      |       2 | Upload/download.                                                                    |
-| `feedback`          |       2 | Submit/list feedback.                                                               |
-| `task-events`       |       1 | Persisted Task-event history.                                                       |
-| `tags`              |       1 | Tag list.                                                                           |
-| `skills`            |       1 | Repository Skill list.                                                              |
-| `feature-flags`     |       1 | Deployment feature flags.                                                           |
-| `agents`            |       1 | Agent catalog.                                                                      |
-| **Total**           | **164** |                                                                                     |
+| OpenAPI tag         |   Count | Product responsibility / T3 destination                                        |
+| ------------------- | ------: | ------------------------------------------------------------------------------ |
+| `provider-settings` |      20 | Codex and Git-host credentials/installations; Settings and admin.              |
+| `tasks`             |      18 | Task list/create/metadata/lifecycle/access/personal state/statistics; core UI. |
+| `sandbox`           |      13 | Task files, lifecycle, live/full status, container logs; Task Workspace panel. |
+| `workspaces`        |      10 | Workspace CRUD/composition/provenance; Workspace management.                   |
+| `users`             |       9 | Admin user/provider identity operations.                                       |
+| `repositories`      |       9 | Repository CRUD/branches/access/template/config sync.                          |
+| `auth`              |       9 | Session/profile/password/token/auth mode.                                      |
+| `adapters`          |       9 | Adapter inventory/connections/webhooks/send.                                   |
+| `teams`             |       8 | Team/member admin; not resource authorization.                                 |
+| `plugins`           |       8 | Plugin CRUD/effective list/Skills/Activations.                                 |
+| `secrets`           |       7 | Secret resolution and scoped CRUD/validation.                                  |
+| `linear`            |       7 | Linear issue/label/comment/lookup/GraphQL integration.                         |
+| `task-bindings`     |       6 | Bindings, external reactions, per-message and Task replies.                    |
+| `loops`             |       6 | Loop CRUD and recent Tasks.                                                    |
+| `messages`          |       5 | Messages, pending queue, tool detail, subagent transcript.                     |
+| `github`            |       3 | Issue comment, PR creation, review-comment reply.                              |
+| `api-keys`          |       3 | User API-key list/create/revoke.                                               |
+| `file-storage`      |       2 | Upload/download.                                                               |
+| `feedback`          |       2 | Submit/list feedback.                                                          |
+| `task-events`       |       1 | Persisted Task-event history.                                                  |
+| `tags`              |       1 | Tag list.                                                                      |
+| `skills`            |       1 | Repository Skill list.                                                         |
+| `feature-flags`     |       1 | Deployment feature flags.                                                      |
+| `agents`            |       1 | Agent catalog.                                                                 |
+| **Total**           | **164** |                                                                                |
 
 The OpenAPI document does not include every live/operational route. Also account for
 the authenticated NDJSON `/api/v1/events/stream`, legacy/current Task event-history
@@ -1935,8 +1933,8 @@ recovery; duplicate dispatch does not duplicate Tasks/Messages/actions.
 2. Implement Task file tree/read/search/write and current diff.
 3. Add Sandbox desired/observed status, lifecycle controls, diagnostics, background
    processes, scheduled jobs, resources, and runtime events.
-4. Map configured servers and preview tabs; port inspector, contexts, logs, console/
-   events, restart, and live override/reset.
+4. Map Workspace Scripts and preview tabs; port inspector, contexts, logs, console/
+   events.
 5. Add batch sidebar live state and file write revisions.
 
 Exit criteria: all ordinary edit/review/preview/Sandbox recovery work can be done in
@@ -1990,7 +1988,7 @@ or lossy adapters.
 - plan/question response, stale response rejection, stop/recovery/error;
 - close/reopen/delete and Binding consequences;
 - file read/write conflict and Sandbox recreation invalidation;
-- preview server start/log/config/inspector context;
+- Script run, published port and inspector context;
 - cross-user/public/global authorization and existence hiding;
 - idempotent retry of every destructive or creating mutation.
 
@@ -2066,7 +2064,7 @@ paths with different verbs are distinct operations.
 - `PUT /api/v1/tasks/{task_id}/ttl`
 - `PUT /api/v1/tasks/{task_id}/visibility`
 
-### `sandbox` — 18
+### `sandbox` — 13
 
 - `POST /api/sandbox/v1/tasks/{task_id}/cleanup`
 - `GET /api/sandbox/v1/tasks/{task_id}/files/list`
@@ -2075,15 +2073,10 @@ paths with different verbs are distinct operations.
 - `GET /api/sandbox/v1/tasks/{task_id}/files/tree`
 - `POST /api/sandbox/v1/tasks/{task_id}/files/write`
 - `GET /api/sandbox/v1/tasks/{task_id}/live-status`
+- `GET /api/sandbox/v1/tasks/{task_id}/logs`
 - `POST /api/sandbox/v1/tasks/{task_id}/provision`
 - `POST /api/sandbox/v1/tasks/{task_id}/redeploy`
 - `POST /api/sandbox/v1/tasks/{task_id}/restart`
-- `GET /api/sandbox/v1/tasks/{task_id}/server/status`
-- `GET /api/sandbox/v1/tasks/{task_id}/servers/config`
-- `PATCH /api/sandbox/v1/tasks/{task_id}/servers/{server_name}`
-- `GET /api/sandbox/v1/tasks/{task_id}/servers/{server_name}/logs`
-- `DELETE /api/sandbox/v1/tasks/{task_id}/servers/{server_name}/override`
-- `POST /api/sandbox/v1/tasks/{task_id}/servers/{server_name}/restart`
 - `GET /api/sandbox/v1/tasks/{task_id}/status`
 - `POST /api/sandbox/v1/tasks/{task_id}/stop`
 
@@ -2283,6 +2276,6 @@ general client secret-read operation.
   direct Rust socket.
 - `backend/src/task`, `workspace`, `repository`, `sandbox`, `adapters`, `loops`,
   `plugins`, `skill`, `secret`, `auth`, and `provider_settings` — domain operations.
-- `sandbox/src` — Codex/Claude harnesses, files, servers, lifecycle, credentials, and
+- `sandbox/src` — Codex/Claude harnesses, files, Scripts, lifecycle, credentials, and
   Workspace materialization.
 - `apps/frontend/src/features` — current behavioral UI reference.

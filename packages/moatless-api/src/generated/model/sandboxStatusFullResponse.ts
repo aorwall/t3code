@@ -13,7 +13,6 @@ import type { RuntimeEvent } from "./runtimeEvent.ts";
 import type { SandboxDesiredState } from "./sandboxDesiredState.ts";
 import type { SandboxStatus } from "./sandboxStatus.ts";
 import type { ScheduledJobInfo } from "./scheduledJobInfo.ts";
-import type { ServerEntry } from "./serverEntry.ts";
 
 /**
  * Full sandbox status response to frontend (matches TS `SandboxStatusFullResponse`)
@@ -55,5 +54,4 @@ export interface SandboxStatusFullResponse {
   sandboxError: string | null;
   sandboxStatus: SandboxStatus;
   scheduledJobs?: ScheduledJobInfo[];
-  servers: ServerEntry[];
 }
