@@ -268,9 +268,8 @@ resolves a repository by preferring a remote named `upstream` over `origin`, so
 from the moment the merge is set up, `moat gh pr checks <n>`, `pr view`, `run
 list` and every other passthrough answer about `pingdotgg/t3code`. PR numbers
 collide across the two repositories, so this does not error — it returns a
-plausible answer about a stranger's PR. On 2026-09-15 that produced a reported
-"all checks pass" for soaplabs/t3code#170 from an unrelated closed upstream PR;
-the fork's PR had no checks at all. The four write operations
+plausible answer about a stranger's PR, such as "all checks pass" for a fork PR
+that has no checks at all. The four write operations
 (`pr create`, `pr comment`, `pr reply`, `issue comment`) go through the Moatless
 backend and resolve `origin` correctly, which is why everything you create lands
 in the right place while only the reads are wrong.
@@ -345,8 +344,8 @@ git merge upstream/main
    whole and say nothing; step 6's `resolution-check.mjs` exempts plain
    `theirs` paths by design; and lint, typecheck and test all pass because the
    working tree installed from the re-derived lockfile rather than the
-   committed one. On 2026-09-16 that shipped a lockfile missing both fork edges
-   to `main`, and CI found it at image build after the PR had merged. Step 8
+   committed one, so a lockfile missing both fork edges reaches `main` and CI
+   finds it only at image build, after the PR merges. Step 8
    tells you to keep a _later_ `vp i` rewrite out of the `--amend`; that is
    true only once this step's result is already in the commit. Get it in first.
 
@@ -557,11 +556,9 @@ the merge on its own.
 A package that fails that retry has its failing file run on its own before
 anything is called confirmed. Dropping the other packages does not stop a
 package contending with itself: `@t3tools/mobile` runs its 165 files
-concurrently either way. On 2026-09-13 a highlighting test failed the full run
-and the retry, passed in 1.5s as a single file, and the whole package passed on
-a re-run — while the report said `Confirmed failing alone, not machine noise`,
-which is the line a reader trusts to tell a regression from sandbox noise. The
-step now says which of four things happened, and only the last two are red:
+concurrently either way, so a file can fail the full run and the package retry
+and still pass alone in seconds. The step reports which of four things
+happened, and only the last two are red:
 
 - `failed in the full run, passed in isolation` — the package passes once the
   others are not running.
@@ -626,13 +623,11 @@ read to find out how far it got. `--sequential` runs each test package alone,
 which bounds that peak, keeps each phase short, and prints a
 `PKG <name> PASS|FAIL` line as each package lands so a truncated log still says
 what passed. It is slower when the machine can take the parallel run, and it is
-the one that finishes when it cannot. The 2026-09-15 merge lost two full passes
-to this before finishing sequentially.
+the one that finishes when it cannot.
 
-Check `/sys/fs/cgroup/memory.max` before concluding a suite is at fault. That
-merge's evictions were not the suites being heavy: the heap ceiling was
-hardcoded at exactly the pod's cap, so any one of them was entitled to all of
-it. `free` reports the host and will not show you this.
+Check `/sys/fs/cgroup/memory.max` before concluding a suite is at fault. An
+eviction more often means a heap ceiling too close to the pod's cap than a
+heavy suite. `free` reports the host and will not show you this.
 
 Reach for it on the second attempt, not the first — and do not hand-roll it as a
 shell loop over `--package`. A loop that pipes each run through `tail` reports
