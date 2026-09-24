@@ -624,6 +624,18 @@
       "note": "Take upstream, then re-apply three things. In ProjectScriptsControl: the `taskScoped` const and its `task` badge on a row the thread declared, `editable && !taskScoped` on the per-script Edit button, and `editable` on the t3.json import items and every Add action — including the one the collapsed menu offers when a project has no scripts at all. In ChatHeader: the `editable` and `taskScopedScriptIds` props, and `FEATURES.openInEditor &&` folded into `showOpenInPicker` rather than onto the picker, so the collapsed menu's separator and its trigger agree there is no picker. Upstream moves this control's rows between presentations — it extracted `scriptItems` and a portalled `headerActions` on 2026-09-20 for the collapsed header menu — so take upstream's structure and re-apply the gates at whatever anchor it now has. See the `task-scoped-scripts`, `project-script-editing-capability` and `open-in-editor-gate` inventory entries for what each gate is standing in for."
     },
     {
+      "id": "project-script-editor",
+      "paths": ["apps/web/src/components/projectScriptEditor.tsx"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply the numeric Port field in place of upstream's Preview URL input and auto-open toggle: `port` on `NewProjectScriptInput` and `EMPTY_PROJECT_SCRIPT_INPUT`, its state, its 1..65535 validation, and the payload built from it. See the `project-script-port-field` inventory entry for why."
+    },
+    {
+      "id": "textarea-mono-font",
+      "paths": ["apps/web/src/components/ui/textarea.tsx"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply the `font?: \"default\" | \"mono\"` prop, copied from upstream's own `Input` prop of the same name. The fork's Moatless settings panels show config and secret values in monospace textareas, and `shadcn/no-restyle` (an error since upstream #13210) forbids `font-mono` at the call site. Retire it when upstream's `Textarea` gains a `font` prop of its own."
+    },
+    {
       "id": "open-in-editor-gate-files",
       "paths": [
         "apps/web/src/components/GitActionsControl.tsx",

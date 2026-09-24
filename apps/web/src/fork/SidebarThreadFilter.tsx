@@ -11,7 +11,6 @@
 import { ListFilterIcon, XIcon } from "lucide-react";
 
 import { Button } from "../components/ui/button";
-import { Label } from "../components/ui/label";
 import { Popover, PopoverPopup, PopoverTrigger } from "../components/ui/popover";
 import {
   Select,
@@ -59,7 +58,7 @@ export function SidebarThreadFilter() {
                   aria-label="Filter threads"
                   // size-7 to sit in the header's segmented icon well beside
                   // upstream's own SidebarHeaderIconButton.
-                  className="relative size-7 shrink-0 focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+                  className="relative size-7 shrink-0"
                 />
               }
             />
@@ -88,9 +87,9 @@ export function SidebarThreadFilter() {
           </div>
           {canBrowse ? <ThreadBrowseSelects /> : null}
           <div className="flex items-center justify-between gap-2">
-            <Label htmlFor="sidebar-thread-filter-closed" className="text-muted-foreground text-xs">
+            <label htmlFor="sidebar-thread-filter-closed" className="text-muted-foreground text-xs">
               Include closed threads
-            </Label>
+            </label>
             <Switch
               id="sidebar-thread-filter-closed"
               size="sm"
@@ -121,7 +120,7 @@ function ThreadBrowseSelects() {
   return (
     <>
       <div className="flex flex-col gap-1.5">
-        <Label className="text-muted-foreground text-xs">Owner</Label>
+        <span className="text-muted-foreground text-xs">Owner</span>
         <Select
           value={filter.ownerUserId ?? ANY}
           onValueChange={(value) => setOwnerUserId(value === ANY ? null : String(value))}
@@ -144,7 +143,7 @@ function ThreadBrowseSelects() {
         </Select>
       </div>
       <div className="flex flex-col gap-1.5">
-        <Label className="text-muted-foreground text-xs">Tag</Label>
+        <span className="text-muted-foreground text-xs">Tag</span>
         <Select
           value={filter.tag ?? ANY}
           onValueChange={(value) => setTag(value === ANY ? null : String(value))}

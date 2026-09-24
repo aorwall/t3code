@@ -102,7 +102,6 @@ export function MermaidDiagram({ code, theme, isStreaming, children }: MermaidDi
             type="button"
             variant="ghost"
             size="micro"
-            className="chat-markdown-chrome-action"
             aria-pressed={view === "source"}
             onClick={() => setSourceRequested((requested) => !requested)}
           >

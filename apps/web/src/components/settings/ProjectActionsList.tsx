@@ -63,16 +63,17 @@ export function ProjectActionsList({
             ) : null}
             {/* Fork: see the editable prop. */}
             {editable ? (
-              <Button
-                size="icon-xs"
-                variant="ghost-muted"
-                className="shrink-0 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
-                aria-label={`Edit ${script.name}`}
-                disabled={disabled}
-                onClick={() => onEdit(script)}
-              >
-                <SettingsIcon className="size-3.5" />
-              </Button>
+              <span className="flex shrink-0 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100">
+                <Button
+                  size="icon-xs"
+                  variant="ghost-muted"
+                  aria-label={`Edit ${script.name}`}
+                  disabled={disabled}
+                  onClick={() => onEdit(script)}
+                >
+                  <SettingsIcon className="size-3.5" />
+                </Button>
+              </span>
             ) : null}
           </>
         }

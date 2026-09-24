@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "../../ui/dialog";
 import { Input } from "../../ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "../../ui/input-group";
 import { ToggleGroup, ToggleGroupItem } from "../../ui/toggle-group";
 import { repositoriesQuery } from "./queries";
 import {
@@ -141,7 +142,7 @@ function AddRepositoryForm({
 
   return (
     <>
-      <DialogPanel className="space-y-4 px-6 pb-5">
+      <DialogPanel>
         <ToggleGroup
           variant="outline"
           size="sm"
@@ -282,19 +283,17 @@ function ExistingRepositoryPicker({
 
   return (
     <div className="space-y-2">
-      <div className="relative">
-        <SearchIcon
-          className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
-          aria-hidden
-        />
-        <Input
+      <InputGroup>
+        <InputGroupAddon>
+          <SearchIcon aria-hidden className="size-3.5" />
+        </InputGroupAddon>
+        <InputGroupInput
           value={search}
           placeholder="Search repositories"
           aria-label="Search repositories"
           onChange={(event) => onSearchChange(event.currentTarget.value)}
-          className="pl-7.5"
         />
-      </div>
+      </InputGroup>
       <div className="max-h-64 overflow-y-auto rounded-lg border border-input">
         {matches.length === 0 ? (
           <p className="px-3 py-6 text-center text-[13px] text-muted-foreground">
