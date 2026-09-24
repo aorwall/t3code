@@ -48,11 +48,11 @@ function MoatlessTaskLinkRouteView() {
   }
 
   return (
-    <SidebarInset className="h-dvh min-h-0 overflow-hidden overscroll-y-none bg-background text-foreground">
+    <SidebarInset className="h-dvh min-h-0 overflow-hidden overscroll-y-none">
       <Empty className="flex-1">
         <EmptyHeader className="max-w-md">
-          <EmptyTitle className="text-foreground text-xl">Couldn’t open this task</EmptyTitle>
-          <EmptyDescription className="mt-2 text-sm text-muted-foreground/78">
+          <EmptyTitle>Couldn’t open this task</EmptyTitle>
+          <EmptyDescription className="mt-2">
             This browser isn’t connected to a Moatless deployment, so there is nowhere to look the
             task up.
           </EmptyDescription>

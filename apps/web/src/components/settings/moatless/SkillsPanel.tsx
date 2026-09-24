@@ -154,7 +154,7 @@ function RegisterPluginDialog({
             opened.
           </DialogDescription>
         </DialogHeader>
-        <DialogPanel className="space-y-4 px-6 pb-5">
+        <DialogPanel>
           <div>
             <label
               htmlFor="new-plugin-name"

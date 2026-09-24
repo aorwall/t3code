@@ -115,7 +115,7 @@ export function SecretEditorDialog({
             after it is saved.
           </DialogDescription>
         </DialogHeader>
-        <DialogPanel className="space-y-4 px-6 pb-5">
+        <DialogPanel>
           {!isEditing ? (
             <p className="rounded-lg bg-accent px-3 py-2 text-[13px] text-muted-foreground">
               {SCOPE_LABELS[scope]}
@@ -138,7 +138,7 @@ export function SecretEditorDialog({
               autoComplete="off"
               spellCheck={false}
               onChange={(event) => setKey(event.currentTarget.value)}
-              className="font-mono"
+              font="mono"
             />
             <p className="mt-1 text-[11px] text-muted-foreground">
               Environment variable name. Case-sensitive, fixed once created.
@@ -186,7 +186,8 @@ export function SecretEditorDialog({
                 autoComplete="off"
                 spellCheck={false}
                 onChange={(event) => setValue(event.currentTarget.value)}
-                className="min-h-[140px] font-mono text-xs"
+                className="min-h-[140px]"
+                font="mono"
               />
             ) : (
               <Input

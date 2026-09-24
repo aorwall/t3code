@@ -219,7 +219,7 @@ function CreateConnectionDialog({
             An account on an integration for loops to subscribe to.
           </DialogDescription>
         </DialogHeader>
-        <DialogPanel className="space-y-4 px-6 pb-5">
+        <DialogPanel>
           <div>
             <span className="mb-1.5 block text-xs font-medium text-foreground">Adapter</span>
             <Select value={effectiveAdapter} onValueChange={(value) => chooseAdapter(value ?? "")}>
@@ -262,7 +262,7 @@ function CreateConnectionDialog({
               id="new-connection-kind"
               value={connectionKind || defaultConnectionKind(effectiveAdapter)}
               onChange={(event) => setConnectionKind(event.currentTarget.value)}
-              className="font-mono text-[13px]"
+              font="mono"
             />
           </div>
           <div>
@@ -586,7 +586,7 @@ function RegisterGithubAppDialog({
             An app created at GitHub, so Moatless can act on the repositories it is installed on.
           </DialogDescription>
         </DialogHeader>
-        <DialogPanel className="space-y-4 px-6 pb-5">
+        <DialogPanel>
           <div>
             <label
               htmlFor="register-github-app-key"
@@ -599,7 +599,7 @@ function RegisterGithubAppDialog({
               value={githubAppKey}
               onChange={(event) => setGithubAppKey(event.currentTarget.value)}
               placeholder="dev-bot"
-              className="font-mono text-[13px]"
+              font="mono"
             />
             <p className="mt-1 text-[13px] text-muted-foreground/80">
               What a bot user, a connection and a loop refer to this app by.
@@ -633,7 +633,7 @@ function RegisterGithubAppDialog({
               onChange={(event) => setPrivateKeyPem(event.currentTarget.value)}
               placeholder="-----BEGIN RSA PRIVATE KEY-----"
               rows={5}
-              className="font-mono text-[13px]"
+              font="mono"
             />
             <p className="mt-1 text-[13px] text-muted-foreground/80">
               Proved against GitHub before it is stored, and never shown again.
@@ -722,7 +722,7 @@ function RotateGithubAppKeyDialog({
             accepts the new one.
           </DialogDescription>
         </DialogHeader>
-        <DialogPanel className="space-y-4 px-6 pb-5">
+        <DialogPanel>
           <div>
             <label
               htmlFor="rotate-github-app-pem"
@@ -736,7 +736,7 @@ function RotateGithubAppKeyDialog({
               onChange={(event) => setPrivateKeyPem(event.currentTarget.value)}
               placeholder="-----BEGIN RSA PRIVATE KEY-----"
               rows={5}
-              className="font-mono text-[13px]"
+              font="mono"
             />
             {app.keyFingerprint ? (
               <p className="mt-1 text-[13px] text-muted-foreground/80">

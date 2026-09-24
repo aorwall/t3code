@@ -337,7 +337,7 @@ function CodexAuthJsonForm() {
         rows={4}
         placeholder='{"tokens":{…}}'
         onChange={(event) => setAuthJson(event.currentTarget.value)}
-        className="font-mono text-[13px]"
+        font="mono"
       />
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <Button

@@ -433,7 +433,10 @@ what a person loses, which is the part the derivation cannot tell you:
   broken button. Closes if Moatless ever wants to relay this itself, which is
   unlikely: the feedback is addressed to OpenAI, not to the workspace.
 - **Preview automation** — `previewAutomation.connect`, `focusHost`, `respond`.
-  The MCP side of the same surface grew a `save` argument on `preview_snapshot`
+  #13064 made a new agent session drive the preview the user can see
+  rather than a hidden one (`apps/server/src/mcp/PreviewAutomationBroker.ts`,
+  `packages/contracts/src/previewAutomation.ts`), so the same choice applies once
+  Moatless serves it. The MCP side of the same surface grew a `save` argument on `preview_snapshot`
   (upstream, 2026-09-08, `apps/server/src/mcp/toolkits/preview/tools.ts`) that
   writes the screenshot to disk for the agent to re-read. It rides this surface
   and closes with it.
@@ -1365,6 +1368,23 @@ Six more arrived in the 2026-09-23 merge, four of them GitHub-quota work:
   (`apps/server/src/vcs/GitVcsDriverCore.ts`, #13170). Moatless derives its own
   PR diffs, and this is a one-character fix on each command.
 
+Two more arrived in the 2026-09-24 merge:
+
+- **A restart should not replay agent alerts for work that finished before it.**
+  Upstream's `AgentAwarenessRelay` records when it started and publishes a
+  `completed` or `failed` thread only if that thread's latest turn finished
+  after that time (`apps/server/src/relay/AgentAwarenessRelay.ts`, #13340).
+  This applies to Moatless only if it pushes turn-finished alerts itself. The
+  symptom is a burst of stale "finished" notifications after every backend
+  restart.
+- **A provider version with a vendor-specific suffix should still match its
+  range.** #13328 strips Cursor's build-hash suffix and Antigravity's
+  `agy_acp_server_` prefix before matching a version against its range, and it
+  restores the ranges for every harness in `model-manifest.json`
+  (`apps/server/src/provider/providerCompatibility.ts`). This extends the
+  compatibility-advisory bullet above: without the normalisation, those CLIs
+  always read as an unknown version.
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
   compaction path queues in-flight user messages, its review diffs report
@@ -1406,7 +1426,8 @@ Six more arrived in the 2026-09-23 merge, four of them GitHub-quota work:
   teardown and managed-tooling reclaim are safe to repeat, its sandbox
   checkout honours the repository's submodule depth preference, it publishes a
   compatibility advisory for the provider CLI version it installed, an explicit
-  provider refresh bypasses its own caches, its GitHub head probes drop the
+  provider refresh bypasses its own caches, a restart does not replay agent
+  alerts for work finished before it, its GitHub head probes drop the
   owner qualifier, its background pull-request summaries are read in one batched
   request, a settlement sweep re-queries only a pull request it would settle,
   and its pull request diffs start at the merge base.

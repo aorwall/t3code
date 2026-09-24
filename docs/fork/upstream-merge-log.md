@@ -28,6 +28,44 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-24 — merged upstream to 78af372cf, where `shadcn/no-restyle` became a lint error
+
+- Upstream: `78af372cf` from base `aca3c87cd` (`27` commits).
+- Landed: `255` files from `git diff --stat HEAD^1 HEAD` against `239` in the
+  upstream range; fork delta `787` files from `git diff --stat HEAD^2 HEAD`. The
+  gap of 16 is the fork-only files fixed for `shadcn/no-restyle` (below), the
+  `ui/textarea.tsx` `font` prop, and `docs/fork/inventory.json`.
+- Branch point: `main`, with no open merge PR to stack on.
+- Conflicts: 6 files, each resolved with the verdict `preflight.mjs` printed.
+  - `AGENTS.md` (decide): kept the fork's prose Taste section and took
+    upstream's rule change into it. `no-restyle` now fails lint, the
+    restyle-ceiling gate is gone, and a look that belongs to one feature stays
+    in that feature's own component.
+  - `GitActionsControl.tsx`, `ProjectScriptsControl.tsx`,
+    `settings/ProjectActionsList.tsx`, `settings/SettingsSidebarNav.tsx`
+    (converged): took upstream's un-restyled markup (wrapper spans and divs in
+    place of classNames on `ui` exports) and re-applied the
+    `FEATURES.openInEditor`, `editable`/`taskScoped`, and personal/admin
+    nav-group deltas at their new anchors.
+  - `pnpm-lock.yaml` (theirs): took upstream's lockfile and re-derived it with
+    `install.mjs`.
+- Unlisted auto-merge: `projectScriptEditor.tsx` now has the path-policy
+  entry `project-script-editor` (converged).
+- Lint: #13210 made `shadcn/no-restyle` an error, and 65 violations surfaced,
+  all in fork-only files (`settings/moatless/**`, `fork/SidebarThreadFilter.tsx`,
+  `fork/MermaidDiagram.tsx`, `sandbox/SandboxPanelPrimitives.tsx`,
+  `routes/_chat.tasks.$taskId.tsx`). Fixed at the call sites: `DialogPanel`
+  keeps its own padding, `Input` uses `font="mono"`, the tooltip uses
+  `variant="code"`, the search field uses `InputGroup`, and muted captions are
+  plain elements. `Textarea` gained Input's `font` prop (inventory
+  `textarea-mono-font`). Font sizes and dialog padding in those panels now
+  follow the `ui` defaults.
+- Sweep: no owned-concern hits and no new workflows.
+- Verification: `verify.mjs` passed all 10 checks, tests included. The
+  unsupported-method derivation had no ADD or DROP.
+- Gaps: two runtime fixes and one preview-automation note added under
+  [Runtime fixes upstream made to its own server](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+
 ### 2026-09-23 — merged upstream to aca3c87cd, where upstream rewrote the diff scope menu as radio groups and gave the status badge a `render` prop
 
 - Upstream: `aca3c87cd` from base `5a61f50cc` (`62` commits).

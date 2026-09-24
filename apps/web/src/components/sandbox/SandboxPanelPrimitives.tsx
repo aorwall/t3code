@@ -73,7 +73,7 @@ export function SandboxRow({
       ) : (
         <Tooltip>
           <TooltipTrigger render={rendered} />
-          <TooltipPopup side="left" className="max-w-80 font-mono text-xs break-all">
+          <TooltipPopup side="left" variant="code">
             {full}
           </TooltipPopup>
         </Tooltip>

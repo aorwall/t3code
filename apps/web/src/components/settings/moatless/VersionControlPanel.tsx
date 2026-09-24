@@ -180,8 +180,8 @@ function GithubDetail() {
             description={credential.description}
             badge={
               credential.login ? (
-                <Badge variant="secondary" className="font-mono">
-                  {credential.login}
+                <Badge variant="secondary">
+                  <span className="font-mono">{credential.login}</span>
                 </Badge>
               ) : null
             }
@@ -434,12 +434,7 @@ function ForgejoInstanceSection({
         />
       ) : (
         <div className="px-3 sm:px-4">
-          <Button
-            size="xs"
-            variant="ghost"
-            className="px-0 text-muted-foreground"
-            onClick={() => setTokenFieldOpen(true)}
-          >
+          <Button size="xs" variant="ghost-muted" onClick={() => setTokenFieldOpen(true)}>
             {credential.kind === "pat" ? "Replace your token" : "Use a personal access token"}
           </Button>
         </div>

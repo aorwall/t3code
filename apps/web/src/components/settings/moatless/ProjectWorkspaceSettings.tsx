@@ -518,7 +518,8 @@ function RunConfigurationSection({
         control={
           <Textarea
             id="workspace-setup-commands"
-            className="w-full font-mono text-[13px] sm:w-96"
+            className="w-full sm:w-96"
+            font="mono"
             aria-label="Setup commands"
             value={form.values.setupCommands}
             disabled={isLocked}

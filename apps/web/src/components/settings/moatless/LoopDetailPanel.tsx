@@ -277,7 +277,7 @@ function ActivateLoopDialog({
             It will start firing on its source and run tasks as the user you pick.
           </DialogDescription>
         </DialogHeader>
-        <DialogPanel className="px-6 pb-5">
+        <DialogPanel>
           <span className="mb-1.5 block text-xs font-medium text-foreground">Run as</span>
           <RunAsUserSelect value={runAsUserId} onValueChange={setRunAsUserId} />
           {activate.error ? (
@@ -633,7 +633,7 @@ function ScheduleSection({ loop, isLocked }: { readonly loop: Loop; readonly isL
             value={form.values.cronExpression}
             disabled={isLocked}
             onChange={(event) => form.setField("cronExpression", event.currentTarget.value)}
-            className="font-mono text-[13px]"
+            font="mono"
           />
         </div>
         <div>

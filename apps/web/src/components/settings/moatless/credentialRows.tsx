@@ -79,7 +79,8 @@ export function TokenField({
           autoComplete="off"
           placeholder={placeholder}
           onChange={(event) => setToken(event.currentTarget.value)}
-          className="min-w-56 flex-1 font-mono text-[13px]"
+          className="min-w-56 flex-1"
+          font="mono"
         />
         <Button
           size="sm"

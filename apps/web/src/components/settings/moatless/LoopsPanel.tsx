@@ -257,7 +257,7 @@ function CreateLoopDialog({
             Create it paused. Routing, prompt and activation are set on its page.
           </DialogDescription>
         </DialogHeader>
-        <DialogPanel className="space-y-4 px-6 pb-5">
+        <DialogPanel>
           <div>
             <label
               htmlFor="new-loop-name"
@@ -329,7 +329,7 @@ function CreateLoopDialog({
                   value={cronExpression}
                   onChange={(event) => setCronExpression(event.currentTarget.value)}
                   placeholder="0 0 0 * * *"
-                  className="font-mono text-[13px]"
+                  font="mono"
                 />
               </div>
               <div>

@@ -171,7 +171,6 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
               lockedProvider={null}
               instanceEntries={entries}
               modelOptionsByInstance={modelOptions}
-              triggerVariant="outline"
               triggerClassName={SETTINGS_PICKER_TRIGGER_CLASSNAME}
               {...(mixedModel ? { triggerLabel: "Mixed" } : {})}
               getModelDisabledReason={modelDisabledReason}
@@ -196,7 +195,6 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
                 modelOptions={selection.options ?? []}
                 allowPromptInjectedEffort={false}
                 planModeEnabled={settings.planModeEnabled}
-                triggerVariant="outline"
                 triggerClassName={SETTINGS_PICKER_TRIGGER_CLASSNAME}
                 onModelOptionsChange={(options) =>
                   setModel(createModelSelection(selection.instanceId, selection.model, options))
