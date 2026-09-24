@@ -161,7 +161,11 @@ function LinkRow({
                 />
               ) : null}
               {snapshot !== null ? (
-                <PullRequestRowBranches head={snapshot.headBranch} base={snapshot.baseBranch} />
+                <>
+                  {/* Fork: a thread links pull requests across repositories, so name each one. */}
+                  <span className="max-w-40 shrink-0 truncate">{link.repository}</span>
+                  <PullRequestRowBranches head={snapshot.headBranch} base={snapshot.baseBranch} />
+                </>
               ) : (
                 <span className="truncate font-mono">
                   {link.host}/{link.repository}
