@@ -63,7 +63,7 @@ export function UsersPanel() {
               <div className={ITEM_ROW_INNER_CLASSNAME}>
                 <div className="flex min-w-0 items-center gap-3">
                   <span
-                    className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-[12px] font-medium text-muted-foreground"
+                    className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-medium text-muted-foreground"
                     aria-hidden
                   >
                     {userMonogram(user)}
@@ -75,13 +75,13 @@ export function UsersPanel() {
                       </span>
                       {user.role === "admin" ? <RoleTag>admin</RoleTag> : null}
                       {user.isBot ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-accent px-1.5 py-px text-[10.5px] font-medium text-muted-foreground">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-accent px-1.5 py-px text-3xs font-medium text-muted-foreground">
                           <BotIcon className="size-2.5" aria-hidden />
                           bot
                         </span>
                       ) : null}
                     </div>
-                    <p className="truncate text-[13px] leading-[1.45] text-muted-foreground/80">
+                    <p className="truncate text-xs leading-normal text-muted-foreground/80">
                       {user.email ?? user.login}
                     </p>
                   </div>
@@ -101,7 +101,7 @@ export function UsersPanel() {
 
 function RoleTag({ children }: { readonly children: string }) {
   return (
-    <span className="rounded-full bg-primary/12 px-1.5 py-px text-[10.5px] font-medium text-primary">
+    <span className="rounded-full bg-primary/12 px-1.5 py-px text-3xs font-medium text-primary">
       {children}
     </span>
   );

@@ -85,14 +85,14 @@ export function MermaidDiagram({ code, theme, isStreaming, children }: MermaidDi
         // Mermaid sanitizes what it draws under `securityLevel: "strict"`, so
         // this is SVG it produced, not markup that came off the wire.
         <div
-          className="chat-markdown-mermaid overflow-x-auto px-3 py-3 [&_svg]:mx-auto [&_svg]:h-auto [&_svg]:max-w-full"
+          className="overflow-x-auto px-3 py-3 [&_svg]:mx-auto [&_svg]:h-auto [&_svg]:max-w-full"
           dangerouslySetInnerHTML={{ __html: render.svg }}
         />
       ) : (
         children
       )}
       {view === "source-with-error" ? (
-        <p className="chat-markdown-codeblock-header px-3 pt-1 pb-2 [font-size:0.6875rem]">
+        <p className="chat-markdown-codeblock-header px-3 pt-1 pb-2 text-2xs">
           This diagram could not be drawn, so its source is shown instead.
         </p>
       ) : null}

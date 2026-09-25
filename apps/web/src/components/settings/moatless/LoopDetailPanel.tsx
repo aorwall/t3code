@@ -139,7 +139,7 @@ function GitProvenanceNotice({ loop }: { readonly loop: Loop }) {
             <p className="text-sm font-medium text-foreground">
               {provenance.isLocked ? "Declared in git" : "Overridden locally"}
             </p>
-            <p className="text-[13px] leading-[1.45] text-muted-foreground/80">
+            <p className="text-xs leading-normal text-muted-foreground/80">
               {provenance.isLocked
                 ? `This loop comes from ${provenance.configPath ?? "a repository"}. Editing it here stops git sync from updating it.`
                 : `This loop came from ${provenance.configPath ?? "a repository"} and was edited here. Restoring discards those edits and takes the configuration from git again.`}
@@ -158,7 +158,7 @@ function GitProvenanceNotice({ loop }: { readonly loop: Loop }) {
         </Button>
       </div>
       {action.error ? (
-        <p className="mt-2 text-[13px] text-destructive-foreground">{action.error.message}</p>
+        <p className="mt-2 text-sm text-destructive-foreground">{action.error.message}</p>
       ) : null}
     </div>
   );
@@ -193,7 +193,7 @@ function LifecycleSection({ loop, isLocked }: { readonly loop: Loop; readonly is
             <Badge variant={stateBadge} size="sm">
               {loop.deleted ? "deleted" : loopStateLabel(loop.executionState)}
             </Badge>
-            <span className="truncate text-[13px] text-muted-foreground/80">
+            <span className="truncate text-sm text-muted-foreground/80">
               {loopSourceSummary(loop)}
             </span>
           </div>
@@ -226,7 +226,7 @@ function LifecycleSection({ loop, isLocked }: { readonly loop: Loop; readonly is
           )}
         </div>
         {(pause.error ?? resume.error) ? (
-          <p className="mt-2 text-[13px] text-destructive-foreground">
+          <p className="mt-2 text-sm text-destructive-foreground">
             {(pause.error ?? resume.error)?.message}
           </p>
         ) : null}
@@ -281,7 +281,7 @@ function ActivateLoopDialog({
           <span className="mb-1.5 block text-xs font-medium text-foreground">Run as</span>
           <RunAsUserSelect value={runAsUserId} onValueChange={setRunAsUserId} />
           {activate.error ? (
-            <p className="mt-2 text-[13px] text-destructive-foreground">{activate.error.message}</p>
+            <p className="mt-2 text-sm text-destructive-foreground">{activate.error.message}</p>
           ) : null}
         </DialogPanel>
         <DialogFooter>
@@ -326,13 +326,13 @@ function IdentitySection({ loop, isLocked }: { readonly loop: Loop; readonly isL
           value={form.values.runAsUserId}
           onValueChange={(value) => form.setField("runAsUserId", value)}
         />
-        <p className="text-[13px] leading-[1.45] text-muted-foreground/80">
+        <p className="text-xs leading-normal text-muted-foreground/80">
           Every task this loop starts runs as this user.
           {isLocked ? " Git does not declare the run-as user, so it stays editable here." : ""}
           {resumes ? " This loop is paused, and saving resumes it." : ""}
         </p>
         {save.error ? (
-          <p className="text-[13px] text-destructive-foreground">{save.error.message}</p>
+          <p className="text-sm text-destructive-foreground">{save.error.message}</p>
         ) : null}
       </div>
       <SaveBar
@@ -414,7 +414,7 @@ function GeneralSection({ loop, isLocked }: { readonly loop: Loop; readonly isLo
           />
         </div>
         {save.error ? (
-          <p className="text-[13px] text-destructive-foreground">{save.error.message}</p>
+          <p className="text-sm text-destructive-foreground">{save.error.message}</p>
         ) : null}
       </div>
       <SaveBar
@@ -549,7 +549,7 @@ function ConfigurationSection({
           />
         </div>
         {save.error ? (
-          <p className="text-[13px] text-destructive-foreground">{save.error.message}</p>
+          <p className="text-sm text-destructive-foreground">{save.error.message}</p>
         ) : null}
       </div>
       <SaveBar
@@ -584,12 +584,12 @@ function SourceSection({ loop, isLocked }: { readonly loop: Loop; readonly isLoc
             <ReadOnlyRow label="Matcher" value={source.sourceMatcher} />
             <ReadOnlyRow label="Direct send" value={source.allowDirectSend ? "On" : "Off"} />
             <ReadOnlyRow label="Notify on success" value={source.notifyOnSuccess ? "On" : "Off"} />
-            <p className="pt-1 text-[13px] leading-[1.45] text-muted-foreground/80">
+            <p className="pt-1 text-xs leading-normal text-muted-foreground/80">
               Subscriptions are bound to an integration connection and edited from Integrations.
             </p>
           </>
         ) : (
-          <p className="text-[13px] leading-[1.45] text-muted-foreground/80">
+          <p className="text-xs leading-normal text-muted-foreground/80">
             This loop has no source. It only runs when started by hand.
           </p>
         )}
@@ -665,7 +665,7 @@ function ScheduleSection({ loop, isLocked }: { readonly loop: Loop; readonly isL
           />
         </div>
         {save.error ? (
-          <p className="text-[13px] text-destructive-foreground">{save.error.message}</p>
+          <p className="text-sm text-destructive-foreground">{save.error.message}</p>
         ) : null}
       </div>
       <SaveBar
@@ -682,8 +682,8 @@ function ScheduleSection({ loop, isLocked }: { readonly loop: Loop; readonly isL
 function ReadOnlyRow({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <span className="text-[13px] text-muted-foreground/80">{label}</span>
-      <span className="min-w-0 truncate text-[13px] font-medium text-foreground">{value}</span>
+      <span className="text-sm text-muted-foreground/80">{label}</span>
+      <span className="min-w-0 truncate text-sm font-medium text-foreground">{value}</span>
     </div>
   );
 }

@@ -192,7 +192,7 @@ export function SandboxPanel({ threadRef }: { readonly threadRef: ScopedThreadRe
                       key={`${event.reason}:${event.message}`}
                       title={event.reason}
                       badge={
-                        <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
+                        <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground">
                           {event.count === null ? "" : `×${event.count}`}
                         </span>
                       }
@@ -296,7 +296,7 @@ function StatusSection({
           {presentation?.label ?? "Checking"}
         </span>
         {status.data?.agentStatus ? (
-          <span className="shrink-0 text-[11px] text-muted-foreground">
+          <span className="shrink-0 text-2xs text-muted-foreground">
             Agent {AGENT_LABELS[status.data.agentStatus].toLowerCase()}
           </span>
         ) : null}
@@ -449,7 +449,7 @@ function ContainersSection({
       title="Containers"
       action={
         totals.cpuMillicores === null && totals.memoryMb === null ? null : (
-          <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+          <span className="font-mono text-2xs tabular-nums text-muted-foreground">
             {formatCpu(totals.cpuMillicores)} · {formatMemory(totals.memoryMb)}
           </span>
         )
@@ -467,7 +467,7 @@ function ContainersSection({
               </span>
             }
             badge={
-              <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
+              <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground">
                 {formatCpu(container.cpuMillicores)} · {formatMemory(container.memoryMb)}
                 {container.restartCount > 0 ? ` · ${container.restartCount}↻` : ""}
               </span>
@@ -496,7 +496,7 @@ function CommandsSection({ commands }: { readonly commands: ReadonlyArray<Comman
           key={command.id}
           title={command.label}
           badge={
-            <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
+            <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground">
               {formatElapsed(command.startedAtUnixMs, nowMs)}
             </span>
           }

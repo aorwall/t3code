@@ -155,7 +155,7 @@ function LoopRow({ loop }: { readonly loop: Loop }) {
               </Badge>
             ) : null}
           </div>
-          <p className="mt-0.5 truncate text-[13px] leading-[1.45] text-muted-foreground/80">
+          <p className="mt-0.5 truncate text-xs leading-normal text-muted-foreground/80">
             {loopSourceSummary(loop)}
           </p>
         </div>
@@ -350,7 +350,7 @@ function CreateLoopDialog({
           ) : null}
 
           {create.error ? (
-            <p className="text-[13px] text-destructive-foreground">{create.error.message}</p>
+            <p className="text-sm text-destructive-foreground">{create.error.message}</p>
           ) : null}
         </DialogPanel>
         <DialogFooter>

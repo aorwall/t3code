@@ -28,6 +28,54 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-25 — merged upstream to ebdcda135, where arbitrary Tailwind values became a lint error
+
+- Upstream: `ebdcda135` from base `78af372cf` (`39` commits).
+- Landed: `515` files from `git diff --stat HEAD^1 HEAD` against `489` in the
+  upstream range; fork delta `756` files from `git diff --stat HEAD^2 HEAD`.
+  The gap: `apps/server/src/cli/pair.ts` stays deleted (upstream edited it), and
+  on the fork side are the 23 fork-only files fixed for `no-arbitrary-values`
+  (below), the three `docs/fork` files, and the re-derived `pnpm-lock.yaml`.
+- Branch point: `main`, with no open merge PR to stack on.
+- Conflicts: 8 files.
+  - `apps/server/src/cli/pair.ts` (modify/delete): kept deleted per
+    `deletedUpstreamPaths`. `preflight.mjs` printed it as `[unlisted]`, which
+    is wrong: the path is in `deletedUpstreamPaths`.
+  - `pullRequest/ThreadPullRequestsPanel.tsx` (unlisted): took upstream. #13061
+    now names the repository on each linked PR, the same thing the fork's delta
+    did, so this file is now byte-identical to upstream.
+  - `ChatView.tsx`, `Sidebar.tsx`, `hooks/useThreadActions.ts`,
+    `settings/ProjectActionsList.tsx` (converged): kept upstream's changes
+    (`setThreadAutoSettle`, `onRunShellCommand`, `text-2xs`) together with the
+    fork's thread-fork, visibility/unfollow, `FEATURES.projectManagement` and
+    port-badge deltas.
+  - `threadActionMenu.logic.test.ts`, `routes/settings.tsx` (unlisted): kept
+    both sides. Both now have a path-policy entry
+    (`thread-visibility-upstream-files`, `settings-surface-gates`).
+- New gate: upstream's chat code-block Run (#13060) calls `scripts.run` with a
+  synthetic id that the backend rejects, so it is hidden on `workspaceScripts`
+  environments. See the inventory's `host-run-scripts` entry and
+  [A script runs on the backend](./gaps.md#a-script-runs-on-the-backend-and-only-the-backend-can-edit-one).
+- Lint: #13371/#13397 made `shadcn(no-arbitrary-values)` an error, and 130 hits
+  surfaced in fork code (mostly `settings/moatless/**`). Mapped them to the scale
+  the way upstream mapped its own: `text-[13px]`→`text-sm` (`text-xs
+leading-normal` where it came with `leading-[1.45]`), `[11px]`/`[.7rem]`→`2xs`,
+  `[10.5px]`/`[.65rem]`→`3xs`. Also dropped the unused `chat-markdown-mermaid`
+  class. Type error: the fork's Mermaid `MarkdownCodeBlock` now passes
+  upstream's required `isStreaming`.
+- Sweep: 7 hits (`cloud/managedTunnelStartup*`, `infra/relay/**` endpoint
+  reaper). All are relay/tunnel code, which is already decided out, so they are
+  false positives. No new workflows.
+- Verification: the first full `verify.mjs` run failed only lint and
+  typecheck, on the items above. After the fixes, a second full run passed all
+  10 checks, tests included. The unsupported-method derivation printed no ADD
+  and no DROP.
+- Gaps: `threadAutoSettleOptOut` added to the capabilities list, the
+  per-thread auto-settle switch added under
+  [Settlement rules Moatless owns](./gaps.md#settlement-rules-moatless-owns),
+  and three bullets added under
+  [Runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+
 ### 2026-09-24 — merged upstream to 78af372cf, where `shadcn/no-restyle` became a lint error
 
 - Upstream: `78af372cf` from base `aca3c87cd` (`27` commits).

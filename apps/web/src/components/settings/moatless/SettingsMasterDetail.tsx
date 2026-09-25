@@ -79,7 +79,7 @@ export function SettingsMasterDetail<Id extends string>({
                     </span>
                     {entry.badge}
                   </span>
-                  <span className="mt-0.5 block text-[13px] leading-[1.45] text-muted-foreground/80">
+                  <span className="mt-0.5 block text-xs leading-normal text-muted-foreground/80">
                     {entry.summary}
                   </span>
                 </span>

@@ -52,7 +52,7 @@ export function UserDetailPanel({ login }: { readonly login: string }) {
           {isPending ? (
             <SectionPending label="this user" />
           ) : (
-            <p className={cn(ITEM_ROW_CLASSNAME, "text-[13px] text-muted-foreground")}>
+            <p className={cn(ITEM_ROW_CLASSNAME, "text-sm text-muted-foreground")}>
               No user with login “{login}”. They may have been renamed or removed.
             </p>
           )}
@@ -82,13 +82,13 @@ function UserDetail({ user }: { readonly user: UserListItem }) {
               {userDisplayName(user)}
             </h2>
             {user.isBot ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-accent px-1.5 py-px text-[10.5px] font-medium text-muted-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full bg-accent px-1.5 py-px text-3xs font-medium text-muted-foreground">
                 <BotIcon className="size-2.5" aria-hidden />
                 bot
               </span>
             ) : null}
           </div>
-          <p className="truncate text-[13px] text-muted-foreground/80">{user.login}</p>
+          <p className="truncate text-sm text-muted-foreground/80">{user.login}</p>
         </div>
       </div>
 
@@ -156,12 +156,12 @@ function ProfileSection({ user }: { readonly user: UserListItem }) {
               <SelectItem value="admin">Admin</SelectItem>
             </SelectContent>
           </Select>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-2xs text-muted-foreground">
             An admin reaches every administration page and can manage all users and settings.
           </p>
         </div>
         {save.error ? (
-          <p className="text-[13px] text-destructive-foreground">{save.error.message}</p>
+          <p className="text-sm text-destructive-foreground">{save.error.message}</p>
         ) : null}
       </div>
       {form.isDirty ? (
@@ -204,8 +204,8 @@ function AccountSection({ user }: { readonly user: UserListItem }) {
       <div className={cn(ITEM_ROW_CLASSNAME, "grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2")}>
         {rows.map((row) => (
           <div key={row.label} className="min-w-0">
-            <p className="text-[12px] font-medium text-muted-foreground/70">{row.label}</p>
-            <p className="mt-0.5 break-all text-[13px] text-foreground">{row.value}</p>
+            <p className="text-xs font-medium text-muted-foreground/70">{row.label}</p>
+            <p className="mt-0.5 break-all text-sm text-foreground">{row.value}</p>
           </div>
         ))}
       </div>

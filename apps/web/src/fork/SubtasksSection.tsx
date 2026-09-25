@@ -135,7 +135,7 @@ function SubtaskRow({
       <span className="col-start-2 row-start-1 flex min-w-0 items-baseline gap-2">
         <span className="min-w-0 truncate text-sm font-medium">{subtask.title}</span>
         {subtask.relation === "forkedFrom" ? (
-          <span className="flex shrink-0 items-center gap-0.5 rounded-sm border border-border/60 px-1 font-mono text-[.65rem] text-muted-foreground">
+          <span className="flex shrink-0 items-center gap-0.5 rounded-sm border border-border/60 px-1 font-mono text-3xs text-muted-foreground">
             <GitBranch aria-hidden className="size-2.5" />
             fork
           </span>
@@ -143,13 +143,13 @@ function SubtaskRow({
       </span>
       <span className="col-start-3 row-start-1 flex items-center gap-1 text-muted-foreground/80">
         {subtask.awaitingInput ? (
-          <span className="rounded-sm border border-info/40 px-1 font-mono text-[.65rem] text-info-foreground">
+          <span className="rounded-sm border border-info/40 px-1 font-mono text-3xs text-info-foreground">
             needs input
           </span>
         ) : null}
         <ChevronRight aria-hidden className="size-3" />
       </span>
-      <span className="col-start-2 col-end-4 row-start-2 truncate font-mono text-[.7rem] text-muted-foreground/70">
+      <span className="col-start-2 col-end-4 row-start-2 truncate font-mono text-2xs text-muted-foreground/70">
         {[visuals.label, ...metadata].join(" · ")}
       </span>
     </Link>
@@ -172,7 +172,7 @@ export function SubtasksSection({ view }: { view: ThreadSubtasksView }) {
   }
   return (
     <section>
-      <div className="flex items-center gap-2 px-1.5 pt-1 text-[.65rem] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="flex items-center gap-2 px-1.5 pt-1 text-3xs font-medium uppercase tracking-wider text-muted-foreground">
         <span>Subtasks</span>
         <span className="font-normal normal-case text-muted-foreground/70">
           {view.subtasks.length} thread{view.subtasks.length === 1 ? "" : "s"}

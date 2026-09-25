@@ -84,7 +84,7 @@ export function SectionSearch({
         }}
         placeholder={`Search ${label}`}
         aria-label={`Search ${label}`}
-        className="h-6 w-44 rounded-md border border-input bg-background pr-2 pl-7 text-[11px] text-foreground outline-none placeholder:text-muted-foreground/72 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/24"
+        className="h-6 w-44 rounded-md border border-input bg-background pr-2 pl-7 text-2xs text-foreground outline-none placeholder:text-muted-foreground/72 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/24"
       />
     </div>
   );
@@ -106,7 +106,7 @@ export function SectionCount({
   readonly plural: string;
 }) {
   return (
-    <span className="text-[11px] text-muted-foreground">
+    <span className="text-2xs text-muted-foreground">
       {count} {count === 1 ? singular : plural}
     </span>
   );

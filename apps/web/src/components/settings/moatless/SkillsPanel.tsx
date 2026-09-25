@@ -79,7 +79,7 @@ export function SkillsPanel() {
                   <span className="truncate text-sm font-medium text-foreground">
                     {plugin.name}
                   </span>
-                  <p className="mt-0.5 flex items-center gap-1.5 text-[13px] leading-[1.45] text-muted-foreground/80">
+                  <p className="mt-0.5 flex items-center gap-1.5 text-xs leading-normal text-muted-foreground/80">
                     <GitBranchIcon className="size-3.5 shrink-0" aria-hidden />
                     <span className="truncate">{plugin.gitUrl}</span>
                   </p>
@@ -191,7 +191,7 @@ function RegisterPluginDialog({
             />
           </div>
           {create.error ? (
-            <p className="text-[13px] text-destructive-foreground">{create.error.message}</p>
+            <p className="text-sm text-destructive-foreground">{create.error.message}</p>
           ) : null}
         </DialogPanel>
         <DialogFooter>
