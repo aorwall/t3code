@@ -18,10 +18,7 @@ import { cn } from "~/lib/utils";
 export function SectionPending({ label }: { readonly label: string }) {
   return (
     <div
-      className={cn(
-        ITEM_ROW_CLASSNAME,
-        "flex items-center gap-2 text-[13px] text-muted-foreground",
-      )}
+      className={cn(ITEM_ROW_CLASSNAME, "flex items-center gap-2 text-sm text-muted-foreground")}
     >
       <LoaderIcon className="size-3.5 animate-spin" aria-hidden />
       Loading {label}…
@@ -60,10 +57,10 @@ export function SectionError({
           aria-hidden
         />
         <div className="min-w-0">
-          <p className="text-[13px] font-medium text-foreground">
+          <p className="text-sm font-medium text-foreground">
             {forbidden ? `You cannot administer ${label}` : `Could not load ${label}`}
           </p>
-          <p className="text-[13px] leading-[1.45] text-muted-foreground/80">
+          <p className="text-xs leading-normal text-muted-foreground/80">
             {forbidden
               ? "This account is not an administrator of this Moatless deployment."
               : error.message}
@@ -80,7 +77,5 @@ export function SectionError({
 }
 
 export function SectionEmpty({ children }: { readonly children: ReactNode }) {
-  return (
-    <div className={cn(ITEM_ROW_CLASSNAME, "text-[13px] text-muted-foreground")}>{children}</div>
-  );
+  return <div className={cn(ITEM_ROW_CLASSNAME, "text-sm text-muted-foreground")}>{children}</div>;
 }

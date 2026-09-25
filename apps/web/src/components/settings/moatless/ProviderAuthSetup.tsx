@@ -80,7 +80,7 @@ function AuthSetupSection({ children }: { readonly children: ReactNode }) {
 /** Why a removal failed, inline in the status row rather than under it. */
 function ActionError({ error }: { readonly error: Error | null }) {
   if (error === null) return null;
-  return <span className="text-[13px] text-destructive-foreground">{error.message}</span>;
+  return <span className="text-sm text-destructive-foreground">{error.message}</span>;
 }
 
 // ---------------------------------------------------------------- Claude ----
@@ -205,7 +205,7 @@ function CodexAuthSetup() {
   return (
     <AuthSetupSection>
       {state.needsReconnect ? (
-        <p className={cn(ITEM_ROW_CLASSNAME, "text-[13px] text-muted-foreground/80")}>
+        <p className={cn(ITEM_ROW_CLASSNAME, "text-sm text-muted-foreground/80")}>
           The stored credential stopped refreshing. Sign in again to repair it.
         </p>
       ) : null}
@@ -276,7 +276,7 @@ function CodexDeviceLogin() {
             Sign in with ChatGPT
           </Button>
           {expired ? (
-            <span className="text-[13px] text-muted-foreground/80">
+            <span className="text-sm text-muted-foreground/80">
               That code expired before it was entered.
             </span>
           ) : null}
@@ -288,11 +288,11 @@ function CodexDeviceLogin() {
 
   return (
     <div className={ITEM_ROW_CLASSNAME}>
-      <p className="text-[13px] text-muted-foreground/80">
+      <p className="text-sm text-muted-foreground/80">
         Enter this code at ChatGPT. This page updates itself once you have.
       </p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <code className="rounded-md bg-muted px-2 py-1 font-mono text-foreground text-sm tracking-[0.2em]">
+        <code className="rounded-md bg-muted px-2 py-1 font-mono text-foreground text-sm tracking-widest">
           {started.userCode}
         </code>
         <Button
@@ -347,7 +347,7 @@ function CodexAuthJsonForm() {
         >
           Save
         </Button>
-        <span className="text-[13px] text-muted-foreground/80">
+        <span className="text-sm text-muted-foreground/80">
           From <code className="font-mono">~/.codex/auth.json</code> on a machine you have signed in
           on.
         </span>

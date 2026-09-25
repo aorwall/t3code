@@ -151,7 +151,7 @@ function SecretRow({
               {secret.key}
             </span>
           </div>
-          <p className="mt-0.5 text-[13px] leading-[1.45] text-muted-foreground/80">
+          <p className="mt-0.5 text-xs leading-normal text-muted-foreground/80">
             {secretKindLabel(secret.kind)}
             {secret.provider ? ` · ${secret.provider}` : ""}
           </p>
@@ -215,7 +215,7 @@ function DeleteSecretDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         {remove.error ? (
-          <p className="px-6 text-[13px] text-destructive-foreground">{remove.error.message}</p>
+          <p className="px-6 text-sm text-destructive-foreground">{remove.error.message}</p>
         ) : null}
         <AlertDialogFooter>
           <AlertDialogClose

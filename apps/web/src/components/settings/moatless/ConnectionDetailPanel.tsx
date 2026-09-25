@@ -56,7 +56,7 @@ export function ConnectionDetailPanel({ connectionId }: { readonly connectionId:
         </SettingsSection>
       ) : connection === null ? (
         <SettingsSection id="connection" title="Connection">
-          <p className={cn(ITEM_ROW_CLASSNAME, "text-[13px] text-muted-foreground/80")}>
+          <p className={cn(ITEM_ROW_CLASSNAME, "text-sm text-muted-foreground/80")}>
             This connection no longer exists.
           </p>
         </SettingsSection>
@@ -89,8 +89,8 @@ function ConnectionDetail({ connection }: { readonly connection: AdapterConnecti
 function DetailRow({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <span className="text-[13px] text-muted-foreground/80">{label}</span>
-      <span className="min-w-0 truncate text-[13px] font-medium text-foreground">{value}</span>
+      <span className="text-sm text-muted-foreground/80">{label}</span>
+      <span className="min-w-0 truncate text-sm font-medium text-foreground">{value}</span>
     </div>
   );
 }

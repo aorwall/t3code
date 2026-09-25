@@ -71,7 +71,8 @@ not report is every boolean added since that handshake was written —
 2026-08-16), `questionAttachments` (upstream, 2026-09-08),
 `projectSettingsOverrides` (upstream, 2026-09-09) and
 `requiredWorktreeBootstrap`, `storageCleanup` and `projectWorktreeCleanup`
-(upstream, 2026-09-18) — so each of those
+(upstream, 2026-09-18) and `threadAutoSettleOptOut` (upstream, 2026-09-25) — so
+each of those
 surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
 statement from the deployment. That is correct for the ones the backend does not
@@ -659,6 +660,19 @@ thread's script, so the control offers no Edit on a task-scoped row.
   how `ProjectScriptsControl` receives its rows has to keep the merged list
   reaching it.
 
+Upstream's chat code-block **Run** button (#13060) runs an ad-hoc command
+through `runProjectScript` under the synthetic id `chat-code-block`. On an
+environment reporting `workspaceScripts`, that becomes `scripts.run` with an id
+no project or thread declares, and the backend answers `ScriptNotFound`. So
+`ChatView.tsx` passes `onRunShellCommand` only when `!supportsWorkspaceScripts`,
+and a Moatless user cannot run a command straight from a chat message.
+
+- **Closed by:** `scripts.run` accepting an inline command (or a sibling method
+  that runs one in the thread's terminal), probed with
+  `git grep -n 'onRunShellCommand' apps/web/src/components/ChatView.tsx`.
+- **Then here:** drop the `!supportsWorkspaceScripts` condition on
+  `onRunShellCommand` and route the call through that method.
+
 ### A subtask is a Moatless concept, and only T3's own server refuses it
 
 `subtasks.list` runs the derivation backwards for the same reason `scripts.run`
@@ -868,6 +882,13 @@ recorded rather than what it decides:
   setup otherwise eats the settlement and leaves the thread mid-setup. Moatless
   cancels its own sandbox setup, where the same interrupt lands in the same
   place.
+
+The 2026-09-25 merge added a per-thread auto-settle switch (#11846): a
+`thread.auto-settle.set` command, a `thread.auto-settle-set` event carrying
+`autoSettleDisabledAt`, and a row-menu item gated on the `threadAutoSettleOptOut`
+capability. Moatless never auto-settles, so there is nothing to opt out of and
+the capability stays absent, which hides the item. It becomes owed the day the
+backend adds any automatic settlement rule — the opt-out must then be read by it.
 
 - **Closes when:** the backend's settlement decision reads pin and snooze state,
   settles a snoozed thread immediately, settles on the pull-request event rather
@@ -1385,6 +1406,27 @@ Two more arrived in the 2026-09-24 merge:
   compatibility-advisory bullet above: without the normalisation, those CLIs
   always read as an unknown version.
 
+Three more arrived in the 2026-09-25 merge:
+
+- **A review diff read through a copied index should keep racily clean edits.**
+  Upstream copies the index into a temp file for its review preview and then
+  rounds the copy's mtime down below the original's, because a copy stamped
+  newer than a same-second edit makes git trust the stat cache and report the
+  edit as unchanged (`apps/server/src/vcs/GitVcsDriverCore.ts`, #12613). This
+  applies wherever Moatless diffs against a scratch `GIT_INDEX_FILE`; the
+  symptom is an agent's last edit missing from the review.
+- **Codex 0.156 is the floor, with a regenerated app-server protocol.** #13481
+  raised the Codex range in `model-manifest.json` and regenerated
+  `packages/effect-codex-app-server`. Moatless drives Codex through its own SDK,
+  so the version floor and protocol changes are its to track.
+- **A Claude account's banked usage resets can be shown and redeemed.**
+  #13118 reads and redeems banked resets
+  (`apps/server/src/provider/Layers/claudeResetCredits.ts`, behind the
+  coordinator renamed to `resetCreditCoordinator.ts`), and #12588/#12799 report
+  a Grok account's email so its limits merge across environments. Moatless owns
+  provider accounts, so the Usage page shows these only if the backend
+  reproduces them.
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
   compaction path queues in-flight user messages, its review diffs report
@@ -1430,7 +1472,9 @@ Two more arrived in the 2026-09-24 merge:
   alerts for work finished before it, its GitHub head probes drop the
   owner qualifier, its background pull-request summaries are read in one batched
   request, a settlement sweep re-queries only a pull request it would settle,
-  and its pull request diffs start at the merge base.
+  its pull request diffs start at the merge base, its review index copy keeps
+  racily clean edits, it tracks Codex 0.156's protocol, and it surfaces banked
+  resets and merged Grok limits.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

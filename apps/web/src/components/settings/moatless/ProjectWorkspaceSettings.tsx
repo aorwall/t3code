@@ -177,7 +177,7 @@ function GitProvenanceNotice({ workspace }: { readonly workspace: WorkspaceRespo
             <p className="text-sm font-medium text-foreground">
               {provenance.isLocked ? "Declared in git" : "Overridden locally"}
             </p>
-            <p className="text-[13px] leading-[1.45] text-muted-foreground/80">
+            <p className="text-xs leading-normal text-muted-foreground/80">
               {provenance.isLocked
                 ? `This workspace comes from ${provenance.configPath ?? "a repository"}. Editing it here stops git sync from updating it.`
                 : `This workspace came from ${provenance.configPath ?? "a repository"} and was edited here. Restoring discards those edits and takes the configuration from git again.`}
@@ -196,7 +196,7 @@ function GitProvenanceNotice({ workspace }: { readonly workspace: WorkspaceRespo
         </Button>
       </div>
       {action.error ? (
-        <p className="mt-2 text-[13px] text-destructive-foreground">{action.error.message}</p>
+        <p className="mt-2 text-sm text-destructive-foreground">{action.error.message}</p>
       ) : null}
     </div>
   );
@@ -260,7 +260,7 @@ function GeneralSection({
         }
       />
       {save.error ? (
-        <p className={cn(ITEM_ROW_CLASSNAME, "py-0 text-[13px] text-destructive-foreground")}>
+        <p className={cn(ITEM_ROW_CLASSNAME, "py-0 text-sm text-destructive-foreground")}>
           {save.error.message}
         </p>
       ) : null}
@@ -418,20 +418,20 @@ function RepositoriesSection({
                   />
                   <span className="truncate text-sm font-medium text-foreground">{row.name}</span>
                   {row.isPrimary ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-accent px-1.5 py-px text-[10.5px] font-medium text-muted-foreground">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-accent px-1.5 py-px text-3xs font-medium text-muted-foreground">
                       <StarIcon className="size-2.5" aria-hidden />
                       primary
                     </span>
                   ) : null}
                   {row.isDangling ? (
-                    <span className="inline-flex items-center gap-1 text-[10.5px] font-medium text-destructive-foreground">
+                    <span className="inline-flex items-center gap-1 text-3xs font-medium text-destructive-foreground">
                       <TriangleAlertIcon className="size-2.5" aria-hidden />
                       not registered
                     </span>
                   ) : null}
                 </div>
                 {row.detail ? (
-                  <p className="mt-0.5 truncate text-[13px] leading-[1.45] text-muted-foreground/80">
+                  <p className="mt-0.5 truncate text-xs leading-normal text-muted-foreground/80">
                     {row.detail}
                   </p>
                 ) : null}
@@ -461,7 +461,7 @@ function RepositoriesSection({
       )}
 
       {pendingError ? (
-        <p className={cn(ITEM_ROW_CLASSNAME, "py-0 text-[13px] text-destructive-foreground")}>
+        <p className={cn(ITEM_ROW_CLASSNAME, "py-0 text-sm text-destructive-foreground")}>
           {pendingError.message}
         </p>
       ) : null}
@@ -529,7 +529,7 @@ function RunConfigurationSection({
         }
       />
       {save.error ? (
-        <p className={cn(ITEM_ROW_CLASSNAME, "py-0 text-[13px] text-destructive-foreground")}>
+        <p className={cn(ITEM_ROW_CLASSNAME, "py-0 text-sm text-destructive-foreground")}>
           {save.error.message}
         </p>
       ) : null}

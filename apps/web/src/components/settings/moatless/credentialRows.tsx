@@ -30,7 +30,7 @@ export function CredentialRow({
             <span className="font-medium text-foreground text-sm">{title}</span>
             {badge}
           </div>
-          <p className="mt-0.5 text-[13px] text-muted-foreground/80">{description}</p>
+          <p className="mt-0.5 text-sm text-muted-foreground/80">{description}</p>
         </div>
         {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
       </div>
@@ -40,7 +40,7 @@ export function CredentialRow({
 
 export function ErrorText({ error }: { readonly error: Error | null }) {
   if (error === null) return null;
-  return <p className="px-3 text-[13px] text-destructive-foreground sm:px-4">{error.message}</p>;
+  return <p className="px-3 text-sm text-destructive-foreground sm:px-4">{error.message}</p>;
 }
 
 /** A password field and its Save button, cleared once the value is stored. */
@@ -90,7 +90,7 @@ export function TokenField({
           Save
         </Button>
       </div>
-      <p className="mt-1 text-[13px] text-muted-foreground/80">{hint}</p>
+      <p className="mt-1 text-sm text-muted-foreground/80">{hint}</p>
     </div>
   );
 }

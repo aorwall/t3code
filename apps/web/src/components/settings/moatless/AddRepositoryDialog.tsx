@@ -210,7 +210,7 @@ function AddRepositoryForm({
                   setName(event.currentTarget.value);
                 }}
               />
-              <p className="mt-1 text-[11px] text-muted-foreground">
+              <p className="mt-1 text-2xs text-muted-foreground">
                 Registering a repository also picks up any workspaces it declares in{" "}
                 <code className="rounded bg-accent px-1 py-px">.moatless/workspaces.json</code>.
               </p>
@@ -258,7 +258,7 @@ function ExistingRepositoryPicker({
 }) {
   if (hasCatalogError) {
     return (
-      <p className="py-6 text-center text-[13px] text-muted-foreground">
+      <p className="py-6 text-center text-sm text-muted-foreground">
         Could not load the repository catalog. A new remote can still be registered.
       </p>
     );
@@ -266,7 +266,7 @@ function ExistingRepositoryPicker({
 
   if (isPending) {
     return (
-      <p className="flex items-center justify-center gap-2 py-6 text-[13px] text-muted-foreground">
+      <p className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
         <LoaderIcon className="size-3.5 animate-spin" aria-hidden />
         Loading repositories…
       </p>
@@ -275,7 +275,7 @@ function ExistingRepositoryPicker({
 
   if (isCatalogEmpty) {
     return (
-      <p className="py-6 text-center text-[13px] text-muted-foreground">
+      <p className="py-6 text-center text-sm text-muted-foreground">
         Every registered repository is already in this workspace. Add a new remote instead.
       </p>
     );
@@ -296,7 +296,7 @@ function ExistingRepositoryPicker({
       </InputGroup>
       <div className="max-h-64 overflow-y-auto rounded-lg border border-input">
         {matches.length === 0 ? (
-          <p className="px-3 py-6 text-center text-[13px] text-muted-foreground">
+          <p className="px-3 py-6 text-center text-sm text-muted-foreground">
             Nothing matches “{search}”.
           </p>
         ) : (
@@ -313,7 +313,7 @@ function ExistingRepositoryPicker({
               <span className="min-w-0">
                 <span className="block truncate text-sm text-foreground">{repository.name}</span>
                 {repository.remoteUrl ? (
-                  <span className="block truncate text-[13px] text-muted-foreground/80">
+                  <span className="block truncate text-sm text-muted-foreground/80">
                     {shortenRemote(repository.remoteUrl)}
                   </span>
                 ) : null}
@@ -347,7 +347,7 @@ function SubmitError({
 }) {
   if (registerError) {
     return (
-      <p className="text-[13px] text-destructive-foreground">
+      <p className="text-sm text-destructive-foreground">
         Could not register the repository. {registerError.message}
       </p>
     );
@@ -356,7 +356,7 @@ function SubmitError({
   if (!placeError) return null;
 
   return (
-    <p className="text-[13px] text-destructive-foreground">
+    <p className="text-sm text-destructive-foreground">
       {registeredId === null
         ? `Could not add the repository to this workspace. ${placeError.message}`
         : `The repository was registered, but adding it to this workspace failed. ${placeError.message} It is registered either way — retry, or pick it under Registered.`}

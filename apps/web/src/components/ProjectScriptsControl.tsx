@@ -211,7 +211,7 @@ export default function ProjectScriptsControl({
             {/* Fork: say which scripts came from the thread, since the
                 row is otherwise identical to a project's. */}
             {taskScoped && (
-              <span className="shrink-0 rounded-sm border border-border/60 px-1 font-mono text-[.65rem] text-muted-foreground">
+              <span className="shrink-0 rounded-sm border border-border/60 px-1 font-mono text-3xs text-muted-foreground">
                 task
               </span>
             )}

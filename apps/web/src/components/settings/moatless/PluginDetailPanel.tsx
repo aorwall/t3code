@@ -89,7 +89,7 @@ export function PluginDetailPanel({ pluginId }: { readonly pluginId: string }) {
           {isPending ? (
             <SectionPending label="this plugin" />
           ) : (
-            <div className={cn(ITEM_ROW_CLASSNAME, "text-[13px] text-muted-foreground")}>
+            <div className={cn(ITEM_ROW_CLASSNAME, "text-sm text-muted-foreground")}>
               This plugin is no longer registered.
             </div>
           )}
@@ -138,7 +138,7 @@ function DetailRow({
 }) {
   return (
     <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-4">
-      <span className="w-32 shrink-0 text-[13px] text-muted-foreground">{label}</span>
+      <span className="w-32 shrink-0 text-sm text-muted-foreground">{label}</span>
       <span className={cn("min-w-0 break-words text-sm text-foreground", mono && "font-mono")}>
         {value}
       </span>
@@ -254,7 +254,7 @@ function ActivationSection({ plugin }: { readonly plugin: PluginResponse }) {
                   )}
                 </div>
                 {row.description ? (
-                  <p className="mt-0.5 text-[13px] leading-[1.45] text-muted-foreground/80">
+                  <p className="mt-0.5 text-xs leading-normal text-muted-foreground/80">
                     {row.description}
                   </p>
                 ) : null}
@@ -295,7 +295,7 @@ function ActivationSection({ plugin }: { readonly plugin: PluginResponse }) {
       )}
 
       {apply.error ? (
-        <p className={cn(ITEM_ROW_CLASSNAME, "py-0 text-[13px] text-destructive-foreground")}>
+        <p className={cn(ITEM_ROW_CLASSNAME, "py-0 text-sm text-destructive-foreground")}>
           {apply.error.message}
         </p>
       ) : null}
@@ -323,9 +323,7 @@ function IdentityPicker({
 }) {
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <span className="hidden shrink-0 text-[13px] text-muted-foreground sm:inline">
-        Overrides for
-      </span>
+      <span className="hidden shrink-0 text-sm text-muted-foreground sm:inline">Overrides for</span>
       <Select
         value={value}
         onValueChange={(next) => onChange(next ?? VIEWER_IDENTITY)}
@@ -364,7 +362,7 @@ function ReachControl({
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-1.5">
-        <span className="text-[13px] font-medium text-foreground">{reachLabel}</span>
+        <span className="text-sm font-medium text-foreground">{reachLabel}</span>
         {pending ? <LoaderIcon className="size-3 animate-spin text-muted-foreground" /> : null}
       </div>
       <Select
@@ -386,7 +384,7 @@ function ReachControl({
           ))}
         </SelectPopup>
       </Select>
-      <p className="text-xs leading-[1.4] text-muted-foreground/70">{hint}</p>
+      <p className="text-xs leading-snug text-muted-foreground/70">{hint}</p>
     </div>
   );
 }
@@ -404,7 +402,7 @@ function DangerSection({ plugin }: { readonly plugin: PluginResponse }) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <p className="text-sm font-medium text-foreground">Remove this plugin</p>
-            <p className="mt-0.5 text-[13px] leading-[1.45] text-muted-foreground/80">
+            <p className="mt-0.5 text-xs leading-normal text-muted-foreground/80">
               Its skills stop being delivered to agents. The activation records for it are
               discarded. Registering it again re-syncs from the same source.
             </p>
@@ -419,7 +417,7 @@ function DangerSection({ plugin }: { readonly plugin: PluginResponse }) {
           </Button>
         </div>
         {remove.error ? (
-          <p className="mt-2 text-[13px] text-destructive-foreground">{remove.error.message}</p>
+          <p className="mt-2 text-sm text-destructive-foreground">{remove.error.message}</p>
         ) : null}
       </div>
 

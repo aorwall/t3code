@@ -29,7 +29,7 @@ export function SandboxSection({
   return (
     <section className="min-w-0">
       <div className="flex min-h-6 items-center justify-between gap-2 px-1.5">
-        <h3 className="text-[.65rem] font-medium uppercase tracking-wider text-muted-foreground">
+        <h3 className="text-3xs font-medium uppercase tracking-wider text-muted-foreground">
           {title}
         </h3>
         {action}

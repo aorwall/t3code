@@ -117,7 +117,7 @@ export function SecretEditorDialog({
         </DialogHeader>
         <DialogPanel>
           {!isEditing ? (
-            <p className="rounded-lg bg-accent px-3 py-2 text-[13px] text-muted-foreground">
+            <p className="rounded-lg bg-accent px-3 py-2 text-sm text-muted-foreground">
               {SCOPE_LABELS[scope]}
             </p>
           ) : null}
@@ -140,7 +140,7 @@ export function SecretEditorDialog({
               onChange={(event) => setKey(event.currentTarget.value)}
               font="mono"
             />
-            <p className="mt-1 text-[11px] text-muted-foreground">
+            <p className="mt-1 text-2xs text-muted-foreground">
               Environment variable name. Case-sensitive, fixed once created.
             </p>
           </div>
@@ -203,7 +203,7 @@ export function SecretEditorDialog({
           </div>
 
           {active.error ? (
-            <p className="text-[13px] text-destructive-foreground">{active.error.message}</p>
+            <p className="text-sm text-destructive-foreground">{active.error.message}</p>
           ) : null}
         </DialogPanel>
         <DialogFooter>

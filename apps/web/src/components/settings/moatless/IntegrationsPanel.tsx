@@ -134,7 +134,7 @@ function ConnectionRow({ connection }: { readonly connection: AdapterConnectionR
               {connection.connectionKind}
             </Badge>
           </div>
-          <p className="mt-0.5 truncate text-[13px] leading-[1.45] text-muted-foreground/80">
+          <p className="mt-0.5 truncate text-xs leading-normal text-muted-foreground/80">
             {adapterKindLabel(connection.adapterKind)}
           </p>
         </div>
@@ -281,7 +281,7 @@ function CreateConnectionDialog({
             />
           </div>
           {create.error ? (
-            <p className="text-[13px] text-destructive-foreground">{create.error.message}</p>
+            <p className="text-sm text-destructive-foreground">{create.error.message}</p>
           ) : null}
         </DialogPanel>
         <DialogFooter>
@@ -338,12 +338,12 @@ function AppRow({ app }: { readonly app: AdapterAppSummary }) {
             <span className="truncate text-sm font-medium text-foreground">
               {app.displayName || adapterKindLabel(app.adapterKind)}
             </span>
-            <code className="rounded bg-accent px-1 py-px text-[11px] text-muted-foreground">
+            <code className="rounded bg-accent px-1 py-px text-2xs text-muted-foreground">
               {app.appKey}
             </code>
           </div>
           {secrets.length === 0 ? (
-            <p className="mt-0.5 text-[13px] leading-[1.45] text-muted-foreground/80">
+            <p className="mt-0.5 text-xs leading-normal text-muted-foreground/80">
               No secrets configured
             </p>
           ) : (
@@ -425,7 +425,7 @@ function GithubAppRow({ app }: { readonly app: GitHubAppOption }) {
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="truncate text-sm font-medium text-foreground">{app.name}</span>
-            <code className="rounded bg-accent px-1 py-px text-[11px] text-muted-foreground">
+            <code className="rounded bg-accent px-1 py-px text-2xs text-muted-foreground">
               {app.githubAppKey}
             </code>
             {app.deploymentConfigured ? (
@@ -434,7 +434,7 @@ function GithubAppRow({ app }: { readonly app: GitHubAppOption }) {
               </Badge>
             ) : null}
           </div>
-          <p className="mt-0.5 truncate text-[13px] leading-[1.45] text-muted-foreground/80">
+          <p className="mt-0.5 truncate text-xs leading-normal text-muted-foreground/80">
             {app.botLogin ? `${app.botLogin} · ` : ""}
             {app.installations.length === 1
               ? "1 installation"
@@ -510,7 +510,7 @@ function CreateBotUserAction({ app }: { readonly app: GitHubAppOption }) {
         {create.isRunning ? <LoaderIcon className="animate-spin" /> : <UserPlusIcon />}
         Create bot user
       </Button>
-      <span className="text-[13px] text-muted-foreground/80">
+      <span className="text-sm text-muted-foreground/80">
         {create.error ? (
           <span className="text-destructive-foreground">{create.error.message}</span>
         ) : (
@@ -601,7 +601,7 @@ function RegisterGithubAppDialog({
               placeholder="dev-bot"
               font="mono"
             />
-            <p className="mt-1 text-[13px] text-muted-foreground/80">
+            <p className="mt-1 text-sm text-muted-foreground/80">
               What a bot user, a connection and a loop refer to this app by.
             </p>
           </div>
@@ -635,7 +635,7 @@ function RegisterGithubAppDialog({
               rows={5}
               font="mono"
             />
-            <p className="mt-1 text-[13px] text-muted-foreground/80">
+            <p className="mt-1 text-sm text-muted-foreground/80">
               Proved against GitHub before it is stored, and never shown again.
             </p>
           </div>
@@ -655,7 +655,7 @@ function RegisterGithubAppDialog({
             />
           </div>
           {register.error ? (
-            <p className="text-[13px] text-destructive-foreground">{register.error.message}</p>
+            <p className="text-sm text-destructive-foreground">{register.error.message}</p>
           ) : null}
         </DialogPanel>
         <DialogFooter>
@@ -739,13 +739,13 @@ function RotateGithubAppKeyDialog({
               font="mono"
             />
             {app.keyFingerprint ? (
-              <p className="mt-1 text-[13px] text-muted-foreground/80">
+              <p className="mt-1 text-sm text-muted-foreground/80">
                 Current key {app.keyFingerprint}
               </p>
             ) : null}
           </div>
           {rotate.error ? (
-            <p className="text-[13px] text-destructive-foreground">{rotate.error.message}</p>
+            <p className="text-sm text-destructive-foreground">{rotate.error.message}</p>
           ) : null}
         </DialogPanel>
         <DialogFooter>
@@ -802,9 +802,7 @@ function RemoveGithubAppDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         {remove.error ? (
-          <p className="px-6 pb-2 text-[13px] text-destructive-foreground">
-            {remove.error.message}
-          </p>
+          <p className="px-6 pb-2 text-sm text-destructive-foreground">{remove.error.message}</p>
         ) : null}
         <AlertDialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

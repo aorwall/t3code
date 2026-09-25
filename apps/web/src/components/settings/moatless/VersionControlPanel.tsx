@@ -105,7 +105,7 @@ function DetailHeader({
   return (
     <div className="px-3 pt-1 sm:px-4">
       <h3 className="font-medium text-foreground text-sm">{title}</h3>
-      <p className="mt-0.5 text-[13px] text-muted-foreground/80">{description}</p>
+      <p className="mt-0.5 text-sm text-muted-foreground/80">{description}</p>
     </div>
   );
 }
@@ -161,7 +161,7 @@ function GithubDetail() {
       {outcome ? (
         <p
           className={cn(
-            "px-3 text-[13px] sm:px-4",
+            "px-3 text-sm sm:px-4",
             outcome.tone === "error" ? "text-destructive-foreground" : "text-muted-foreground",
           )}
         >
@@ -224,7 +224,7 @@ function GithubDetail() {
           <ErrorText error={disconnect.error ?? removeOverride.error} />
 
           {credential.kind === "none" && !canConnect ? (
-            <p className="px-3 text-[13px] text-muted-foreground/80 sm:px-4">
+            <p className="px-3 text-sm text-muted-foreground/80 sm:px-4">
               This deployment has no GitHub App configured, so a personal access token is the way
               in.
             </p>
@@ -288,7 +288,7 @@ function ForgejoDetail() {
       {returned.outcome ? (
         <p
           className={cn(
-            "px-3 text-[13px] sm:px-4",
+            "px-3 text-sm sm:px-4",
             returned.outcome.tone === "error"
               ? "text-destructive-foreground"
               : "text-muted-foreground",
@@ -307,7 +307,7 @@ function ForgejoDetail() {
       ) : isPending && data === null ? (
         <SectionPending label="Forgejo instances" />
       ) : instances.length === 0 ? (
-        <p className="px-3 text-[13px] text-muted-foreground/80 sm:px-4">
+        <p className="px-3 text-sm text-muted-foreground/80 sm:px-4">
           No instance is registered on this deployment. An administrator registers one before it can
           be connected here.
         </p>
@@ -407,7 +407,7 @@ function ForgejoInstanceSection({
       <ErrorText error={disconnect.error ?? removeOverride.error} />
 
       {canConnectForgejoOauth(status) ? null : (
-        <p className="px-3 text-[13px] text-muted-foreground/80 sm:px-4">
+        <p className="px-3 text-sm text-muted-foreground/80 sm:px-4">
           No OAuth application is registered for this instance, so a personal access token is the
           way in.
         </p>
