@@ -15,7 +15,7 @@ import type { EventType } from "./eventType.ts";
  */
 export interface StreamEvent {
   /** @nullable */
-  agentType?: string | null;
+  agentProfile?: string | null;
   /**
    * What this event says about whether the agent is working, if anything.
    *

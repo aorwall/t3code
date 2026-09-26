@@ -11,7 +11,7 @@
  */
 export interface TaskEventResponse {
   /** @nullable */
-  agentType?: string | null;
+  agentProfile?: string | null;
   eventId: string;
   isError: boolean;
   payload: unknown;

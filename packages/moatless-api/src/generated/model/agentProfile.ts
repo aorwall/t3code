@@ -7,6 +7,6 @@
  */
 
 /**
- * Agent type identifier (open-ended, e.g. "claude-code").
+ * A catalog entry: a harness plus transport, default model and credentials (e.g. "claude-code-tui").
  */
-export type AgentType = string;
+export type AgentProfile = string;

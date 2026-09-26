@@ -440,7 +440,7 @@ function ConfigurationSection({
     workspaceId: loop.config.workspaceId,
     routingMode: loop.config.routingMode,
     taskName: loop.config.taskName ?? "",
-    agentType: loop.config.agentType,
+    agentProfile: loop.config.agentProfile,
     prompt: loop.config.prompt ?? "",
   });
   const save = useMoatlessCommand<typeof form.values, Loop>(
@@ -450,7 +450,7 @@ function ConfigurationSection({
           workspaceId: values.workspaceId,
           routingMode: values.routingMode,
           taskName: values.taskName.trim() || null,
-          agentType: values.agentType.trim() || "claude-code",
+          agentProfile: values.agentProfile.trim() || "claude-code",
           prompt: values.prompt.trim() || null,
         },
       }),
@@ -524,16 +524,16 @@ function ConfigurationSection({
         </div>
         <div>
           <label
-            htmlFor="loop-agent-type"
+            htmlFor="loop-agent-profile"
             className="mb-1.5 block text-xs font-medium text-foreground"
           >
             Agent type
           </label>
           <Input
-            id="loop-agent-type"
-            value={form.values.agentType}
+            id="loop-agent-profile"
+            value={form.values.agentProfile}
             disabled={isLocked}
-            onChange={(event) => form.setField("agentType", event.currentTarget.value)}
+            onChange={(event) => form.setField("agentProfile", event.currentTarget.value)}
           />
         </div>
         <div>

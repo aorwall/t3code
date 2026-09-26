@@ -3,7 +3,7 @@
 on: schedule
 name: Upstream Merge
 workspace: t3code
-agentType: claude-code
+agentProfile: claude-code
 model: opus
 tags:
   - upstream-merge

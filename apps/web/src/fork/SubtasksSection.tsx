@@ -118,7 +118,7 @@ function SubtaskRow({
 }) {
   const visuals = STATUS_VISUALS[subtask.status];
   const metadata = [
-    subtask.agentType,
+    subtask.agentProfile,
     subtask.turnCount > 0 ? `${subtask.turnCount} turn${subtask.turnCount === 1 ? "" : "s"}` : null,
     subtask.branch,
   ].filter((value): value is string => value !== null);

@@ -30,7 +30,7 @@ export * from "./agentMode.ts";
 export * from "./agentModel.ts";
 export * from "./agentStatus.ts";
 export * from "./agentSubType.ts";
-export * from "./agentType.ts";
+export * from "./agentProfile.ts";
 export * from "./allowedPrompt.ts";
 export * from "./apiKeyCreateResponse.ts";
 export * from "./apiKeyListItem.ts";

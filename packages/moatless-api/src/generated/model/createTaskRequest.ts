@@ -6,13 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AgentMode } from "./agentMode.ts";
-import type { AgentType } from "./agentType.ts";
+import type { AgentProfile } from "./agentProfile.ts";
 import type { CheckoutMode } from "./checkoutMode.ts";
 import type { MessageContextInput } from "./messageContextInput.ts";
 
 export interface CreateTaskRequest {
   agentMode?: null | AgentMode;
-  agentType?: null | AgentType;
+  agentProfile?: null | AgentProfile;
   /** @nullable */
   branch?: string | null;
   checkoutMode?: null | CheckoutMode;

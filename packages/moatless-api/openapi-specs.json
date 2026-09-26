@@ -9427,9 +9427,9 @@
           "commands_changed"
         ]
       },
-      "AgentType": {
+      "AgentProfile": {
         "type": "string",
-        "description": "Agent type identifier (open-ended, e.g. \"claude-code\")."
+        "description": "A catalog entry: a harness plus transport, default model and credentials (e.g. \"claude-code-tui\")."
       },
       "AllowedPrompt": {
         "type": "object",
@@ -10217,7 +10217,7 @@
         "type": "object",
         "required": ["workspaceId", "routingMode"],
         "properties": {
-          "agentType": {
+          "agentProfile": {
             "type": ["string", "null"]
           },
           "inactiveTtlDays": {
@@ -10462,13 +10462,13 @@
               }
             ]
           },
-          "agentType": {
+          "agentProfile": {
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/AgentType"
+                "$ref": "#/components/schemas/AgentProfile"
               }
             ]
           },
@@ -12155,9 +12155,9 @@
       },
       "LoopConfig": {
         "type": "object",
-        "required": ["workspaceId", "routingMode", "tagIds", "skills", "agentType"],
+        "required": ["workspaceId", "routingMode", "tagIds", "skills", "agentProfile"],
         "properties": {
-          "agentType": {
+          "agentProfile": {
             "type": "string"
           },
           "inactiveTtlDays": {
@@ -14648,7 +14648,7 @@
         "description": "SSE event envelope — the shape of events streamed to the frontend.\n\nThis is the canonical wire format for all SSE events. The frontend\nreceives this shape and dispatches on `event_type` + `sub_type`.",
         "required": ["eventId", "type", "subType", "taskId", "timestamp", "isError", "payload"],
         "properties": {
-          "agentType": {
+          "agentProfile": {
             "type": ["string", "null"]
           },
           "agentWorking": {
@@ -14954,7 +14954,7 @@
         "description": "A single task event in the response.",
         "required": ["eventId", "taskId", "type", "subType", "isError", "payload", "timestamp"],
         "properties": {
-          "agentType": {
+          "agentProfile": {
             "type": ["string", "null"]
           },
           "eventId": {
@@ -15062,7 +15062,7 @@
           "taskId",
           "title",
           "status",
-          "agentType",
+          "agentProfile",
           "repositoryId",
           "createdAt",
           "lastMessageAt",
@@ -15076,8 +15076,8 @@
           "sandboxDesiredStateUpdatedAt"
         ],
         "properties": {
-          "agentType": {
-            "$ref": "#/components/schemas/AgentType"
+          "agentProfile": {
+            "$ref": "#/components/schemas/AgentProfile"
           },
           "appendSystemPrompt": {
             "type": ["string", "null"]
@@ -15265,15 +15265,15 @@
         "description": "Conversation statistics derived from persisted task messages.",
         "required": [
           "taskId",
-          "agentType",
+          "agentProfile",
           "tokenTotals",
           "messageTokenUsage",
           "toolCalls",
           "skills"
         ],
         "properties": {
-          "agentType": {
-            "$ref": "#/components/schemas/AgentType"
+          "agentProfile": {
+            "$ref": "#/components/schemas/AgentProfile"
           },
           "messageTokenUsage": {
             "type": "array",
@@ -15734,7 +15734,7 @@
       "UpdateLoopConfig": {
         "type": "object",
         "properties": {
-          "agentType": {
+          "agentProfile": {
             "type": ["string", "null"]
           },
           "inactiveTtlDays": {

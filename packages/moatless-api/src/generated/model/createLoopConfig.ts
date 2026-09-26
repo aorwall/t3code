@@ -9,7 +9,7 @@ import type { RoutingMode } from "./routingMode.ts";
 
 export interface CreateLoopConfig {
   /** @nullable */
-  agentType?: string | null;
+  agentProfile?: string | null;
   /** @nullable */
   inactiveTtlDays?: number | null;
   /**

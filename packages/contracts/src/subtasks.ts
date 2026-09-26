@@ -66,7 +66,7 @@ export const Subtask = Schema.Struct({
   status: SubtaskStatus,
   awaitingInput: Schema.Boolean,
   /** The agent runtime the child runs under, for the row's role tag. */
-  agentType: Schema.NullOr(TrimmedNonEmptyString),
+  agentProfile: Schema.NullOr(TrimmedNonEmptyString),
   branch: Schema.NullOr(TrimmedNonEmptyString),
   /** How many turns the child has run. Zero before it starts. */
   turnCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),

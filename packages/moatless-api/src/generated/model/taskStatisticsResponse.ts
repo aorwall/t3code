@@ -5,7 +5,7 @@
  * Sandbox orchestration and authentication for Moatless Vibe
  * OpenAPI spec version: 0.1.0
  */
-import type { AgentType } from "./agentType.ts";
+import type { AgentProfile } from "./agentProfile.ts";
 import type { TaskMessageTokenUsage } from "./taskMessageTokenUsage.ts";
 import type { TaskSkillUsage } from "./taskSkillUsage.ts";
 import type { TaskTokenTotals } from "./taskTokenTotals.ts";
@@ -15,7 +15,7 @@ import type { TaskToolCallStats } from "./taskToolCallStats.ts";
  * Conversation statistics derived from persisted task messages.
  */
 export interface TaskStatisticsResponse {
-  agentType: AgentType;
+  agentProfile: AgentProfile;
   messageTokenUsage: TaskMessageTokenUsage[];
   /** @nullable */
   model?: string | null;

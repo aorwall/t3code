@@ -231,7 +231,7 @@ function CreateLoopDialog({
       name: trimmedName,
       kind,
       active: false,
-      config: { workspaceId, routingMode: "by_subject", agentType: "claude-code", tagIds: [] },
+      config: { workspaceId, routingMode: "by_subject", agentProfile: "claude-code", tagIds: [] },
       source,
     });
     if (created !== null) {

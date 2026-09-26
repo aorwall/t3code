@@ -17,7 +17,7 @@ import {
 } from "./loopRows";
 
 const CONFIG: LoopConfig = {
-  agentType: "claude-code",
+  agentProfile: "claude-code",
   workspaceId: "ws_1",
   routingMode: "by_subject",
   skills: [],
