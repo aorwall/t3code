@@ -153,7 +153,7 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [activeResultIndex, setActiveResultIndex] = useState(0);
-  const searchableItems = useAvailableSettingsSearchItems();
+  const searchableItems = useAvailableSettingsSearchItems(scopeSearch);
   // Fork: search is a second way into a section, so it filters alongside the
   // nav list — a result that jumps to a section the nav hides is the same hole.
   const { isAdmin } = useMoatlessSession();

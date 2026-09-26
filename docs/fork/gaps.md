@@ -1427,6 +1427,29 @@ Three more arrived in the 2026-09-25 merge:
   provider accounts, so the Usage page shows these only if the backend
   reproduces them.
 
+Four more arrived in the 2026-09-26 merge:
+
+- **Settling a thread should close its idle shells.** #13673 has the terminal
+  manager close a settled thread's shells that are not running anything
+  (`apps/server/src/terminal/Manager.ts`,
+  `project/ProjectSetupScriptRunner.ts`). Moatless owns both the sandbox
+  terminals and settlement, so a settled thread's shells stay open there.
+- **Usage should read Cursor, OpenCode and Antigravity history.** #10409 adds
+  `usage/cursorUsageReader.ts`, `opencodeUsageReader.ts` and
+  `antigravityUsageReader.ts`; #13714 adds `cursorKeychainUsageEnabled`, a
+  server setting the fork hides under `FEATURES.providerConfiguration` with the
+  rest of `UsageProviderSettings`. Moatless serves `server.getUsageSummary`, so
+  those providers report nothing until it reads them.
+- **Newer Codex models should get the runtime instructions.** #13547 widened
+  the model match in `provider/Drivers/CodexDriver.ts` and
+  `RuntimeInstructions.ts`, which had silently stopped sending instructions to
+  newer Codex models. Relevant wherever Moatless selects instructions by model.
+- **Background server work should not scale with every thread or project.**
+  #13689, #13691, #13704, #13720 and #13693 stop per-minute git reruns for every
+  project, whole-list rebuilds on per-thread settlement, and PR sync scans of
+  threads without a linked PR; #13684 checkpoints the SQLite WAL back down after
+  large writes. The same shapes apply to the Moatless backend's sweeps.
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
   compaction path queues in-flight user messages, its review diffs report
@@ -1473,8 +1496,11 @@ Three more arrived in the 2026-09-25 merge:
   owner qualifier, its background pull-request summaries are read in one batched
   request, a settlement sweep re-queries only a pull request it would settle,
   its pull request diffs start at the merge base, its review index copy keeps
-  racily clean edits, it tracks Codex 0.156's protocol, and it surfaces banked
-  resets and merged Grok limits.
+  racily clean edits, it tracks Codex 0.156's protocol, it surfaces banked
+  resets and merged Grok limits, settling closes a thread's idle shells, its
+  usage reads Cursor, OpenCode and Antigravity history, newer Codex models get
+  its runtime instructions, and its background sweeps read only the threads and
+  projects that changed.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
