@@ -28,6 +28,36 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-26 — merged upstream to eeea71a88
+
+- Upstream: `eeea71a88` from base `ebdcda135` (`55` commits).
+- Landed: `271` files from `git diff --stat HEAD^1 HEAD` against `272` in the
+  upstream range; fork delta `756` files from `git diff --stat HEAD^2 HEAD`.
+  The gap is `apps/server/src/cli/pair.ts`, which stays deleted.
+- Branch point: `main`, with no open merge PR to stack on.
+- Conflicts: 4 files.
+  - `apps/server/src/cli/pair.ts` (modify/delete): kept deleted per
+    `deletedUpstreamPaths`. `preflight.mjs` again printed it as `[unlisted]`.
+  - `settings/ProviderSettingsPanel.tsx`, `SettingsSidebarNav.tsx`,
+    `useAvailableSettingsSearchItems.ts` (converged): kept the fork's
+    `FEATURES.providerConfiguration` gate, admin/feature search filter and
+    Moatless feature-flag read, and took upstream's `scopeSearch` argument
+    (#13714's machine scope) and `cursorKeychainUsageEnabled` prop.
+- New gate: #13714's `cursor-keychain-usage` search item is now
+  `providerConfigurationOnly`, because its row sits in `UsageProviderSettings`,
+  which the fork hides. Upstream's test for it asserts against
+  `FEATURES.providerConfiguration`, and it gains the fork's `forgejoEnabled`
+  field, which was the one typecheck failure.
+- Lockfile: re-derived with `install.mjs`; the auto-merged copy already carried
+  the fork edges, and the install left it unchanged.
+- Sweep: no keyword hits in new upstream files. No new workflows.
+- Unsupported methods: no ADD or DROP.
+- Gaps: four items added to
+  [Runtime fixes upstream made to its own server](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: the first full `verify.mjs` run failed only typecheck, on the
+  item above, and all tests passed. After the fix, `--fast` passed all nine
+  checks, and the final full run passed all ten.
+
 ### 2026-09-25 — merged upstream to ebdcda135, where arbitrary Tailwind values became a lint error
 
 - Upstream: `ebdcda135` from base `78af372cf` (`39` commits).
