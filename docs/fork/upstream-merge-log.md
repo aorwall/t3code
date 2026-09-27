@@ -28,6 +28,26 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-27 — merged upstream to ab099178a
+
+- Upstream: `ab099178a` from base `eeea71a88` (`35` commits).
+- Landed: `126` files from `git diff --stat HEAD^1 HEAD` against `126` in the
+  upstream range, an exact match; fork delta `756` files from
+  `git diff --stat HEAD^2 HEAD`, unchanged.
+- Branch point: `main`, with no open merge PR to stack on.
+- Conflicts: `pnpm-lock.yaml` only (theirs, re-derived with `install.mjs`).
+  Nine converged files auto-merged; `duplicate-adds.mjs` and
+  `resolution-check.mjs` found nothing, and the delta guards held
+  (`FEATURES.serverUpdateBanner` survived #13083's rewrite of the offline
+  banner in `ChatView.tsx`).
+- Sweep: `auth/replayMarkers.ts` (+ test) is upstream's own DPoP replay-marker
+  pruning for `apps/server`, and `ConnectionFormField.test.tsx` is a mobile
+  connection-form test; neither touches a fork-owned surface. No new workflows.
+- Unsupported methods: no ADD or DROP.
+- Gaps: three items added to
+  [Runtime fixes upstream made to its own server](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: the first full `verify.mjs` run passed all ten checks.
+
 ### 2026-09-26 — merged upstream to eeea71a88
 
 - Upstream: `eeea71a88` from base `ebdcda135` (`55` commits).

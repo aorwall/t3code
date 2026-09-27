@@ -1450,6 +1450,21 @@ Four more arrived in the 2026-09-26 merge:
   threads without a linked PR; #13684 checkpoints the SQLite WAL back down after
   large writes. The same shapes apply to the Moatless backend's sweeps.
 
+Three more arrived in the 2026-09-27 merge:
+
+- **A background git fetch should not start `git gc --auto`.** #13812 adds
+  `--no-auto-gc` to the status poll's fetch
+  (`apps/server/src/vcs/GitVcsDriverCore.ts`): on a repository with missing
+  objects the auto gc fails on every fetch and leaves a full-size `tmp_pack_*`
+  behind each time, filling the disk. Relevant wherever Moatless polls a
+  sandbox checkout's remote.
+- **Settlement and PR sweeps should read only threads that can still settle.**
+  #13765 scopes `ProjectionSnapshotQuery` reads for `ThreadSettlementReactor`
+  and `ThreadPullRequestReactor` to unsettled threads.
+- **Idle servers should not wake per session.** #13774 stops the Connect relay
+  and `ProviderSessionReaper` from waking on idle sessions
+  (`relay/AgentAwarenessRelay.ts`, `provider/Layers/ProviderSessionReaper.ts`).
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
   compaction path queues in-flight user messages, its review diffs report
@@ -1500,7 +1515,8 @@ Four more arrived in the 2026-09-26 merge:
   resets and merged Grok limits, settling closes a thread's idle shells, its
   usage reads Cursor, OpenCode and Antigravity history, newer Codex models get
   its runtime instructions, and its background sweeps read only the threads and
-  projects that changed.
+  projects that changed, its status fetches skip auto gc, its settlement and PR
+  sweeps read only settleable threads, and idle sessions do not wake it.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
