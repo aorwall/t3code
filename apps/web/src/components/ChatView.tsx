@@ -2653,7 +2653,8 @@ export default function ChatView(props: ChatViewProps) {
     activeProjectDefaultModelSelection?.instanceId ??
     null;
   const lockedProvider = deriveLockedProvider({
-    thread: activeThread,
+    // Fork: a Moatless server switches a started thread's harness on its next turn.
+    thread: serverConfig?.environment.capabilities.threadProviderSwitch ? null : activeThread,
     selectedProvider: selectedProviderByThreadId,
     threadProvider,
     providers: providerStatuses,

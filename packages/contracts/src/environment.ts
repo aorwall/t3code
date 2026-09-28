@@ -153,6 +153,10 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
       Absent on servers whose listing is every thread there is, where filtering
       is something a client does over the rows it already holds. */
   threadBrowse: Schema.optionalKey(Schema.Boolean),
+  /** Fork: server switches a started thread to another provider when a turn
+      names that provider's instance, so the client leaves the picker unlocked.
+      Absent, a started thread keeps its provider. */
+  threadProviderSwitch: Schema.optionalKey(Schema.Boolean),
   /** Server persists manual Active order through thread.active.reorder. */
   threadActiveReorder: Schema.optionalKey(Schema.Boolean),
   /** Server understands thread.auto-settle.set (per-thread auto-settle off).
