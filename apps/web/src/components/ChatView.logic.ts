@@ -1278,7 +1278,10 @@ export function hasServerAcknowledgedLocalDispatch(input: {
     return true;
   }
   if (input.phase === "connecting") {
-    return false;
+    // Fork: Moatless reports a starting sandbox as "connecting", often for
+    // minutes. The projected user message means the Task inbox already holds
+    // it, so the composer frees up and later sends queue in the inbox too.
+    return input.localDispatch.latestUserMessageId !== input.latestUserMessageId;
   }
 
   const latestTurn = input.latestTurn ?? null;

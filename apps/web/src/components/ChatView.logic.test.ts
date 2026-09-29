@@ -1829,7 +1829,9 @@ describe("hasServerAcknowledgedLocalDispatch", () => {
     ).toBe(false);
   });
 
-  it("keeps a follow-up active while its provider session is starting", () => {
+  // Fork: a starting Moatless sandbox holds "connecting" for minutes, and the
+  // projected message is already in the Task inbox.
+  it("acknowledges a follow-up once it projects while the sandbox is starting", () => {
     const localDispatch = createLocalDispatchSnapshot(
       makeThread({ latestTurn: completedTurn, session: readySession }),
     );
@@ -1840,6 +1842,29 @@ describe("hasServerAcknowledgedLocalDispatch", () => {
         phase: "connecting",
         latestTurn: completedTurn,
         latestUserMessageId: MessageId.make("message-followup"),
+        session: {
+          ...readySession,
+          status: "starting",
+          updatedAt: "2026-03-29T00:01:00.000Z",
+        },
+        hasPendingApproval: false,
+        hasPendingUserInput: false,
+        threadError: null,
+      }),
+    ).toBe(true);
+  });
+
+  it("keeps a follow-up active while starting until it projects", () => {
+    const localDispatch = createLocalDispatchSnapshot(
+      makeThread({ latestTurn: completedTurn, session: readySession }),
+    );
+
+    expect(
+      hasServerAcknowledgedLocalDispatch({
+        localDispatch,
+        phase: "connecting",
+        latestTurn: completedTurn,
+        latestUserMessageId: localDispatch.latestUserMessageId,
         session: {
           ...readySession,
           status: "starting",
