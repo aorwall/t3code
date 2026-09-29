@@ -1465,6 +1465,24 @@ Three more arrived in the 2026-09-27 merge:
   and `ProviderSessionReaper` from waking on idle sessions
   (`relay/AgentAwarenessRelay.ts`, `provider/Layers/ProviderSessionReaper.ts`).
 
+Four more arrived in the 2026-09-29 merge:
+
+- **A Claude turn should be aborted before its session closes.** #13999 has
+  `ClaudeAdapter` interrupt the running query before tearing the session down
+  (`apps/server/src/provider/Layers/ClaudeAdapter.ts`), so a stop does not leave
+  a turn running against a closed session.
+- **Stopping an OpenCode turn interrupted before submission should not hang.**
+  #12003 resolves the pending stop when no prompt was ever submitted
+  (`apps/server/src/provider/Layers/OpenCodeAdapter.ts`).
+- **Usage should survive an oversized transcript record.** #13650 streams
+  transcript lines past the size cap and keeps their usage fields rather than
+  dropping the record (`apps/server/src/usage/usageTranscriptReader.ts`).
+  Moatless serves `server.getUsageSummary` itself, so it applies there.
+- **The provider manifest moved.** #14198 marks OpenCode `>=2.0.0` broken and
+  pins the recommended version to 1.14.19; #14152 adds `claude-sonnet-5-5`
+  (Claude Code `>=2.1.284`) (`apps/server/src/provider/model-manifest.json`).
+  Moatless installs and advertises its own provider CLIs and models.
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
   compaction path queues in-flight user messages, its review diffs report
@@ -1516,7 +1534,10 @@ Three more arrived in the 2026-09-27 merge:
   usage reads Cursor, OpenCode and Antigravity history, newer Codex models get
   its runtime instructions, and its background sweeps read only the threads and
   projects that changed, its status fetches skip auto gc, its settlement and PR
-  sweeps read only settleable threads, and idle sessions do not wake it.
+  sweeps read only settleable threads, idle sessions do not wake it, a Claude
+  stop aborts the turn before closing the session, an OpenCode stop before
+  submission resolves, usage survives oversized transcript records, and its
+  provider manifest tracks OpenCode 2 as broken and offers Claude Sonnet 5.5.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
