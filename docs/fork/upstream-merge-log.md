@@ -28,6 +28,27 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-29 — merged upstream to d2c9281b8
+
+- Upstream: `d2c9281b8` from base `ab099178a` (`16` commits).
+- Landed: `56` files from `git diff --stat HEAD^1 HEAD` against `56` in the
+  upstream range, an exact match; fork delta `756` files from
+  `git diff --stat HEAD^2 HEAD`, unchanged.
+- Branch point: `main`, with no open merge PR to stack on.
+- Conflicts: `ThreadStatusIndicators.tsx` (converged) — kept the fork's shared
+  `PullRequestBadgeFace` and moved #14007's `<span>` around the badge text into
+  it, so the link and list badges both sit on the row's baseline.
+  `settingsSearch.ts` auto-merged upstream's `bitbucket-credentials` item, which
+  inherits the `/settings/source-control` gate. `pnpm-lock.yaml` re-derived with
+  `install.mjs`; the re-resolve also moved the fork-only `orval` edge 8.37 → 8.38.
+- Sweep: `AgentSessionJson.test.ts` is upstream's server test, and the two
+  `clerk/` files are T3 Connect account UI, already decided out; none touches a
+  fork-owned surface. No new workflows.
+- Unsupported methods: no ADD or DROP.
+- Gaps: four items added to
+  [Runtime fixes upstream made to its own server](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: the first full `verify.mjs` run passed all ten checks.
+
 ### 2026-09-27 — merged upstream to ab099178a
 
 - Upstream: `ab099178a` from base `eeea71a88` (`35` commits).
