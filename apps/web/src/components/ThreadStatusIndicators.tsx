@@ -29,8 +29,6 @@ import { resolveChangeRequestPresentation } from "../sourceControlPresentation";
 import { resolveThreadStatusPill, type ThreadStatusPill } from "./Sidebar.logic";
 import type { SidebarThreadSummary } from "../types";
 import { formatWorktreePathForDisplay } from "../worktreeCleanup";
-// Fork: the badge lists a Task's other pull requests under it.
-import { Popover, PopoverPopup, PopoverTrigger } from "./ui/popover";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "./ui/tooltip";
 import { pullRequestListLines } from "./pullRequest/pullRequestListLines";
 import {
@@ -197,7 +195,8 @@ export function resolveThreadPullRequestBadgePresentation({
  * The linked-PR badge shared by the sidebar and composer footer. The badge owns what it shows:
  * the state glyph and number at the meta size, in the state's color. The caller owns the control
  * it sits in through `render` (an inline link in a sidebar row, a toolbar control in the
- * composer), and the badge fills in the link or stack button behavior.
+ * composer), and the badge fills in the behavior: a single PR is a link to it, while a stack or
+ * several linked PRs is a button that opens the thread's pull requests tab.
  */
 export function ThreadPullRequestBadgeControl({
   render,
@@ -205,48 +204,26 @@ export function ThreadPullRequestBadgeControl({
   number,
   url,
   status,
-  pullRequests,
-  onOpenStack,
+  onOpenList,
   onOpenPullRequest,
-  onOpenLink,
 }: {
   render: ReactElement<{ render?: useRender.RenderProp }>;
   badge: ThreadPullRequestBadge | null;
   number?: number | undefined;
   url?: string | undefined;
   status: PrStatusIndicator | null;
-  /** Fork: the links the badge lists. Supply `onOpenLink` with them. */
-  pullRequests?: ReadonlyArray<ThreadPullRequestLink> | undefined;
-  onOpenStack: () => void;
+  onOpenList: () => void;
   onOpenPullRequest: (event: MouseEvent<HTMLElement>) => void;
-  /** Fork: opens one listed link. */
-  onOpenLink?:
-    | ((event: MouseEvent<HTMLAnchorElement>, link: ThreadPullRequestLink) => void)
-    | undefined;
 }) {
-  const listed = useMemo(() => visibleThreadPullRequests(pullRequests ?? []), [pullRequests]);
   const presentation = resolveThreadPullRequestBadgePresentation({ badge, number, url, status });
   if (presentation === null) return null;
-  // Fork: several links that are not one stack. Upstream's badge is a link to
-  // the primary and the `+N` beside it names the rest with nothing behind it,
-  // so the fork puts the sidebar hover's list under the badge instead.
-  if (badge?.kind !== "stack" && onOpenLink !== undefined && listed.length > 1) {
-    return (
-      <PullRequestLinksBadge
-        render={render}
-        presentation={presentation}
-        links={listed}
-        onSelect={onOpenLink}
-      />
-    );
-  }
   return (
     <PullRequestBadge
       render={render}
       presentation={presentation}
-      isStack={badge?.kind === "stack"}
+      opensList={badge !== null && (badge.kind === "stack" || badge.others > 0)}
       url={url}
-      onOpenStack={onOpenStack}
+      onOpenList={onOpenList}
       onOpenPullRequest={onOpenPullRequest}
     />
   );
@@ -255,26 +232,26 @@ export function ThreadPullRequestBadgeControl({
 function PullRequestBadge({
   render,
   presentation,
-  isStack,
+  opensList,
   url,
-  onOpenStack,
+  onOpenList,
   onOpenPullRequest,
 }: {
   render: ReactElement<{ render?: useRender.RenderProp }>;
   presentation: NonNullable<ReturnType<typeof resolveThreadPullRequestBadgePresentation>>;
-  isStack: boolean;
+  opensList: boolean;
   url: string | undefined;
-  onOpenStack: () => void;
+  onOpenList: () => void;
   onOpenPullRequest: (event: MouseEvent<HTMLElement>) => void;
 }) {
-  const onClick = isStack
+  const onClick = opensList
     ? (event: MouseEvent<HTMLElement>) => {
         event.preventDefault();
         event.stopPropagation();
-        onOpenStack();
+        onOpenList();
       }
     : onOpenPullRequest;
-  const element = isStack ? (
+  const element = opensList ? (
     <button type="button" />
   ) : (
     <a href={url} target="_blank" rel="noopener noreferrer" />
@@ -293,74 +270,17 @@ function PullRequestBadge({
   return (
     <Tooltip>
       <TooltipTrigger render={control}>
-        <PullRequestBadgeFace presentation={presentation} />
+        <span
+          className={cn("contents font-normal text-xs tabular-nums", presentation.toneClassName)}
+        >
+          <presentation.Icon aria-hidden className="size-3 shrink-0" />
+          {/* An element, not bare text: bare text takes its line box from the control, which
+              inherits the row's size, so beside a text-sm title it sat below the other meta. */}
+          <span>{presentation.text}</span>
+        </span>
       </TooltipTrigger>
       <TooltipPopup side="top">{presentation.label}</TooltipPopup>
     </Tooltip>
-  );
-}
-
-/**
- * Fork: the glyph and number the badge shows, shared by the link badge above and the list badge
- * below so the two read identically. Extracted rather than copied: upstream owns these styles
- * and restyles them (#13175 moved them to the meta size), and a second copy drifts silently.
- */
-function PullRequestBadgeFace({
-  presentation,
-}: {
-  presentation: NonNullable<ReturnType<typeof resolveThreadPullRequestBadgePresentation>>;
-}) {
-  return (
-    <span className={cn("contents font-normal text-xs tabular-nums", presentation.toneClassName)}>
-      <presentation.Icon aria-hidden className="size-3 shrink-0" />
-      {/* An element, not bare text: bare text takes its line box from the control, which
-          inherits the row's size, so beside a text-sm title it sat below the other meta. */}
-      <span>{presentation.text}</span>
-    </span>
-  );
-}
-
-/**
- * Fork: the same badge, opening the list of links instead of one of them. A Task binds every
- * pull request its agent opened and they rarely stack, so the badge is a popover over the
- * sidebar hover's list rather than a link to a primary the `+N` says nothing about.
- */
-function PullRequestLinksBadge({
-  render,
-  presentation,
-  links,
-  onSelect,
-}: {
-  render: ReactElement<{ render?: useRender.RenderProp }>;
-  presentation: NonNullable<ReturnType<typeof resolveThreadPullRequestBadgePresentation>>;
-  links: ReadonlyArray<ThreadPullRequestLink>;
-  onSelect: (event: MouseEvent<HTMLAnchorElement>, link: ThreadPullRequestLink) => void;
-}) {
-  const control = useRender({
-    render,
-    props: {
-      render: <button type="button" />,
-      "aria-label": presentation.label,
-      onPointerDown: (event: MouseEvent<HTMLElement>) => event.stopPropagation(),
-      onClick: (event: MouseEvent<HTMLElement>) => event.stopPropagation(),
-    },
-  });
-  return (
-    <Popover>
-      <PopoverTrigger render={control}>
-        <PullRequestBadgeFace presentation={presentation} />
-      </PopoverTrigger>
-      <PopoverPopup
-        side="top"
-        align="start"
-        tooltipStyle
-        className="max-w-[min(30rem,calc(100vw-2rem))]"
-      >
-        <div className="py-0.5 text-muted-foreground text-xs">
-          <ThreadPullRequestsMiniList pullRequests={links} onSelect={onSelect} />
-        </div>
-      </PopoverPopup>
-    </Popover>
   );
 }
 
@@ -370,13 +290,8 @@ function PullRequestLinksBadge({
  */
 export function ThreadPullRequestsMiniList({
   pullRequests,
-  onSelect,
 }: {
   pullRequests: ReadonlyArray<ThreadPullRequestLink>;
-  /** Fork: makes each row a link to its own pull request. Absent, the list is text. */
-  onSelect?:
-    | ((event: MouseEvent<HTMLAnchorElement>, link: ThreadPullRequestLink) => void)
-    | undefined;
 }) {
   const lines = useMemo(
     () =>
@@ -392,8 +307,14 @@ export function ThreadPullRequestsMiniList({
           snapshot === null
             ? null
             : resolvePullRequestState({ state: snapshot.state, isDraft: snapshot.isDraft });
-        const row = (
-          <>
+        return (
+          <li
+            key={`${line.link.host}/${line.link.repository}#${line.link.number}`}
+            className="flex min-w-0 items-center gap-2"
+            // Capped like the panel: past a few layers the indent only repeats "still in the
+            // stack", and sixteen of them would walk the titles off the popover.
+            style={{ paddingLeft: `${Math.min(line.depth, 3) * 0.75}rem` }}
+          >
             {presentation ? (
               <presentation.Icon
                 aria-hidden
@@ -414,29 +335,6 @@ export function ThreadPullRequestsMiniList({
                 {line.stack.kind === "native" ? "stack" : "chain"} · {line.stack.size}
               </span>
             ) : null}
-          </>
-        );
-        return (
-          <li
-            key={`${line.link.host}/${line.link.repository}#${line.link.number}`}
-            className="flex min-w-0 items-center gap-2"
-            // Capped like the panel: past a few layers the indent only repeats "still in the
-            // stack", and sixteen of them would walk the titles off the popover.
-            style={{ paddingLeft: `${Math.min(line.depth, 3) * 0.75}rem` }}
-          >
-            {onSelect === undefined ? (
-              row
-            ) : (
-              <a
-                href={line.link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="-mx-1 flex min-w-0 flex-1 items-center gap-2 rounded-sm px-1 py-0.5 hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-ring"
-                onClick={(event) => onSelect(event, line.link)}
-              >
-                {row}
-              </a>
-            )}
           </li>
         );
       })}
