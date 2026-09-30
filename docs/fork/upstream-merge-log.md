@@ -28,6 +28,41 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-09-30 — merged upstream to 0fcd5f906
+
+- Upstream: `0fcd5f906` from base `d2c9281b8` (`16` commits).
+- Landed: `158` files from `git diff --stat HEAD^1 HEAD` against `156` in the
+  upstream range; fork delta `756` files from `git diff --stat HEAD^2 HEAD`.
+  The gap is `ThreadStatusIndicators.test.tsx`, reset to upstream's copy, and
+  `docs/fork/inventory.json`.
+- Branch point: `main`, with no open merge PR to stack on.
+- Conflicts: 4 files.
+  - `ThreadStatusIndicators.tsx` (converged): #13211 makes a multi-PR badge
+    open the `pull-requests` panel, which is the `task-bound-pull-request`
+    convergence entry's `watchFor`. Took upstream whole and retired the fork's
+    composer-footer popover (`PullRequestLinksBadge`, the mini-list `onSelect`
+    and their tests); the row is now `theirs`.
+  - `BranchToolbarBranchSelector.tsx` (converged): upstream's `onOpenList`,
+    fork's `pullRequests`/`onOpenLink` props dropped with the popover; the
+    worktree gate stays.
+  - `FilePreviewPanel.tsx` (decide): upstream's `relativePath !== null` read
+    guard plus the fork's `onRetargetFile` effect.
+  - `ProviderInstanceCard.tsx` (converged): upstream's Codex-managed folded
+    Runtime section kept inside the `FEATURES.providerConfiguration` gate,
+    `ProviderAuthSetup` before it.
+  - `pnpm-lock.yaml` re-derived with `install.mjs`.
+- Sweep: 18 hits, all #14290's managed ChatGPT sign-in for Codex (desktop
+  callback, server `CodexChatGptAuth`, web `ChatGptConnectionButton`, shared
+  handoff helpers). None touches a fork-owned surface; the web flow appears only
+  for `setupMode: "managed"`, which Moatless never reports. No new workflows.
+- Unsupported methods: no ADD or DROP; the four new `provider.chatgpt.*` /
+  `provider.codex.auth-callback.subscribe` methods share `ProviderSetupRpcError`.
+- Gaps: extended _Provider setup_ under
+  [Methods the backend does not dispatch](./gaps.md#methods-the-backend-does-not-dispatch)
+  and added three items to
+  [Runtime fixes upstream made to its own server](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: the first full `verify.mjs` run passed all ten checks.
+
 ### 2026-09-29 — merged upstream to d2c9281b8
 
 - Upstream: `d2c9281b8` from base `ab099178a` (`16` commits).

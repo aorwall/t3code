@@ -402,7 +402,13 @@ what a person loses, which is the part the derivation cannot tell you:
   `provider.auth.respond` arrived in the 2026-09-23 merge with #12983, which
   made a sign-in flow interactive — the server asks, the client answers through
   that method — and needed no union edit of its own because the method took the
-  same error type as the other nine.
+  same error type as the other nine. The 2026-09-30 merge added four more on
+  the same union with #14290's managed ChatGPT sign-in for Codex —
+  `provider.chatgpt.reconnect-profile`, `.import-profile`, `.handoff.subscribe`
+  and `provider.codex.auth-callback.subscribe` — which store a ChatGPT session
+  on the server's own machine. The web editor shows that flow only for a Codex
+  instance whose config says `setupMode: "managed"`, which Moatless never
+  reports, so it stays dormant with no fork gate.
   The editor still reads and the models list renders; the auth and install
   actions inside it resolve to a refusal. Closes if Moatless ever manages
   provider credentials on the client's behalf.
@@ -1483,6 +1489,25 @@ Four more arrived in the 2026-09-29 merge:
   (Claude Code `>=2.1.284`) (`apps/server/src/provider/model-manifest.json`).
   Moatless installs and advertises its own provider CLIs and models.
 
+Three more arrived in the 2026-09-30 merge:
+
+- **A provider process that dies mid-turn should settle the turn as an error.**
+  #10607 has `GrokAdapter` mark a session terminated on the ACP
+  `ConnectionTerminated` event, settle the prompt in flight and report the exit
+  as `error` rather than `graceful`, so the next send starts a fresh session
+  instead of hanging on a dead one
+  (`apps/server/src/provider/Layers/GrokAdapter.ts`). Moatless runs no Grok, but
+  the same crash is possible for any provider CLI it drives.
+- **A Codex Pro Max account should load.** #14304 adds the `promax` plan label
+  and shorter copy for the `ultrafast` service tier
+  (`apps/server/src/provider/Layers/CodexProvider.ts`); an unrecognised plan is
+  what hid Ultrafast. #14311 regenerates the Codex app-server bindings for Codex
+  0.159 and moves the model manifest with it.
+- **OpenCode Go limits should merge per credential.** #14209 keys merged usage
+  limits by the credential they came from (`packages/shared/src/usageLimits.ts`,
+  `provider/Layers/openCodeUsageLimits.ts`), relevant where Moatless serves usage
+  limits itself.
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
   compaction path queues in-flight user messages, its review diffs report
@@ -1537,7 +1562,10 @@ Four more arrived in the 2026-09-29 merge:
   sweeps read only settleable threads, idle sessions do not wake it, a Claude
   stop aborts the turn before closing the session, an OpenCode stop before
   submission resolves, usage survives oversized transcript records, and its
-  provider manifest tracks OpenCode 2 as broken and offers Claude Sonnet 5.5.
+  provider manifest tracks OpenCode 2 as broken and offers Claude Sonnet 5.5,
+  a crashed provider process settles its turn as an error, it loads Codex Pro
+  Max accounts and tracks Codex 0.159, and OpenCode Go limits merge per
+  credential.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
