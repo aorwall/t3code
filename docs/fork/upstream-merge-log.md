@@ -28,6 +28,31 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-01 — merged upstream to 0cf482b08
+
+- Upstream: `0cf482b08` from base `0fcd5f906` (`13` commits).
+- Landed: `65` files from `git diff --stat HEAD^1 HEAD` against `65` in the
+  upstream range; fork delta `756` files from `git diff --stat HEAD^2 HEAD`.
+  Exact match.
+- Branch point: `main`, with no open merge PR to stack on.
+- Conflicts: 1 file.
+  - `DraftHeroHeadline.tsx` (converged): upstream's #13612 picker rewrite,
+    with its now-conditional separator and the New project item re-wrapped in
+    `FEATURES.projectManagement`.
+  - `pnpm-lock.yaml` auto-merged; re-derived with `install.mjs` from upstream's
+    copy anyway.
+- Auto-merged by hand check: `CommandPalette.tsx`, `NoProjectsHero.tsx` and
+  `_chat.tsx` gained #13612's "No project" entry points; all self-gate on
+  `ServerConfig.scratchWorkspaceRoot`, which Moatless omits, so no fork gate.
+- Sweep: no keyword hits. No new workflows.
+- Unsupported methods: ADD `projects.ensureScratch`; no DROP.
+- Gaps: extended _Project and repository management_ under
+  [Methods the backend does not dispatch](./gaps.md#methods-the-backend-does-not-dispatch)
+  and added #14497 to
+  [Runtime fixes upstream made to its own server](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: full `verify.mjs` passed all ten checks; `t3` failed the parallel test run
+  and passed in isolation (load, not the merge).
+
 ### 2026-09-30 — merged upstream to 0fcd5f906
 
 - Upstream: `0fcd5f906` from base `d2c9281b8` (`16` commits).
