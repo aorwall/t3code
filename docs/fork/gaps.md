@@ -257,6 +257,14 @@ what a person loses, which is the part the derivation cannot tell you:
   gated client-side on `capabilities.projectCloneTracking`, which a Moatless
   handshake omits — so the four union entries are the only stand-in, and they
   close with the rest of this bullet.
+  The 2026-10-01 merge added **threads without a project** (#13612):
+  `projects.ensureScratch` finds or creates a server-owned scratch project
+  rooted at `ServerConfig.scratchWorkspaceRoot`, and the draft hero, command
+  palette, empty-state hero and the `chat.newWithoutProject` shortcut start a
+  thread in it. Every entry point reads `scratchWorkspaceRoot` first, which a
+  Moatless `getConfig` omits, so nothing is offered and no fork gate was added;
+  the union entry is the only stand-in. Closes when Moatless can start a thread
+  with no repository and reports a scratch root; delete the union entry then.
 - **Preparing a worktree behind a progress stream** — `subscribeWorktreeSetup`
   and `worktreeSetup.cancel`, new upstream in this merge (#11372, grown by
   #11832). Upstream cuts a thread's worktree as a tracked setup with named
@@ -1508,6 +1516,17 @@ Three more arrived in the 2026-09-30 merge:
   `provider/Layers/openCodeUsageLimits.ts`), relevant where Moatless serves usage
   limits itself.
 
+One more arrived in the 2026-10-01 merge:
+
+- **A Claude result for a turn Claude started itself should not end the
+  user's turn.** #14497 has `ClaudeAdapter` ignore a result whose echoed
+  `user_message_uuids` do not include the active turn, or that carries a
+  non-human `origin`, so a prompt queued behind a resumed session's background
+  report or a peer wake-up keeps its turn open. Without it a `/compact` runs
+  with no turn open and the thread is left busy
+  (`apps/server/src/provider/Layers/ClaudeAdapter.ts`). Relevant to Moatless
+  wherever it maps Claude SDK results to turn completion.
+
 - **Closes when:** the Moatless backend's session reaper reads the later of the
   two timestamps, its thread/session event replay releases consumed pages, its
   compaction path queues in-flight user messages, its review diffs report
@@ -1564,8 +1583,9 @@ Three more arrived in the 2026-09-30 merge:
   submission resolves, usage survives oversized transcript records, and its
   provider manifest tracks OpenCode 2 as broken and offers Claude Sonnet 5.5,
   a crashed provider process settles its turn as an error, it loads Codex Pro
-  Max accounts and tracks Codex 0.159, and OpenCode Go limits merge per
-  credential.
+  Max accounts and tracks Codex 0.159, OpenCode Go limits merge per
+  credential, and a Claude result for a Claude-initiated turn leaves the
+  user's turn open.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
