@@ -12,9 +12,11 @@
  * mirror, or a tar-only fork) answers the file read as "sandbox not running",
  * so the surface shows that in its own panel rather than being closed outright.
  *
- * Pull requests would qualify on the same reasoning, but the surface is off
- * wholesale on this backend — the client reads `capabilities.pullRequests`,
- * which Moatless does not report — so gating it changes nothing that renders.
+ * Linked pull requests are not either: the list is the thread's own
+ * `pullRequests` and each row's summary comes from the backend's store. A
+ * single pull request's detail reads the git host through
+ * `capabilities.pullRequests`, which Moatless does not report, so that surface
+ * stays gated and never opens on this backend anyway.
  *
  * A browser tab is the one surface whose answer depends on the page it holds
  * rather than on the kind alone — see [`previewTabNeedsSandbox`].
@@ -27,9 +29,10 @@ import type { RightPanelKind, RightPanelSurface } from "~/rightPanelStore";
  * Surfaces the environment serves rather than the live workspace.
  *
  * `files`/`file` are here because the backend reads them from the S3 snapshot
- * when no sandbox is running. A kind absent from here needs the sandbox, which
- * is the safe default: a new surface is a window onto the live workspace until
- * someone says otherwise.
+ * when no sandbox is running, and `pull-requests` because
+ * `pullRequests.summary` reads the backend's own store. A kind absent from here
+ * needs the sandbox, which is the safe default: a new surface is a window onto
+ * the live workspace until someone says otherwise.
  *
  * `sandbox` is the one surface that must stay open precisely when the sandbox
  * is down: it is where the person starts one.
@@ -38,6 +41,7 @@ const SANDBOX_INDEPENDENT_KINDS: ReadonlySet<RightPanelKind> = new Set<RightPane
   "agents",
   "files",
   "file",
+  "pull-requests",
   "sandbox",
 ]);
 
