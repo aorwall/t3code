@@ -218,7 +218,10 @@ what a person loses, which is the part the derivation cannot tell you:
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
   `getConfig`), so Settings renders and nothing in it can be saved. Holds open
-  `serverAdministration` and `providerConfiguration`. `server.getSettings`
+  `serverAdministration` and `providerConfiguration`. The 2026-10-02 merge's
+  one-click "update every machine" button (#14678, `ProviderUpdatesAction.tsx`)
+  calls `updateProvider` and sits behind `providerConfiguration` too — it would
+  render nothing anyway, because Moatless publishes no `versionAdvisory`. `server.getSettings`
   answers `{}`, so an ungated control does not merely fail to save — it shows a
   contract default as though it were the server's configuration. A project's
   scripts are the exception: the backend dispatches `project.meta.update` for
@@ -265,6 +268,13 @@ what a person loses, which is the part the derivation cannot tell you:
   Moatless `getConfig` omits, so nothing is offered and no fork gate was added;
   the union entry is the only stand-in. Closes when Moatless can start a thread
   with no repository and reports a scratch root; delete the union entry then.
+  The 2026-10-02 merge added **a new project from just a name** (#14527):
+  `projects.createNew` makes a folder under `ServerConfig.newProjectsRoot` with a
+  first commit and registers it as a project, offered from the command palette's
+  top level and its Add project submenu. Both entries read `newProjectsRoot`
+  first, which a Moatless `getConfig` omits, so nothing is offered; the union
+  entry is the only stand-in. Closes when Moatless can create a repository from a
+  name and reports a root; delete the union entry then.
 - **Preparing a worktree behind a progress stream** — `subscribeWorktreeSetup`
   and `worktreeSetup.cancel`, new upstream in this merge (#11372, grown by
   #11832). Upstream cuts a thread's worktree as a tracked setup with named
@@ -1377,6 +1387,23 @@ Six more arrived in the 2026-09-23 merge, four of them GitHub-quota work:
   on the contract, so on Moatless the distinction is served or not served
   entirely in the backend: a Refresh button that returns the same cached answer
   is the symptom.
+- **A fresh provider refresh should rescan skills and plugins.** Upstream's
+  command palette gained "Restart agent session" (#14542): it stops the
+  thread's session and calls `server.refreshProviders` with a new `fresh` flag,
+  which makes `apps/server` rescan workspace skills and plugins before the next
+  turn starts one. Moatless serves `refreshProviders` and the action is
+  ungated, so the session restart works and the rescan is whatever Moatless
+  already does; a newly added skill still missing after a restart is the symptom.
+- **Background GitHub polling should batch its pull-request reads.** Upstream
+  folds its per-PR `gh` calls into batched GraphQL queries, about 74% fewer
+  calls (`apps/server/src/sourceControl/GitHubCli.ts`,
+  `GitHubSourceControlProvider.ts`, #14673), and adds an optional
+  `PullRequestSummary.stack` the client renders only when present. Relevant to
+  Moatless exactly if it polls GitHub per PR on a timer.
+- **A Claude subagent with its own model should report that model.** Upstream's
+  `ClaudeAdapter.ts` stopped attributing a subagent's turns to the parent's model
+  (#14540). The same misattribution is likely wherever Moatless reads Claude
+  subagent events.
 - **A GitHub pull-request probe should not ask for an owner-qualified head.**
   `gh pr list --head` filters on the bare ref name and answers an `owner:branch`
   selector with nothing while still spending a GraphQL call, so upstream drops
