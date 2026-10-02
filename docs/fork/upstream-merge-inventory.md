@@ -122,7 +122,8 @@ For `apps/web/vite.config.ts`, take upstream first, then re-apply exactly:
 ### Moatless Spec Check Delta
 
 For `.github/workflows/ci.yml`, take upstream first, then re-apply exactly one
-step in the `check` job, after `Typecheck`:
+step in the `typecheck` job, after `Typecheck` (upstream split the old `check`
+job into `lint`, `typecheck`, `build` and `test` jobs in #14025):
 
 - `Check the Moatless API description is current`, guarded by
   `if: vars.MOATLESS_API_URL != ''`, running

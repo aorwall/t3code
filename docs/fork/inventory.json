@@ -549,7 +549,7 @@
       "paths": [".github/workflows/ci.yml"],
       "verdict": "converged",
       "delta": "Moatless Spec Check Delta",
-      "note": "The one exception to the entry below. Take upstream, then re-apply the single `Check the Moatless API description is current` step in the check job. Nothing else in this file is fork-owned."
+      "note": "The one exception to the entry below. Take upstream, then re-apply the single `Check the Moatless API description is current` step after `vpr typecheck` in the Typecheck job. Nothing else in this file is fork-owned."
     },
     {
       "id": "upstream-workflows",
@@ -694,7 +694,7 @@
         "apps/web/src/components/settings/ProviderSettingsPanel.environment.test.tsx"
       ],
       "verdict": "converged",
-      "note": "Take upstream, then re-apply the FEATURES.providerConfiguration gates described in the moatless-provider-auth entry, which is where the reasoning lives. In ProviderSettingsPanel: the driver list narrows to what `serverProviders` publishes, and the Add provider button is a `? … : null` around the whole Tooltip. In ProviderInstanceCard: the status row's control slot is a ternary between upstream's configuration controls and the fork's ProviderAuthAction, and ProviderAuthSetup owns its own section after upstream's setup block. In ProviderModelsSection: the flag folds into upstream's `driverKind === \"antigravity\" ? null :` head, because adding a custom model writes providerInstances; hiding, ordering and favouriting below it are client settings and stay ungated. Upstream restyles these rows often — the 2026-09-17 merge moved them from `sm:` breakpoints to `@min-[32rem]/settings-row:` container queries — so take upstream's classNames and keep the ternary around them, not the other way round."
+      "note": "Take upstream, then re-apply the FEATURES.providerConfiguration gates described in the moatless-provider-auth entry, which is where the reasoning lives. In ProviderSettingsPanel: the driver list narrows to what `serverProviders` publishes, and the Add provider button is a `? … : null` around the whole Tooltip, and upstream's `<ProviderUpdatesAction />` in the section's `headerAction` is a `? … : null` too, since it calls the refused `server.updateProvider`. In ProviderInstanceCard: the status row's control slot is a ternary between upstream's configuration controls and the fork's ProviderAuthAction, and ProviderAuthSetup owns its own section after upstream's setup block. In ProviderModelsSection: the flag folds into upstream's `driverKind === \"antigravity\" ? null :` head, because adding a custom model writes providerInstances; hiding, ordering and favouriting below it are client settings and stay ungated. Upstream restyles these rows often — the 2026-09-17 merge moved them from `sm:` breakpoints to `@min-[32rem]/settings-row:` container queries — so take upstream's classNames and keep the ternary around them, not the other way round."
     },
     {
       "id": "chat-layout-route",

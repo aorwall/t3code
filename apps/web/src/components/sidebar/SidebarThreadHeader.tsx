@@ -133,7 +133,7 @@ export function SidebarThreadHeader({
             {projectScope}
             {/* Fork: Moatless owns project creation, so the button is gated. */}
             {FEATURES.projectManagement ? (
-              <SidebarHeaderIconButton label="New project" onClick={onNewProject}>
+              <SidebarHeaderIconButton label="Add project" onClick={onNewProject}>
                 <FolderPlusIcon />
               </SidebarHeaderIconButton>
             ) : null}

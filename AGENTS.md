@@ -74,7 +74,7 @@ Clients send typed WebSocket requests. The server turns them into _commands_, a 
 
 That describes `apps/server`. It is also the vocabulary the wire is written in, so it is what Moatless implements on the other side of `/ws` — read it as the contract's model, not as the code running behind the fork's client.
 
-- `apps/server` — WebSocket, orchestration, providers, checkpointing. Effect-heavy: read `.repos/effect-smol/LLMS.md` before writing Effect code.
+- `apps/server` — WebSocket, orchestration, providers, checkpointing. Effect-heavy: read [Effect services](docs/internals/effect-services.md) before adding server code, and `.repos/effect-smol/LLMS.md` for the Effect library itself. Server features are services and transports stay thin: a `ws.ts` handler, HTTP route or MCP tool decodes input, calls one service method, and maps errors.
 - `apps/web` — React/Vite UI. `apps/desktop` wraps it, `apps/mobile` is React Native, `apps/marketing` is the site.
 - `packages/contracts` — Effect/Schema contracts plus small derived helpers. No heavy runtime logic.
 - `packages/shared` — shared runtime utils, subpath exports, no barrel.

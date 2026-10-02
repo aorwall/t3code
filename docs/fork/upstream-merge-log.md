@@ -28,6 +28,43 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-02 — merged upstream to 20012ebd8
+
+- Upstream: `20012ebd8` from base `0cf482b08` (`33` commits).
+- Landed: `211` files from `git diff --stat HEAD^1 HEAD` against `211` in the
+  upstream range; fork delta `756` files from `git diff --stat HEAD^2 HEAD`.
+  Exact match.
+- Branch point: `main`, with no open merge PR to stack on.
+- Conflicts: 7 files.
+  - `.github/workflows/ci.yml` (converged): upstream split the `check` job into
+    lint/typecheck/build/test jobs (#14025); the Moatless spec-check step now
+    follows `vpr typecheck` in the `typecheck` job. Inventory note re-pointed.
+  - `AGENTS.md` (decide): kept the fork's shape and dropped upstream's user
+    count; folded #14613's "server features are services, transports stay thin"
+    and the `docs/internals/effect-services.md` pointer into the `apps/server` line.
+  - `Sidebar.tsx` (converged): union of both memo dependency lists — the fork's
+    `isBrowsing`/`showsClosed` and upstream's `workingShelfEnabled` (#13926).
+  - `DraftHeroHeadline.tsx`, `SidebarThreadHeader.tsx` (converged): upstream's
+    "New project" → "Add project" rename, inside the `FEATURES.projectManagement`
+    gates.
+  - `third-party-licenses.config.json` (converged): upstream's noxcturnal
+    overrides, then the fork's `khroma`/`fastdom`/`strictdom` re-appended.
+  - `pnpm-lock.yaml` (theirs): upstream's copy, re-derived with `install.mjs`.
+- Auto-merged by hand check: `ProviderSettingsPanel.tsx` gained #14678's
+  ungated `ProviderUpdatesAction` (calls refused `server.updateProvider`); gated
+  on `FEATURES.providerConfiguration` and noted in `provider-settings-gates`.
+  `CommandPalette.tsx`'s #14527 "new project" entries self-gate on
+  `ServerConfig.newProjectsRoot`, which Moatless omits.
+- Sweep: no keyword hits. No new workflows.
+- Unsupported methods: ADD `projects.createNew`; no DROP.
+- Gaps: extended _Editing server settings_ and _Project and repository
+  management_ under
+  [Methods the backend does not dispatch](./gaps.md#methods-the-backend-does-not-dispatch);
+  added #14542, #14673, #14540 to
+  [Runtime fixes upstream made to its own server](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: full `verify.mjs` passed all ten checks; `@t3tools/mobile`
+  failed the parallel test run and passed in isolation (load, not the merge).
+
 ### 2026-10-01 — merged upstream to 0cf482b08
 
 - Upstream: `0cf482b08` from base `0fcd5f906` (`13` commits).
