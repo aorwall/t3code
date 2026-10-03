@@ -17,4 +17,7 @@ export const TaskSubType = {
   closed: "closed",
   updated: "updated",
   metadataupdated: "metadata.updated",
+  error: "error",
+  binding_reply_sent: "binding_reply_sent",
+  agent_switched: "agent_switched",
 } as const;

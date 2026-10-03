@@ -36,6 +36,7 @@ import {
 } from "../../ui/dialog";
 import { Input } from "../../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
+import { Switch } from "../../ui/switch";
 import { Textarea } from "../../ui/textarea";
 import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
 import { SettingsPageContainer, SettingsRow, SettingsSection } from "../settingsLayout";
@@ -441,6 +442,7 @@ function ConfigurationSection({
     routingMode: loop.config.routingMode,
     taskName: loop.config.taskName ?? "",
     agentProfile: loop.config.agentProfile,
+    fallbackToOtherAgent: loop.config.fallbackToOtherAgent,
     prompt: loop.config.prompt ?? "",
   });
   const save = useMoatlessCommand<typeof form.values, Loop>(
@@ -451,6 +453,7 @@ function ConfigurationSection({
           routingMode: values.routingMode,
           taskName: values.taskName.trim() || null,
           agentProfile: values.agentProfile.trim() || "claude-code",
+          fallbackToOtherAgent: values.fallbackToOtherAgent,
           prompt: values.prompt.trim() || null,
         },
       }),
@@ -534,6 +537,26 @@ function ConfigurationSection({
             value={form.values.agentProfile}
             disabled={isLocked}
             onChange={(event) => form.setField("agentProfile", event.currentTarget.value)}
+          />
+        </div>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <label
+              htmlFor="loop-fallback-to-other-agent"
+              className="block text-xs font-medium text-foreground"
+            >
+              Fall back to the other agent when the provider is unavailable
+            </label>
+            <p className="mt-0.5 text-xs leading-normal text-muted-foreground/80">
+              When a turn fails on a usage limit, rate limit or provider outage, run it once more on
+              the other agent: Codex and Claude Code swap.
+            </p>
+          </div>
+          <Switch
+            id="loop-fallback-to-other-agent"
+            checked={form.values.fallbackToOtherAgent}
+            disabled={isLocked}
+            onCheckedChange={(checked) => form.setField("fallbackToOtherAgent", checked)}
           />
         </div>
         <div>

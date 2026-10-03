@@ -40,4 +40,11 @@ export interface LoopConfig {
    * is the repository those tasks run against.
    */
   workspaceId: string;
+  /**
+   * Re-run a spawned Task's failed turn once on the other agent (`codex` or
+   * `claude-code`), in the same Task, when the turn's error reason is
+   * `usage_limit`, `rate_limit` or `provider_unavailable`. The sandbox
+   * reports the last two only once its retries are spent.
+   */
+  fallbackToOtherAgent: boolean;
 }

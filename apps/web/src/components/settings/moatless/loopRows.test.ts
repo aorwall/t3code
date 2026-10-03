@@ -18,6 +18,7 @@ import {
 
 const CONFIG: LoopConfig = {
   agentProfile: "claude-code",
+  fallbackToOtherAgent: true,
   workspaceId: "ws_1",
   routingMode: "by_subject",
   skills: [],

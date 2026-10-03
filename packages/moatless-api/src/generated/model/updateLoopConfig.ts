@@ -33,4 +33,10 @@ export interface UpdateLoopConfig {
    * @nullable
    */
   workspaceId?: string | null;
+  /**
+   * See [`LoopConfig::fallback_to_other_agent`]. `None` keeps the current
+   * value.
+   * @nullable
+   */
+  fallbackToOtherAgent?: boolean | null;
 }

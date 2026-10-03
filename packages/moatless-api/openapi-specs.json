@@ -10258,6 +10258,10 @@
           "workspaceId": {
             "type": "string",
             "description": "See [`LoopConfig::workspace_id`]."
+          },
+          "fallbackToOtherAgent": {
+            "type": ["boolean", "null"],
+            "description": "See [`LoopConfig::fallback_to_other_agent`]. `None` is on."
           }
         }
       },
@@ -12155,7 +12159,14 @@
       },
       "LoopConfig": {
         "type": "object",
-        "required": ["workspaceId", "routingMode", "tagIds", "skills", "agentProfile"],
+        "required": [
+          "workspaceId",
+          "routingMode",
+          "tagIds",
+          "skills",
+          "agentProfile",
+          "fallbackToOtherAgent"
+        ],
         "properties": {
           "agentProfile": {
             "type": "string"
@@ -12200,6 +12211,10 @@
           "workspaceId": {
             "type": "string",
             "description": "The Workspace every task this Loop spawns runs in. Its primary placement\nis the repository those tasks run against."
+          },
+          "fallbackToOtherAgent": {
+            "type": "boolean",
+            "description": "Re-run a spawned Task's failed turn once on the other agent (`codex` or\n`claude-code`), in the same Task, when the turn's error reason is\n`usage_limit`, `rate_limit` or `provider_unavailable`. The sandbox\nreports the last two only once its retries are spent."
           }
         }
       },
@@ -15316,7 +15331,16 @@
       "TaskSubType": {
         "type": "string",
         "description": "Task sub-types.",
-        "enum": ["created", "open", "closed", "updated", "metadata.updated"]
+        "enum": [
+          "created",
+          "open",
+          "closed",
+          "updated",
+          "metadata.updated",
+          "error",
+          "binding_reply_sent",
+          "agent_switched"
+        ]
       },
       "TaskTokenTotals": {
         "type": "object",
@@ -15779,6 +15803,10 @@
           "workspaceId": {
             "type": ["string", "null"],
             "description": "See [`LoopConfig::workspace_id`]."
+          },
+          "fallbackToOtherAgent": {
+            "type": ["boolean", "null"],
+            "description": "See [`LoopConfig::fallback_to_other_agent`]. `None` keeps the current\nvalue."
           }
         }
       },

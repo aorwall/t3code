@@ -32,4 +32,9 @@ export interface CreateLoopConfig {
   taskName?: string | null;
   /** See [`LoopConfig::workspace_id`]. */
   workspaceId: string;
+  /**
+   * See [`LoopConfig::fallback_to_other_agent`]. `None` is on.
+   * @nullable
+   */
+  fallbackToOtherAgent?: boolean | null;
 }
