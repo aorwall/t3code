@@ -949,6 +949,32 @@ to grow.
 - **Then here:** delete the `return null` branch at the end of
   `workspaceIconFromOverride`, and this entry with it.
 
+### Upstream's orchestrator V2 is a wire protocol Moatless does not speak
+
+Upstream's `de3439142` (#2829, "introduce new orchestrator") deletes
+`packages/contracts/src/orchestration.ts` and the client-runtime
+`threadReducer.ts` and replaces them with `orchestrationV2.ts`. The
+`orchestration.*` method names are unchanged, but every command, event, shell
+and thread payload behind them is a new schema. `crates/t3code` serves the V1
+payloads only. The fork's Message Origin, Thread Fork, Thread Visibility, Thread
+Follow and Thread Owner Name deltas are all anchored in the deleted files.
+
+- **Costs:** every upstream commit from `de3439142` on is unmergeable. Merging
+  it would ship a client that cannot decode a single shell or thread from the
+  backend. The 2026-10-03 merge stopped at `024d49520`, its parent. Every later
+  upstream fix, including the web-only ones, waits behind this gap.
+- **Holds it open here:** the merge-base. `preflight.mjs` against
+  `upstream/main` reports the five `*-upstream-files` path-policy entries above
+  as stale, because their anchor files are gone upstream.
+- **Closes when:** either the backend decodes and emits `OrchestrationV2*`
+  payloads, or a person decides on a client-side adapter from V1 to V2. In both
+  cases the five deltas get re-homed into `orchestrationV2.ts` and the
+  client-runtime modules that replaced `threadReducer.ts`.
+- **Check:** `git merge-base --is-ancestor de3439142 HEAD` exits 0 once a merge
+  has taken it.
+- **Then here:** re-point the five stale path-policy entries in
+  `inventory.json`, merge `upstream/main` normally, and strike this entry.
+
 ### Runtime fixes upstream made to its own server
 
 Upstream server fixes the fork cannot use, because Moatless owns the surface
@@ -1612,7 +1638,9 @@ One more arrived in the 2026-10-01 merge:
   a crashed provider process settles its turn as an error, it loads Codex Pro
   Max accounts and tracks Codex 0.159, OpenCode Go limits merge per
   credential, and a Claude result for a Claude-initiated turn leaves the
-  user's turn open.
+  user's turn open, and a reconcile republishes only the events its own
+  dispatch appended, so a second server on a shared state directory cannot
+  start a duplicate provider turn (#13295).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

@@ -28,6 +28,31 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-03 — merged upstream to 024d49520, stopped before orchestrator V2
+
+- Upstream: `024d49520` from base `20012ebd8` (`12` commits). `upstream/main`
+  was `4f7760e6a` (30 commits). This merge deliberately stopped at the parent
+  of `de3439142` (orchestrator V2). See
+  [the gap](./gaps.md#upstreams-orchestrator-v2-is-a-wire-protocol-moatless-does-not-speak).
+- Landed: `41` files from `git diff --stat HEAD^1 HEAD` against `41` in the
+  upstream range; fork delta `756` files from `git diff --stat HEAD^2 HEAD`.
+  Exact match.
+- Branch point: `main`, with no open merge PR to stack on.
+- Conflicts: none. Auto-merged: `ChatMarkdown.tsx` and `apps/web/package.json`
+  (chat-markdown-mermaid). The mermaid delta survived beside #12615's
+  Windows-path plugin. `nativeMarkdownText.test.ts` (unlisted) keeps the fork's
+  older "prose"→"text" wording around upstream's new cases; no entry added.
+- `pnpm-lock.yaml`: auto-merged, re-derived with `install.mjs` (one `type-fest`
+  line), fork edges present.
+- Scripts ran with `refs/remotes/upstream/main` pointed at `024d49520`, so that
+  resolution and tripwire checks compared against the merged parent.
+- Sweep: preflight against the merged range had no stale entries. The 24
+  keyword hits were all V2-era files beyond the merged range.
+- Unsupported methods: no ADD, no DROP.
+- Gaps: added the orchestrator V2 entry; #13295 extended
+  [Runtime fixes upstream made to its own server](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: full `verify.mjs` passed all ten checks.
+
 ### 2026-10-02 — merged upstream to 20012ebd8
 
 - Upstream: `20012ebd8` from base `0cf482b08` (`33` commits).
