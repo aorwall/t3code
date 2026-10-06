@@ -1,6 +1,6 @@
 import { WS_METHODS } from "@t3tools/contracts";
 import * as Stream from "effect/Stream";
-import { Atom } from "effect/unstable/reactivity";
+import { Atom } from "effect/reactivity";
 
 import {
   createAtomCommandScheduler,
@@ -44,7 +44,7 @@ export function createTerminalEnvironmentAtoms<R, E>(
       subscribe: (input: EnvironmentRpcInput<typeof WS_METHODS.terminalAttach>) =>
         Stream.suspend(() =>
           subscribe(WS_METHODS.terminalAttach, input).pipe(
-            Stream.scan(nextTerminalAttachSeedState(), applyTerminalAttachStreamEvent),
+            Stream.scan(nextTerminalAttachSeedState, applyTerminalAttachStreamEvent),
           ),
         ),
     }),
@@ -58,7 +58,7 @@ export function createTerminalEnvironmentAtoms<R, E>(
         subscribe(WS_METHODS.subscribeTerminalMetadata, {}).pipe(
           // Fork: the scan carries the environment's announcements beside the
           // listing; see `TerminalMetadataState`.
-          Stream.scan(EMPTY_TERMINAL_METADATA_STATE, applyTerminalMetadataStreamEvent),
+          Stream.scan(() => EMPTY_TERMINAL_METADATA_STATE, applyTerminalMetadataStreamEvent),
         ),
     }),
     open: createEnvironmentRpcCommand(runtime, {

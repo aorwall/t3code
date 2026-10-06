@@ -55,17 +55,14 @@ function render(options: {
       onAddPullRequests={() => undefined}
       onAddDiff={() => undefined}
       onAddFiles={() => undefined}
-      onAddAgents={() => undefined}
       onAddDevice={() => undefined}
       onAddSandbox={"onAddSandbox" in options ? options.onAddSandbox : () => undefined}
-      liveAgentCount={0}
       browserAvailable
       terminalAvailable
       diffAvailable
       filesAvailable
       pullRequestAvailable
       pullRequestsAvailable
-      agentsAvailable
       deviceAvailable
       surfaceDisabled={options.surfaceDisabled}
       surfaceDisabledReason="Start the sandbox to use right-panel surfaces."
@@ -113,7 +110,7 @@ describe("the sandbox status indicator", () => {
 
   it("keeps the launcher open when the sandbox is down and nothing is active", () => {
     // The point of the change: a stopped sandbox no longer curtains the panel,
-    // so the surfaces it does not own — Agents, Sandbox — stay one keystroke away.
+    // so the surfaces it does not own — Files, Sandbox — stay one keystroke away.
     const markup = render({ surfaceDisabled: true });
     expect(markup).toContain("Open a surface");
     expect(markup).not.toContain("Sandbox required");

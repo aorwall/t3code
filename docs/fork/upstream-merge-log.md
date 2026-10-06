@@ -28,6 +28,44 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-06 — merged upstream to 442735897f (orchestrator V2)
+
+- Upstream: `442735897f` from base `024d49520e` (`272` commits), including
+  orchestrator V2 (#2829). The client now speaks only V2; the backend still
+  serves V1, so the merge PR stays a draft. See
+  [the gap](./gaps.md#upstreams-orchestrator-v2-is-a-wire-protocol-moatless-does-not-speak).
+- Landed: `14180` files from `git diff --stat HEAD^1 HEAD` against `14152` in
+  the upstream range; fork delta `756` files from `git diff --stat HEAD^2 HEAD`.
+  Gap: 30 fork-only files edited to adapt them to V2 (`fork/*`, `sandbox/*`,
+  client-runtime state, contracts, `inventory.json`, `unsupported-methods.mjs`),
+  less `apps/server/src/cli/pair.ts` and `pair.test.ts`, which the fork deletes
+  and upstream touched (`ecfdda5fa8`, `194c73f3f9`).
+- Branch point: `main`, with no open merge PR to stack on.
+- Conflicts: 51 files. Fork contract deltas moved from the deleted V1 files onto
+  `orchestrationV2.ts`; inventory paths re-pointed at their V2 homes. The
+  agents right panel is dropped (upstream deleted it for
+  `ThreadRelationshipsControl`); script and Open-in gates moved with upstream's
+  controls to `ThreadDetailsPanel`; the mermaid delta is dropped (upstream
+  renders it). New flags `FEATURES.mergeBack` and `FEATURES.scheduledTasks`,
+  both off.
+- New inventory rows: `upstream-server-fork-commands` (converged; fork command
+  cases and the `parentTurnItem` type guard in upstream's `Orchestrator.ts`),
+  and duplicate-add exceptions `project-defaults-switch-handlers` and
+  `thread-route-ready-branches`.
+- `unsupported-methods.mjs` now reads `ORCHESTRATION_V2_WS_METHODS`.
+- Unsupported methods: ADD 30, DROP 0. See
+  [Methods the backend does not dispatch](./gaps.md#methods-the-backend-does-not-dispatch).
+- Gaps: rewrote the orchestrator V2 entry as a known gap on
+  `@t3tools/contracts`, and the message-origin entry for V2.
+- Verification: `verify.mjs --sequential` passed every check but `test`.
+  - contracts: `moatlessResponses.test.ts` fails on V1 fixtures, the known gap.
+  - server: `OpenCodeServerLedger.test.ts` and `AcpAdapterV2.test.ts` fail
+    because the sandbox does not reap detached process groups;
+    `OrchestratorReplayFixtures.integration.test.ts` fails because the
+    sandbox's `CLAUDE_CONFIG_DIR` leaks into an auth-failure message. Machine,
+    not code; none touch fork paths.
+  - web: 6 stale fork tests fixed; `--only test --package @t3tools/web` passed.
+
 ### 2026-10-03 — merged upstream to 024d49520, stopped before orchestrator V2
 
 - Upstream: `024d49520` from base `20012ebd8` (`12` commits). `upstream/main`

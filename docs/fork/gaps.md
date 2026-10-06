@@ -215,6 +215,15 @@ It reads both sides and reports in both directions — a method the backend has
 started serving is a union entry to delete, not a no-op. The grouping below is
 what a person loses, which is the part the derivation cannot tell you:
 
+- **Orchestrator V2 reads and the newer upstream families** — the 2026-10-06
+  merge added `UnsupportedMethodError` to 30 methods. Seven are
+  `orchestration.*` V2 methods with no V1 arm (`getThreadProjection`,
+  `getTurnItem`, `launchThread`, `subscribeArchivedShell`, `getTurnDiff`,
+  `getFullThreadDiff`, `getWorkflowScript`) plus `assets.persistChatAttachments`.
+  The rest are whole upstream families Moatless has no counterpart for:
+  `scheduledTasks.*` (held by the `scheduledTasks` flag), `server.*AcpRegistry*`,
+  `secrets.answerRequest` and `projects.mutate`. The V2 reads close with
+  _Upstream's orchestrator V2_ above.
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
   `getConfig`), so Settings renders and nothing in it can be saved. Holds open
@@ -831,14 +840,17 @@ and not typed refusals, and it will be the reason for the next one too.
 
 ### A message does not say where it came from
 
-The fork carries a `messageOrigin` field so the chat can mark a message that did
-not come from the composer. Backend half is `soaplabs/moatless#269`, client half
-is `#40`; they may land in either order, and until both are in this is fork-only
-code on four upstream files.
+The fork carries `origin` on `OrchestrationV2ConversationMessage` and on the
+`user_message` turn item, so the chat can mark a message that did not come from
+the composer. The backend half is `soaplabs/moatless#269`, and it emits the V1
+shape until the V2 backend lands. Carrying the field on a turn item makes tsc
+fail on one spread in upstream's own `apps/server` orchestrator, so the
+`upstream-server-fork-commands` inventory entry adds a type guard there.
 
-- **Closes when:** the field is served, or upstream ships its own provenance
-  field on `OrchestrationMessage` — in which case prefer upstream's shape.
-- **Then here:** Message Origin Delta in the inventory.
+- **Closes when:** the V2 backend serves the field, or upstream ships its own
+  provenance field on messages. In the second case, prefer upstream's shape.
+- **Then here:** remove the Message Origin delta in the inventory and the type
+  guard in `Orchestrator.ts`.
 
 ### Subagents do not carry the identity the Agents surface folds on
 
@@ -951,29 +963,31 @@ to grow.
 
 ### Upstream's orchestrator V2 is a wire protocol Moatless does not speak
 
-Upstream's `de3439142` (#2829, "introduce new orchestrator") deletes
-`packages/contracts/src/orchestration.ts` and the client-runtime
-`threadReducer.ts` and replaces them with `orchestrationV2.ts`. The
-`orchestration.*` method names are unchanged, but every command, event, shell
-and thread payload behind them is a new schema. `crates/t3code` serves the V1
-payloads only. The fork's Message Origin, Thread Fork, Thread Visibility, Thread
-Follow and Thread Owner Name deltas are all anchored in the deleted files.
+Upstream's `de3439142` (#2829) replaced `orchestration.ts` and the client-runtime
+`threadReducer.ts` with `orchestrationV2.ts`, and the 2026-10-06 merge took it.
+The client is now V2-only: it reads `orchestrationProtocolVersion` from the
+environment descriptor and decodes every shell, thread, run, turn item and
+command as `OrchestrationV2*`. `crates/t3code` still serves the V1 payloads
+under the same `orchestration.*` method names. The fork's Message Origin, Thread
+Fork extras, Thread Visibility, Thread Follow and Owner Name deltas are re-homed
+in `orchestrationV2.ts`.
 
-- **Costs:** every upstream commit from `de3439142` on is unmergeable. Merging
-  it would ship a client that cannot decode a single shell or thread from the
-  backend. The 2026-10-03 merge stopped at `024d49520`, its parent. Every later
-  upstream fix, including the web-only ones, waits behind this gap.
-- **Holds it open here:** the merge-base. `preflight.mjs` against
-  `upstream/main` reports the five `*-upstream-files` path-policy entries above
-  as stale, because their anchor files are gone upstream.
-- **Closes when:** either the backend decodes and emits `OrchestrationV2*`
-  payloads, or a person decides on a client-side adapter from V1 to V2. In both
-  cases the five deltas get re-homed into `orchestrationV2.ts` and the
-  client-runtime modules that replaced `threadReducer.ts`.
-- **Check:** `git merge-base --is-ancestor de3439142 HEAD` exits 0 once a merge
-  has taken it.
-- **Then here:** re-point the five stale path-policy entries in
-  `inventory.json`, merge `upstream/main` normally, and strike this entry.
+- **Costs:** against today's backend the merged client cannot decode a single
+  shell or thread, so nothing renders. The merge PR stays a draft until the
+  backend speaks V2.
+- **Holds it open here:** the draft merge PR. The method-level refusals are in
+  _Methods the backend does not dispatch_. `moatlessResponses.test.ts` decodes the
+  backend's `threads.getShell` fixture as `OrchestrationV2ThreadShell` and fails
+  while that fixture is a V1 row.
+- **Package:** @t3tools/contracts
+- **Open while:** `node -e "process.exit('latestRunId' in require('./packages/contracts/fixtures/moatless/threads-get-shell.json').thread ? 0 : 1)"`
+- **Closes when:** `crates/t3code` serves `subscribeShell`, `subscribeThread`,
+  `getThreadProjection`, `getTurnItem`, `launchThread` and `dispatchCommand` with
+  V2 payloads and advertises `orchestrationProtocolVersion: 2`.
+- **Check:** `curl -s <backend>/.well-known/t3/environment | jq .orchestrationProtocolVersion`
+  prints `2`, and `unsupported-methods.mjs` drops the V2 entries.
+- **Then here:** regenerate `packages/contracts/fixtures/moatless/threads-get-shell*.json`
+  from the V2 backend, apply the DROP bucket, and strike this entry.
 
 ### Runtime fixes upstream made to its own server
 

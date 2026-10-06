@@ -48,6 +48,7 @@ export function useSandboxDetail(threadRef: ScopedThreadRef | null): SandboxDeta
     data,
     dataUpdatedAt,
     error,
+    failure,
     isPending: queryIsPending,
     isSuccess,
     refresh,
@@ -60,7 +61,7 @@ export function useSandboxDetail(threadRef: ScopedThreadRef | null): SandboxDeta
   }, [pushed, refresh, supported, threadRef?.environmentId, threadRef?.threadId]);
 
   return useMemo(
-    () => ({ data, dataUpdatedAt, error, isPending, isSuccess, refresh, supported }),
-    [data, dataUpdatedAt, error, isPending, isSuccess, refresh, supported],
+    () => ({ data, dataUpdatedAt, error, failure, isPending, isSuccess, refresh, supported }),
+    [data, dataUpdatedAt, error, failure, isPending, isSuccess, refresh, supported],
   );
 }

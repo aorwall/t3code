@@ -57,7 +57,7 @@ describe("Moatless subtasks.list", () => {
 /**
  * The fixture is a real archived Moatless task, and it is deliberately one the
  * shell listing does not carry: that is the whole reason the method exists.
- * Decoding it as `OrchestrationThreadShell` is the assertion — the row a client
+ * Decoding it as `OrchestrationV2ThreadShell` is the assertion — the row a client
  * gets by id has to be the row it would have got from the listing, or the same
  * thread renders two ways depending on how it was reached.
  */
@@ -70,7 +70,7 @@ describe("Moatless threads.getShell", () => {
     expect(result.thread?.projectId).not.toBe("");
     expect(result.thread?.archivedAt).toBe("2026-09-01T05:33:40.403Z");
     // Sidebar-row facts the shell carries and the detail does not.
-    expect(result.thread?.hasPendingUserInput).toBe(false);
+    expect(result.thread?.pendingRuntimeRequest ?? null).toBeNull();
     expect(result.thread?.latestUserMessageAt).not.toBeNull();
   });
 

@@ -22,9 +22,8 @@ export type ThreadRouteRenderState = "loading" | "ready" | "missing";
 
 export function resolveThreadRouteRenderState(input: {
   bootstrapComplete: boolean;
-  serverThreadShellExists: boolean;
-  serverThreadDetailExists: boolean;
-  serverThreadDetailDeleted: boolean;
+  serverThreadExists: boolean;
+  serverThreadDeleted: boolean;
   draftThreadExists: boolean;
   // Fork: whether the environment has yet said anything about this thread.
   // Against a listing that is every thread there is, absence from it settles
@@ -36,14 +35,14 @@ export function resolveThreadRouteRenderState(input: {
   if (!input.bootstrapComplete) {
     return "loading";
   }
-  if (input.serverThreadDetailExists || input.draftThreadExists) {
+  if (input.draftThreadExists) {
     return "ready";
   }
-  if (input.serverThreadDetailDeleted) {
+  if (input.serverThreadDeleted) {
     return "missing";
   }
-  if (input.serverThreadShellExists) {
-    return "loading";
+  if (input.serverThreadExists) {
+    return "ready";
   }
   // Fork: a thread nothing has answered about yet is not a thread that is gone.
   return input.serverThreadAwaitingFirstAnswer === true ? "loading" : "missing";

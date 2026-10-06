@@ -1,6 +1,6 @@
 "use client";
 
-/* eslint-disable react/iframe-missing-sandbox */
+/* eslint-disable react/iframe-missing-sandbox -- the frame is cross-origin; see below */
 // The rule objects to `allow-scripts` together with `allow-same-origin`, which
 // would be a hole if the frame were same-origin with this app: the page could
 // reach out and remove its own sandbox. It is not — a preview server is always

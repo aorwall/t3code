@@ -29,6 +29,7 @@ export type SettingsPath =
   // (see MoatlessAdminPath below), so upstream's embedded-surfaces settings
   // moved here to avoid colliding on the same route.
   | "/settings/browser"
+  | "/settings/scheduled-tasks"
   | "/settings/source-control"
   | "/settings/storage"
   | "/settings/connections"
@@ -101,6 +102,8 @@ export interface SettingsSearchItem {
   readonly localBackendManagementOnly?: boolean;
   readonly localEnvironmentOnly?: boolean;
   readonly wslAvailableOnly?: boolean;
+  // Its row only renders while this environment's T3 Connect managed tunnel is on.
+  readonly managedTunnelOnly?: boolean;
   /**
    * Sorts after every other match. Keybinding commands mirror rows on other
    * surfaces, so "model" must still lead with Default model, not Model Picker.
@@ -131,6 +134,7 @@ export interface SettingsSearchAvailability {
   readonly hasThreadAutoSettlement: boolean;
   // Fork: what the Moatless backend reports in its `forgejo_enabled` flag.
   readonly forgejoEnabled: boolean;
+  readonly managedTunnelActive?: boolean;
 }
 
 /**
@@ -149,6 +153,7 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   // below Providers.
   "/settings/version-control": "Version control",
   "/settings/browser": "Browser",
+  "/settings/scheduled-tasks": "Scheduled Tasks",
   "/settings/source-control": "Source Control",
   "/settings/storage": "Storage",
   "/settings/connections": "Connections",
@@ -201,6 +206,13 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: [
       "disk storage delete deleted archived threads old inactive merged unchanged worktrees retention days project inherit off custom",
     ],
+  },
+  {
+    id: "storage-worktrees-location",
+    title: "Worktree location",
+    to: "/settings/storage",
+    scope: "environment-defaults",
+    searchTerms: ["worktree location folder directory path drive external disk"],
   },
   {
     id: "storage-artifacts",
@@ -334,10 +346,33 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["long lines code blocks tables diffs file previews"],
   },
   {
+    id: "composer-context",
+    title: "Composer context",
+    to: "/settings/appearance",
+  },
+  {
     id: "project-grouping",
     title: "Project grouping",
     to: "/settings/general",
     searchTerms: ["combine matching repositories environments sidebar"],
+  },
+  {
+    id: "project-order",
+    title: "Project order",
+    to: "/settings/general",
+    searchTerms: ["sort projects sidebar manual created recent"],
+  },
+  {
+    id: "snooze-limited-threads",
+    title: "Snooze limited threads",
+    to: "/settings/general",
+    searchTerms: ["usage quota rate limit reset wake recover continue"],
+  },
+  {
+    id: "auto-resume-limited-threads",
+    title: "Auto-resume limited threads",
+    to: "/settings/general",
+    searchTerms: ["usage quota rate limit reset recover continue"],
   },
   {
     id: "working-shelf",
@@ -658,27 +693,31 @@ export const SETTINGS_SEARCH_ITEMS = [
   {
     id: "device-hosts",
     title: "Device hosts",
-    to: "/settings/integrations",
+    // Fork: routed to /settings/browser, not upstream\'s /settings/integrations.
+    to: "/settings/browser",
     searchTerms: ["ssh remote simulator emulator ios android mac mini identity key connection"],
   },
   {
     id: "agent-device-access",
     title: "Agent device access",
-    to: "/settings/integrations",
+    // Fork: routed to /settings/browser, not upstream\'s /settings/integrations.
+    to: "/settings/browser",
     targetId: "devices",
     searchTerms: ["allow simulator emulator ios android drive tools sessions"],
   },
   {
     id: "device-hub",
     title: "Device hub",
-    to: "/settings/integrations",
+    // Fork: routed to /settings/browser, not upstream\'s /settings/integrations.
+    to: "/settings/browser",
     targetId: "devices",
     searchTerms: ["simulator emulator ios android install start"],
   },
   {
     id: "device-platform-support",
     title: "Simulator support",
-    to: "/settings/integrations",
+    // Fork: routed to /settings/browser, not upstream\'s /settings/integrations.
+    to: "/settings/browser",
     targetId: "devices",
     searchTerms: ["xcode android studio sdk avd runtime"],
   },
@@ -726,13 +765,15 @@ export const SETTINGS_SEARCH_ITEMS = [
   {
     id: "browser-recording-key-presses",
     title: "Show key presses in recordings",
-    to: "/settings/integrations",
+    // Fork: routed to /settings/browser, not upstream\'s /settings/integrations.
+    to: "/settings/browser",
     searchTerms: ["browser preview keyboard shortcuts keystrokes overlay capture"],
   },
   {
     id: "browser-recording-mouse-presses",
     title: "Show mouse presses in recordings",
-    to: "/settings/integrations",
+    // Fork: routed to /settings/browser, not upstream\'s /settings/integrations.
+    to: "/settings/browser",
     searchTerms: ["browser preview clicks buttons drag overlay capture"],
   },
   {
@@ -755,6 +796,13 @@ export const SETTINGS_SEARCH_ITEMS = [
     to: "/settings/source-control",
     scope: "project-defaults",
     searchTerms: ["auto pull default branch current checkout fast forward upstream"],
+  },
+  {
+    id: "remove-agent-credits-on-merge",
+    title: "Remove agent credits when merging",
+    to: "/settings/source-control",
+    scope: "project-defaults",
+    searchTerms: ["pull request github squash co-authored-by attribution claude codex generated"],
   },
   {
     id: "pull-request-merge-method",
@@ -781,6 +829,14 @@ export const SETTINGS_SEARCH_ITEMS = [
     ],
     environmentOnly: true,
     scope: "environment-defaults",
+  },
+  {
+    id: "worktree-branch-naming",
+    title: "Worktree branch naming",
+    to: "/settings/source-control",
+    searchTerms: ["static semantic prefix custom prompt instructions feat fix refactor chore"],
+    environmentOnly: true,
+    scope: "project-defaults",
   },
   {
     id: "bitbucket-credentials",
@@ -876,6 +932,16 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["managed tunnel cloud other devices remote"],
     desktopOnly: true,
     cloudOnly: true,
+  },
+  {
+    id: "hold-webhooks-while-offline",
+    localEnvironmentOnly: true,
+    title: "Hold webhooks while offline",
+    to: "/settings/connections",
+    targetId: "connections-environment",
+    searchTerms: ["webhook automations offline queue mailbox t3 connect"],
+    cloudOnly: true,
+    managedTunnelOnly: true,
   },
   {
     id: "publish-agent-activity",
@@ -1041,6 +1107,7 @@ const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScop
   "/settings/source-control": "environment-defaults",
   "/settings/storage": "project-defaults",
   "/settings/connections": "connections",
+  "/settings/scheduled-tasks": null,
   "/settings/archived": "project-defaults",
   // Fork: the Moatless admin pages administer the deployment, not a selected
   // environment or project, so none of them carries a scope.
@@ -1173,7 +1240,8 @@ export function filterAvailableSettingsSearchItems(
       // Fork: see providerConfigurationOnly above.
       (!item.providerConfigurationOnly || FEATURES.providerConfiguration) &&
       // Fork: see assistantStreamingOnly above.
-      (!item.assistantStreamingOnly || FEATURES.assistantStreaming),
+      (!item.assistantStreamingOnly || FEATURES.assistantStreaming) &&
+      (!item.managedTunnelOnly || availability.managedTunnelActive === true),
   );
 }
 

@@ -22,7 +22,7 @@
  */
 import { Schema } from "effect";
 import { ThreadId } from "./baseSchemas.ts";
-import { OrchestrationThreadShell } from "./orchestration.ts";
+import { OrchestrationV2ThreadShell } from "./orchestrationV2.ts";
 
 export const ThreadShellGetInput = Schema.Struct({
   threadId: ThreadId,
@@ -39,6 +39,6 @@ export type ThreadShellGetInput = typeof ThreadShellGetInput.Type;
  * of what it may learn.
  */
 export const ThreadShellGetResult = Schema.Struct({
-  thread: Schema.NullOr(OrchestrationThreadShell),
+  thread: Schema.NullOr(OrchestrationV2ThreadShell),
 });
 export type ThreadShellGetResult = typeof ThreadShellGetResult.Type;

@@ -27,7 +27,7 @@ import { useAtomValue } from "@effect/atom-react";
 import type { EnvironmentId, Subtask, SubtaskStatus, ThreadId } from "@t3tools/contracts";
 import { Link } from "@tanstack/react-router";
 import * as Cause from "effect/Cause";
-import { AsyncResult, Atom } from "effect/unstable/reactivity";
+import { AsyncResult, Atom } from "effect/reactivity";
 import { ChevronRight, GitBranch } from "lucide-react";
 
 import { cn } from "~/lib/utils";

@@ -10,14 +10,14 @@
 import { useAtomValue } from "@effect/atom-react";
 import type {
   EnvironmentId,
-  OrchestrationShellSnapshot,
+  OrchestrationV2ShellSnapshot,
   ScopedThreadRef,
   ThreadId,
 } from "@t3tools/contracts";
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import { threadKey } from "@t3tools/client-runtime/state/entities";
 import type { EnvironmentThreadStatus } from "@t3tools/client-runtime/state/threads";
-import { Atom } from "effect/unstable/reactivity";
+import { Atom } from "effect/reactivity";
 import { useEffect, useMemo, useRef } from "react";
 
 import { adoptThread } from "./adoptedThreadShells";
@@ -32,7 +32,7 @@ const NO_THREAD_ERROR_ATOM = Atom.make<string | null>(null).pipe(
 );
 
 /** See `NO_THREAD_ERROR_ATOM`. */
-const NO_SNAPSHOT_ATOM = Atom.make<OrchestrationShellSnapshot | null>(null).pipe(
+const NO_SNAPSHOT_ATOM = Atom.make<OrchestrationV2ShellSnapshot | null>(null).pipe(
   Atom.withLabel("fork-unlisted-thread:no-snapshot"),
 );
 

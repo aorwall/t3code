@@ -20,7 +20,7 @@
  * @module ThreadBrowse
  */
 import { Schema } from "effect";
-import { OrchestrationThreadShell } from "./orchestration.ts";
+import { OrchestrationV2ThreadShell } from "./orchestrationV2.ts";
 
 /**
  * At least one of `ownerUserId` and `tag` must be set, and the server refuses
@@ -57,7 +57,7 @@ export type ThreadBrowseInput = typeof ThreadBrowseInput.Type;
  * already holds and silently drops one it cannot place.
  */
 export const ThreadBrowseResult = Schema.Struct({
-  threads: Schema.Array(OrchestrationThreadShell),
+  threads: Schema.Array(OrchestrationV2ThreadShell),
   /**
    * Whether the filter matched more rows than the server's cap returns, so a
    * client can say a list is partial rather than leaving somebody to read a cut

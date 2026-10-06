@@ -1,20 +1,18 @@
-import { remoteHttpClientLayer } from "@t3tools/client-runtime/rpc";
+import { layerRemoteHttpClient } from "@t3tools/client-runtime/rpc";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/unstable/http";
+import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/http";
 
 import { readDesktopPrimaryBearerToken } from "./desktopAuth";
 
+// Fork: no same-origin gate. Moatless is reached through a single-origin proxy
+// or cross-origin with cookies, so every http(s) browser primary uses cookies.
 function isBrowserPrimary(): boolean {
-  if (
-    typeof window === "undefined" ||
-    window.desktopBridge !== undefined ||
-    !window.location.origin.startsWith("http")
-  ) {
-    return false;
-  }
-
-  return true;
+  return (
+    typeof window !== "undefined" &&
+    window.desktopBridge === undefined &&
+    window.location.origin.startsWith("http")
+  );
 }
 
 // Fork: Moatless guards an unsafe cookie-authenticated request with a
@@ -57,34 +55,34 @@ function withPrimaryBearerToken(client: HttpClient.HttpClient): HttpClient.HttpC
   );
 }
 
-export function makePrimaryEnvironmentHttpLayer() {
+export function layerForCurrentOrigin() {
   return Layer.unwrap(
     Effect.sync(() => {
-      const baseLayer = remoteHttpClientLayer(globalThis.fetch);
+      const layerBase = layerRemoteHttpClient(globalThis.fetch);
       if (isBrowserPrimary()) {
         // Fork: see MOATLESS_CSRF_COOKIE.
-        const csrfClientLayer = Layer.effect(
+        const layerCsrfClient = Layer.effect(
           HttpClient.HttpClient,
           Effect.map(HttpClient.HttpClient, withMoatlessCsrfToken),
-        ).pipe(Layer.provide(baseLayer));
+        ).pipe(Layer.provide(layerBase));
 
         return Layer.merge(
-          csrfClientLayer,
+          layerCsrfClient,
           Layer.succeed(FetchHttpClient.RequestInit, { credentials: "include" }),
         );
       }
 
-      const bearerClientLayer = Layer.effect(
+      const layerBearerClient = Layer.effect(
         HttpClient.HttpClient,
         Effect.map(HttpClient.HttpClient, withPrimaryBearerToken),
-      ).pipe(Layer.provide(baseLayer));
+      ).pipe(Layer.provide(layerBase));
 
       return Layer.merge(
-        bearerClientLayer,
+        layerBearerClient,
         Layer.succeed(FetchHttpClient.RequestInit, { credentials: "omit" }),
       );
     }),
   );
 }
 
-export const primaryEnvironmentHttpLayer = makePrimaryEnvironmentHttpLayer();
+export const layer = layerForCurrentOrigin();

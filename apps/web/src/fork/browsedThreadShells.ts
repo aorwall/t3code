@@ -12,10 +12,11 @@
  * row, `threads.getShell` fetches one, and the route follows the thread.
  */
 import { useAtomValue } from "@effect/atom-react";
+import { presentThreadShell } from "@t3tools/client-runtime/state/models";
 import type { EnvironmentThreadShell } from "@t3tools/client-runtime/state/shell";
 import { EnvironmentId, type ThreadBrowseInput } from "@t3tools/contracts";
 import * as Option from "effect/Option";
-import { AsyncResult, Atom } from "effect/unstable/reactivity";
+import { AsyncResult, Atom } from "effect/reactivity";
 import { useMemo } from "react";
 
 import { useArchivedThreadSnapshots } from "../lib/archivedThreadsState";
@@ -67,7 +68,7 @@ const browsedShellsAtom = Atom.family((key: string) =>
       isLoading ||= result.waiting;
       const value = Option.getOrNull(AsyncResult.value(result));
       for (const thread of value?.threads ?? []) {
-        threads.push({ ...thread, environmentId });
+        threads.push(presentThreadShell(environmentId, thread));
       }
       // One capped answer caps the list, whichever environment it came from:
       // the rows are merged, so a reader cannot tell which half is short.
@@ -126,7 +127,7 @@ export function useSidebarThreadList(
   const archivedThreads = useMemo(
     () =>
       archived.snapshots.flatMap((entry) =>
-        entry.snapshot.threads.map((thread) => ({ ...thread, environmentId: entry.environmentId })),
+        entry.snapshot.threads.map((thread) => presentThreadShell(entry.environmentId, thread)),
       ),
     [archived.snapshots],
   );

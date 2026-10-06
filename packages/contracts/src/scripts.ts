@@ -27,7 +27,7 @@
  */
 import { Schema } from "effect";
 import { ThreadId, TrimmedNonEmptyString } from "./baseSchemas.ts";
-import { ProjectScript } from "./orchestration.ts";
+import { ProjectScript } from "./project.ts";
 // Fork: `previewTabId` on the result below is a preview tab id.
 import { PreviewTabId } from "./preview.ts";
 

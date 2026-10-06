@@ -5,7 +5,7 @@
  *
  *   node .agents/skills/fork-upstream-merge/scripts/unsupported-methods.mjs
  *
- * Contract side: every `Rpc.make(WS_METHODS.x, …)` / `Rpc.make(ORCHESTRATION_WS_METHODS.x, …)`
+ * Contract side: every `Rpc.make(WS_METHODS.x, …)` / `Rpc.make(ORCHESTRATION_V2_WS_METHODS.x, …)`
  * in packages/contracts/src/rpc.ts, resolved through the method maps to wire strings.
  * Backend side: the `"method.name" =>` arms of the frame dispatch in soaplabs/moatless
  * (crates/t3code/src/rpc/dispatch/), read over the API since a sandbox has no checkout.
@@ -36,7 +36,7 @@ import {
 } from "./lib.mjs";
 
 const RPC_PATH = "packages/contracts/src/rpc.ts";
-const ORCHESTRATION_PATH = "packages/contracts/src/orchestration.ts";
+const ORCHESTRATION_PATH = "packages/contracts/src/orchestrationV2.ts";
 /**
  * The dispatch keeps moving — inline in `lib.rs` until the backend split `rpc/`
  * into its own module on 2026-09-07, then again on 2026-09-13 when `dispatch.rs`
@@ -104,7 +104,7 @@ function parseContract() {
   const orchestration = read(ORCHESTRATION_PATH);
   const maps = {
     WS_METHODS: parseMethodMap(rpc, "WS_METHODS"),
-    ORCHESTRATION_WS_METHODS: parseMethodMap(orchestration, "ORCHESTRATION_WS_METHODS"),
+    ORCHESTRATION_V2_WS_METHODS: parseMethodMap(orchestration, "ORCHESTRATION_V2_WS_METHODS"),
   };
   const errorConsts = new Map([...parseErrorConsts(rpc), ...parseErrorConsts(orchestration)]);
 
@@ -112,7 +112,7 @@ function parseContract() {
   const marker = "Rpc.make(";
   for (let at = rpc.indexOf(marker); at !== -1; at = rpc.indexOf(marker, at + 1)) {
     const call = balancedSlice(rpc, at + marker.length);
-    const ref = call.match(/^\s*(WS_METHODS|ORCHESTRATION_WS_METHODS)\.(\w+)/);
+    const ref = call.match(/^\s*(WS_METHODS|ORCHESTRATION_V2_WS_METHODS)\.(\w+)/);
     if (!ref) continue;
     const wire = maps[ref[1]][ref[2]];
     if (!wire) throw new Error(`${ref[1]}.${ref[2]} is not in its map`);
