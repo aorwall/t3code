@@ -792,6 +792,17 @@
       "mustSurvive": "Keep fork sandbox lifecycle and subtask state surfaces separate. sandbox exposes both status (polled query, the fallback) and statusStream (the pushed subscription); dropping either leaves the sandbox without a live indicator. The subscription tag is also listed in EnvironmentSubscriptionRpcTag in rpc/client.ts, an upstream file. subtasks is a query on a refresh interval, not a subscription: a child task settles at the pace of a task, not of a container probe. threadShellLookup is a query with no refresh at all: it is how the client learns a row the listing never sent, and once it has one nothing is pushing changes to re-read. threadBrowse is a query on a refresh interval, because nothing pushes a change to a listing the viewer does not follow: the fork deliberately did not widen orchestration.subscribeShell for it, so the browse stays out of the snapshot every other surface reads."
     },
     {
+      "id": "moatless-artifact-links",
+      "name": "Artifact links open in the right panel",
+      "paths": [
+        "apps/web/src/fork/moatlessArtifactLink.ts",
+        "apps/web/src/fork/moatlessArtifactLink.test.ts",
+        "apps/web/src/fork/MoatlessArtifactChip.tsx",
+        "apps/web/src/components/ChatMarkdown.tsx"
+      ],
+      "mustSurvive": "A chat link to /api/v1/artifacts/<id>[/v<n>] on the primary environment's origin renders as a chip titled from GET /api/v1/tasks/<thread id>/artifacts, and a plain click opens it in the in-app browser regardless of the Open links in setting. The ChatMarkdown.tsx delta is two imports and one early return in MarkdownAnchor after the citation check."
+    },
+    {
       "id": "subtasks-agents-panel",
       "name": "Subtasks section in the agents panel",
       "paths": [

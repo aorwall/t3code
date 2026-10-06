@@ -88,6 +88,9 @@ import remarkBreaks from "remark-breaks";
 import { parseAssistantCitationHref } from "@t3tools/shared/assistantCitations";
 import { parseComposerContextHref } from "@t3tools/shared/composerContextReferences";
 import { AssistantCitationChip } from "./chat/AssistantCitationChip";
+// Fork: Moatless Artifact links.
+import { MoatlessArtifactChip } from "../fork/MoatlessArtifactChip";
+import { parseMoatlessArtifactHref } from "../fork/moatlessArtifactLink";
 import remarkGfm from "remark-gfm";
 import type { Processor } from "unified";
 import { isWindowsAbsolutePath } from "@t3tools/shared/path";
@@ -2931,6 +2934,19 @@ const CHAT_MARKDOWN_COMPONENTS = {
     } = use(ChatMarkdownRendererContext);
     const citation = href ? parseAssistantCitationHref(href) : null;
     if (citation) return <AssistantCitationChip citation={citation} />;
+    // Fork: a Moatless Artifact link renders as a chip that opens in the right panel.
+    const moatlessArtifact = href ? parseMoatlessArtifactHref(href) : null;
+    if (href && moatlessArtifact) {
+      return (
+        <MoatlessArtifactChip
+          href={href}
+          artifact={moatlessArtifact}
+          text={hastPlainTextDeep(node)}
+          threadRef={threadRef}
+          openInPreview={openExternalLinkInPreview}
+        />
+      );
+    }
     const contextReference = href ? parseComposerContextHref(href) : null;
     if (contextReference) {
       const label = hastPlainTextDeep(node) || contextReference.contextId;
