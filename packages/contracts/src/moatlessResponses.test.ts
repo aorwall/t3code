@@ -7,6 +7,7 @@
  * themselves — so when its projection changes, the fixture changes with it in
  * the same commit and this is what fails if the two drift.
  */
+import * as DateTime from "effect/DateTime";
 import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vite-plus/test";
 
@@ -22,7 +23,8 @@ import { ThreadShellGetResult } from "./threadShellLookup.ts";
 
 const decodePreviewList = Schema.decodeUnknownSync(PreviewListResult);
 const decodeSubtasksList = Schema.decodeUnknownSync(SubtasksListResult);
-const decodeThreadShell = Schema.decodeUnknownSync(ThreadShellGetResult);
+// V2 timestamps are `DateTimeUtc`, which the RPC layer carries as ISO text.
+const decodeThreadShell = Schema.decodeUnknownSync(Schema.toCodecJson(ThreadShellGetResult));
 
 describe("Moatless subtasks.list", () => {
   it("decodes both parent edges, in spawn order, with the nullable fields written as null", () => {
@@ -68,7 +70,8 @@ describe("Moatless threads.getShell", () => {
     expect(result.thread?.title).toBe("fork-verify-source");
     // What the client could not learn from the thread subscription alone.
     expect(result.thread?.projectId).not.toBe("");
-    expect(result.thread?.archivedAt).toBe("2026-09-01T05:33:40.403Z");
+    const archivedAt = result.thread?.archivedAt;
+    expect(archivedAt && DateTime.formatIso(archivedAt)).toBe("2026-09-01T05:33:40.403Z");
     // Sidebar-row facts the shell carries and the detail does not.
     expect(result.thread?.pendingRuntimeRequest ?? null).toBeNull();
     expect(result.thread?.latestUserMessageAt).not.toBeNull();

@@ -215,15 +215,13 @@ It reads both sides and reports in both directions — a method the backend has
 started serving is a union entry to delete, not a no-op. The grouping below is
 what a person loses, which is the part the derivation cannot tell you:
 
-- **Orchestrator V2 reads and the newer upstream families** — the 2026-10-06
-  merge added `UnsupportedMethodError` to 30 methods. Seven are
-  `orchestration.*` V2 methods with no V1 arm (`getThreadProjection`,
-  `getTurnItem`, `launchThread`, `subscribeArchivedShell`, `getTurnDiff`,
-  `getFullThreadDiff`, `getWorkflowScript`) plus `assets.persistChatAttachments`.
-  The rest are whole upstream families Moatless has no counterpart for:
-  `scheduledTasks.*` (held by the `scheduledTasks` flag), `server.*AcpRegistry*`,
-  `secrets.answerRequest` and `projects.mutate`. The V2 reads close with
-  _Upstream's orchestrator V2_ above.
+- **Orchestrator V2 diffs and the newer upstream families** — the 2026-10-06
+  merge added `UnsupportedMethodError` to 30 methods, and 26 remain once the V2
+  backend landed. Three are `orchestration.*` V2 reads (`getTurnDiff`,
+  `getFullThreadDiff`, `getWorkflowScript`), plus
+  `assets.persistChatAttachments`. The rest are whole upstream families Moatless
+  has no counterpart for: `scheduledTasks.*` (held by the `scheduledTasks`
+  flag), `server.*AcpRegistry*`, `secrets.answerRequest` and `projects.mutate`.
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
   `getConfig`), so Settings renders and nothing in it can be saved. Holds open
@@ -838,20 +836,6 @@ and not typed refusals, and it will be the reason for the next one too.
 - **Then here:** delete `threadDeletion` and `checkpointFileRestore`, and the
   `projectManagement` gates that cover `project.create` / `project.delete`.
 
-### A message does not say where it came from
-
-The fork carries `origin` on `OrchestrationV2ConversationMessage` and on the
-`user_message` turn item, so the chat can mark a message that did not come from
-the composer. The backend half is `soaplabs/moatless#269`, and it emits the V1
-shape until the V2 backend lands. Carrying the field on a turn item makes tsc
-fail on one spread in upstream's own `apps/server` orchestrator, so the
-`upstream-server-fork-commands` inventory entry adds a type guard there.
-
-- **Closes when:** the V2 backend serves the field, or upstream ships its own
-  provenance field on messages. In the second case, prefer upstream's shape.
-- **Then here:** remove the Message Origin delta in the inventory and the type
-  guard in `Orchestrator.ts`.
-
 ### Subagents do not carry the identity the Agents surface folds on
 
 Upstream's 2026-08-06 merge added the Agents surface (`#5219`): a right panel,
@@ -961,33 +945,32 @@ to grow.
 - **Then here:** delete the `return null` branch at the end of
   `workspaceIconFromOverride`, and this entry with it.
 
-### Upstream's orchestrator V2 is a wire protocol Moatless does not speak
+### Orchestrator V2 is served by translation, and only in part
 
-Upstream's `de3439142` (#2829) replaced `orchestration.ts` and the client-runtime
-`threadReducer.ts` with `orchestrationV2.ts`, and the 2026-10-06 merge took it.
-The client is now V2-only: it reads `orchestrationProtocolVersion` from the
-environment descriptor and decodes every shell, thread, run, turn item and
-command as `OrchestrationV2*`. `crates/t3code` still serves the V1 payloads
-under the same `orchestration.*` method names. The fork's Message Origin, Thread
-Fork extras, Thread Visibility, Thread Follow and Owner Name deltas are re-homed
-in `orchestrationV2.ts`.
+Upstream's `de3439142` (#2829) made the client V2-only, and the 2026-10-06
+merge took it. `crates/t3code` serves V2 since `soaplabs/moatless#1068`, but
+only to a deployment that sets `T3_UI_RPC_ORCHESTRATION_PROTOCOL_VERSION=2`; any
+other backend still advertises V1, and this client renders nothing against it.
+V2 there is a translation over the V1 state, not a V2 store: every thread
+subscription item is a whole `snapshot`, and `dispatchCommand` rewrites each
+command onto a V1 one or refuses it.
 
-- **Costs:** against today's backend the merged client cannot decode a single
-  shell or thread, so nothing renders. The merge PR stays a draft until the
-  backend speaks V2.
-- **Holds it open here:** the draft merge PR. The method-level refusals are in
-  _Methods the backend does not dispatch_. `moatlessResponses.test.ts` decodes the
-  backend's `threads.getShell` fixture as `OrchestrationV2ThreadShell` and fails
-  while that fixture is a V1 row.
-- **Package:** @t3tools/contracts
-- **Open while:** `node -e "process.exit('latestRunId' in require('./packages/contracts/fixtures/moatless/threads-get-shell.json').thread ? 0 : 1)"`
-- **Closes when:** `crates/t3code` serves `subscribeShell`, `subscribeThread`,
-  `getThreadProjection`, `getTurnItem`, `launchThread` and `dispatchCommand` with
-  V2 payloads and advertises `orchestrationProtocolVersion: 2`.
-- **Check:** `curl -s <backend>/.well-known/t3/environment | jq .orchestrationProtocolVersion`
-  prints `2`, and `unsupported-methods.mjs` drops the V2 entries.
-- **Then here:** regenerate `packages/contracts/fixtures/moatless/threads-get-shell*.json`
-  from the V2 backend, apply the DROP bucket, and strike this entry.
+- **Costs:** a person cannot restart a running turn, defer a start, fork from a
+  checkpoint, answer an approval, or merge back: each is a typed refusal from
+  `dispatchCommand`. The thread carries no `providerSessions` or attempts, so
+  promote-to-steer is never offered, and plans, file changes and subagent items
+  are absent from the timeline.
+- **Holds it open here:** nothing in this repository. The client sends the
+  commands and the backend refuses them, so the refusal reason is what a person
+  sees.
+- **Closes when:** `crates/t3code/src/v2_commands.rs` has no `refused(` arm
+  but its catch-all, and the thread projection carries provider sessions and
+  the missing turn item kinds.
+- **Check:** `grep -c 'refused(' crates/t3code/src/v2_commands.rs` in
+  soaplabs/moatless, and the deployment's
+  `curl -s <backend>/.well-known/t3/environment | jq .orchestrationProtocolVersion`
+  prints `2`.
+- **Then here:** strike this entry.
 
 ### Runtime fixes upstream made to its own server
 

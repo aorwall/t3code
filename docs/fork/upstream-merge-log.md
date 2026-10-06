@@ -31,9 +31,9 @@ bullet here that no one will read again.
 ### 2026-10-06 — merged upstream to 442735897f (orchestrator V2)
 
 - Upstream: `442735897f` from base `024d49520e` (`272` commits), including
-  orchestrator V2 (#2829). The client now speaks only V2; the backend still
-  serves V1, so the merge PR stays a draft. See
-  [the gap](./gaps.md#upstreams-orchestrator-v2-is-a-wire-protocol-moatless-does-not-speak).
+  orchestrator V2 (#2829). The client now speaks only V2, which the backend
+  serves from `soaplabs/moatless#1068` behind a deployment setting. See
+  [the gap](./gaps.md#orchestrator-v2-is-served-by-translation-and-only-in-part).
 - Landed: `14180` files from `git diff --stat HEAD^1 HEAD` against `14152` in
   the upstream range; fork delta `756` files from `git diff --stat HEAD^2 HEAD`.
   Gap: 30 fork-only files edited to adapt them to V2 (`fork/*`, `sandbox/*`,
@@ -53,10 +53,15 @@ bullet here that no one will read again.
   and duplicate-add exceptions `project-defaults-switch-handlers` and
   `thread-route-ready-branches`.
 - `unsupported-methods.mjs` now reads `ORCHESTRATION_V2_WS_METHODS`.
-- Unsupported methods: ADD 30, DROP 0. See
+- Unsupported methods: ADD 30, DROP 0; then DROP 4 once `soaplabs/moatless#1068`
+  merged (`getThreadProjection`, `getTurnItem`, `launchThread`,
+  `subscribeArchivedShell`). See
   [Methods the backend does not dispatch](./gaps.md#methods-the-backend-does-not-dispatch).
-- Gaps: rewrote the orchestrator V2 entry as a known gap on
-  `@t3tools/contracts`, and the message-origin entry for V2.
+- Gaps: after `soaplabs/moatless#1068`, the orchestrator V2 entry became what V2
+  still refuses or omits, and the message-origin entry is struck (V2 serves
+  `origin`). `threads-get-shell.json` is regenerated as a V2 row from the
+  backend's `thread_shell_v2`, and the test decodes it through
+  `Schema.toCodecJson` as the RPC layer does.
 - Verification: `verify.mjs --sequential` passed every check but `test`.
   - contracts: `moatlessResponses.test.ts` fails on V1 fixtures, the known gap.
   - server: `OpenCodeServerLedger.test.ts` and `AcpAdapterV2.test.ts` fail

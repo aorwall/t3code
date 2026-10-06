@@ -2000,11 +2000,7 @@ const WsOrchestrationV2GetThreadProjectionRpc = Rpc.make(
   {
     payload: OrchestrationV2RpcSchemas.getThreadProjection.input,
     success: OrchestrationV2RpcSchemas.getThreadProjection.output,
-    error: Schema.Union([
-      OrchestrationV2GetThreadProjectionError,
-      EnvironmentAuthorizationError,
-      UnsupportedMethodError,
-    ]),
+    error: Schema.Union([OrchestrationV2GetThreadProjectionError, EnvironmentAuthorizationError]),
   },
 );
 
@@ -2024,21 +2020,13 @@ const WsOrchestrationV2GetWorkflowScriptRpc = Rpc.make(
 const WsOrchestrationV2GetTurnItemRpc = Rpc.make(ORCHESTRATION_V2_WS_METHODS.getTurnItem, {
   payload: OrchestrationV2RpcSchemas.getTurnItem.input,
   success: OrchestrationV2RpcSchemas.getTurnItem.output,
-  error: Schema.Union([
-    OrchestrationV2GetThreadProjectionError,
-    EnvironmentAuthorizationError,
-    UnsupportedMethodError,
-  ]),
+  error: Schema.Union([OrchestrationV2GetThreadProjectionError, EnvironmentAuthorizationError]),
 });
 
 const WsOrchestrationV2LaunchThreadRpc = Rpc.make(ORCHESTRATION_V2_WS_METHODS.launchThread, {
   payload: OrchestrationV2RpcSchemas.launchThread.input,
   success: OrchestrationV2RpcSchemas.launchThread.output,
-  error: Schema.Union([
-    OrchestrationV2ThreadLaunchError,
-    EnvironmentAuthorizationError,
-    UnsupportedMethodError,
-  ]),
+  error: Schema.Union([OrchestrationV2ThreadLaunchError, EnvironmentAuthorizationError]),
 });
 
 const WsOrchestrationV2SubscribeArchivedShellRpc = Rpc.make(
@@ -2046,11 +2034,7 @@ const WsOrchestrationV2SubscribeArchivedShellRpc = Rpc.make(
   {
     payload: OrchestrationV2RpcSchemas.subscribeArchivedShell.input,
     success: OrchestrationV2RpcSchemas.subscribeArchivedShell.output,
-    error: Schema.Union([
-      OrchestrationV2GetShellSnapshotError,
-      EnvironmentAuthorizationError,
-      UnsupportedMethodError,
-    ]),
+    error: Schema.Union([OrchestrationV2GetShellSnapshotError, EnvironmentAuthorizationError]),
     stream: true,
   },
 );
