@@ -50,19 +50,20 @@ export function surfaceNeedsSandbox(kind: RightPanelKind): boolean {
 }
 
 /**
- * Where the environment serves a workspace file to a frame, from
- * `ASSET_ROUTE_PREFIX` in `crates/t3code/src/assets.rs`.
+ * Routes the environment serves a page from without a sandbox: a workspace
+ * file (`ASSET_ROUTE_PREFIX` in `crates/t3code/src/assets.rs`), read from the
+ * snapshot when none is running, and a published Artifact, held in object
+ * storage.
  */
-const ASSET_ROUTE_PREFIX = "/api/assets/";
+const ENVIRONMENT_PAGE_PREFIXES = ["/api/assets/", "/api/v1/artifacts/"] as const;
 
 /**
  * Whether the browser tab showing `url` needs the sandbox.
  *
- * `openFileInPreview` opens an HTML or PDF file at the environment's own asset
- * route, and the environment reads that file from the workspace snapshot when
- * no sandbox is running. Such a tab renders with the sandbox stopped, so gating
- * it hid a page the file surface beside it was already showing. Every other URL
- * is a server inside the sandbox, or an empty tab someone types one into.
+ * A page on one of [`ENVIRONMENT_PAGE_PREFIXES`] renders with the sandbox
+ * stopped: an HTML or PDF file `openFileInPreview` opened, or an Artifact a
+ * chat link opened. Every other URL is a server inside the sandbox, or an
+ * empty tab someone types one into.
  */
 export function previewTabNeedsSandbox(
   url: string | null,
@@ -73,7 +74,7 @@ export function previewTabNeedsSandbox(
   const page = new URL(url);
   return !(
     page.origin === new URL(environmentHttpBaseUrl).origin &&
-    page.pathname.startsWith(ASSET_ROUTE_PREFIX)
+    ENVIRONMENT_PAGE_PREFIXES.some((prefix) => page.pathname.startsWith(prefix))
   );
 }
 

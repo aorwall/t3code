@@ -42,6 +42,15 @@ describe("previewTabNeedsSandbox", () => {
     ).toBe(false);
   });
 
+  it("frees a tab showing a published Artifact", () => {
+    const artifact = "/api/v1/artifacts/77e15557-209a-4e15-8e03-d524e230a88b";
+    expect(previewTabNeedsSandbox(`${ENVIRONMENT}${artifact}/v1`, ENVIRONMENT)).toBe(false);
+    expect(previewTabNeedsSandbox(`${ENVIRONMENT}${artifact}`, ENVIRONMENT)).toBe(false);
+    expect(previewTabNeedsSandbox(`https://elsewhere.example.com${artifact}`, ENVIRONMENT)).toBe(
+      true,
+    );
+  });
+
   it("gates a server running inside the sandbox", () => {
     expect(previewTabNeedsSandbox("https://3000-task-1.preview.example.com/", ENVIRONMENT)).toBe(
       true,
