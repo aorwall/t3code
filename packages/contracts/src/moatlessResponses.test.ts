@@ -15,8 +15,10 @@ import previewList from "../fixtures/moatless/preview-list.json" with { type: "j
 import previewListEmpty from "../fixtures/moatless/preview-list-empty.json" with { type: "json" };
 import subtasksList from "../fixtures/moatless/subtasks-list.json" with { type: "json" };
 import subtasksListEmpty from "../fixtures/moatless/subtasks-list-empty.json" with { type: "json" };
+import threadProjectionV2 from "../fixtures/moatless/thread-projection-v2.json" with { type: "json" };
 import threadsGetShell from "../fixtures/moatless/threads-get-shell.json" with { type: "json" };
 import threadsGetShellAbsent from "../fixtures/moatless/threads-get-shell-absent.json" with { type: "json" };
+import { OrchestrationV2ThreadProjection } from "./orchestrationV2.ts";
 import { PreviewListResult } from "./preview.ts";
 import { SubtasksListResult } from "./subtasks.ts";
 import { ThreadShellGetResult } from "./threadShellLookup.ts";
@@ -25,6 +27,9 @@ const decodePreviewList = Schema.decodeUnknownSync(PreviewListResult);
 const decodeSubtasksList = Schema.decodeUnknownSync(SubtasksListResult);
 // V2 timestamps are `DateTimeUtc`, which the RPC layer carries as ISO text.
 const decodeThreadShell = Schema.decodeUnknownSync(Schema.toCodecJson(ThreadShellGetResult));
+const decodeThreadProjection = Schema.decodeUnknownSync(
+  Schema.toCodecJson(OrchestrationV2ThreadProjection),
+);
 
 describe("Moatless subtasks.list", () => {
   it("decodes both parent edges, in spawn order, with the nullable fields written as null", () => {
@@ -79,6 +84,37 @@ describe("Moatless threads.getShell", () => {
 
   it("decodes an absent thread as null rather than an error", () => {
     expect(decodeThreadShell(threadsGetShellAbsent).thread).toBeNull();
+  });
+});
+
+/**
+ * A running thread whose timeline holds one item of every kind Moatless
+ * translates its tool calls into, with the provider session, thread and turn a
+ * client needs before it offers to steer the running turn.
+ */
+describe("Moatless orchestration.v2.getThreadProjection", () => {
+  it("decodes every translated item kind, plan and provider row", () => {
+    const projection = decodeThreadProjection(threadProjectionV2);
+
+    expect(new Set(projection.turnItems.map((item) => item.type))).toEqual(
+      new Set([
+        "command_execution",
+        "dynamic_tool",
+        "file_change",
+        "proposed_plan",
+        "subagent",
+        "todo_list",
+        "web_search",
+      ]),
+    );
+    expect(projection.plans.map((plan) => plan.status)).toEqual(["active", "active"]);
+    // Steering needs the run's attempt to resolve to a running provider turn.
+    const run = projection.runs[0];
+    expect(run?.status).toBe("running");
+    expect(projection.providerTurns.map((turn) => turn.runAttemptId)).toEqual([
+      run?.activeAttemptId,
+    ]);
+    expect(projection.providerSessions[0]?.capabilities.turns.supportsActiveSteering).toBe(true);
   });
 });
 
