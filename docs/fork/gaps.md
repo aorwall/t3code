@@ -955,19 +955,20 @@ V2 there is a translation over the V1 state, not a V2 store: every thread
 subscription item is a whole `snapshot`, and `dispatchCommand` rewrites each
 command onto a V1 one or refuses it.
 
-- **Costs:** a person cannot restart a running turn, defer a start, fork from a
-  checkpoint, answer an approval, or merge back: each is a typed refusal from
-  `dispatchCommand`. The thread carries no `providerSessions` or attempts, so
-  promote-to-steer is never offered, and plans, file changes and subagent items
-  are absent from the timeline.
+- **Costs:** a person cannot defer a start, fork from a checkpoint, answer an
+  approval, or merge back: each is a typed refusal from `dispatchCommand`.
+  Deferred starts and checkpoint forks are unreachable from this client,
+  Moatless produces no approvals, and merge-back is behind `FEATURES.mergeBack`,
+  so none of the four is a button a person can press today. Restart, steering
+  and every turn item kind are served since `soaplabs/moatless#1071`.
 - **Holds it open here:** nothing in this repository. The client sends the
   commands and the backend refuses them, so the refusal reason is what a person
   sees.
 - **Closes when:** `crates/t3code/src/v2_commands.rs` has no `refused(` arm
-  but its catch-all, and the thread projection carries provider sessions and
-  the missing turn item kinds.
+  but its catch-all, and the deployment serves V2.
 - **Check:** `grep -c 'refused(' crates/t3code/src/v2_commands.rs` in
-  soaplabs/moatless, and the deployment's
+  soaplabs/moatless prints `2`, the catch-all and the helper itself (`6` on
+  `b656cf6`), and the deployment's
   `curl -s <backend>/.well-known/t3/environment | jq .orchestrationProtocolVersion`
   prints `2`.
 - **Then here:** strike this entry.
