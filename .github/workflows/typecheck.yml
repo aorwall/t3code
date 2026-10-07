@@ -50,8 +50,7 @@ jobs:
       # Node sizes its default heap from the host's memory and never sees the
       # pod's cap, so on a capped runner it will happily grow past it and be
       # killed. Half of this set's 8 GiB, the same share the merge tooling's
-      # `heapMb` derives — enough for the two concurrent tsgo processes
-      # `pnpm typecheck` runs, and leaving the other half for everything else.
+      # `heapMb` derives, leaving the other half for everything else.
       NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
@@ -79,4 +78,7 @@ jobs:
       # Before the typecheck, so a runner lost to its memory still reports these.
       - run: pnpm --filter @t3tools/contracts test
 
-      - run: pnpm typecheck
+      # One project at a time, not `pnpm typecheck`'s two: tsgo peaks near
+      # 6.3 GB on apps/server and 3.5 GB on apps/web, so the two together
+      # starve this 8 GiB runner until it stops answering GitHub.
+      - run: pnpm exec vp run -r --concurrency-limit 1 typecheck
