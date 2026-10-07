@@ -28,6 +28,55 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-07 — merged upstream to cd41c4ada0
+
+- Upstream: `cd41c4ada0` from base `442735897f` (`81` commits).
+- Landed: `853` files from `git diff --stat HEAD^1 HEAD` against `853` in the
+  upstream range; fork delta `765` files from `git diff --stat HEAD^2 HEAD`.
+  Landed-only: `AppRoot.test.tsx` and `sandboxControl.placement.test.tsx`
+  (fork tests adapted to upstream's change) and the formatted
+  `thread-projection-v2.json` fixture. Upstream-only: `cli/pair.ts` and
+  `pair.test.ts` (fork deletes them) and `routes/pair.tsx`, whose change edits
+  the pairing surface the fork's route does not render.
+- Branch point: `main` at `c74883d4cf`, the real merge commit force-pushed over
+  the squash of #207. No open merge PR to stack on.
+- Conflicts: 36 files, resolved by verdict. The notable ones:
+  - Preview: took upstream's server-hosted browser (#15328) and kept the
+    fork's frame runtime beside it in `PreviewView.tsx`,
+    `ThreadPreviewMiniPlayer.tsx` and `PreviewPanel.tsx`. The frame picker now
+    uses upstream's per-pick token in `pickActiveRef`. Upstream deleted the
+    `previewAutomation.*` RPCs and `PreviewAutomationHosts`.
+  - Permissions (#9786–#9791): upstream's granular scope gates were taken
+    everywhere and combined with the fork's `FEATURES` gates, as in Sidebar,
+    ProviderSettingsPanel, ChatMarkdown and ProjectSettingsPanel.
+  - Scripts: upstream's `runOnSettle` (#16290) is carried in
+    `projectScripts.ts`, but no editor switch renders it (see the gaps entry).
+  - `ws.ts`: upstream moved RPC metrics and spans into the `RpcInstrumentation`
+    middleware. The fork's 15 stub handlers lost their `observeRpcEffect`
+    wrappers, and their methods joined `RPC_AGGREGATES`.
+  - `ChatView.tsx`: dropped the woke, parked and resume-compaction banners with
+    upstream. Kept the sandbox-commands banner and the draft-thread script
+    path behind upstream's `hasTerminalWriteAccess()` guard.
+  - `auth.ts`: upstream's explicit re-pair branch returns `requires-login`.
+- Sweep: 19 new upstream files hit owned concerns: MCP OAuth and
+  `/connect-agent`, the server preview browser, the desktop CDP relay and
+  `authScopes`. All were taken as upstream's. The two gaps are recorded below.
+- Unsupported methods: ADD 3 (`preview.adjust`, `preview.clearProfile`,
+  `terminal.observe`), DROP 0.
+- Gaps: added
+  [granular scopes](./gaps.md#moatless-grants-the-new-permission-scopes-only-through-their-legacy-parents)
+  and [MCP sign-in](./gaps.md#outside-agents-cannot-sign-in-to-an-mcp-server-here),
+  and extended the scripts, methods and settlement entries. The auth bootstrap
+  suite entry is struck: the file passes 36 of 36.
+- Verification: `verify.mjs --sequential` passed every check except `test`.
+  - web: five upstream tests that did not know the fork's deltas were fixed.
+    `--only test --package @t3tools/web` then passed 496 files.
+  - server: `OpenCodeServerLedger`, `AcpAdapterV2` and
+    `OrchestratorReplayFixtures` fail as on 2026-10-06, because the sandbox
+    does not reap process groups and leaks `CLAUDE_CONFIG_DIR`. The new
+    `ServerBrowserPage.test.ts` needs Playwright's `chromium_headless_shell-1223`,
+    which the sandbox lacks. Machine, not code.
+
 ### 2026-10-06 — merged upstream to 442735897f (orchestrator V2)
 
 - Upstream: `442735897f` from base `024d49520e` (`272` commits), including

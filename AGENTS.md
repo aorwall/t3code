@@ -134,6 +134,8 @@ Ambitious ideas, simple systems, software that feels obvious. Do not preserve co
 
 Complexity belongs at the adapter boundary: orchestration stays pure and the UI stays dumb. Prefer inferred types to annotations, and treat `any` as the enemy. Comments say how a thing is used and move when the code moves; they describe functions rather than annotating every line.
 
+Client mutations use `createEnvironmentRpcCommand`. Add a protected method to `CLIENT_GUARDED_RPC_SCOPES` in contracts, and use the command's `permissionAtom` for UI availability. Grants are checked at execution against the destination environment, and the server remains authoritative. Keep raw RPC clients inside `rpc/`, and extend the permission behavior tests when you add a protected method.
+
 `apps/web/src/components/ui` exports own their look. Pick a `variant` or a `size`; do not restyle one with `className`. If none fits and the look is a generic concept, add a variant to the component; a look that belongs to one feature stays in that feature's own component, not in `components/ui`. Layout classes — width, flex, margin, position — belong on the parent. `shadcn/no-restyle` fails `vp lint` on violations.
 
 People drive agents through this UI all day and notice a dropped frame, a lying spinner, and a stale label. Upstream's performance discipline is worth keeping: watch what you send over the socket, how long lists render, and what the GPU is asked to paint. No continuously repainting animations — they peg the GPU on high-refresh displays.

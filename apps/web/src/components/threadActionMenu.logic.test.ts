@@ -7,6 +7,7 @@ import {
 } from "./threadActionMenu.logic";
 
 const baseState: ThreadActionMenuState = {
+  canOperate: true,
   branch: null,
   projectFilter: null,
   isPinned: false,
@@ -42,6 +43,63 @@ function allIds(state: ThreadActionMenuState): string[] {
 }
 
 describe("buildThreadActionMenuItems", () => {
+  it.each([false, true])(
+    "disables both lifecycle directions without permission (reversed: %s)",
+    (reversed) => {
+      const items = buildThreadActionMenuItems({
+        ...baseState,
+        canOperate: false,
+        isPinned: reversed,
+        isSettled: reversed,
+        isSnoozed: reversed,
+      });
+      const expected = reversed
+        ? [
+            "unpin",
+            "unsettle",
+            "unsnooze",
+            "rename",
+            "regenerate-title",
+            "auto-settle",
+            // Fork: the visibility and follow items, and no Delete
+            // (FEATURES.threadDeletion is off).
+            "make-public",
+            "unfollow",
+            "archive",
+          ]
+        : [
+            "pin",
+            "settle",
+            "snooze",
+            "rename",
+            "regenerate-title",
+            "auto-settle",
+            // Fork: the visibility and follow items, and no Delete
+            // (FEATURES.threadDeletion is off).
+            "make-public",
+            "unfollow",
+            "archive",
+          ];
+      expect(items.filter((item) => item.disabled).map((item) => item.id)).toEqual(expected);
+      expect(
+        items.find((item) => item.id === "snooze")?.children?.every((child) => child.disabled) ??
+          true,
+      ).toBe(true);
+    },
+  );
+
+  it("preserves local actions and restores mutations after a grant", () => {
+    const denied = buildThreadActionMenuItems({ ...baseState, canOperate: false, branch: "main" });
+    expect(denied.filter((item) => !item.disabled).map((item) => item.id)).toEqual([
+      "new-thread-on-branch",
+      "mark-unread",
+      "copy",
+      "project-settings",
+    ]);
+    const allowed = buildThreadActionMenuItems({ ...baseState, canOperate: true });
+    expect(allowed.every((item) => !item.disabled)).toBe(true);
+  });
+
   it("hides lifecycle items when the environment lacks the capabilities", () => {
     // Fork: `delete` is gated behind FEATURES.threadDeletion (off) and `archive`
     // is always offered, so the tail is archive rather than upstream's delete.
