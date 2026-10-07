@@ -14,6 +14,7 @@ import { Route as UsageRouteImport } from './routes/usage'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PairRouteImport } from './routes/pair'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ConnectAgentRouteImport } from './routes/connect-agent'
 import { Route as ConnectRouteImport } from './routes/connect'
 import { Route as ChatRouteImport } from './routes/_chat'
 import { Route as ChatIndexRouteImport } from './routes/_chat.index'
@@ -70,6 +71,11 @@ const PairRoute = PairRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConnectAgentRoute = ConnectAgentRouteImport.update({
+  id: '/connect-agent',
+  path: '/connect-agent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConnectRoute = ConnectRouteImport.update({
@@ -238,6 +244,7 @@ const ChatEnvironmentIdThreadIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof ChatIndexRoute
   '/connect': typeof ConnectRoute
+  '/connect-agent': typeof ConnectAgentRoute
   '/login': typeof LoginRoute
   '/pair': typeof PairRoute
   '/settings': typeof SettingsRouteWithChildren
@@ -275,6 +282,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/connect': typeof ConnectRoute
+  '/connect-agent': typeof ConnectAgentRoute
   '/login': typeof LoginRoute
   '/pair': typeof PairRoute
   '/settings': typeof SettingsRouteWithChildren
@@ -315,6 +323,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_chat': typeof ChatRouteWithChildren
   '/connect': typeof ConnectRoute
+  '/connect-agent': typeof ConnectAgentRoute
   '/login': typeof LoginRoute
   '/pair': typeof PairRoute
   '/settings': typeof SettingsRouteWithChildren
@@ -356,6 +365,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/connect'
+    | '/connect-agent'
     | '/login'
     | '/pair'
     | '/settings'
@@ -393,6 +403,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/connect'
+    | '/connect-agent'
     | '/login'
     | '/pair'
     | '/settings'
@@ -432,6 +443,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_chat'
     | '/connect'
+    | '/connect-agent'
     | '/login'
     | '/pair'
     | '/settings'
@@ -472,6 +484,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   ChatRoute: typeof ChatRouteWithChildren
   ConnectRoute: typeof ConnectRoute
+  ConnectAgentRoute: typeof ConnectAgentRoute
   LoginRoute: typeof LoginRoute
   PairRoute: typeof PairRoute
   SettingsRoute: typeof SettingsRouteWithChildren
@@ -515,6 +528,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/connect-agent': {
+      id: '/connect-agent'
+      path: '/connect-agent'
+      fullPath: '/connect-agent'
+      preLoaderRoute: typeof ConnectAgentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/connect': {
@@ -823,6 +843,7 @@ const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   ChatRoute: ChatRouteWithChildren,
   ConnectRoute: ConnectRoute,
+  ConnectAgentRoute: ConnectAgentRoute,
   LoginRoute: LoginRoute,
   PairRoute: PairRoute,
   SettingsRoute: SettingsRouteWithChildren,

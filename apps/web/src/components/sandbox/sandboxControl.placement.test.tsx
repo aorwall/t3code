@@ -12,6 +12,7 @@
  * pin that the entry exists and that the disabled state offers the way to it.
  */
 import type { PreviewSessionSnapshot } from "@t3tools/contracts";
+import { DEFAULT_RESOLVED_KEYBINDINGS } from "@t3tools/shared/keybindings";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vite-plus/test";
 
@@ -35,6 +36,15 @@ function render(options: {
   return renderToStaticMarkup(
     <RightPanelTabs
       mode="inline"
+      keybindings={DEFAULT_RESOLVED_KEYBINDINGS}
+      getShortcutContext={() => ({
+        terminalFocus: false,
+        terminalOpen: false,
+        previewFocus: false,
+        previewOpen: false,
+        isWeb: true,
+        isDesktop: false,
+      })}
       environmentId={null}
       surfaces={options.surfaces ?? []}
       activeSurfaceId={options.activeSurfaceId ?? null}

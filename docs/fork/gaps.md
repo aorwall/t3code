@@ -165,6 +165,46 @@ the answer varies by deployment; keep the flag when it cannot.
   backend fills `thread.pullRequests` from the Task's bindings and reports the
   boolean, so every pull-request surface is upstream's.
 
+### Moatless grants the new permission scopes only through their legacy parents
+
+The 2026-10-07 merge split upstream's coarse scopes into granular ones
+(#9786–#9791): `settings:write`, `providers:manage`, `environment:maintain`,
+`preview:operate`, `diagnostics:read`, `terminal:read`, `source-control:write`,
+`filesystem:read` and `filesystem:write`. A client now gates each surface on its
+own scope through `sessionGrantsScope`. Moatless's `session_state`
+(`crates/t3code/src/rpc/config.rs`) still sends only `scopes` from its coarse
+`GRANTED_SCOPES`, with no `permissions` record. `sessionGrantsScope` then falls
+back to `legacyParents` (#10298), and that fallback implies every new scope, so
+nothing is gated off today. The cost is that Moatless cannot grant less: a
+read-only terminal session, a viewer who may not write source control, or a
+session that may not touch the filesystem cannot be expressed, and
+`terminal.observe` is never reached.
+
+What holds it open: nothing on this side; the client reads whatever the
+session sends.
+
+- **Closed by:** the backend sending a `permissions` record with explicit
+  granular scopes; probe the `session_state` handler for `permissions`.
+- **Then here:** drop `terminal.observe` from the unsupported methods if the
+  backend serves it by then, and re-run the web permission tests, which
+  assume the granular scopes are present.
+
+### Outside agents cannot sign in to an MCP server here
+
+The 2026-10-07 merge lets an outside agent (Claude Code, Codex, ChatGPT) connect
+to an environment's T3 MCP server over OAuth (#16336, #16718): a consent page at
+`/connect-agent` (`apps/web/src/routes/connect-agent.tsx`,
+`ConnectAgentSurface`), OAuth endpoints on upstream's server, and per-tool
+caller declarations (#16335). Moatless serves no MCP endpoint and no OAuth
+flow, so the consent page has nothing to authorize against. Its entry point,
+"Copy MCP URL" in Connections settings, sits behind `FEATURES.connections`, so
+the route is reachable only by a typed URL.
+
+- **Closed by:** the backend serving an MCP endpoint with an OAuth
+  authorization server.
+- **Until then:** gate `/connect-agent` in `FEATURES`' path map if anyone is
+  found reaching it.
+
 ### A pull request link is a listing change, not an event
 
 Moatless derives `thread.pullRequests` from the Task's GitHub bindings, and a
@@ -464,14 +504,21 @@ what a person loses, which is the part the derivation cannot tell you:
   composer shows "Could not send feedback to OpenAI" — a correct answer, not a
   broken button. Closes if Moatless ever wants to relay this itself, which is
   unlikely: the feedback is addressed to OpenAI, not to the workspace.
-- **Preview automation** — `previewAutomation.connect`, `focusHost`, `respond`.
-  #13064 made a new agent session drive the preview the user can see
-  rather than a hidden one (`apps/server/src/mcp/PreviewAutomationBroker.ts`,
-  `packages/contracts/src/previewAutomation.ts`), so the same choice applies once
-  Moatless serves it. The MCP side of the same surface grew a `save` argument on `preview_snapshot`
-  (upstream, 2026-09-08, `apps/server/src/mcp/toolkits/preview/tools.ts`) that
-  writes the screenshot to disk for the agent to re-read. It rides this surface
-  and closes with it.
+- **The server-hosted browser** — `preview.adjust` and `preview.clearProfile`,
+  new upstream in the 2026-10-07 merge. #15328 runs the preview browser on the
+  environment server and streams it to any client
+  (`apps/server/src/preview/`, `apps/web/src/browser/ServerBrowserSurface.tsx`),
+  and removed the `previewAutomation.*` methods this bullet used to list. A
+  client offers it only when the environment reports the `serverBrowser`
+  capability, which Moatless does not, so the fork's web client keeps its
+  frame runtime (`isPreviewSupportedInRuntime`) and these two methods are never
+  sent. Agent control of the preview, which `previewAutomation` carried, now
+  rides the server browser and closes with it.
+- **Passive terminal observation** — `terminal.observe` (#9791). The client
+  sends it only with `terminal:read` and without `terminal:operate`; Moatless
+  grants operate to every session, so it attaches instead. It becomes owed
+  when the backend grants a read-only terminal session — see _Moatless grants
+  the new permission scopes only through their legacy parents_.
 - **The device hub** — `device.configure`, `device.list`, `device.testHost`,
   `device.open`, `device.close`, `device.shutdown`, `device.detail`,
   `device.action` and the `subscribeDeviceState` push stream, all new upstream in
@@ -665,6 +712,21 @@ setup script can now be marked to finish before the agent's first turn starts
 `async: false` on the script (`apps/web/src/projectScripts.ts`), so the flag is
 written through `project.meta.update` today and does nothing until the backend
 honours it — see _Runtime fixes upstream made to its own server_ below.
+
+The 2026-10-07 merge brought a second such field, and it was **not** carried:
+#16290 lets one project script run when a worktree thread settles, as
+`runOnSettle` on the script. Moatless's script mapping
+(`crates/t3code/src/projection/project.rs` in the backend) has no such field and
+nothing runs a script on settle, so `projectScriptEditor.tsx` renders no switch
+for it. The form keeps the value it was handed and writes it back unchanged,
+so a script that already carries the flag does not lose it on edit.
+
+- **Closed by:** the backend storing `runOnSettle` on a script and running the
+  marked one when a worktree thread settles; probe with
+  `git grep -n 'runOnSettle' apps/web/src/components/projectScriptEditor.tsx`.
+- **Then here:** restore upstream's "Run when a thread settles" switch in
+  `projectScriptEditor.tsx`, where the `Fork:` comment after the setup switches
+  stands, and trim the comment.
 
 - **Closed by:** the backend dispatching `project.meta.update` for a project's
   scripts and reporting `scriptsEditable` per project.
@@ -909,6 +971,15 @@ The 2026-09-25 merge added a per-thread auto-settle switch (#11846): a
 capability. Moatless never auto-settles, so there is nothing to opt out of and
 the capability stays absent, which hides the item. It becomes owed the day the
 backend adds any automatic settlement rule — the opt-out must then be read by it.
+
+The 2026-10-07 merge added two more for the pull-request half:
+
+- **A thread settles as soon as a client sees its PR merge.** #16761 settles
+  on the client's observation of the merge rather than waiting for the
+  server's own poll (`apps/server/src/orchestration/ThreadSettlementReactor.ts`).
+- **A settled thread stops polling its pull requests.** #16762 drops settled
+  threads from the PR refresh set, so their polling stops costing requests.
+  Moatless polls linked PRs itself and would save the same work.
 
 - **Closes when:** the backend's settlement decision reads pin and snooze state,
   settles a snoozed thread immediately, settles on the pull-request event rather
@@ -1772,28 +1843,6 @@ node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only test
   and lets the packages still running finish.
 - **Then here:** delete this entry, and delete `completedPackages` and the
   alone-run loop from `verify.mjs`.
-
-### The auth bootstrap test suite does not run
-
-`apps/web/src/authBootstrap.test.ts` fails twelve of its twenty-three tests —
-the whole `resolveInitialServerAuthGateState` block — with
-`connect ECONNREFUSED`. The HTTP mock `installEnvironmentHttpTest` installs is
-not intercepting, so each test makes a real request and times out against
-nothing. It fails the same way on Node 24 and Node 25, and on the tree before
-the 2026-08-16 merge as well as after it, so it is neither a version nor a
-merge problem.
-
-What it costs: this is the fork's own test for its own most load-bearing
-surface — the Moatless cookie session, the requires-login state, the dev-proxy
-auth base. Eleven tests still pass, so the file is not obviously dead, and a
-regression in the twelve is currently invisible.
-
-What holds it open: nothing gates on it; the suite it lives in is not in
-`pnpm test` either (see above), so nothing has been reporting it.
-
-- **Check:** `cd apps/web && vp test run --project unit src/authBootstrap.test.ts`
-  reports 23 passed.
-- **Then here:** nothing to delete — this is a repair, not a stand-in.
 
 ### Node 25 breaks the prompt-stash tests
 

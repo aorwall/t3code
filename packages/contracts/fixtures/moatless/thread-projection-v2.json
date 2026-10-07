@@ -410,9 +410,7 @@
       "nodeId": null,
       "ordinal": 4,
       "parentItemId": null,
-      "patterns": [
-        "rust"
-      ],
+      "patterns": ["rust"],
       "providerThreadId": null,
       "providerTurnId": null,
       "runId": "task-1:2",
@@ -686,9 +684,7 @@
         "nodeId": null,
         "ordinal": 4,
         "parentItemId": null,
-        "patterns": [
-          "rust"
-        ],
+        "patterns": ["rust"],
         "providerThreadId": null,
         "providerTurnId": null,
         "runId": "task-1:2",
