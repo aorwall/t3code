@@ -93,7 +93,7 @@ describe("Moatless threads.getShell", () => {
  * client needs before it offers to steer the running turn.
  */
 describe("Moatless orchestration.v2.getThreadProjection", () => {
-  it("decodes every translated item kind, plan and provider row", () => {
+  it("decodes every translated item kind, plan, node and provider row", () => {
     const projection = decodeThreadProjection(threadProjectionV2);
 
     expect(new Set(projection.turnItems.map((item) => item.type))).toEqual(
@@ -115,6 +115,16 @@ describe("Moatless orchestration.v2.getThreadProjection", () => {
       run?.activeAttemptId,
     ]);
     expect(projection.providerSessions[0]?.capabilities.turns.supportsActiveSteering).toBe(true);
+    // Every node a row names is one the projection carries.
+    const nodes = new Set(projection.nodes.map((node) => node.id));
+    for (const id of [
+      ...projection.attempts.map((attempt) => attempt.rootNodeId),
+      ...projection.providerTurns.map((turn) => turn.nodeId),
+      ...projection.plans.map((plan) => plan.nodeId),
+      run?.rootNodeId,
+    ]) {
+      expect(nodes.has(id!)).toBe(true);
+    }
   });
 });
 
