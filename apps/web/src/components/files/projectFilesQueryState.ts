@@ -39,6 +39,8 @@ interface ProjectQueryState<A> {
 interface ProjectFileQueryState extends ProjectQueryState<ProjectReadFileResult> {
   /** The path exists but is not a regular file, typically a directory. */
   readonly isNotFile: boolean;
+  // Fork: the file holds bytes, not text; the path is the one the server resolved.
+  readonly binaryPath: string | null;
 }
 
 function getProjectEntriesQueryAtom(
@@ -222,6 +224,11 @@ export function useProjectFileQuery(
     data: optimisticFile?.data ?? data,
     error: errorMessage(cause),
     isNotFile: isProjectReadFileError(cause) && cause.failure === "path_not_file",
+    // Fork: see `binaryPath` above.
+    binaryPath:
+      isProjectReadFileError(cause) && cause.failure === "binary_file"
+        ? (cause.relativePath ?? relativePath)
+        : null,
     isPending: result.waiting,
     refresh,
   };

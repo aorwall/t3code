@@ -32,6 +32,8 @@ import { useAssetUrlRefresh, useAssetUrlState } from "~/assets/assetUrls";
 import { OpenInPicker } from "~/components/chat/OpenInPicker";
 // Fork: gates the header's Open in editor button.
 import { FEATURES } from "~/fork/features";
+// Fork: Moatless refuses a binary file as text, so it is offered as a download.
+import { WorkspaceBinaryFile } from "~/fork/WorkspaceBinaryFile";
 import { MediaVideoPlayer } from "~/components/media/MediaVideoPlayer";
 import { MediaActions, type MediaActionSource } from "~/components/media/MediaActions";
 import { useRemoteOpenState } from "~/remoteOpen";
@@ -1261,6 +1263,14 @@ export default function FilePreviewPanel({
               workspaceMutationId={workspaceMutationId}
               // Fork: null for a PDF, which is never read.
               frameRevision={browserFrameRevision}
+            />
+          ) : // Fork: a file the read refused as binary gets a download instead of the error.
+          file.binaryPath !== null && attachment === undefined ? (
+            <WorkspaceBinaryFile
+              key={file.binaryPath}
+              environmentId={environmentId}
+              threadRef={threadRef}
+              absolutePath={resolvePathLinkTarget(file.binaryPath, cwd)}
             />
           ) : relativePath && file.error && file.data === null ? (
             <div className="flex min-h-0 flex-1 items-center justify-center px-6 text-center text-xs leading-relaxed text-destructive">

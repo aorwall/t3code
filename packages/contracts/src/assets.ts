@@ -15,6 +15,8 @@ export const AssetResource = Schema.Union([
   Schema.TaggedStruct("workspace-file", {
     threadId: ThreadId,
     path: TrimmedNonEmptyString.check(Schema.isMaxLength(ASSET_PATH_MAX_LENGTH)),
+    // Fork: `attachment` asks for a download, which Moatless mints for any file type.
+    disposition: Schema.optionalKey(Schema.Literals(["inline", "attachment"])),
   }),
   // One file served in place from anywhere the environment host can read:
   // images, videos, HTML, and PDF. An absolute path may lie outside the

@@ -526,7 +526,7 @@
       "id": "file-preview-panel",
       "paths": ["apps/web/src/components/files/FilePreviewPanel.tsx"],
       "verdict": "decide",
-      "note": "Upstream owns this file and works in it steadily. Two fork deltas to re-state on top: the browser frame keyed on the page's own bytes (frameRevision, from browserPreviewFrameRevision) instead of on the workspace mutation id, and following the path the read resolved to (onRetargetFile) so a mention into a subdirectory repository lands on the file actually shown."
+      "note": "Upstream owns this file and works in it steadily. Two fork deltas to re-state on top: the browser frame keyed on the page's own bytes (frameRevision, from browserPreviewFrameRevision) instead of on the workspace mutation id, following the path the read resolved to (onRetargetFile) so a mention into a subdirectory repository lands on the file actually shown, and the WorkspaceBinaryFile branch (fork/WorkspaceBinaryFile.tsx) that answers a `binary_file` read failure, surfaced as `binaryPath` by projectFilesQueryState.ts, with a download."
     },
     {
       "id": "fork-only-workflows",
