@@ -215,8 +215,9 @@ export const FEATURES = {
    */
   mergeBack: false,
   /**
-   * The Scheduled tasks settings page. Moatless schedules work as Loops, and
-   * the backend serves none of the `scheduledTasks.*` methods behind it.
+   * The Scheduled tasks settings page and the thread details Automations
+   * panel. Moatless schedules work as Loops, and the backend serves none of
+   * the `scheduledTasks.*` methods behind them.
    */
   scheduledTasks: false,
 } satisfies Record<string, boolean>;

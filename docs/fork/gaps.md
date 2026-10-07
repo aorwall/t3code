@@ -261,7 +261,7 @@ what a person loses, which is the part the derivation cannot tell you:
   `getFullThreadDiff`, `getWorkflowScript`), plus
   `assets.persistChatAttachments`. The rest are whole upstream families Moatless
   has no counterpart for: `scheduledTasks.*` (held by the `scheduledTasks`
-  flag), `server.*AcpRegistry*`, `secrets.answerRequest` and `projects.mutate`.
+  flag, which also hides the thread details Automations panel), `server.*AcpRegistry*`, `secrets.answerRequest` and `projects.mutate`.
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
   `getConfig`), so Settings renders and nothing in it can be saved. Holds open

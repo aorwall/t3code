@@ -1155,7 +1155,9 @@ export function PreviewView({
             </div>
           </>
         ) : runtimeTabId && snapshot && !showEmptyState ? (
-          previewBridge ? (
+          // Fork: the web build's frame runtime fills this slot too; the
+          // desktop notice is only for a tab no surface here can show.
+          previewBridge || framed ? (
             <BrowserSurfaceSlot
               key={runtimeTabId}
               tabId={runtimeTabId}

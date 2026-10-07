@@ -867,7 +867,7 @@
         "apps/web/src/previewStateStore.ts",
         "apps/web/src/previewRuntimeCapability.test.ts"
       ],
-      "mustSurvive": "Preview renders in a hosted iframe rather than a native browser surface. Upstream owns most files and works in them; take upstream and re-state the iframe behavior on top. Also surviving (2026-08-07): a framed page can be annotated — four gates on the existing framed flag in PreviewView.tsx, each // Fork: marked and additive. Drop the whole delta once upstream ships a web preview."
+      "mustSurvive": "Preview renders in a hosted iframe rather than a native browser surface. Upstream owns most files and works in them; take upstream and re-state the iframe behavior on top. Also surviving (2026-08-07): a framed page can be annotated — four gates on the existing framed flag in PreviewView.tsx, each // Fork: marked and additive. Also surviving (2026-10-07): the surface body renders BrowserSurfaceSlot when framed, not only with a desktop previewBridge — upstream's \"This tab is open in the T3 Code desktop app\" notice must not replace the frame on web. Drop the whole delta once upstream ships a web preview."
     },
     {
       "id": "hosted-env-stubs",
@@ -1228,6 +1228,16 @@
       "guard": {
         "symbol": "FEATURES.checkpointFileRestore",
         "files": ["apps/web/src/components/ChatView.tsx"]
+      }
+    },
+    {
+      "id": "thread-automations-gate",
+      "name": "Thread Automations panel gate",
+      "paths": ["apps/web/src/components/chat/ThreadDetailsPanel.tsx", "apps/web/src/fork/features.ts"],
+      "mustSurvive": "Thread details shows no Automations panel. It subscribes to scheduledTasks.subscribe, which Moatless does not serve: it schedules work as Loops, so the panel only ever shows \"Could not load automations\". One additive FEATURES.scheduledTasks conjunct on the ThreadAutomationsPanel mount in ThreadDetailsPanel.tsx, the same flag that holds the Scheduled tasks settings page. Drop the conjunct with the flag once the backend serves scheduledTasks.*.",
+      "guard": {
+        "symbol": "FEATURES.scheduledTasks",
+        "files": ["apps/web/src/components/chat/ThreadDetailsPanel.tsx"]
       }
     },
     {
