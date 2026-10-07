@@ -215,6 +215,13 @@ It reads both sides and reports in both directions — a method the backend has
 started serving is a union entry to delete, not a no-op. The grouping below is
 what a person loses, which is the part the derivation cannot tell you:
 
+- **Orchestrator V2 diffs and the newer upstream families** — the 2026-10-06
+  merge added `UnsupportedMethodError` to 30 methods, and 26 remain once the V2
+  backend landed. Three are `orchestration.*` V2 reads (`getTurnDiff`,
+  `getFullThreadDiff`, `getWorkflowScript`), plus
+  `assets.persistChatAttachments`. The rest are whole upstream families Moatless
+  has no counterpart for: `scheduledTasks.*` (held by the `scheduledTasks`
+  flag), `server.*AcpRegistry*`, `secrets.answerRequest` and `projects.mutate`.
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
   `getConfig`), so Settings renders and nothing in it can be saved. Holds open
@@ -829,17 +836,6 @@ and not typed refusals, and it will be the reason for the next one too.
 - **Then here:** delete `threadDeletion` and `checkpointFileRestore`, and the
   `projectManagement` gates that cover `project.create` / `project.delete`.
 
-### A message does not say where it came from
-
-The fork carries a `messageOrigin` field so the chat can mark a message that did
-not come from the composer. Backend half is `soaplabs/moatless#269`, client half
-is `#40`; they may land in either order, and until both are in this is fork-only
-code on four upstream files.
-
-- **Closes when:** the field is served, or upstream ships its own provenance
-  field on `OrchestrationMessage` — in which case prefer upstream's shape.
-- **Then here:** Message Origin Delta in the inventory.
-
 ### Subagents do not carry the identity the Agents surface folds on
 
 Upstream's 2026-08-06 merge added the Agents surface (`#5219`): a right panel,
@@ -949,31 +945,33 @@ to grow.
 - **Then here:** delete the `return null` branch at the end of
   `workspaceIconFromOverride`, and this entry with it.
 
-### Upstream's orchestrator V2 is a wire protocol Moatless does not speak
+### Orchestrator V2 is served by translation, and only in part
 
-Upstream's `de3439142` (#2829, "introduce new orchestrator") deletes
-`packages/contracts/src/orchestration.ts` and the client-runtime
-`threadReducer.ts` and replaces them with `orchestrationV2.ts`. The
-`orchestration.*` method names are unchanged, but every command, event, shell
-and thread payload behind them is a new schema. `crates/t3code` serves the V1
-payloads only. The fork's Message Origin, Thread Fork, Thread Visibility, Thread
-Follow and Thread Owner Name deltas are all anchored in the deleted files.
+Upstream's `de3439142` (#2829) made the client V2-only, and the 2026-10-06
+merge took it. `crates/t3code` serves V2 since `soaplabs/moatless#1068`, but
+only to a deployment that sets `T3_UI_RPC_ORCHESTRATION_PROTOCOL_VERSION=2`; any
+other backend still advertises V1, and this client renders nothing against it.
+V2 there is a translation over the V1 state, not a V2 store: every thread
+subscription item is a whole `snapshot`, and `dispatchCommand` rewrites each
+command onto a V1 one or refuses it.
 
-- **Costs:** every upstream commit from `de3439142` on is unmergeable. Merging
-  it would ship a client that cannot decode a single shell or thread from the
-  backend. The 2026-10-03 merge stopped at `024d49520`, its parent. Every later
-  upstream fix, including the web-only ones, waits behind this gap.
-- **Holds it open here:** the merge-base. `preflight.mjs` against
-  `upstream/main` reports the five `*-upstream-files` path-policy entries above
-  as stale, because their anchor files are gone upstream.
-- **Closes when:** either the backend decodes and emits `OrchestrationV2*`
-  payloads, or a person decides on a client-side adapter from V1 to V2. In both
-  cases the five deltas get re-homed into `orchestrationV2.ts` and the
-  client-runtime modules that replaced `threadReducer.ts`.
-- **Check:** `git merge-base --is-ancestor de3439142 HEAD` exits 0 once a merge
-  has taken it.
-- **Then here:** re-point the five stale path-policy entries in
-  `inventory.json`, merge `upstream/main` normally, and strike this entry.
+- **Costs:** a person cannot defer a start, fork from a checkpoint, answer an
+  approval, or merge back: each is a typed refusal from `dispatchCommand`.
+  Deferred starts and checkpoint forks are unreachable from this client,
+  Moatless produces no approvals, and merge-back is behind `FEATURES.mergeBack`,
+  so none of the four is a button a person can press today. Restart, steering
+  and every turn item kind are served since `soaplabs/moatless#1071`.
+- **Holds it open here:** nothing in this repository. The client sends the
+  commands and the backend refuses them, so the refusal reason is what a person
+  sees.
+- **Closes when:** `crates/t3code/src/v2_commands.rs` has no `refused(` arm
+  but its catch-all, and the deployment serves V2.
+- **Check:** `grep -c 'refused(' crates/t3code/src/v2_commands.rs` in
+  soaplabs/moatless prints `2`, the catch-all and the helper itself (`6` on
+  `b656cf6`), and the deployment's
+  `curl -s <backend>/.well-known/t3/environment | jq .orchestrationProtocolVersion`
+  prints `2`.
+- **Then here:** strike this entry.
 
 ### Runtime fixes upstream made to its own server
 

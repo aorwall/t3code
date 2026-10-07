@@ -8,9 +8,11 @@
 # `ChangeRequestStatusIcon` call missing a required prop) and was found by a
 # maintainer typechecking by hand days later.
 #
-# It deliberately does not run the tests. `pnpm test` is roughly thirteen minutes
-# on a machine larger than this runner, and the parallel pass is what gets a
-# 4 CPU / 8 GiB box evicted. Tests stay local and targeted; see AGENTS.md.
+# Of the tests it runs only `@t3tools/contracts`: its Moatless fixtures are the
+# one check that a backend response decodes against the schemas the client
+# reads. The full `pnpm test` is roughly thirteen minutes on a machine larger
+# than this runner, and its parallel pass is what gets a 4 CPU / 8 GiB box
+# evicted. Every other test stays local and targeted; see AGENTS.md.
 #
 # Runner: `staging-runners-large`, the same org-scoped ARC scale set the image
 # build uses — 4 CPU and 8 GiB, defined in soaplabs/soap-platform-gitops under
@@ -73,5 +75,8 @@ jobs:
       # `--ignore-scripts` also skips this repo's own `prepare`, which patches
       # the TypeScript binary `pnpm typecheck` then runs. Run it by hand.
       - run: pnpm run prepare
+
+      # Before the typecheck, so a runner lost to its memory still reports these.
+      - run: pnpm --filter @t3tools/contracts test
 
       - run: pnpm typecheck

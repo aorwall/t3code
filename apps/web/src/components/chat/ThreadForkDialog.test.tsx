@@ -35,16 +35,16 @@ describe("ThreadForkDialog", () => {
     hooks.reset();
   });
 
-  it("submits sameSandbox on with no message when nothing was typed", () => {
+  it("submits sameSandbox off with no message when nothing was typed", () => {
     const onSubmit = vi.fn();
     const tree = render({ open: true, onOpenChange: vi.fn(), onSubmit });
 
     (findByText(tree, "Fork")?.props.onClick as (() => void) | undefined)?.();
 
-    expect(onSubmit).toHaveBeenCalledWith({ sameSandbox: true });
+    expect(onSubmit).toHaveBeenCalledWith({ sameSandbox: false });
   });
 
-  it("carries sameSandbox off once the toggle is switched", () => {
+  it("carries sameSandbox on once the toggle is switched", () => {
     const onSubmit = vi.fn();
     let tree = render({ open: true, onOpenChange: vi.fn(), onSubmit });
 
@@ -52,12 +52,12 @@ describe("ThreadForkDialog", () => {
       findById(tree, "thread-fork-same-sandbox")?.props.onCheckedChange as
         | ((checked: boolean) => void)
         | undefined
-    )?.(false);
+    )?.(true);
 
     tree = render({ open: true, onOpenChange: vi.fn(), onSubmit });
     (findByText(tree, "Fork")?.props.onClick as (() => void) | undefined)?.();
 
-    expect(onSubmit).toHaveBeenCalledWith({ sameSandbox: false });
+    expect(onSubmit).toHaveBeenCalledWith({ sameSandbox: true });
   });
 
   it("trims a typed message and omits it entirely when left blank", () => {
@@ -73,7 +73,29 @@ describe("ThreadForkDialog", () => {
     tree = render({ open: true, onOpenChange: vi.fn(), onSubmit });
     (findByText(tree, "Fork")?.props.onClick as (() => void) | undefined)?.();
 
-    expect(onSubmit).toHaveBeenCalledWith({ sameSandbox: true, message: "keep going" });
+    expect(onSubmit).toHaveBeenCalledWith({ sameSandbox: false, message: "keep going" });
+  });
+
+  it("sends the picked harness and hides the picker when there is none to pick", () => {
+    const onSubmit = vi.fn();
+    const modelSelection = { instanceId: "codex", model: "gpt-5" } as never;
+    const harnessOptions = [{ key: "codex", label: "Codex", modelSelection }];
+    expect(
+      findById(render({ open: true, onOpenChange: vi.fn(), onSubmit }), "thread-fork-harness"),
+    ).toBeNull();
+
+    let tree = render({ open: true, onOpenChange: vi.fn(), onSubmit, harnessOptions });
+    (
+      visitElements(
+        tree,
+        (element) => element.props.value === "same" && "onValueChange" in element.props,
+      )?.props.onValueChange as ((value: string) => void) | undefined
+    )?.("codex");
+
+    tree = render({ open: true, onOpenChange: vi.fn(), onSubmit, harnessOptions });
+    (findByText(tree, "Fork")?.props.onClick as (() => void) | undefined)?.();
+
+    expect(onSubmit).toHaveBeenCalledWith({ sameSandbox: false, modelSelection });
   });
 
   it("cancels without submitting", () => {

@@ -3,11 +3,10 @@
  * does, and what a card says when something has closed it.
  *
  * A shell in the workspace, its diff and a server running inside it are windows
- * onto a live machine, so a stopped sandbox leaves them nothing to show. Agents
- * and files are not: the agent roster is folded out of the thread's own
- * activity and its subtasks, and the file tree, a file's contents and the name
- * search are served from the workspace snapshot S3 holds — all readable with
- * the sandbox stopped. Gating those hid a working surface behind a machine they
+ * onto a live machine, so a stopped sandbox leaves them nothing to show. Files
+ * are not: the file tree, a file's contents and the name search are served
+ * from the workspace snapshot S3 holds — all readable with the sandbox
+ * stopped. Gating those hid a working surface behind a machine they
  * did not need. A snapshot the environment never stored (a Task from before the
  * mirror, or a tar-only fork) answers the file read as "sandbox not running",
  * so the surface shows that in its own panel rather than being closed outright.
@@ -38,7 +37,6 @@ import type { RightPanelKind, RightPanelSurface } from "~/rightPanelStore";
  * is down: it is where the person starts one.
  */
 const SANDBOX_INDEPENDENT_KINDS: ReadonlySet<RightPanelKind> = new Set<RightPanelKind>([
-  "agents",
   "files",
   "file",
   "pull-requests",

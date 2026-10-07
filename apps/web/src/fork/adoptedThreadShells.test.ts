@@ -1,7 +1,7 @@
 import type {
   EnvironmentId,
-  OrchestrationShellSnapshot,
-  OrchestrationThreadShell,
+  OrchestrationV2ShellSnapshot,
+  OrchestrationV2ThreadShell,
   ScopedThreadRef,
   ThreadId,
 } from "@t3tools/contracts";
@@ -13,17 +13,17 @@ const ENVIRONMENT = "env-1" as EnvironmentId;
 const OTHER_ENVIRONMENT = "env-2" as EnvironmentId;
 
 /** Only the id is read by anything under test; the rest is shape. */
-function row(id: string): OrchestrationThreadShell {
-  return { id: id as ThreadId } as unknown as OrchestrationThreadShell;
+function row(id: string): OrchestrationV2ThreadShell {
+  return { id: id as ThreadId } as unknown as OrchestrationV2ThreadShell;
 }
 
-function snapshot(...ids: ReadonlyArray<string>): OrchestrationShellSnapshot {
+function snapshot(...ids: ReadonlyArray<string>): OrchestrationV2ShellSnapshot {
   return {
     snapshotSequence: 0,
     projects: [],
     threads: ids.map(row),
     updatedAt: "2026-09-01T00:00:00.000Z",
-  } as unknown as OrchestrationShellSnapshot;
+  } as unknown as OrchestrationV2ShellSnapshot;
 }
 
 function ref(environmentId: EnvironmentId, threadId: string): ScopedThreadRef {

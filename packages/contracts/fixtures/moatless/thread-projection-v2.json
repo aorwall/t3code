@@ -1,0 +1,881 @@
+{
+  "attempts": [
+    {
+      "attemptOrdinal": 1,
+      "completedAt": null,
+      "id": "task-1:2:attempt",
+      "providerInstanceId": "claudeAgent",
+      "providerThreadId": "task-1:provider-thread",
+      "providerTurnId": "task-1:2:provider-turn",
+      "reason": "initial",
+      "rootNodeId": "task-1:2:root",
+      "runId": "task-1:2",
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "status": "running"
+    }
+  ],
+  "checkpointScopes": [],
+  "checkpoints": [],
+  "contextHandoffs": [],
+  "contextTransfers": [],
+  "messages": [],
+  "nodes": [
+    {
+      "checkpointScopeId": null,
+      "completedAt": null,
+      "countsForRun": true,
+      "id": "task-1:2:root",
+      "kind": "root_turn",
+      "nativeItemRef": null,
+      "parentNodeId": null,
+      "providerThreadId": "task-1:provider-thread",
+      "providerTurnId": "task-1:2:provider-turn",
+      "rootNodeId": "task-1:2:root",
+      "runId": "task-1:2",
+      "runtimeRequestId": null,
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "status": "running",
+      "threadId": "task-1"
+    },
+    {
+      "checkpointScopeId": null,
+      "completedAt": null,
+      "countsForRun": false,
+      "id": "todo-1:plan:plan",
+      "kind": "todo_list",
+      "nativeItemRef": null,
+      "parentNodeId": "task-1:2:root",
+      "providerThreadId": null,
+      "providerTurnId": null,
+      "rootNodeId": "task-1:2:root",
+      "runId": "task-1:2",
+      "runtimeRequestId": null,
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "status": "running",
+      "threadId": "task-1"
+    },
+    {
+      "checkpointScopeId": null,
+      "completedAt": null,
+      "countsForRun": false,
+      "id": "plan-1:plan",
+      "kind": "plan",
+      "nativeItemRef": null,
+      "parentNodeId": "task-1:2:root",
+      "providerThreadId": null,
+      "providerTurnId": null,
+      "rootNodeId": "task-1:2:root",
+      "runId": "task-1:2",
+      "runtimeRequestId": null,
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "status": "waiting",
+      "threadId": "task-1"
+    }
+  ],
+  "plans": [
+    {
+      "id": "todo-1:plan",
+      "kind": "todo_list",
+      "nodeId": "todo-1:plan:plan",
+      "runId": "task-1:2",
+      "status": "active",
+      "steps": [
+        {
+          "id": "1",
+          "status": "completed",
+          "text": "Read"
+        },
+        {
+          "id": "2",
+          "status": "running",
+          "text": "Write"
+        }
+      ],
+      "threadId": "task-1",
+      "updatedAt": "2026-10-07T05:21:46.574Z"
+    },
+    {
+      "id": "plan-1",
+      "kind": "proposed_plan",
+      "markdown": "# Do it",
+      "nodeId": "plan-1:plan",
+      "runId": "task-1:2",
+      "status": "active",
+      "threadId": "task-1",
+      "updatedAt": "2026-10-07T05:21:46.574Z"
+    }
+  ],
+  "providerSessions": [
+    {
+      "capabilities": {
+        "approvals": {
+          "approvalCallbacksAreLiveOnly": false,
+          "approvalsCanOriginateFromSubagents": false,
+          "approvalsHaveNativeRequestIds": false,
+          "supportsApplyPatchApproval": false,
+          "supportsCommandApproval": false,
+          "supportsFileChangeApproval": false,
+          "supportsFileReadApproval": false
+        },
+        "checkpointing": {
+          "appCanCheckpointFilesystem": false,
+          "providerCanReadConversationSnapshot": false,
+          "providerCanRollbackConversation": false,
+          "providerRollbackReturnsSnapshot": false,
+          "supportsNestedCheckpointScopes": false
+        },
+        "context": {
+          "acceptsDeveloperContext": false,
+          "acceptsSyntheticUserContext": true,
+          "acceptsSystemContext": false,
+          "canConsumeHandoffSummaries": false,
+          "canGenerateSummaries": false,
+          "maxRecommendedHandoffChars": null,
+          "supportsDeltaHandoff": false,
+          "supportsFullThreadHandoff": true
+        },
+        "identity": {
+          "nativeItemIds": "weak",
+          "nativeRequestIds": "weak",
+          "nativeThreadIds": "none",
+          "nativeTurnIds": "none"
+        },
+        "planning": {
+          "emitsPlanUpdated": true,
+          "emitsProposedPlan": true,
+          "emitsTodoList": true,
+          "planDeltasHaveItemIds": false,
+          "supportsStructuredQuestions": true
+        },
+        "runtimePolicy": {
+          "enforcement": "native"
+        },
+        "sessions": {
+          "pendingRequestsSurviveRestart": true,
+          "supportsModelSwitchInSession": true,
+          "supportsMultipleProviderThreadsPerSession": false,
+          "supportsProviderSwitchingViaHandoff": false,
+          "supportsRuntimeModeSwitchInSession": false
+        },
+        "streaming": {
+          "emitsMessageCompleted": true,
+          "streamsAssistantText": false,
+          "streamsPlanText": false,
+          "streamsReasoning": false,
+          "streamsToolOutput": false
+        },
+        "subagents": {
+          "canCloseSubagents": false,
+          "canForkSubagentThread": false,
+          "canWaitForSubagents": false,
+          "emitsSubagentLifecycle": true,
+          "exposesSubagentThreadIds": false,
+          "supportsSubagents": true
+        },
+        "threads": {
+          "canCreateEmptyThread": true,
+          "canForkFromSubagentThread": false,
+          "canForkFromTurn": true,
+          "canForkThread": true,
+          "canReadThreadSnapshot": true,
+          "canRollbackThread": false,
+          "exposesNativeThreadId": false
+        },
+        "tools": {
+          "emitsToolCompleted": true,
+          "emitsToolOutput": true,
+          "emitsToolStarted": true,
+          "exposesToolItemIds": true,
+          "supportsDynamicToolCallbacks": false,
+          "supportsMcpTools": true
+        },
+        "turns": {
+          "emitsTurnCompleted": true,
+          "emitsTurnStarted": true,
+          "exposesNativeTurnId": false,
+          "supportsActiveSteering": true,
+          "supportsInterrupt": true,
+          "supportsQueuedMessages": true,
+          "supportsSteeringByInterruptRestart": true,
+          "terminalStatusQuality": "strong"
+        }
+      },
+      "createdAt": "2026-10-07T05:21:46.574Z",
+      "cwd": "/moatless/tasks/task-1",
+      "driver": "claudeAgent",
+      "id": "task-1:provider-session",
+      "lastError": null,
+      "model": "unknown",
+      "providerInstanceId": "claudeAgent",
+      "status": "stopped",
+      "updatedAt": "2026-10-07T05:21:46.574Z"
+    }
+  ],
+  "providerThreads": [
+    {
+      "appThreadId": "task-1",
+      "createdAt": "2026-10-07T05:21:46.574Z",
+      "driver": "claudeAgent",
+      "firstRunOrdinal": 2,
+      "forkedFrom": null,
+      "handoffIds": [],
+      "id": "task-1:provider-thread",
+      "lastRunOrdinal": 2,
+      "nativeConversationHeadRef": null,
+      "nativeThreadRef": null,
+      "ownerNodeId": null,
+      "providerInstanceId": "claudeAgent",
+      "providerSessionId": "task-1:provider-session",
+      "status": "active",
+      "updatedAt": "2026-10-07T05:21:46.574Z"
+    }
+  ],
+  "providerTurns": [
+    {
+      "completedAt": null,
+      "id": "task-1:2:provider-turn",
+      "nativeTurnRef": null,
+      "nodeId": "task-1:2:root",
+      "ordinal": 2,
+      "providerThreadId": "task-1:provider-thread",
+      "runAttemptId": "task-1:2:attempt",
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "status": "running"
+    }
+  ],
+  "runs": [
+    {
+      "activeAttemptId": "task-1:2:attempt",
+      "checkpointId": null,
+      "completedAt": null,
+      "contextHandoffId": null,
+      "id": "task-1:2",
+      "modelSelection": {
+        "instanceId": "claudeAgent",
+        "model": "unknown"
+      },
+      "ordinal": 2,
+      "providerInstanceId": "claudeAgent",
+      "providerThreadId": "task-1:provider-thread",
+      "requestedAt": "2026-10-07T05:21:46.574Z",
+      "rootNodeId": "task-1:2:root",
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "status": "running",
+      "threadId": "task-1",
+      "userMessageId": "task-1:2:user-message"
+    }
+  ],
+  "runtimeRequests": [],
+  "subagents": [],
+  "thread": {
+    "activeProviderThreadId": "task-1:provider-thread",
+    "archivedAt": null,
+    "branch": "feat/checkout",
+    "createdAt": "2026-10-07T05:21:46.574Z",
+    "createdBy": "user",
+    "creationSource": "web",
+    "deletedAt": null,
+    "forkedFrom": null,
+    "id": "task-1",
+    "interactionMode": "default",
+    "lastVisitedAt": null,
+    "latestTurn": {
+      "assistantMessageId": null,
+      "completedAt": null,
+      "requestedAt": "2026-10-07T05:21:46.574Z",
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "state": "running",
+      "turnId": "task-1:2"
+    },
+    "lineage": {
+      "parentThreadId": null,
+      "relationshipToParent": null,
+      "rootThreadId": "task-1"
+    },
+    "linkedPullRequest": null,
+    "modelSelection": {
+      "instanceId": "claudeAgent",
+      "model": "unknown"
+    },
+    "projectId": "ws-a",
+    "providerInstanceId": "claudeAgent",
+    "pullRequests": [],
+    "runtimeMode": "full-access",
+    "session": null,
+    "settledAt": null,
+    "settledOverride": null,
+    "snoozedAt": null,
+    "snoozedUntil": null,
+    "title": "Fix the checkout",
+    "updatedAt": "2026-10-07T05:21:46.574Z",
+    "visibility": "private",
+    "worktreePath": null
+  },
+  "turnItems": [
+    {
+      "completedAt": "2026-10-07T05:21:46.574Z",
+      "fileName": "src/a.rs",
+      "id": "item:activity:edit-1",
+      "nativeItemRef": null,
+      "newStr": "b",
+      "nodeId": null,
+      "oldStr": "a",
+      "ordinal": 0,
+      "parentItemId": null,
+      "providerThreadId": null,
+      "providerTurnId": null,
+      "runId": "task-1:2",
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "status": "completed",
+      "threadId": "task-1",
+      "title": null,
+      "type": "file_change",
+      "updatedAt": "2026-10-07T05:21:46.574Z"
+    },
+    {
+      "completedAt": "2026-10-07T05:21:46.574Z",
+      "fileName": "src/c.rs",
+      "id": "item:activity:w-1",
+      "nativeItemRef": null,
+      "newStr": "c",
+      "nodeId": null,
+      "ordinal": 1,
+      "parentItemId": null,
+      "providerThreadId": null,
+      "providerTurnId": null,
+      "runId": "task-1:2",
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "status": "completed",
+      "threadId": "task-1",
+      "title": null,
+      "type": "file_change",
+      "updatedAt": "2026-10-07T05:21:46.574Z"
+    },
+    {
+      "changes": [
+        {
+          "operation": "delete",
+          "path": "/w/b.rs"
+        },
+        {
+          "operation": "add",
+          "path": "/w/d.rs"
+        }
+      ],
+      "completedAt": "2026-10-07T05:21:46.574Z",
+      "fileName": "/w/b.rs",
+      "id": "item:activity:codex-edit-1",
+      "nativeItemRef": null,
+      "nodeId": null,
+      "ordinal": 2,
+      "parentItemId": null,
+      "providerThreadId": null,
+      "providerTurnId": null,
+      "runId": "task-1:2",
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "status": "completed",
+      "threadId": "task-1",
+      "title": null,
+      "type": "file_change",
+      "updatedAt": "2026-10-07T05:21:46.574Z"
+    },
+    {
+      "childThreadId": null,
+      "completedAt": "2026-10-07T05:21:46.574Z",
+      "driver": "claudeAgent",
+      "id": "item:activity:agent-1",
+      "nativeItemRef": null,
+      "nodeId": null,
+      "ordinal": 3,
+      "origin": "provider_native",
+      "parentItemId": null,
+      "prompt": "Find",
+      "providerInstanceId": "claudeAgent",
+      "providerThreadId": null,
+      "providerTurnId": null,
+      "result": "Found",
+      "runId": "task-1:2",
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "status": "completed",
+      "subagentId": "agent-1:subagent",
+      "threadId": "task-1",
+      "title": "Look",
+      "type": "subagent",
+      "updatedAt": "2026-10-07T05:21:46.574Z"
+    },
+    {
+      "completedAt": "2026-10-07T05:21:46.574Z",
+      "id": "item:activity:search-1",
+      "nativeItemRef": null,
+      "nodeId": null,
+      "ordinal": 4,
+      "parentItemId": null,
+      "patterns": [
+        "rust"
+      ],
+      "providerThreadId": null,
+      "providerTurnId": null,
+      "runId": "task-1:2",
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "status": "completed",
+      "threadId": "task-1",
+      "title": null,
+      "type": "web_search",
+      "updatedAt": "2026-10-07T05:21:46.574Z"
+    },
+    {
+      "completedAt": "2026-10-07T05:21:46.574Z",
+      "id": "item:activity:read-1",
+      "input": {
+        "file_path": "src/a.rs"
+      },
+      "nativeItemRef": null,
+      "nodeId": null,
+      "ordinal": 5,
+      "output": "text",
+      "parentItemId": null,
+      "providerThreadId": null,
+      "providerTurnId": null,
+      "runId": "task-1:2",
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "status": "completed",
+      "threadId": "task-1",
+      "title": null,
+      "toolName": "Read",
+      "type": "dynamic_tool",
+      "updatedAt": "2026-10-07T05:21:46.574Z"
+    },
+    {
+      "completedAt": "2026-10-07T05:21:46.574Z",
+      "id": "item:activity:mcp-1",
+      "input": {
+        "id": 1
+      },
+      "nativeItemRef": null,
+      "nodeId": null,
+      "ordinal": 6,
+      "output": "x",
+      "parentItemId": null,
+      "providerThreadId": null,
+      "providerTurnId": null,
+      "runId": "task-1:2",
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "status": "completed",
+      "threadId": "task-1",
+      "title": null,
+      "toolName": "mcp__linear__get",
+      "type": "dynamic_tool",
+      "updatedAt": "2026-10-07T05:21:46.574Z"
+    },
+    {
+      "completedAt": "2026-10-07T05:21:46.574Z",
+      "exitCode": 0,
+      "id": "item:activity:shell-1",
+      "input": "ls",
+      "nativeItemRef": null,
+      "nodeId": null,
+      "ordinal": 7,
+      "output": "a",
+      "outputIndicatesFailure": false,
+      "parentItemId": null,
+      "providerThreadId": null,
+      "providerTurnId": null,
+      "runId": "task-1:2",
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "status": "completed",
+      "threadId": "task-1",
+      "title": null,
+      "type": "command_execution",
+      "updatedAt": "2026-10-07T05:21:46.574Z"
+    },
+    {
+      "completedAt": null,
+      "id": "item:activity:read-2",
+      "input": {
+        "file_path": "x"
+      },
+      "nativeItemRef": null,
+      "nodeId": null,
+      "ordinal": 8,
+      "output": null,
+      "parentItemId": null,
+      "providerThreadId": null,
+      "providerTurnId": null,
+      "runId": "task-1:2",
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "status": "running",
+      "threadId": "task-1",
+      "title": null,
+      "toolName": "Read",
+      "type": "dynamic_tool",
+      "updatedAt": "2026-10-07T05:21:46.574Z"
+    },
+    {
+      "completedAt": "2026-10-07T05:21:46.574Z",
+      "id": "item:activity:todo-1:plan",
+      "nativeItemRef": null,
+      "nodeId": null,
+      "ordinal": 9,
+      "parentItemId": null,
+      "planId": "todo-1:plan",
+      "providerThreadId": null,
+      "providerTurnId": null,
+      "runId": "task-1:2",
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "status": "completed",
+      "steps": [
+        {
+          "id": "1",
+          "status": "completed",
+          "text": "Read"
+        },
+        {
+          "id": "2",
+          "status": "running",
+          "text": "Write"
+        }
+      ],
+      "threadId": "task-1",
+      "title": null,
+      "type": "todo_list",
+      "updatedAt": "2026-10-07T05:21:46.574Z"
+    },
+    {
+      "completedAt": null,
+      "id": "item:activity:plan-1",
+      "markdown": "# Do it",
+      "nativeItemRef": null,
+      "nodeId": null,
+      "ordinal": 10,
+      "parentItemId": null,
+      "planId": "plan-1",
+      "providerThreadId": null,
+      "providerTurnId": null,
+      "runId": "task-1:2",
+      "startedAt": "2026-10-07T05:21:46.574Z",
+      "status": "running",
+      "streaming": false,
+      "threadId": "task-1",
+      "title": null,
+      "type": "proposed_plan",
+      "updatedAt": "2026-10-07T05:21:46.574Z"
+    }
+  ],
+  "updatedAt": "2026-10-07T05:21:46.574Z",
+  "visibleTurnItems": [
+    {
+      "item": {
+        "completedAt": "2026-10-07T05:21:46.574Z",
+        "fileName": "src/a.rs",
+        "id": "item:activity:edit-1",
+        "nativeItemRef": null,
+        "newStr": "b",
+        "nodeId": null,
+        "oldStr": "a",
+        "ordinal": 0,
+        "parentItemId": null,
+        "providerThreadId": null,
+        "providerTurnId": null,
+        "runId": "task-1:2",
+        "startedAt": "2026-10-07T05:21:46.574Z",
+        "status": "completed",
+        "threadId": "task-1",
+        "title": null,
+        "type": "file_change",
+        "updatedAt": "2026-10-07T05:21:46.574Z"
+      },
+      "position": 0,
+      "sourceItemId": "item:activity:edit-1",
+      "sourceThreadId": "task-1",
+      "visibility": "local"
+    },
+    {
+      "item": {
+        "completedAt": "2026-10-07T05:21:46.574Z",
+        "fileName": "src/c.rs",
+        "id": "item:activity:w-1",
+        "nativeItemRef": null,
+        "newStr": "c",
+        "nodeId": null,
+        "ordinal": 1,
+        "parentItemId": null,
+        "providerThreadId": null,
+        "providerTurnId": null,
+        "runId": "task-1:2",
+        "startedAt": "2026-10-07T05:21:46.574Z",
+        "status": "completed",
+        "threadId": "task-1",
+        "title": null,
+        "type": "file_change",
+        "updatedAt": "2026-10-07T05:21:46.574Z"
+      },
+      "position": 1,
+      "sourceItemId": "item:activity:w-1",
+      "sourceThreadId": "task-1",
+      "visibility": "local"
+    },
+    {
+      "item": {
+        "changes": [
+          {
+            "operation": "delete",
+            "path": "/w/b.rs"
+          },
+          {
+            "operation": "add",
+            "path": "/w/d.rs"
+          }
+        ],
+        "completedAt": "2026-10-07T05:21:46.574Z",
+        "fileName": "/w/b.rs",
+        "id": "item:activity:codex-edit-1",
+        "nativeItemRef": null,
+        "nodeId": null,
+        "ordinal": 2,
+        "parentItemId": null,
+        "providerThreadId": null,
+        "providerTurnId": null,
+        "runId": "task-1:2",
+        "startedAt": "2026-10-07T05:21:46.574Z",
+        "status": "completed",
+        "threadId": "task-1",
+        "title": null,
+        "type": "file_change",
+        "updatedAt": "2026-10-07T05:21:46.574Z"
+      },
+      "position": 2,
+      "sourceItemId": "item:activity:codex-edit-1",
+      "sourceThreadId": "task-1",
+      "visibility": "local"
+    },
+    {
+      "item": {
+        "childThreadId": null,
+        "completedAt": "2026-10-07T05:21:46.574Z",
+        "driver": "claudeAgent",
+        "id": "item:activity:agent-1",
+        "nativeItemRef": null,
+        "nodeId": null,
+        "ordinal": 3,
+        "origin": "provider_native",
+        "parentItemId": null,
+        "prompt": "Find",
+        "providerInstanceId": "claudeAgent",
+        "providerThreadId": null,
+        "providerTurnId": null,
+        "result": "Found",
+        "runId": "task-1:2",
+        "startedAt": "2026-10-07T05:21:46.574Z",
+        "status": "completed",
+        "subagentId": "agent-1:subagent",
+        "threadId": "task-1",
+        "title": "Look",
+        "type": "subagent",
+        "updatedAt": "2026-10-07T05:21:46.574Z"
+      },
+      "position": 3,
+      "sourceItemId": "item:activity:agent-1",
+      "sourceThreadId": "task-1",
+      "visibility": "local"
+    },
+    {
+      "item": {
+        "completedAt": "2026-10-07T05:21:46.574Z",
+        "id": "item:activity:search-1",
+        "nativeItemRef": null,
+        "nodeId": null,
+        "ordinal": 4,
+        "parentItemId": null,
+        "patterns": [
+          "rust"
+        ],
+        "providerThreadId": null,
+        "providerTurnId": null,
+        "runId": "task-1:2",
+        "startedAt": "2026-10-07T05:21:46.574Z",
+        "status": "completed",
+        "threadId": "task-1",
+        "title": null,
+        "type": "web_search",
+        "updatedAt": "2026-10-07T05:21:46.574Z"
+      },
+      "position": 4,
+      "sourceItemId": "item:activity:search-1",
+      "sourceThreadId": "task-1",
+      "visibility": "local"
+    },
+    {
+      "item": {
+        "completedAt": "2026-10-07T05:21:46.574Z",
+        "id": "item:activity:read-1",
+        "input": {
+          "file_path": "src/a.rs"
+        },
+        "nativeItemRef": null,
+        "nodeId": null,
+        "ordinal": 5,
+        "output": "text",
+        "parentItemId": null,
+        "providerThreadId": null,
+        "providerTurnId": null,
+        "runId": "task-1:2",
+        "startedAt": "2026-10-07T05:21:46.574Z",
+        "status": "completed",
+        "threadId": "task-1",
+        "title": null,
+        "toolName": "Read",
+        "type": "dynamic_tool",
+        "updatedAt": "2026-10-07T05:21:46.574Z"
+      },
+      "position": 5,
+      "sourceItemId": "item:activity:read-1",
+      "sourceThreadId": "task-1",
+      "visibility": "local"
+    },
+    {
+      "item": {
+        "completedAt": "2026-10-07T05:21:46.574Z",
+        "id": "item:activity:mcp-1",
+        "input": {
+          "id": 1
+        },
+        "nativeItemRef": null,
+        "nodeId": null,
+        "ordinal": 6,
+        "output": "x",
+        "parentItemId": null,
+        "providerThreadId": null,
+        "providerTurnId": null,
+        "runId": "task-1:2",
+        "startedAt": "2026-10-07T05:21:46.574Z",
+        "status": "completed",
+        "threadId": "task-1",
+        "title": null,
+        "toolName": "mcp__linear__get",
+        "type": "dynamic_tool",
+        "updatedAt": "2026-10-07T05:21:46.574Z"
+      },
+      "position": 6,
+      "sourceItemId": "item:activity:mcp-1",
+      "sourceThreadId": "task-1",
+      "visibility": "local"
+    },
+    {
+      "item": {
+        "completedAt": "2026-10-07T05:21:46.574Z",
+        "exitCode": 0,
+        "id": "item:activity:shell-1",
+        "input": "ls",
+        "nativeItemRef": null,
+        "nodeId": null,
+        "ordinal": 7,
+        "output": "a",
+        "outputIndicatesFailure": false,
+        "parentItemId": null,
+        "providerThreadId": null,
+        "providerTurnId": null,
+        "runId": "task-1:2",
+        "startedAt": "2026-10-07T05:21:46.574Z",
+        "status": "completed",
+        "threadId": "task-1",
+        "title": null,
+        "type": "command_execution",
+        "updatedAt": "2026-10-07T05:21:46.574Z"
+      },
+      "position": 7,
+      "sourceItemId": "item:activity:shell-1",
+      "sourceThreadId": "task-1",
+      "visibility": "local"
+    },
+    {
+      "item": {
+        "completedAt": null,
+        "id": "item:activity:read-2",
+        "input": {
+          "file_path": "x"
+        },
+        "nativeItemRef": null,
+        "nodeId": null,
+        "ordinal": 8,
+        "output": null,
+        "parentItemId": null,
+        "providerThreadId": null,
+        "providerTurnId": null,
+        "runId": "task-1:2",
+        "startedAt": "2026-10-07T05:21:46.574Z",
+        "status": "running",
+        "threadId": "task-1",
+        "title": null,
+        "toolName": "Read",
+        "type": "dynamic_tool",
+        "updatedAt": "2026-10-07T05:21:46.574Z"
+      },
+      "position": 8,
+      "sourceItemId": "item:activity:read-2",
+      "sourceThreadId": "task-1",
+      "visibility": "local"
+    },
+    {
+      "item": {
+        "completedAt": "2026-10-07T05:21:46.574Z",
+        "id": "item:activity:todo-1:plan",
+        "nativeItemRef": null,
+        "nodeId": null,
+        "ordinal": 9,
+        "parentItemId": null,
+        "planId": "todo-1:plan",
+        "providerThreadId": null,
+        "providerTurnId": null,
+        "runId": "task-1:2",
+        "startedAt": "2026-10-07T05:21:46.574Z",
+        "status": "completed",
+        "steps": [
+          {
+            "id": "1",
+            "status": "completed",
+            "text": "Read"
+          },
+          {
+            "id": "2",
+            "status": "running",
+            "text": "Write"
+          }
+        ],
+        "threadId": "task-1",
+        "title": null,
+        "type": "todo_list",
+        "updatedAt": "2026-10-07T05:21:46.574Z"
+      },
+      "position": 9,
+      "sourceItemId": "item:activity:todo-1:plan",
+      "sourceThreadId": "task-1",
+      "visibility": "local"
+    },
+    {
+      "item": {
+        "completedAt": null,
+        "id": "item:activity:plan-1",
+        "markdown": "# Do it",
+        "nativeItemRef": null,
+        "nodeId": null,
+        "ordinal": 10,
+        "parentItemId": null,
+        "planId": "plan-1",
+        "providerThreadId": null,
+        "providerTurnId": null,
+        "runId": "task-1:2",
+        "startedAt": "2026-10-07T05:21:46.574Z",
+        "status": "running",
+        "streaming": false,
+        "threadId": "task-1",
+        "title": null,
+        "type": "proposed_plan",
+        "updatedAt": "2026-10-07T05:21:46.574Z"
+      },
+      "position": 10,
+      "sourceItemId": "item:activity:plan-1",
+      "sourceThreadId": "task-1",
+      "visibility": "local"
+    }
+  ]
+}

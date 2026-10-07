@@ -26,13 +26,13 @@
  */
 import type {
   EnvironmentId,
-  OrchestrationShellSnapshot,
-  OrchestrationThreadShell,
+  OrchestrationV2ShellSnapshot,
+  OrchestrationV2ThreadShell,
   ScopedThreadRef,
 } from "@t3tools/contracts";
 import { threadKey } from "@t3tools/client-runtime/state/entities";
 import * as Option from "effect/Option";
-import { AsyncResult, Atom } from "effect/unstable/reactivity";
+import { AsyncResult, Atom } from "effect/reactivity";
 
 import { appAtomRegistry } from "../rpc/atomRegistry";
 import { environmentSnapshotAtom } from "../state/shell";
@@ -98,7 +98,7 @@ export function adoptThread(ref: ScopedThreadRef): () => void {
  * already here is filtered out before its atom is touched.
  */
 export function missingThreadIds(
-  snapshot: OrchestrationShellSnapshot,
+  snapshot: OrchestrationV2ShellSnapshot,
   environmentId: EnvironmentId,
   refs: ReadonlyArray<ScopedThreadRef>,
 ): ReadonlyArray<ScopedThreadRef["threadId"]> {
@@ -110,9 +110,9 @@ export function missingThreadIds(
 
 /** Splice adopted rows into a listing snapshot, or hand back the original. */
 export function graftThreadShells(
-  snapshot: OrchestrationShellSnapshot,
-  adopted: ReadonlyArray<OrchestrationThreadShell>,
-): OrchestrationShellSnapshot {
+  snapshot: OrchestrationV2ShellSnapshot,
+  adopted: ReadonlyArray<OrchestrationV2ThreadShell>,
+): OrchestrationV2ShellSnapshot {
   if (adopted.length === 0) {
     return snapshot;
   }
@@ -120,7 +120,7 @@ export function graftThreadShells(
 }
 
 const graftedSnapshotAtom = Atom.family((environmentId: EnvironmentId) =>
-  Atom.make((get): OrchestrationShellSnapshot | null => {
+  Atom.make((get): OrchestrationV2ShellSnapshot | null => {
     const snapshot = get(environmentSnapshotAtom(environmentId));
     // Before the listing has answered there is nothing to be missing from, and
     // asking early would race the snapshot that was about to carry the thread.
@@ -137,7 +137,7 @@ const graftedSnapshotAtom = Atom.family((environmentId: EnvironmentId) =>
         ),
       )
       .map((result) => result?.thread ?? null)
-      .filter((thread): thread is OrchestrationThreadShell => thread !== null);
+      .filter((thread): thread is OrchestrationV2ThreadShell => thread !== null);
     return graftThreadShells(snapshot, adopted);
   }).pipe(Atom.withLabel(`fork-adopted-thread-shells:snapshot:${environmentId}`)),
 );
@@ -150,6 +150,6 @@ const graftedSnapshotAtom = Atom.family((environmentId: EnvironmentId) =>
  */
 export function adoptedEnvironmentSnapshotAtom(
   environmentId: EnvironmentId,
-): Atom.Atom<OrchestrationShellSnapshot | null> {
+): Atom.Atom<OrchestrationV2ShellSnapshot | null> {
   return graftedSnapshotAtom(environmentId);
 }

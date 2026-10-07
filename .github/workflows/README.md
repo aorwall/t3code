@@ -18,10 +18,10 @@ Everything except `build-moatless-t3-image.yml` and `typecheck.yml` must report
 
 ## The two that run
 
-| Workflow                      | Runner                                                   | What it does                                                                                                 |
-| ----------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `build-moatless-t3-image.yml` | `vars.DOCKER_BUILD_RUNNER`, else `staging-runners-large` | Builds `apps/web` into a static nginx image and publishes `aorwall/moatless-t3` for the Moatless Helm chart. |
-| `typecheck.yml`               | `vars.CI_RUNNER`, else `staging-runners-large`           | `pnpm typecheck` over the whole workspace, on every pull request and every push to `main`.                   |
+| Workflow                      | Runner                                                   | What it does                                                                                                                    |
+| ----------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `build-moatless-t3-image.yml` | `vars.DOCKER_BUILD_RUNNER`, else `staging-runners-large` | Builds `apps/web` into a static nginx image and publishes `aorwall/moatless-t3` for the Moatless Helm chart.                    |
+| `typecheck.yml`               | `vars.CI_RUNNER`, else `staging-runners-large`           | `pnpm typecheck` over the whole workspace, then the `@t3tools/contracts` tests, on every pull request and every push to `main`. |
 
 Both are fork-only — upstream has no equivalent of either, so there is nothing
 for a merge to conflict with.
@@ -34,10 +34,12 @@ Pull requests build the image without publishing, which is also the only place
 from reaching `main`. The image build runs `vp build`, which does not typecheck,
 so until this workflow existed nothing did — #109 landed with a
 `ChangeRequestStatusIcon` call missing a required prop and was found by a
-maintainer typechecking by hand. It deliberately stops at types. `pnpm test` is
-about thirteen minutes on a machine larger than this runner, and its parallel
-pass is exactly what evicts a 4 CPU / 8 GiB box, so the test suite is still
-local and targeted rather than something a push proves.
+maintainer typechecking by hand. Past types it runs one package's tests,
+`@t3tools/contracts`, whose Moatless fixtures decode real backend responses
+against the client's schemas. `pnpm test` is about thirteen minutes on a
+machine larger than this runner, and its parallel pass is exactly what evicts a
+4 CPU / 8 GiB box, so the rest of the suite is still local and targeted rather
+than something a push proves.
 
 To publish it needs `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` on this
 repository, with write access to the `aorwall` namespace. Neither is read on the

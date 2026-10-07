@@ -1,12 +1,21 @@
 {
   "thread": {
+    "activeProviderThreadId": null,
+    "activeRunId": null,
     "archivedAt": "2026-09-01T05:33:40.403Z",
     "branch": "main",
     "createdAt": "2026-09-01T05:09:28.640Z",
+    "createdBy": "user",
+    "creationSource": "web",
+    "deletedAt": null,
+    "forkedFrom": null,
     "hasActionableProposedPlan": false,
-    "hasPendingApprovals": false,
-    "hasPendingUserInput": false,
     "id": "6da16506-f1bf-4f20-93de-8b7282a8dace",
+    "interactionMode": "default",
+    "itemCount": 0,
+    "lastError": null,
+    "lastVisitedAt": null,
+    "latestRunId": "6da16506-f1bf-4f20-93de-8b7282a8dace:1",
     "latestTurn": {
       "assistantMessageId": null,
       "completedAt": "2026-09-01T05:09:42.247Z",
@@ -16,11 +25,22 @@
       "turnId": "6da16506-f1bf-4f20-93de-8b7282a8dace:1"
     },
     "latestUserMessageAt": "2026-09-01T05:09:28.656Z",
+    "latestVisibleMessage": null,
+    "lineage": {
+      "parentThreadId": null,
+      "relationshipToParent": null,
+      "rootThreadId": "6da16506-f1bf-4f20-93de-8b7282a8dace"
+    },
+    "linkedPullRequest": null,
     "modelSelection": {
       "instanceId": "claudeAgent",
       "model": "claude-haiku-4-5-20251001"
     },
+    "ownerName": null,
+    "pendingRuntimeRequest": null,
     "projectId": "ws_688b4fb4-e0b7-450c-9888-3ea97caf17c5",
+    "providerInstanceId": "claudeAgent",
+    "pullRequests": [],
     "runtimeMode": "full-access",
     "session": {
       "activeTurnId": null,
@@ -35,8 +55,11 @@
     "settledOverride": null,
     "snoozedAt": null,
     "snoozedUntil": null,
+    "status": "idle",
     "title": "fork-verify-source",
     "updatedAt": "2026-09-01T05:33:40.403Z",
-    "worktreePath": null
+    "visibility": "private",
+    "visibleItemCount": 0,
+    "worktreePath": "/moatless/tasks/6da16506-f1bf-4f20-93de-8b7282a8dace"
   }
 }

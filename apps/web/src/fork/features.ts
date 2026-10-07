@@ -207,6 +207,18 @@ export const FEATURES = {
    * the backend does not dispatch either.
    */
   deviceHub: false,
+  /**
+   * Merging a fork back into the thread it came from, from the Lineage
+   * section. `thread.merge_back` carries the fork's conversation into its
+   * parent as handed-off context; the backend refuses it, since a Moatless
+   * fork shares no conversation store with its parent to merge.
+   */
+  mergeBack: false,
+  /**
+   * The Scheduled tasks settings page. Moatless schedules work as Loops, and
+   * the backend serves none of the `scheduledTasks.*` methods behind it.
+   */
+  scheduledTasks: false,
 } satisfies Record<string, boolean>;
 
 export type FeatureName = keyof typeof FEATURES;
@@ -229,6 +241,7 @@ export const FEATURE_BY_SETTINGS_PATH: Readonly<Record<string, FeatureName>> = {
   "/settings/source-control": "projectManagement",
   "/settings/connections": "connections",
   "/settings/diagnostics": "diagnostics",
+  "/settings/scheduled-tasks": "scheduledTasks",
 };
 
 /** Whether a settings path is reachable in this build. Unlisted paths are. */

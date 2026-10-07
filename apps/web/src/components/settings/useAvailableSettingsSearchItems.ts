@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { AuthAccessWriteScope } from "@t3tools/contracts";
 
+import { usePrimaryCloudLinkState } from "~/cloud/primaryCloudLinkState";
 import { hasCloudPublicConfig } from "~/cloud/publicConfig";
 import { isElectron } from "~/env";
 import { isLocalEnvironmentDisabled } from "~/localEnvironment";
@@ -28,6 +29,10 @@ export function useAvailableSettingsSearchItems(scopeSearch: SettingsScopeSearch
   // Fork: the Version control page lists Forgejo only where the Moatless
   // deployment runs Forgejo. Shared with the panel through one cache entry.
   const { data: moatlessFeatures } = useMoatlessQuery(featureFlagsQuery);
+  const cloudLinkState = usePrimaryCloudLinkState().data;
+  // Same fallback as the Connections row: older servers imply a tunnel from `linked`.
+  const managedTunnelActive =
+    cloudLinkState?.managedTunnelActive ?? cloudLinkState?.linked ?? false;
   const canManageLocalBackend =
     !localEnvironmentDisabled &&
     (isElectron ||
@@ -66,8 +71,10 @@ export function useAvailableSettingsSearchItems(scopeSearch: SettingsScopeSearch
           getThreadAutoSettlementSearchAvailability(environments).eligibleEnvironmentIds.length > 0,
         // Fork: see the Forgejo read above.
         forgejoEnabled: moatlessFeatures?.forgejo_enabled === true,
+        managedTunnelActive,
       }),
     [
+      managedTunnelActive,
       canManageLocalBackend,
       desktopWsl.data,
       desktopWsl.error,

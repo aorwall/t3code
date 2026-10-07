@@ -5,12 +5,14 @@
  * Moatless encodes `TurnId` as `"{taskId}:{turnNumber}"`
  * (`crates/t3code/src/projection.rs`, `turn_id`). The contract types `TurnId`
  * as an opaque branded string, so this parse is Moatless-specific and lives
- * here rather than in a shared, upstream-owned module.
+ * here rather than in a shared, upstream-owned module. A V2 `RunId` from
+ * Moatless is expected to carry the same encoding; one that does not parses
+ * to `null`, which keeps upstream behaviour.
  */
-import type { TurnId } from "@t3tools/contracts";
+import type { RunId, TurnId } from "@t3tools/contracts";
 
 /** The trailing turn number, or `null` when `turnId` does not carry one. */
-export function parseMoatlessTurnNumber(turnId: TurnId): number | null {
+export function parseMoatlessTurnNumber(turnId: TurnId | RunId): number | null {
   const raw = turnId.split(":").at(-1);
   if (raw === undefined || raw.length === 0) {
     return null;

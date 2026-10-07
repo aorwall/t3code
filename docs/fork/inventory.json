@@ -191,7 +191,22 @@
     }
   ],
 
-  "duplicateAddExceptions": [],
+  "duplicateAddExceptions": [
+    {
+      "id": "project-defaults-switch-handlers",
+      "path": "apps/web/src/components/settings/ProjectDefaultsSettings.tsx",
+      "line": "onCheckedChange={(enabled) =>",
+      "reason": "Distinct switches (agent credits upstream, agent browser access fork) that both wrap their handler; not a duplicated statement.",
+      "retiredWhen": "The two lines stop colliding, which the check reports as stale."
+    },
+    {
+      "id": "thread-route-ready-branches",
+      "path": "apps/web/src/threadRoutes.ts",
+      "line": "return \"ready\";",
+      "reason": "Two branches of the route render state (draft thread, server thread) each return ready; not a duplicated statement.",
+      "retiredWhen": "The two lines stop colliding, which the check reports as stale."
+    }
+  ],
 
   "pathPolicy": [
     {
@@ -233,6 +248,15 @@
       "verdict": "converged",
       "delta": "Web Vite Delta",
       "note": "Take upstream, then apply Web Vite Delta."
+    },
+    {
+      "id": "upstream-server-fork-commands",
+      "paths": [
+        "apps/server/src/orchestration-v2/Orchestrator.ts",
+        "apps/server/src/orchestration-v2/testkit/OrchestratorScenario.ts"
+      ],
+      "verdict": "converged",
+      "note": "Take theirs, then re-apply what the fork's contract additions need to compile: the `thread.visibility.set` / `thread.follow` / `thread.unfollow` cases in each command-to-thread-id switch (the dispatcher's default arm refuses them), and the type guard on the subagent `parentTurnItem` lookup, which tsc needs once user-message items carry `origin`."
     },
     {
       "id": "agent-instructions",
@@ -297,9 +321,8 @@
     {
       "id": "third-party-licenses-config",
       "paths": ["third-party-licenses.config.json"],
-      "verdict": "converged",
-      "delta": "mermaid-diagrams",
-      "note": "Upstream owns this file and appends to it as its own bundle changes. Take upstream, then re-append the fork's three `packageOverrides` entries at the end of the array: `khroma` with `license: \"MIT\"` and no notice — it declares no license but ships its own `license` file, so only the declaration is missing — and `fastdom` and `strictdom` with `generatedNotice` MIT and their README copyright lines, since both declare MIT and ship no notice file at all. All three arrive through the fork's `mermaid` edge, which upstream does not have, so upstream will never carry them. Nothing in `verify.mjs` reaches this: the plugin runs in `generateBundle`, so only `pnpm --filter @t3tools/web build` fails when they are missing."
+      "verdict": "theirs",
+      "note": "Upstream owns this file. The fork used to re-append `khroma`, `fastdom` and `strictdom` overrides for its `mermaid` edge; upstream renders mermaid itself since the 2026-10-06 merge and ships all three, so take upstream whole."
     },
     {
       "id": "sandbox-state-surfaces",
@@ -391,9 +414,9 @@
     },
     {
       "id": "server-cli-entrypoint",
-      "paths": ["apps/server/src/bin.ts"],
+      "paths": ["apps/server/src/binCli.ts"],
       "verdict": "converged",
-      "note": "Take upstream, then re-drop the two `pairCommand` lines — the `./cli/pair.ts` import and the entry in the command list. This is the companion to the deletedUpstreamPaths entry for apps/server/src/cli/pair.ts: deleting the module without dropping its two references here is a build failure, and taking upstream's side of this file whole restores a command whose module does not exist. Moatless replaces device pairing, so the command has nothing to talk to. Drop this entry if the fork ever restores cli/pair.ts."
+      "note": "Take upstream, then re-drop the two `pairCommand` lines (the command list lives in binCli.ts since upstream split it out of bin.ts in 2026-10) — the `./cli/pair.ts` import and the entry in the command list. This is the companion to the deletedUpstreamPaths entry for apps/server/src/cli/pair.ts: deleting the module without dropping its two references here is a build failure, and taking upstream's side of this file whole restores a command whose module does not exist. Moatless replaces device pairing, so the command has nothing to talk to. Drop this entry if the fork ever restores cli/pair.ts."
     },
     {
       "id": "fork-registry",
@@ -421,11 +444,8 @@
     {
       "id": "message-origin-upstream-files",
       "paths": [
-        "packages/contracts/src/orchestration.ts",
-        "packages/client-runtime/src/state/threadReducer.ts",
-        "apps/server/src/orchestration/projector.ts",
-        "apps/web/src/components/chat/MessagesTimeline.tsx",
-        "packages/contracts/src/orchestration.test.ts"
+        "packages/contracts/src/orchestrationV2.ts",
+        "apps/web/src/components/chat/MessagesTimeline.tsx"
       ],
       "verdict": "converged",
       "delta": "Message Origin Delta",
@@ -434,14 +454,13 @@
     {
       "id": "thread-fork-upstream-files",
       "paths": [
-        "packages/contracts/src/orchestration.ts",
+        "packages/contracts/src/orchestrationV2.ts",
         "packages/client-runtime/src/operations/commands.ts",
         "packages/client-runtime/src/state/threadCommands.ts",
         "apps/web/src/components/chat/MessagesTimeline.tsx",
         "apps/web/src/components/chat/MessagesTimeline.test.tsx",
         "apps/web/src/components/chat/MessagesTimeline.logic.ts",
-        "apps/web/src/components/ChatView.tsx",
-        "apps/server/src/orchestration/decider.ts"
+        "apps/web/src/components/ChatView.tsx"
       ],
       "verdict": "converged",
       "delta": "Thread Fork Delta",
@@ -459,7 +478,6 @@
     {
       "id": "thread-fork-fork-files",
       "paths": [
-        "apps/server/src/orchestration/decider.threadFork.test.ts",
         "apps/web/src/components/chat/ThreadForkDialog.tsx",
         "apps/web/src/components/chat/ThreadForkDialog.test.tsx"
       ],
@@ -469,7 +487,7 @@
     {
       "id": "thread-visibility-upstream-files",
       "paths": [
-        "packages/contracts/src/orchestration.ts",
+        "packages/contracts/src/orchestrationV2.ts",
         "packages/contracts/src/environment.ts",
         "packages/client-runtime/src/operations/commands.ts",
         "packages/client-runtime/src/state/threadCommands.ts",
@@ -479,8 +497,7 @@
         "apps/web/src/components/Sidebar.tsx",
         "apps/web/src/contextMenuFallback.ts",
         "apps/web/src/components/threadActionMenu.logic.ts",
-        "apps/web/src/components/threadActionMenu.logic.test.ts",
-        "apps/server/src/orchestration/decider.ts"
+        "apps/web/src/components/threadActionMenu.logic.test.ts"
       ],
       "verdict": "converged",
       "delta": "Thread Visibility Delta",
@@ -489,15 +506,14 @@
     {
       "id": "thread-follow-upstream-files",
       "paths": [
-        "packages/contracts/src/orchestration.ts",
+        "packages/contracts/src/orchestrationV2.ts",
         "packages/contracts/src/environment.ts",
         "packages/client-runtime/src/operations/commands.ts",
         "packages/client-runtime/src/state/threadCommands.ts",
         "apps/web/src/state/entities.ts",
         "apps/web/src/hooks/useThreadActions.ts",
         "apps/web/src/hooks/useThreadActionMenu.ts",
-        "apps/web/src/components/Sidebar.tsx",
-        "apps/server/src/orchestration/decider.ts"
+        "apps/web/src/components/Sidebar.tsx"
       ],
       "verdict": "converged",
       "delta": "Thread Follow Delta",
@@ -505,7 +521,7 @@
     },
     {
       "id": "thread-owner-name-upstream-files",
-      "paths": ["packages/contracts/src/orchestration.ts", "apps/web/src/components/Sidebar.tsx"],
+      "paths": ["packages/contracts/src/orchestrationV2.ts", "apps/web/src/components/Sidebar.tsx"],
       "verdict": "converged",
       "delta": "Thread Owner Name Delta",
       "note": "Take upstream, then apply Thread Owner Name Delta. Both paths carry the Thread Visibility and Thread Follow Deltas as well; all must survive. The field is on OrchestrationThreadShell only, beside `visibility`, and the row hunk is two elements inside `SidebarThreadRow`'s card meta line and its tooltip — additive, and outside upstream's aria-hidden icon cluster."
@@ -536,7 +552,7 @@
         ".github/workflows/README.md"
       ],
       "verdict": "ours",
-      "note": "Fork-only workflows. Upstream has no equivalent of either: it publishes no image, and its own typechecking runs inside ci.yml on Blacksmith runners this fork cannot reach. typecheck.yml is the only thing standing between a type error and main — the image build runs `vp build`, which does not typecheck."
+      "note": "Fork-only workflows. Upstream has no equivalent of either: it publishes no image, and its own typechecking runs inside ci.yml on Blacksmith runners this fork cannot reach. typecheck.yml is the only thing standing between a type error and main — the image build runs `vp build`, which does not typecheck — and the only CI run of any tests: the `@t3tools/contracts` package, whose Moatless fixtures decode backend responses."
     },
     {
       "id": "fork-only-loops",
@@ -611,10 +627,10 @@
       "id": "project-scripts-control",
       "paths": [
         "apps/web/src/components/ProjectScriptsControl.tsx",
-        "apps/web/src/components/chat/ChatHeader.tsx"
+        "apps/web/src/components/chat/ThreadDetailsPanel.tsx"
       ],
       "verdict": "converged",
-      "note": "Take upstream, then re-apply three things. In ProjectScriptsControl: the `taskScoped` const and its `task` badge on a row the thread declared, `editable && !taskScoped` on the per-script Edit button, and `editable` on the t3.json import items and every Add action — including the one the collapsed menu offers when a project has no scripts at all. In ChatHeader: the `editable` and `taskScopedScriptIds` props, and `FEATURES.openInEditor &&` folded into `showOpenInPicker` rather than onto the picker, so the collapsed menu's separator and its trigger agree there is no picker. Upstream moves this control's rows between presentations — it extracted `scriptItems` and a portalled `headerActions` on 2026-09-20 for the collapsed header menu — so take upstream's structure and re-apply the gates at whatever anchor it now has. See the `task-scoped-scripts`, `project-script-editing-capability` and `open-in-editor-gate` inventory entries for what each gate is standing in for."
+      "note": "Take upstream, then re-apply three things. In ProjectScriptsControl: the `taskScoped` const and its `task` badge on a row the thread declared, `editable && !taskScoped` on the per-script Edit button, and `editable` on the t3.json import items and every Add action — including the one the collapsed menu offers when a project has no scripts at all. In ThreadDetailsPanel, where upstream moved the header's scripts and Open in controls in 2026-10: the `activeProjectScriptsEditable` and `activeTaskScopedScriptIds` props feeding ProjectScriptsControl's `editable` and `taskScopedScriptIds`, and `FEATURES.openInEditor` on the Open in picker. Upstream moves this control's rows between presentations — it extracted `scriptItems` and a portalled `headerActions` on 2026-09-20 for the collapsed header menu — so take upstream's structure and re-apply the gates at whatever anchor it now has. See the `task-scoped-scripts`, `project-script-editing-capability` and `open-in-editor-gate` inventory entries for what each gate is standing in for."
     },
     {
       "id": "project-script-editor",
@@ -806,11 +822,7 @@
     {
       "id": "subtasks-agents-panel",
       "name": "Subtasks section in the agents panel",
-      "paths": [
-        "apps/web/src/fork/SubtasksSection.tsx",
-        "apps/web/src/state/subtasks.ts",
-        "apps/web/src/components/AgentsPanel.tsx"
-      ],
+      "paths": ["apps/web/src/fork/SubtasksSection.tsx", "apps/web/src/state/subtasks.ts"],
       "mustSurvive": "The agents panel has two sections against Moatless: the child threads this thread spawned, and upstream's subagent fleet. Only AgentsPanel.tsx is upstream's, and the whole fork delta there is one import, one useThreadSubtasks call above the empty-state return, the empty-state copy, and two elements in the scroll area. Everything else lives in fork/SubtasksSection.tsx, which mirrors AgentsPanel's STATUS_VISUALS classes on purpose rather than importing them."
     },
     {
@@ -959,9 +971,7 @@
       "id": "message-origin",
       "name": "Message origin",
       "paths": [
-        "packages/contracts/src/orchestration.ts",
-        "packages/client-runtime/src/state/threadReducer.ts",
-        "apps/server/src/orchestration/projector.ts",
+        "packages/contracts/src/orchestrationV2.ts",
         "apps/web/src/components/chat/MessagesTimeline.tsx",
         "apps/web/src/components/chat/messageOrigin.ts",
         "apps/web/src/components/chat/messageOrigin.test.ts"
@@ -972,7 +982,7 @@
       "id": "thread-fork",
       "name": "Fork a thread from the chat",
       "paths": [
-        "packages/contracts/src/orchestration.ts",
+        "packages/contracts/src/orchestrationV2.ts",
         "packages/client-runtime/src/operations/commands.ts",
         "packages/client-runtime/src/state/threadCommands.ts",
         "apps/web/src/components/chat/MessagesTimeline.tsx",
@@ -981,9 +991,7 @@
         "apps/web/src/components/chat/ThreadForkDialog.test.tsx",
         "apps/web/src/components/ChatView.tsx",
         "apps/web/src/fork/threadFork.ts",
-        "apps/web/src/fork/threadFork.test.ts",
-        "apps/server/src/orchestration/decider.ts",
-        "apps/server/src/orchestration/decider.threadFork.test.ts"
+        "apps/web/src/fork/threadFork.test.ts"
       ],
       "mustSurvive": "Hovering an assistant message with a completed or interrupted turn shows a fork icon beside the copy button. While the thread's newest turn is still running, the icon stays visible on messages from an earlier, already-ended turn and hides only on messages from that running turn itself — cutting below the open turn is allowed, cutting at or into it is not, matching the backend's own gate. `parseMoatlessTurnNumber` (`apps/web/src/fork/threadFork.ts`) reads the turn number off the wire `TurnId` to compare; either turn number failing to parse hides the icon. Clicking it opens a dialog rather than forking immediately: a same-sandbox toggle (on by default — it is the only checkout that resumes this conversation, and the dialog says so when switched off) and an optional first message. There is no branch control — a fork always runs on its source's branch. Confirming mints a thread id client-side, dispatches `thread.fork` with that id, the source thread's id, the hovered message's turn number, and the dialog's fields, then navigates to the new thread the same way starting a thread from a proposed plan does — same wait-for-started-thread and cleanup-on-failure path. Moatless is the only backend that runs `thread.fork`; the bundled server refuses it rather than fabricate a session-less copy."
     },
@@ -991,7 +999,7 @@
       "id": "thread-visibility",
       "name": "Toggle a thread's visibility from its row menu",
       "paths": [
-        "packages/contracts/src/orchestration.ts",
+        "packages/contracts/src/orchestrationV2.ts",
         "packages/contracts/src/environment.ts",
         "packages/client-runtime/src/operations/commands.ts",
         "packages/client-runtime/src/state/threadCommands.ts",
@@ -1001,8 +1009,7 @@
         "apps/web/src/components/Sidebar.tsx",
         "apps/web/src/components/threadActionMenu.logic.ts",
         "apps/web/src/components/threadActionMenu.logic.test.ts",
-        "apps/web/src/contextMenuFallback.ts",
-        "apps/server/src/orchestration/decider.ts"
+        "apps/web/src/contextMenuFallback.ts"
       ],
       "mustSurvive": "Right-clicking a thread in the sidebar, or opening the chat header's menu, offers one visibility item: \"Make public\" on a private thread and \"Make private\" on a public one. The label is the only indicator \u2014 a sidebar row shows no badge \u2014 so it names the level the click moves to, not the one the thread is on. It sits directly above \"Archive thread\" and opens that group, so it carries the group's separator and `archive` gives it up while the item is present. Going public confirms first (`confirmAndSetThreadVisibility` in useThreadActions.ts, shared by both surfaces); going private dispatches straight away. Only that direction confirms because public is not read-only on Moatless: `ScopeContext::can_control` treats it as the whole of the control grant, so a public thread hands every signed-in viewer its turns, terminal, scripts and sandbox. The confirmation copy says so, and must keep saying so. The item is gated on the `threadVisibility` capability, which covers both halves: the `thread.visibility.set` command and the `visibility` field on a thread row that the label reads. A server sending neither leaves the item out rather than showing a control it cannot label. The level is sent whole rather than toggled, so two clients that disagree about the current value cannot flip each other's write. Moatless carries visibility on the Task itself and keeps writes with the owner, so a public reader's toggle is refused; the bundled server refuses the command outright. LegacySidebar.tsx builds its own menu array and is deliberately left without the item."
     },
@@ -1010,7 +1017,7 @@
       "id": "thread-follow",
       "name": "Opening a thread by link follows it; the row menu unfollows it",
       "paths": [
-        "packages/contracts/src/orchestration.ts",
+        "packages/contracts/src/orchestrationV2.ts",
         "packages/contracts/src/environment.ts",
         "packages/client-runtime/src/operations/commands.ts",
         "packages/client-runtime/src/state/threadCommands.ts",
@@ -1022,8 +1029,7 @@
         "apps/web/src/components/Sidebar.tsx",
         "apps/web/src/components/threadActionMenu.logic.ts",
         "apps/web/src/components/threadActionMenu.logic.test.ts",
-        "apps/web/src/contextMenuFallback.ts",
-        "apps/server/src/orchestration/decider.ts"
+        "apps/web/src/contextMenuFallback.ts"
       ],
       "guard": {
         "symbol": "useAutoFollowThread",
@@ -1034,7 +1040,7 @@
     {
       "id": "thread-owner-name",
       "name": "A sidebar row names its owner when that is somebody else",
-      "paths": ["packages/contracts/src/orchestration.ts", "apps/web/src/components/Sidebar.tsx"],
+      "paths": ["packages/contracts/src/orchestrationV2.ts", "apps/web/src/components/Sidebar.tsx"],
       "mustSurvive": "A Moatless sidebar lists work other people started — a public Task, a Task an admin can read, a Task followed by opening its link — so a row that is not yours says whose it is. `ownerName` on `OrchestrationThreadShell` carries the display name, and the card row shows it on the meta line directly left of the environment and provider glyphs, truncated, with the whole name on the owner line of the row tooltip. The server decides when to send it: the client is never told which user it is signed in as, so Moatless emits the name only when the Task's owner — the access rule's own `COALESCE(owner_user_id, created_by)` — is not the viewer, and null otherwise. Absence and null both mean \"yours, or a server that does not send it\", so no capability gates this: a row with no name renders exactly as it did before. The slim settled and snoozed rows are deliberately left without it; they carry no provider glyph either, and their point is a quiet tail."
     },
     {
@@ -1059,7 +1065,7 @@
         "apps/server/src/ws.ts",
         "apps/server/src/auth/RpcAuthorization.ts",
         "apps/web/src/components/ChatView.tsx",
-        "packages/contracts/src/orchestration.ts"
+        "packages/contracts/src/orchestrationV2.ts"
       ],
       "mustSurvive": "scripts.run asks the environment to run a project's script in its own sandbox, hosted in a named terminal, returning that terminal and the URL of any port it publishes. Gated on the workspaceScripts capability: absent, runProjectScript keeps upstream's client-driven terminal.open + terminal.write path byte-for-byte, so a T3 server behaves exactly as upstream. The rpc.ts union entry is the one documented exception to unsupported-methods.mjs's DROP advice — it is upstream's OWN server that refuses this method, not Moatless, so the derivation reports it backwards once the backend half publishes. Keep it while apps/server answers with UnsupportedMethodError; see 'A script runs on the backend' in gaps.md. A SandboxNotRunningError from scripts.run is answered rather than reported: startSandboxForScript starts the thread's sandbox, polls sandbox.status until ready, and re-runs once. Upstream has nothing to start, so a merge that loses this turns an idle-reaped sandbox back into a dead end. A script run from a draft has no thread to run in, so runProjectScript sends thread.create under the id the draft already holds before anything else, carrying the fork-only provision: true on ThreadCreateCommand in orchestration.ts. Moatless gives a thread created with no first message no sandbox until a turn is sent, and a script run is not a turn; without the flag the run reaches a thread that has nowhere to run, and every script pays startSandboxForScript's start-and-poll before it does anything. The draft route navigates to the created thread on its own, so the create is the whole delta. That create takes its modelSelection from the composer's send context, not from the draft thread, which carries the project default or the empty-model NO_PROVIDER_MODEL_SELECTION placeholder: the placeholder fails the contract's own TrimmedNonEmptyString before dispatch, and Moatless fixes a thread's agent at creation and refuses any later switch, so the create has to pin the agent the person's first message will ask for. Upstream's chat code-block Run button (#13060, `onRunShellCommand`) runs an ad-hoc command through runProjectScript under the synthetic id `chat-code-block`; scripts.run resolves only declared ids and the backend answers ScriptNotFound, so ChatView passes `onRunShellCommand` only when `!supportsWorkspaceScripts`. Drop that condition once scripts.run accepts an inline command.",
       "guard": {
@@ -1113,13 +1119,13 @@
         "apps/web/src/components/settings/ProjectActionsSettings.tsx",
         "apps/web/src/components/settings/ProjectActionsList.tsx",
         "apps/web/src/components/ChatView.tsx",
-        "packages/contracts/src/orchestration.ts"
+        "packages/contracts/src/orchestrationProject.ts"
       ],
       "mustSurvive": "A project's scripts can be edited only when the backend says so per workspace: a git-synced workspace owns its scripts in .moatless/workspaces.json and is projected read-only, a manual one is writable. That answer rides the wire as scriptsEditable on OrchestrationProject / OrchestrationProjectShell, threaded to ProjectScriptsControl and the settings Actions section as an `editable` prop that gates the per-script Edit button, the t3.json import items and the Add action. Upstream extracted the row list into ProjectActionsList.tsx on 2026-09-07, so the Edit gate now lives there behind an `editable` prop that defaults to upstream's always-editable behavior; upstream then moved the Actions section itself out of ProjectSettingsPanel.tsx into ProjectActionsSettings.tsx on 2026-09-10, which is where scriptsEditable is now derived and where upstream's Reset button, which writes, is gated. It is NOT a FEATURES flag — projectScriptEditing was deleted when the capability arrived, because the answer varies per deployment and per workspace. Running a script stays ungated: a read-only workspace still runs what it declares, and ProjectScriptsControl's no-primary-script branch returns null only when editing is also off. A merge that reintroduces FEATURES.projectScriptEditing or an always-on Add action has taken upstream's side back.",
       "guard": {
         "symbol": "scriptsEditable",
         "files": [
-          "packages/contracts/src/orchestration.ts",
+          "packages/contracts/src/orchestrationProject.ts",
           "apps/web/src/components/settings/ProjectActionsSettings.tsx"
         ]
       }
@@ -1133,7 +1139,7 @@
         "apps/web/src/components/settings/ProjectActionsSettings.tsx",
         "apps/web/src/projectScripts.ts",
         "apps/web/src/projectScripts.test.ts",
-        "packages/contracts/src/orchestration.ts"
+        "packages/contracts/src/orchestrationV2.ts"
       ],
       "mustSurvive": "The script editor sets a numeric Port, not upstream's free-text Preview URL: a script in a remote sandbox has no localhost to point at, so the host publishes the port and returns the real external URL when the script runs (scripts.run). ProjectScript carries port (1..65535); the editor's Port input replaces the Preview URL input and auto-open toggle, and buildProjectScript derives autoOpenPreview from the port's presence. previewUrl / autoOpenPreview stay on the contract for wire-compatibility but the fork's UI never writes a URL. The row badge in ProjectActionsList.tsx reads `preview · :<port>` where upstream reads `preview · desktop only` off previewUrl. Importing a t3.json script in ProjectActionsSettings.tsx runs the free-text previewUrl through portFromPreviewUrl so the import keeps a port rather than a URL. A merge that restores the Preview URL input has dropped the port.",
       "guard": {
@@ -1256,7 +1262,7 @@
       "id": "open-in-editor-gate",
       "name": "Open-in-an-external-editor gates",
       "paths": [
-        "apps/web/src/components/chat/ChatHeader.tsx",
+        "apps/web/src/components/chat/ThreadDetailsPanel.tsx",
         "apps/web/src/components/files/FilePreviewPanel.tsx",
         "apps/web/src/components/ChatMarkdown.tsx",
         "apps/web/src/components/ChatMarkdown.test.tsx",
@@ -1265,11 +1271,11 @@
         "apps/web/src/components/DiffPanel.tsx",
         "apps/web/src/fork/features.ts"
       ],
-      "mustSurvive": "No surface offers to open a workspace path in an external editor. shell.openInEditor runs an editor on the machine the workspace is on, and here that machine is a sandbox in a cluster, so even a call that succeeded opens a window nobody is sitting at. FEATURES.openInEditor holds every way in, and each is one expression: the Open in picker in ChatHeader.tsx and the same picker in a file preview's header in files/FilePreviewPanel.tsx; canUseShellActions in ChatMarkdown.tsx, which carries a path link's Open in menu item, its modifier-click and its reveal-in-a-file-manager action together — gated at that call site deliberately, since ChatMarkdown.test.tsx calls the pure canUseMarkdownFileShellActions directly, and that file mocks the flag on, because a link left with no action at all renders as a menu button rather than an anchor and upstream's Windows-path assertions read the href; the path branch of a terminal link activation in ThreadTerminalDrawer.tsx, where a URL still opens; and the commit dialog's changed-file row in GitActionsControl.tsx, disabled rather than rewritten because an editor open is the row's only action. DiffPanel.tsx's openDiffFilePrimaryAction callback is reached only without a thread ref, where upstream falls back to an editor instead of the file panel. Three other callers need no gate: KeybindingsSettings and DiagnosticsSettings sit behind serverAdministration and diagnostics, and __root.tsx's \"Open keybindings.json\" toast only raises on a keybindingsUpdated event the backend never sends. What stays is the file panel, which a transcript path link and a diff's file already open. Count the call sites every merge: a new one is a new way in. Drop the flag, all six gates and that mock together if a person's own editor ever reaches the workspace.",
+      "mustSurvive": "No surface offers to open a workspace path in an external editor. shell.openInEditor runs an editor on the machine the workspace is on, and here that machine is a sandbox in a cluster, so even a call that succeeded opens a window nobody is sitting at. FEATURES.openInEditor holds every way in, and each is one expression: the Open in picker in chat/ThreadDetailsPanel.tsx (upstream moved it out of ChatHeader.tsx in 2026-10) and the same picker in a file preview's header in files/FilePreviewPanel.tsx; canUseShellActions in ChatMarkdown.tsx, which carries a path link's Open in menu item, its modifier-click and its reveal-in-a-file-manager action together — gated at that call site deliberately, since ChatMarkdown.test.tsx calls the pure canUseMarkdownFileShellActions directly, and that file mocks the flag on, because a link left with no action at all renders as a menu button rather than an anchor and upstream's Windows-path assertions read the href; the path branch of a terminal link activation in ThreadTerminalDrawer.tsx, where a URL still opens; and the commit dialog's changed-file row in GitActionsControl.tsx, disabled rather than rewritten because an editor open is the row's only action. DiffPanel.tsx's openDiffFilePrimaryAction callback is reached only without a thread ref, where upstream falls back to an editor instead of the file panel. Three other callers need no gate: KeybindingsSettings and DiagnosticsSettings sit behind serverAdministration and diagnostics, and __root.tsx's \"Open keybindings.json\" toast only raises on a keybindingsUpdated event the backend never sends. What stays is the file panel, which a transcript path link and a diff's file already open. Count the call sites every merge: a new one is a new way in. Drop the flag, all six gates and that mock together if a person's own editor ever reaches the workspace.",
       "guard": {
         "symbol": "FEATURES.openInEditor",
         "files": [
-          "apps/web/src/components/chat/ChatHeader.tsx",
+          "apps/web/src/components/chat/ThreadDetailsPanel.tsx",
           "apps/web/src/components/files/FilePreviewPanel.tsx",
           "apps/web/src/components/ChatMarkdown.tsx",
           "apps/web/src/components/ThreadTerminalDrawer.tsx",

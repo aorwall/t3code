@@ -1,10 +1,10 @@
 import type { DesktopBridge } from "@t3tools/contracts";
 import { afterEach, describe, expect, it, vi } from "@effect/vitest";
 import * as Effect from "effect/Effect";
-import { HttpBody, HttpClient } from "effect/unstable/http";
+import { HttpBody, HttpClient } from "effect/http";
 
 import { __resetDesktopPrimaryAuthForTests } from "./desktopAuth";
-import { makePrimaryEnvironmentHttpLayer } from "./httpLayer";
+import * as PrimaryEnvironmentHttpLayer from "./httpLayer";
 
 describe("primary environment HTTP layer", { concurrent: false }, () => {
   afterEach(() => {
@@ -34,7 +34,7 @@ describe("primary environment HTTP layer", { concurrent: false }, () => {
       const request = new Request(fetchMock.mock.calls[0]?.[0], fetchMock.mock.calls[0]?.[1]);
       expect(request.credentials).toBe("include");
       expect(request.headers.get("authorization")).toBeNull();
-    }).pipe(Effect.provide(makePrimaryEnvironmentHttpLayer()));
+    }).pipe(Effect.provide(PrimaryEnvironmentHttpLayer.layerForCurrentOrigin()));
   });
 
   // Fork: without this header Moatless 403s every unsafe cookie-authenticated
@@ -63,7 +63,7 @@ describe("primary environment HTTP layer", { concurrent: false }, () => {
 
       const request = new Request(fetchMock.mock.calls[0]?.[0], fetchMock.mock.calls[0]?.[1]);
       expect(request.headers.get("x-csrf-token")).toBe("csrf-token-value");
-    }).pipe(Effect.provide(makePrimaryEnvironmentHttpLayer()));
+    }).pipe(Effect.provide(PrimaryEnvironmentHttpLayer.layerForCurrentOrigin()));
   });
 
   it.effect("uses bearer auth without cookies for desktop-managed primaries", () => {
@@ -91,6 +91,6 @@ describe("primary environment HTTP layer", { concurrent: false }, () => {
       const request = new Request(fetchMock.mock.calls[0]?.[0], fetchMock.mock.calls[0]?.[1]);
       expect(request.credentials).not.toBe("include");
       expect(request.headers.get("authorization")).toBe("Bearer desktop-bearer-token");
-    }).pipe(Effect.provide(makePrimaryEnvironmentHttpLayer()));
+    }).pipe(Effect.provide(PrimaryEnvironmentHttpLayer.layerForCurrentOrigin()));
   });
 });

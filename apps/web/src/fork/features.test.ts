@@ -15,6 +15,7 @@ import connectionsRouteSource from "../routes/settings.connections.tsx?raw";
 import diagnosticsRouteSource from "../routes/settings.diagnostics.tsx?raw";
 import keybindingsRouteSource from "../routes/settings.keybindings.tsx?raw";
 import providersRouteSource from "../routes/settings.providers.tsx?raw";
+import scheduledTasksRouteSource from "../routes/settings.scheduled-tasks.tsx?raw";
 import snapShotRouteSource from "../routes/settings.snap-shot.tsx?raw";
 import sourceControlRouteSource from "../routes/settings.source-control.tsx?raw";
 import {
@@ -32,6 +33,7 @@ const ROUTE_SOURCES: Readonly<Record<string, string>> = {
   "/settings/source-control": sourceControlRouteSource,
   "/settings/connections": connectionsRouteSource,
   "/settings/diagnostics": diagnosticsRouteSource,
+  "/settings/scheduled-tasks": scheduledTasksRouteSource,
 };
 
 describe("the settings path map", () => {
@@ -132,15 +134,13 @@ describe("the inventory's delta guards", () => {
     expect(guards.length).toBeGreaterThan(0);
   });
 
-  for (const { id, mustSurvive, file, symbol } of guards) {
-    it(`${id}: ${symbol} survives in ${file}`, () => {
-      const source = webSources[file];
-      expect(
-        source,
-        `docs/fork/inventory.json guards ${file}, which no longer exists. ` +
-          `Upstream moved it; re-point the ${id} entry at its new home.`,
-      ).toBeDefined();
-      expect(source, mustSurvive).toContain(symbol);
-    });
-  }
+  it.each(guards)("$id: $symbol survives in $file", ({ id, mustSurvive, file, symbol }) => {
+    const source = webSources[file];
+    expect(
+      source,
+      `docs/fork/inventory.json guards ${file}, which no longer exists. ` +
+        `Upstream moved it; re-point the ${id} entry at its new home.`,
+    ).toBeDefined();
+    expect(source, mustSurvive).toContain(symbol);
+  });
 });

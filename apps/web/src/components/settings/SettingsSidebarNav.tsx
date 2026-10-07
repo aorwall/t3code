@@ -14,6 +14,7 @@ import {
   BlocksIcon,
   BotIcon,
   createLucideIcon,
+  CalendarClockIcon,
   GitBranchIcon,
   HardDriveIcon,
   KeyRoundIcon,
@@ -98,6 +99,7 @@ const SETTINGS_SECTION_ICONS: Readonly<
   // "/settings/source-control", which FEATURE_BY_SETTINGS_PATH gates off here.
   "/settings/version-control": GitBranchIcon,
   "/settings/browser": BlocksIcon,
+  "/settings/scheduled-tasks": CalendarClockIcon,
   "/settings/source-control": GitBranchIcon,
   "/settings/storage": HardDriveIcon,
   "/settings/connections": Link2Icon,
