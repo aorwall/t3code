@@ -76,6 +76,7 @@ jobs:
       # the TypeScript binary `pnpm typecheck` then runs. Run it by hand.
       - run: pnpm run prepare
 
-      - run: pnpm typecheck
-
+      # Before the typecheck, so a runner lost to its memory still reports these.
       - run: pnpm --filter @t3tools/contracts test
+
+      - run: pnpm typecheck
