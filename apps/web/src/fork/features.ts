@@ -145,6 +145,9 @@ export const FEATURES = {
    * worktree" and the "Previous worktree" hop — name a place the backend
    * cannot put a thread, and the branch selector behind them would offer to
    * pick a base ref for a worktree nobody cuts.
+   *
+   * Off also swaps the thread details panel's workspace row for a sandbox row:
+   * the sandbox's state and a menu to start, stop, restart or redeploy it.
    */
   worktreeSelection: false,
   /**

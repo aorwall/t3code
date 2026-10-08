@@ -45,7 +45,6 @@ import {
 } from "lucide-react";
 import { useCallback, useState } from "react";
 
-import { requestConfirmDialog } from "~/confirmDialog";
 import { cn } from "~/lib/utils";
 import type { EnvironmentQueryView } from "~/state/query";
 import { sandboxEnvironment } from "~/state/sandbox";
@@ -70,18 +69,17 @@ import {
   formatMemory,
   IDLE_TIMEOUT_CHOICES,
   imageUpdateAvailable,
-  SANDBOX_ACTION_CONFIRMATIONS,
-  SANDBOX_CONFIRM_ACTIONS,
   sandboxActionsFor,
   shortImageRef,
   totalContainerResources,
   type SandboxAction,
 } from "./sandboxPanelFormat";
+import { useSandboxAction } from "./useSandboxAction";
 import { useSandboxAvailability } from "./useSandboxAvailability";
 import { useSandboxDetail } from "./useSandboxDetail";
 import { commandEndedBadly, commandStateLabel, formatElapsed } from "./commandDisplay";
 
-const STATUS_PRESENTATION: Record<
+export const STATUS_PRESENTATION: Record<
   SandboxRuntimeStatus,
   { readonly label: string; readonly tone: "success" | "warning" | "danger" | "muted" | "info" }
 > = {
@@ -108,7 +106,7 @@ const CONTAINER_TONES = {
   unknown: "muted",
 } as const;
 
-const ACTION_LABELS: Record<SandboxAction, string> = {
+export const ACTION_LABELS: Record<SandboxAction, string> = {
   start: "Start",
   stop: "Stop",
   restart: "Restart",
@@ -116,7 +114,7 @@ const ACTION_LABELS: Record<SandboxAction, string> = {
   cleanup: "Cleanup",
 };
 
-const ACTION_ICONS = {
+export const ACTION_ICONS = {
   start: PlayIcon,
   stop: SquareIcon,
   restart: RotateCcwIcon,
@@ -129,7 +127,7 @@ const ACTION_ICONS = {
  * the two that need confirming sit last so a mis-aimed click lands on a
  * reversible one.
  */
-const ACTION_ORDER: ReadonlyArray<SandboxAction> = [
+export const ACTION_ORDER: ReadonlyArray<SandboxAction> = [
   "start",
   "stop",
   "restart",
@@ -224,48 +222,16 @@ function StatusSection({
   readonly status: EnvironmentQueryView<SandboxStatusResult>;
   readonly detail: ReturnType<typeof useSandboxDetail>;
 }) {
-  const start = useAtomCommand(sandboxEnvironment.start, { reportFailure: false });
-  const stop = useAtomCommand(sandboxEnvironment.stop, { reportFailure: false });
-  const restart = useAtomCommand(sandboxEnvironment.restart, { reportFailure: false });
-  const redeploy = useAtomCommand(sandboxEnvironment.redeploy, { reportFailure: false });
-  const cleanup = useAtomCommand(sandboxEnvironment.cleanup, { reportFailure: false });
-  const [pending, setPending] = useState<SandboxAction | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
-
   const sandboxStatus = status.data?.sandboxStatus ?? null;
   const presentation = sandboxStatus ? STATUS_PRESENTATION[sandboxStatus] : null;
   const available = sandboxActionsFor(status.isPending ? null : sandboxStatus);
-  const commands = { start, stop, restart, redeploy, cleanup };
   const { refresh: refreshStatus } = status;
   const { refresh: refreshDetail } = detail;
-
-  const run = useCallback(
-    async (action: SandboxAction) => {
-      if (SANDBOX_CONFIRM_ACTIONS.has(action)) {
-        // Undefined means no themed host is mounted, and the click itself was
-        // the request; the same reading `ServerUpdateAction` takes.
-        const confirmed =
-          (await requestConfirmDialog(SANDBOX_ACTION_CONFIRMATIONS[action] ?? "", {
-            variant: "destructive",
-          })) ?? true;
-        if (!confirmed) return;
-      }
-      setActionError(null);
-      setPending(action);
-      const result = await commands[action]({
-        environmentId: threadRef.environmentId,
-        input: { threadId: threadRef.threadId },
-      });
-      setPending(null);
-      refreshStatus();
-      refreshDetail();
-      if (result._tag === "Success" || isAtomCommandInterrupted(result)) return;
-      setActionError(failureMessage(squashAtomCommandFailure(result)));
-    },
-    // The five commands are stable atom bindings; only the thread they are
-    // aimed at and the two refreshes change.
-    [refreshDetail, refreshStatus, threadRef.environmentId, threadRef.threadId],
-  );
+  const refresh = useCallback(() => {
+    refreshStatus();
+    refreshDetail();
+  }, [refreshDetail, refreshStatus]);
+  const { run, pending, error: actionError } = useSandboxAction(threadRef, refresh);
 
   const offered = ACTION_ORDER.filter((action) => available.has(action));
 
@@ -277,10 +243,7 @@ function StatusSection({
           aria-label="Refresh sandbox status"
           size="icon-micro"
           variant="ghost-muted"
-          onClick={() => {
-            refreshStatus();
-            refreshDetail();
-          }}
+          onClick={refresh}
         >
           <RefreshCwIcon />
         </Button>

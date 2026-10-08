@@ -7,6 +7,8 @@ import type {
 } from "@t3tools/contracts";
 
 import { FEATURES } from "../../fork/features";
+// Fork: the sandbox row that stands in for the workspace row.
+import { SandboxDetailsRow } from "../sandbox/SandboxDetailsRow";
 
 import type { DraftId } from "../../composerDraftStore";
 import { useT3ProjectFileScripts } from "../../hooks/useT3ProjectFileScripts";
@@ -112,7 +114,8 @@ export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
             showHeading={false}
           >
             <div className="flex flex-col">
-              {density === "full" ? (
+              {/* Fork: added conjunct — no worktree to pick, the sandbox row stands in. */}
+              {density === "full" && FEATURES.worktreeSelection ? (
                 <BranchToolbar
                   layout="panel"
                   panelSection="workspace"
@@ -121,6 +124,12 @@ export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
                   autoEnvironmentLabel={props.autoEnvironmentLabel}
                   onAutoEnvironment={props.onAutoEnvironment}
                   {...branchToolbarProps}
+                />
+              ) : null}
+              {/* Fork: the thread's sandbox, one line with its lifecycle actions. */}
+              {!FEATURES.worktreeSelection && !props.draftId ? (
+                <SandboxDetailsRow
+                  threadRef={{ environmentId: props.environmentId, threadId: props.threadId }}
                 />
               ) : null}
 

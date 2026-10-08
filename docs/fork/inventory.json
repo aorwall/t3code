@@ -1197,6 +1197,20 @@
       }
     },
     {
+      "id": "thread-details-sandbox-row",
+      "name": "Sandbox row in thread details",
+      "paths": [
+        "apps/web/src/components/chat/ThreadDetailsPanel.tsx",
+        "apps/web/src/components/sandbox/SandboxDetailsRow.tsx",
+        "apps/web/src/fork/features.ts"
+      ],
+      "mustSurvive": "With FEATURES.worktreeSelection off, the thread details panel shows no workspace row (BranchToolbar panelSection=\"workspace\", upstream's RunContextSelector), which against Moatless only names the one environment and a project folder no worktree is ever cut from. SandboxDetailsRow stands in its place on every non-draft thread at every density: the sandbox's state in one line and a menu of the start, stop, restart and redeploy actions sandboxActionsFor allows, restart and redeploy only where the server advertises sandboxDetail. Cleanup is left to the Sandbox panel. Two hunks in ThreadDetailsPanel.tsx: an added conjunct on the workspace BranchToolbar mount and the SandboxDetailsRow element after it. Drop both with the flag once Moatless serves worktrees.",
+      "guard": {
+        "symbol": "SandboxDetailsRow",
+        "files": ["apps/web/src/components/chat/ThreadDetailsPanel.tsx"]
+      }
+    },
+    {
       "id": "navigation-gates",
       "name": "Navigation gates",
       "paths": [
