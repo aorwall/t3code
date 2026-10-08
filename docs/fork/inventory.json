@@ -893,9 +893,11 @@
       "name": "Send while the sandbox starts",
       "paths": [
         "apps/web/src/components/ChatView.logic.ts",
-        "apps/web/src/components/ChatView.logic.test.ts"
+        "apps/web/src/components/ChatView.logic.test.ts",
+        "apps/web/src/components/ChatView.tsx",
+        "apps/web/src/components/chat/MessagesTimeline.tsx"
       ],
-      "mustSurvive": "Moatless reports a starting sandbox as session status starting, which derivePhase maps to connecting, and a cold start holds that for minutes. Upstream's hasServerAcknowledgedLocalDispatch refuses to acknowledge anything while connecting, so the composer would stay on Sending until the sandbox is up. The fork acknowledges the dispatch once a new user message projects: Moatless has already put it in the Task inbox, so the composer frees up and further sends go to the inbox too. Drop this when upstream acknowledges a projected message during connecting."
+      "mustSurvive": "Moatless reports a starting sandbox as session status starting, which derivePhase maps to connecting, and a cold start holds that for minutes. Upstream's hasServerAcknowledgedLocalDispatch refuses to acknowledge anything while connecting, so the composer would stay on Sending until the sandbox is up. The fork acknowledges the dispatch once a new user message projects: Moatless has already put it in the Task inbox, so the composer frees up and further sends go to the inbox too. Once the composer frees up, isWorking is false while the phase is still connecting, so ChatView passes isStartingRun to MessagesTimeline, which keeps the working row up and labels it Starting sandbox… instead of showing nothing under the sent message. Drop this when upstream acknowledges a projected message during connecting."
     },
     {
       "id": "sandbox-panel-surface",

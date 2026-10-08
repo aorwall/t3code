@@ -371,6 +371,8 @@ interface TimelineRowActivityState {
   /** The agent waits on an approval or an answer from the user. */
   awaitingUser: boolean;
   isPreparingWorktree: boolean;
+  // Fork: see `MessagesTimelineProps.isStartingRun`.
+  isStartingRun: boolean;
   latestRunId: RunId | null;
   /**
    * A worktree setup whose script is still running after the agent took
@@ -465,6 +467,8 @@ interface MessagesTimelineProps {
   onWorktreeSetupWorkLocally?: () => void;
   onOpenWorktreeSetupTerminal?: (terminalId: string) => void;
   isPreparingWorktree?: boolean;
+  // Fork: a run waits for its Moatless sandbox to start before its turn begins.
+  isStartingRun?: boolean;
   isCompacting?: boolean;
   /** The agent waits on an approval or an answer from the user. */
   awaitingUser?: boolean;
@@ -556,6 +560,8 @@ export const MessagesTimeline = memo(function MessagesTimeline({
   onWorktreeSetupWorkLocally,
   onOpenWorktreeSetupTerminal,
   isPreparingWorktree = false,
+  // Fork: see `isStartingRun` in the props.
+  isStartingRun = false,
   isCompacting = false,
   awaitingUser = false,
   listRef,
@@ -1307,6 +1313,8 @@ export const MessagesTimeline = memo(function MessagesTimeline({
       activeTurnInProgress,
       awaitingUser,
       isPreparingWorktree,
+      // Fork: see `isStartingRun` in the props.
+      isStartingRun,
       latestRunId: latestRun?.runId ?? null,
     }),
     [
@@ -1316,6 +1324,8 @@ export const MessagesTimeline = memo(function MessagesTimeline({
       activeTurnInProgress,
       isPreparingWorktree,
       isRevertingCheckpoint,
+      // Fork: see `isStartingRun` in the props.
+      isStartingRun,
       isWorking,
       latestRun?.runId,
     ],
@@ -3590,13 +3600,17 @@ function toolIconAcceptsTint(
 }
 
 function WorkingTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "working" }> }) {
-  const { isCompacting, isPreparingWorktree, backgroundWorktreeSetup } =
+  // Fork: `isStartingRun` labels the row while the run's sandbox starts.
+  const { isCompacting, isPreparingWorktree, isStartingRun, backgroundWorktreeSetup } =
     use(TimelineRowActivityCtx);
   // One span for every label so the setup-to-working handoff swaps text in
   // place instead of remounting the row.
-  const shimmer = isPreparingWorktree || isCompacting;
+  const shimmer = isPreparingWorktree || isCompacting || isStartingRun;
   const label = isPreparingWorktree ? (
     "Setting up worktree…"
+  ) : isStartingRun ? (
+    // Fork: see `isStartingRun`.
+    "Starting sandbox…"
   ) : isCompacting ? (
     <CompactingLabel />
   ) : row.createdAt ? (
@@ -3677,9 +3691,10 @@ function CompactingLabel() {
 
 function ThinkingTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "thinking" }> }) {
   const ctx = use(TimelineRowCtx);
-  const { isCompacting, isPreparingWorktree } = use(TimelineRowActivityCtx);
+  // Fork: a starting sandbox is not thinking yet.
+  const { isCompacting, isPreparingWorktree, isStartingRun } = use(TimelineRowActivityCtx);
   // Reserve the activity row during setup so the handoff keeps the same height.
-  if (isPreparingWorktree || isCompacting) return <WorkLogRow label="" />;
+  if (isPreparingWorktree || isCompacting || isStartingRun) return <WorkLogRow label="" />;
   const activity = <LiveActivityRow label="Thinking" iconName="brain" active shimmer />;
   const { groupId } = row;
   if (groupId === undefined) return activity;

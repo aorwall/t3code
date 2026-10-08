@@ -3684,6 +3684,10 @@ export default function ChatView(props: ChatViewProps) {
     isConnecting ||
     isCompacting ||
     runlessWorkStartedAt !== null;
+  // Fork: a Moatless run stays `connecting` while its sandbox starts, often for
+  // minutes, and a send stops counting as busy once the server has the message
+  // (`hasServerAcknowledgedLocalDispatch`). The timeline shows this as working.
+  const isStartingRun = phase === "connecting" && !isWorking;
   const activeContextWindow = useMemo(
     () =>
       deriveLatestContextWindowSnapshot(
@@ -11769,7 +11773,9 @@ export default function ChatView(props: ChatViewProps) {
                         : {}),
                     }
                   : {})}
-                isWorking={!paintOnlyDisplayedTimeline && isWorking}
+                // Fork: keep the working row up while the run's sandbox starts.
+                isWorking={!paintOnlyDisplayedTimeline && (isWorking || isStartingRun)}
+                isStartingRun={!paintOnlyDisplayedTimeline && isStartingRun}
                 runlessWorkActive={runlessWorkStartedAt !== null}
                 activeTurnInProgress={
                   !paintOnlyDisplayedTimeline && (isWorking || !latestRunSettled)
