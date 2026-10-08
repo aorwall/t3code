@@ -61,11 +61,11 @@ describe("buildThreadActionMenuItems", () => {
             "rename",
             "regenerate-title",
             "auto-settle",
-            // Fork: the visibility and follow items, and no Delete
-            // (FEATURES.threadDeletion is off).
+            // Fork: the visibility and follow items.
             "make-public",
             "unfollow",
             "archive",
+            "delete",
           ]
         : [
             "pin",
@@ -74,11 +74,11 @@ describe("buildThreadActionMenuItems", () => {
             "rename",
             "regenerate-title",
             "auto-settle",
-            // Fork: the visibility and follow items, and no Delete
-            // (FEATURES.threadDeletion is off).
+            // Fork: the visibility and follow items.
             "make-public",
             "unfollow",
             "archive",
+            "delete",
           ];
       expect(items.filter((item) => item.disabled).map((item) => item.id)).toEqual(expected);
       expect(
@@ -101,9 +101,8 @@ describe("buildThreadActionMenuItems", () => {
   });
 
   it("hides lifecycle items when the environment lacks the capabilities", () => {
-    // Fork: `delete` is gated behind FEATURES.threadDeletion (off) and `archive`
-    // is always offered, so the tail is archive rather than upstream's delete.
-    // `project-settings` stays — it is not fork-gated.
+    // Fork: `archive` is always offered. `project-settings` stays — it is not
+    // fork-gated.
     expect(
       ids({
         ...baseState,
@@ -117,7 +116,7 @@ describe("buildThreadActionMenuItems", () => {
           follow: false,
         },
       }),
-    ).toEqual(["rename", "mark-unread", "copy", "project-settings", "archive"]);
+    ).toEqual(["rename", "mark-unread", "copy", "project-settings", "archive", "delete"]);
   });
 
   it("groups project settings with utility actions before archive", () => {
@@ -134,6 +133,7 @@ describe("buildThreadActionMenuItems", () => {
       "make-public",
       "unfollow",
       "archive",
+      "delete",
     ]);
   });
 
@@ -207,21 +207,19 @@ describe("buildThreadActionMenuItems", () => {
     expect(item).toMatchObject({ label: "Regenerating…", disabled: true });
   });
 
-  // Fork: deletion is gated off (FEATURES.threadDeletion), so upstream's
-  // destructive delete item is absent and archive is the last item instead.
-  it("keeps archive last, non-destructive, and omits the gated delete item", () => {
+  it("keeps delete last and destructive, after archive", () => {
     const items = buildThreadActionMenuItems({ ...baseState, branch: "main" });
-    const archiveItem = items.at(-1);
+    const deleteItem = items.at(-1);
+    expect(deleteItem).toMatchObject({ id: "delete", destructive: true, icon: "trash" });
+    const archiveItem = items.at(-2);
     expect(archiveItem?.id).toBe("archive");
-    expect(archiveItem?.icon).toBe("archive");
     // Fork: the visibility item opens the group, so it carries the separator
     // and everything below it in the group goes without.
     expect(archiveItem?.separatorBefore).toBe(false);
-    expect(items.at(-2)?.id).toBe("unfollow");
-    expect(items.at(-2)?.separatorBefore).toBe(false);
+    expect(items.at(-3)?.id).toBe("unfollow");
+    expect(items.at(-3)?.separatorBefore).toBe(false);
     expect(items.find((item) => item.id === "make-public")?.separatorBefore).toBe(true);
     expect(archiveItem?.destructive).toBeFalsy();
-    expect(items.map((item) => item.id)).not.toContain("delete");
   });
 
   it("keeps archive available even when the environment lacks every other capability", () => {

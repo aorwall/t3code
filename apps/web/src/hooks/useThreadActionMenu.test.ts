@@ -69,11 +69,6 @@ vi.mock("../state/entities", () => ({
   }),
   useProjects: () => [{ id: "project", environmentId: "secondary" }],
 }));
-// Fork: Delete is gated by FEATURES.threadDeletion; these cases exercise its permission gate.
-vi.mock("../fork/features", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../fork/features")>();
-  return { FEATURES: { ...actual.FEATURES, threadDeletion: true } };
-});
 vi.mock("../state/environments", () => ({ usePrimaryEnvironmentId: () => "primary" }));
 vi.mock("../state/threads", () => ({ threadEnvironment: { updateMetadata: "metadata" } }));
 vi.mock("../state/use-atom-command", () => ({

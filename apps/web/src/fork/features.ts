@@ -100,12 +100,6 @@ export const FEATURES = {
   /** Trace, process and resource-telemetry diagnostics. */
   diagnostics: false,
   /**
-   * Deleting a thread. Archiving is served — it is closing a Moatless task —
-   * but closing keeps the conversation and its history, so there is nothing
-   * behind a control that promises to clear them.
-   */
-  threadDeletion: false,
-  /**
    * The Connections settings page: device pairing, SSH environments, WSL, and
    * server-exposure controls for a self-hosted T3 server. The Moatless backend
    * is reached over the web and manages none of this.

@@ -901,13 +901,14 @@ order for the active thread list (upstream #9729), and
 — a sidebar drag and a Dismiss button — and both fail generically on a backend
 that does not implement them.
 
-This is the reason `threadDeletion` and `checkpointFileRestore` are build flags
-and not typed refusals, and it will be the reason for the next one too.
+This is the reason `checkpointFileRestore` is a build flag and not a typed
+refusal, and it will be the reason for the next one too. Moatless serves
+`thread.delete`, so deletion carries no gate.
 
 - **Closes when:** either the backend reports which command types it accepts, or
   the contract splits the union into methods that can each be refused. The first
   is cheaper and fits the capability record above.
-- **Then here:** delete `threadDeletion` and `checkpointFileRestore`, and the
+- **Then here:** delete `checkpointFileRestore`, and the
   `projectManagement` gates that cover `project.create` / `project.delete`.
 
 ### Subagents do not carry the identity the Agents surface folds on

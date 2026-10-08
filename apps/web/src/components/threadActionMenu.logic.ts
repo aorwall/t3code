@@ -1,8 +1,6 @@
 import type { ContextMenuItem } from "@t3tools/contracts";
 import type { SnoozePreset } from "@t3tools/client-runtime/state/thread-settled";
 
-import { FEATURES } from "../fork/features";
-
 /**
  * Ids for the per-thread action menu. Snooze presets are dispatched as
  * `snooze:<presetId>` so the union stays closed while the preset list
@@ -291,12 +289,7 @@ export function buildThreadActionMenuItems(
       disabled: state.isRunning,
       separatorBefore: !state.supports.visibility && !state.supports.follow,
     },
-    // Fork: the Moatless backend does not serve thread deletion — see
-    // FEATURES.threadDeletion. Archiving keeps the conversation; deleting it
-    // would promise to clear a history the backend never removes.
-    ...(FEATURES.threadDeletion
-      ? [{ id: "delete" as const, label: "Delete", destructive: true, icon: "trash" }]
-      : []),
+    { id: "delete", label: "Delete", destructive: true, icon: "trash" },
   ];
   return state.canOperate
     ? items

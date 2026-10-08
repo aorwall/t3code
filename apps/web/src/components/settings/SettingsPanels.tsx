@@ -3174,35 +3174,31 @@ export function GeneralSettingsPanel() {
           }
         />
 
-        {/* Fork: archiving (closing the Moatless task) keeps the conversation
-            and its history, so there is no destructive delete to confirm. */}
-        {FEATURES.threadDeletion ? (
-          <SettingsRow
-            {...searchableSetting("delete-confirmation")}
-            description="Ask before deleting a thread and its chat history."
-            resetAction={
-              settings.confirmThreadDelete !== DEFAULT_UNIFIED_SETTINGS.confirmThreadDelete ? (
-                <SettingResetButton
-                  label="delete confirmation"
-                  onClick={() =>
-                    updateSettings({
-                      confirmThreadDelete: DEFAULT_UNIFIED_SETTINGS.confirmThreadDelete,
-                    })
-                  }
-                />
-              ) : null
-            }
-            control={
-              <Switch
-                checked={settings.confirmThreadDelete}
-                onCheckedChange={(checked) =>
-                  updateSettings({ confirmThreadDelete: Boolean(checked) })
+        <SettingsRow
+          {...searchableSetting("delete-confirmation")}
+          description="Ask before deleting a thread and its chat history."
+          resetAction={
+            settings.confirmThreadDelete !== DEFAULT_UNIFIED_SETTINGS.confirmThreadDelete ? (
+              <SettingResetButton
+                label="delete confirmation"
+                onClick={() =>
+                  updateSettings({
+                    confirmThreadDelete: DEFAULT_UNIFIED_SETTINGS.confirmThreadDelete,
+                  })
                 }
-                aria-label="Confirm thread deletion"
               />
-            }
-          />
-        ) : null}
+            ) : null
+          }
+          control={
+            <Switch
+              checked={settings.confirmThreadDelete}
+              onCheckedChange={(checked) =>
+                updateSettings({ confirmThreadDelete: Boolean(checked) })
+              }
+              aria-label="Confirm thread deletion"
+            />
+          }
+        />
 
         {isElectron ? (
           <SettingsRow
@@ -3490,10 +3486,7 @@ export function ArchivedThreadsPanel() {
       const clicked = await api.contextMenu.show(
         [
           { id: "unarchive", label: "Unarchive" },
-          // Fork: see the threadDeletion feature flag comment above.
-          ...(FEATURES.threadDeletion
-            ? [{ id: "delete", label: "Delete", destructive: true }]
-            : []),
+          { id: "delete", label: "Delete", destructive: true },
         ],
         position,
       );

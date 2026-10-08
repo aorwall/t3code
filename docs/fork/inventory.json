@@ -1238,20 +1238,6 @@
       "mustSurvive": "Re-apply list filtering gates. FEATURES.projectManagement also hides the New project affordance wherever it is offered: both sidebars and the draft hero's project picker, which upstream grew a New project menu item on 2026-09-05. A Moatless deployment creates projects from its own admin surfaces, so an enabled New project entry here leads nowhere."
     },
     {
-      "id": "thread-deletion-gate",
-      "name": "Thread deletion gate in the row menu",
-      "paths": [
-        "apps/web/src/components/threadActionMenu.logic.ts",
-        "apps/web/src/components/threadActionMenu.logic.test.ts",
-        "apps/web/src/fork/features.ts"
-      ],
-      "mustSurvive": "The row menu never offers Delete: orchestration.dispatchCommand is dispatched as one method, so a thread.delete Moatless does not implement fails generically after the user has already asked for it. One additive FEATURES.threadDeletion spread around upstream's delete item in buildThreadActionMenuItems, which makes archive the tail of the menu — upstream's tests assume delete is. Archive itself is upstream's since 2026-08-16 and is no longer a fork delta.",
-      "guard": {
-        "symbol": "FEATURES.threadDeletion",
-        "files": ["apps/web/src/components/threadActionMenu.logic.ts"]
-      }
-    },
-    {
       "id": "checkpoint-file-restore-gate",
       "name": "File-restoring revert gate in the rewind dialog",
       "paths": ["apps/web/src/components/ChatView.tsx", "apps/web/src/fork/features.ts"],

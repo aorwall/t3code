@@ -4381,16 +4381,12 @@ export default function Sidebar() {
                 ]
               : []),
             { id: "mark-unread", label: `Mark unread (${count})` },
-            ...(FEATURES.threadDeletion
-              ? [
-                  {
-                    id: "delete",
-                    label: `Delete (${count})`,
-                    destructive: true,
-                    disabled: !canOperateThreads(selectedThreads),
-                  },
-                ]
-              : []),
+            {
+              id: "delete",
+              label: `Delete (${count})`,
+              destructive: true,
+              disabled: !canOperateThreads(selectedThreads),
+            },
           ],
           position,
         ),
