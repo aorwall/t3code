@@ -31,6 +31,9 @@ import {
   releaseClaimedRoles,
 } from "../../projectScripts";
 import { useProjects } from "../../state/entities";
+// Fork: Moatless saves a project's scripts on its Workspace.
+import { projectEnvironment } from "../../state/projects";
+import { useOrchestrationCommand } from "../../state/use-orchestration-command";
 import { serverEnvironment } from "../../state/server";
 import { useAtomCommand } from "../../state/use-atom-command";
 import type { NewProjectScriptInput } from "../projectScriptEditor";
@@ -64,6 +67,12 @@ export function useProjectScriptSettings(
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const updateSettings = useAtomCommand(serverEnvironment.updateSettings, "project actions update");
+  // Fork: a Moatless project is a Workspace that owns its scripts. It serves
+  // `project.update` for them and not `server.updateSettings`.
+  const updateWorkspaceScripts = useOrchestrationCommand(
+    projectEnvironment.update,
+    "project actions update",
+  );
   const upsertKeybinding = useAtomCommand(
     serverEnvironment.upsertKeybinding,
     "action shortcut update",
@@ -72,6 +81,17 @@ export function useProjectScriptSettings(
     serverEnvironment.removeKeybinding,
     "action shortcut removal",
   );
+
+  // Fork: only Moatless reports `scriptsEditable`, and its projects are
+  // Workspaces saved through `updateWorkspaceScripts`.
+  function isWorkspace(environmentId: EnvironmentId, projectId: ProjectId): boolean {
+    return projects.some(
+      (candidate) =>
+        candidate.environmentId === environmentId &&
+        candidate.id === projectId &&
+        candidate.scriptsEditable !== undefined,
+    );
+  }
 
   async function persist(
     transform: (current: readonly ProjectScript[]) => readonly ProjectScript[] | null,
@@ -85,7 +105,10 @@ export function useProjectScriptSettings(
     }
     if (
       targets.some(
-        ({ environmentId }) => !readEnvironmentScope(environmentId, AuthSettingsWriteScope),
+        ({ environmentId, project }) =>
+          // Fork: a Workspace's scripts are not settings; see `isWorkspace`.
+          !(project && isWorkspace(environmentId, project.id)) &&
+          !readEnvironmentScope(environmentId, AuthSettingsWriteScope),
       )
     ) {
       return reportScriptFailure(
@@ -107,6 +130,16 @@ export function useProjectScriptSettings(
           ? resolveProjectScripts(settings, project)
           : settings.defaultProjectScripts;
         const nextScripts = transform(current);
+        // Fork: a Workspace has no override to reset, so a reset writes its
+        // list back unchanged.
+        if (project && isWorkspace(environmentId, project.id)) {
+          const saved = await updateWorkspaceScripts({
+            environmentId,
+            input: { projectId: project.id, scripts: nextScripts ?? current },
+          });
+          if (saved._tag === "Failure") return reportScriptFailure(saved);
+          continue;
+        }
         const effectiveScripts = nextScripts ?? settings.defaultProjectScripts;
         const result = await updateSettings({
           environmentId,

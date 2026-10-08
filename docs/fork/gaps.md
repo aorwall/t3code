@@ -271,8 +271,8 @@ what a person loses, which is the part the derivation cannot tell you:
   render nothing anyway, because Moatless publishes no `versionAdvisory`. `server.getSettings`
   answers `{}`, so an ungated control does not merely fail to save — it shows a
   contract default as though it were the server's configuration. A project's
-  scripts are the exception: the backend dispatches `project.meta.update` for
-  them — see _A script runs on the backend_ below. Everything upstream adds to
+  scripts are the exception: the backend serves `projects.mutate`'s
+  `project.update` for them — see _A script runs on the backend_ below. Everything upstream adds to
   `ServerSettings` inherits this: the
   2026-09-12 merge brought `defaultRuntimeMode` (upstream #11346, the permission
   mode a new thread starts in, decoding-defaulted to `full-access`) and the
@@ -687,9 +687,13 @@ decode failure.
 - **Closes when:** upstream's server grows a way to run a project's script off
   the local machine, or the method leaves the contract. Neither is near.
 
-The **edit** half is now served, but conditionally. The backend dispatches
-`project.meta.update` carrying a `scripts` array and writes it through to the
-Workspace run-config — but only for a workspace it owns. A git-synced workspace
+The **edit** half is now served, but conditionally. The backend serves
+`projects.mutate` with a `project.update` carrying a `scripts` array and writes
+it through to the Workspace run-config — but only for a workspace it owns.
+Upstream's editors save a project's scripts with `server.updateSettings`
+instead, so `ChatView` and `useProjectScriptSettings` send a project that
+reports `scriptsEditable` through `project.update`; without those `Fork:` hunks
+"Add project script" fails with "server.updateSettings is not available". A git-synced workspace
 keeps its scripts in `.moatless/workspaces.json`, so the backend refuses the
 write and projects the scripts read-only. That "can this viewer edit these
 scripts" answer varies per workspace at runtime, so it rides the wire as a
@@ -710,7 +714,7 @@ The 2026-09-15 merge added upstream's first such field, and it was carried: a
 setup script can now be marked to finish before the agent's first turn starts
 (#11832). It rides as `waitForSetup` in the editor's form and maps to
 `async: false` on the script (`apps/web/src/projectScripts.ts`), so the flag is
-written through `project.meta.update` today and does nothing until the backend
+written through `project.update` today and does nothing until the backend
 honours it — see _Runtime fixes upstream made to its own server_ below.
 
 The 2026-10-07 merge brought a second such field, and it was **not** carried:
@@ -728,8 +732,8 @@ so a script that already carries the flag does not lose it on edit.
   `projectScriptEditor.tsx`, where the `Fork:` comment after the setup switches
   stands, and trim the comment.
 
-- **Closed by:** the backend dispatching `project.meta.update` for a project's
-  scripts and reporting `scriptsEditable` per project.
+- **Closed by:** the backend serving `project.update` for a project's scripts
+  and reporting `scriptsEditable` per project.
 - **Watch on merge:** if upstream's editor grows a field the fork's port-only
   form dropped, decide per field whether to carry it; the port is the fork's, the
   URL is upstream's.
@@ -743,7 +747,7 @@ over them — and the header's Run control lists that. `apps/server` refuses the
 method, as it does `scripts.run`, so the same "keep the union entry" rule
 applies. The read is gated on the `taskScripts` capability and falls back to the
 project's own scripts whenever it is absent, in flight or failed. Editing stays
-on `project.meta.update`, which writes a project's list and cannot reach a
+on `project.update`, which writes a project's list and cannot reach a
 thread's script, so the control offers no Edit on a task-scoped row.
 
 - **Closed by:** nothing outstanding on the client. Declaring and removing a
@@ -1166,7 +1170,7 @@ Seven more arrived in the 2026-09-15 merge:
   The fork already carries the client half — the editor's "Wait for it to finish
   before the agent starts" toggle and the `waitForSetup` → `async: false`
   mapping in `apps/web/src/projectScripts.ts` — so the flag reaches the backend
-  on `project.meta.update` today and means nothing until Moatless honours it.
+  on `project.update` today and means nothing until Moatless honours it.
   See _A script runs on the backend_ above.
 - **A setup script should not wait on a color probe nobody will answer.**
   Upstream sets `NO_COLOR=1` / `FORCE_COLOR=0` for a setup script, because it

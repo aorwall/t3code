@@ -1119,9 +1119,10 @@
         "apps/web/src/components/settings/ProjectActionsSettings.tsx",
         "apps/web/src/components/settings/ProjectActionsList.tsx",
         "apps/web/src/components/ChatView.tsx",
+        "apps/web/src/components/settings/useProjectScriptSettings.ts",
         "packages/contracts/src/orchestrationProject.ts"
       ],
-      "mustSurvive": "A project's scripts can be edited only when the backend says so per workspace: a git-synced workspace owns its scripts in .moatless/workspaces.json and is projected read-only, a manual one is writable. That answer rides the wire as scriptsEditable on OrchestrationProject / OrchestrationProjectShell, threaded to ProjectScriptsControl and the settings Actions section as an `editable` prop that gates the per-script Edit button, the t3.json import items and the Add action. Upstream extracted the row list into ProjectActionsList.tsx on 2026-09-07, so the Edit gate now lives there behind an `editable` prop that defaults to upstream's always-editable behavior; upstream then moved the Actions section itself out of ProjectSettingsPanel.tsx into ProjectActionsSettings.tsx on 2026-09-10, which is where scriptsEditable is now derived and where upstream's Reset button, which writes, is gated. It is NOT a FEATURES flag — projectScriptEditing was deleted when the capability arrived, because the answer varies per deployment and per workspace. Running a script stays ungated: a read-only workspace still runs what it declares, and ProjectScriptsControl's no-primary-script branch returns null only when editing is also off. A merge that reintroduces FEATURES.projectScriptEditing or an always-on Add action has taken upstream's side back.",
+      "mustSurvive": "A project that reports scriptsEditable is a Moatless Workspace, and its scripts are saved with projects.mutate's project.update (updateWorkspaceScripts in ChatView's persistProjectScripts and in useProjectScriptSettings, which also skips its settings:write check for it), never with upstream's server.updateSettings, which Moatless does not serve. A merge that routes these saves back through updateSettings breaks Add project script. A project's scripts can be edited only when the backend says so per workspace: a git-synced workspace owns its scripts in .moatless/workspaces.json and is projected read-only, a manual one is writable. That answer rides the wire as scriptsEditable on OrchestrationProject / OrchestrationProjectShell, threaded to ProjectScriptsControl and the settings Actions section as an `editable` prop that gates the per-script Edit button, the t3.json import items and the Add action. Upstream extracted the row list into ProjectActionsList.tsx on 2026-09-07, so the Edit gate now lives there behind an `editable` prop that defaults to upstream's always-editable behavior; upstream then moved the Actions section itself out of ProjectSettingsPanel.tsx into ProjectActionsSettings.tsx on 2026-09-10, which is where scriptsEditable is now derived and where upstream's Reset button, which writes, is gated. It is NOT a FEATURES flag — projectScriptEditing was deleted when the capability arrived, because the answer varies per deployment and per workspace. Running a script stays ungated: a read-only workspace still runs what it declares, and ProjectScriptsControl's no-primary-script branch returns null only when editing is also off. A merge that reintroduces FEATURES.projectScriptEditing or an always-on Add action has taken upstream's side back.",
       "guard": {
         "symbol": "scriptsEditable",
         "files": [
@@ -1233,7 +1234,10 @@
     {
       "id": "thread-automations-gate",
       "name": "Thread Automations panel gate",
-      "paths": ["apps/web/src/components/chat/ThreadDetailsPanel.tsx", "apps/web/src/fork/features.ts"],
+      "paths": [
+        "apps/web/src/components/chat/ThreadDetailsPanel.tsx",
+        "apps/web/src/fork/features.ts"
+      ],
       "mustSurvive": "Thread details shows no Automations panel. It subscribes to scheduledTasks.subscribe, which Moatless does not serve: it schedules work as Loops, so the panel only ever shows \"Could not load automations\". One additive FEATURES.scheduledTasks conjunct on the ThreadAutomationsPanel mount in ThreadDetailsPanel.tsx, the same flag that holds the Scheduled tasks settings page. Drop the conjunct with the flag once the backend serves scheduledTasks.*.",
       "guard": {
         "symbol": "FEATURES.scheduledTasks",

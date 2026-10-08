@@ -594,6 +594,8 @@ import { assetEnvironment } from "../state/assets";
 import { readEnvironmentScope, readPreparedConnection } from "../state/session";
 import { useAtomCommand } from "../state/use-atom-command";
 import { useOrchestrationCommand } from "../state/use-orchestration-command";
+// Fork: Moatless saves a project's scripts on its Workspace.
+import { projectEnvironment } from "../state/projects";
 import { useAtomQueryRunner } from "../state/use-atom-query-runner";
 import { Button, InlineButton } from "./ui/button";
 import {
@@ -1635,6 +1637,11 @@ export default function ChatView(props: ChatViewProps) {
     };
   }, [routeThreadKey]);
   const updateProjectScriptSettings = useAtomCommand(serverEnvironment.updateSettings, {
+    reportFailure: false,
+  });
+  // Fork: a Moatless project is a Workspace that owns its scripts. It serves
+  // `project.update` for them and not `server.updateSettings`.
+  const updateWorkspaceScripts = useOrchestrationCommand(projectEnvironment.update, {
     reportFailure: false,
   });
   const upsertKeybinding = useAtomCommand(serverEnvironment.upsertKeybinding, {
@@ -5358,6 +5365,20 @@ export default function ChatView(props: ChatViewProps) {
       keybinding: NewProjectScriptInput["keybinding"];
       keybindingCommand: KeybindingCommand | null;
     }): Promise<AtomCommandResult<void, unknown>> => {
+      // Fork: only Moatless reports `scriptsEditable`; see `updateWorkspaceScripts`.
+      const project = allProjects.find(
+        (candidate) =>
+          candidate.environmentId === environmentId && candidate.id === input.projectId,
+      );
+      if (project?.scriptsEditable !== undefined) {
+        return mapAtomCommandResult(
+          await updateWorkspaceScripts({
+            environmentId,
+            input: { projectId: input.projectId, scripts: input.nextScripts },
+          }),
+          () => undefined,
+        );
+      }
       const previousKeybinding = keybindingValueForCommand(
         appAtomRegistry.get(serverEnvironment.configValueAtom(environmentId))?.keybindings ?? [],
         input.keybindingCommand,
@@ -5487,6 +5508,8 @@ export default function ChatView(props: ChatViewProps) {
       removeKeybinding,
       settings,
       supportsProjectSettingsOverrides,
+      // Fork: see `updateWorkspaceScripts`.
+      updateWorkspaceScripts,
       updateProjectScriptSettings,
       upsertKeybinding,
     ],
