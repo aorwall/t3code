@@ -262,6 +262,14 @@ what a person loses, which is the part the derivation cannot tell you:
   `assets.persistChatAttachments`. The rest are whole upstream families Moatless
   has no counterpart for: `scheduledTasks.*` (held by the `scheduledTasks`
   flag, which also hides the thread details Automations panel), `server.*AcpRegistry*`, `secrets.answerRequest` and `projects.mutate`.
+  The 2026-10-08 merge added **MCP apps** (#16236): `mcpApps.callTool`,
+  `toolInfo`, `readResource` and `updateModelContext` let a tool call that
+  returns an MCP app UI render and run inline in the transcript
+  (`McpAppFrame.tsx`). The frame mounts only for a work-log item carrying an MCP
+  app snapshot, which upstream's Codex adapter projects and Moatless never
+  sends, so nothing renders and no fork gate was added; the four union entries
+  are the only stand-in. Closes when Moatless projects MCP app snapshots and
+  dispatches the family; delete the four union entries then.
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
   `getConfig`), so Settings renders and nothing in it can be saved. Holds open
@@ -1713,7 +1721,16 @@ One more arrived in the 2026-10-01 merge:
   credential, and a Claude result for a Claude-initiated turn leaves the
   user's turn open, and a reconcile republishes only the events its own
   dispatch appended, so a second server on a shared state directory cannot
-  start a duplicate provider turn (#13295).
+  start a duplicate provider turn (#13295). The 2026-10-08 merge adds: idle Codex
+  threads are unloaded from the shared app-server (#16917), a refused Claude
+  turn keeps its session (#16287), a Claude prompt does not hang on a uuid the
+  session already holds (#16897), Claude 5-series models always run 1M context
+  (#16908), a background Claude subagent's work shows while its parent is idle
+  (#16486), worktrees are freed for terminal thread statuses and after squash
+  merges (#15150, #14847) without deleting files hidden by
+  `showUntrackedFiles=no` (#15834), replaying a command or opening a long thread
+  no longer blocks the server (#17041, #17029), and the orchestrator MCP thread
+  list reports and filters on snooze state (#16782).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
