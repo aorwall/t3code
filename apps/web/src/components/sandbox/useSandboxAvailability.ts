@@ -35,6 +35,26 @@ function disabledReason(
   }
 }
 
+const FAILED_STREAM_RETRY_MS = 3_000;
+
+/**
+ * Resubscribes a pushed sandbox stream that ended in a failure. The client
+ * never retries a refusal, and the atom keeps it per thread, so a draft that
+ * subscribed before its task existed reads "This thread is not available."
+ * until a reload. Each failed retry toggles `isPending`, which schedules the next.
+ */
+export function useRetryFailedSandboxStream(
+  enabled: boolean,
+  query: Pick<EnvironmentQueryView<unknown>, "error" | "isPending" | "refresh">,
+): void {
+  const { error, isPending, refresh } = query;
+  useEffect(() => {
+    if (!enabled || error === null || isPending) return;
+    const timer = setTimeout(refresh, FAILED_STREAM_RETRY_MS);
+    return () => clearTimeout(timer);
+  }, [enabled, error, isPending, refresh]);
+}
+
 export function useSandboxAvailability(threadRef: ScopedThreadRef | null): SandboxAvailability {
   // Where the environment pushes lifecycle, one subscription replaces the
   // poll entirely — it is seeded with the current status, so there is nothing
@@ -75,6 +95,7 @@ export function useSandboxAvailability(threadRef: ScopedThreadRef | null): Sandb
     if (threadRef === null || pushed) return;
     refresh();
   }, [pushed, refresh, threadRef?.environmentId, threadRef?.threadId]);
+  useRetryFailedSandboxStream(threadRef !== null && pushed, live);
 
   const status = useMemo<EnvironmentQueryView<SandboxStatusResult>>(
     () => ({

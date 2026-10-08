@@ -13,6 +13,8 @@ import { useEnvironment } from "~/state/environments";
 import { useEnvironmentQuery, type EnvironmentQueryView } from "~/state/query";
 import { sandboxEnvironment } from "~/state/sandbox";
 
+import { useRetryFailedSandboxStream } from "./useSandboxAvailability";
+
 export interface SandboxDetailView extends EnvironmentQueryView<SandboxDetailResult> {
   /** False on a server without `capabilities.sandboxDetail`, where nothing was
       asked for and the panel offers no controls. */
@@ -59,6 +61,7 @@ export function useSandboxDetail(threadRef: ScopedThreadRef | null): SandboxDeta
     if (threadRef === null || !supported || pushed) return;
     refresh();
   }, [pushed, refresh, supported, threadRef?.environmentId, threadRef?.threadId]);
+  useRetryFailedSandboxStream(threadRef !== null && pushed, live);
 
   return useMemo(
     () => ({ data, dataUpdatedAt, error, failure, isPending, isSuccess, refresh, supported }),
