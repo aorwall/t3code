@@ -7,6 +7,8 @@ import type {
   ScopedThreadRef,
   ThreadId,
 } from "@t3tools/contracts";
+// Fork: only a provider-native subagent stays out of thread navigation.
+import { isProviderNativeSubagentThread } from "@t3tools/contracts";
 import { Atom } from "effect/reactivity";
 
 import type { EnvironmentThreadShell } from "./models.ts";
@@ -204,8 +206,8 @@ export function createEnvironmentThreadShellAtoms(input: {
     const next: EnvironmentThreadShell[] = [];
     for (const environmentId of enabledEnvironmentIds(get(input.catalogValueAtom))) {
       for (const thread of get(environmentThreadsAtom(environmentId))) {
-        if (thread.archivedAt !== null || thread.lineage.relationshipToParent === "subagent")
-          continue;
+        // Fork: a Moatless child task is a thread of its own, listed and navigable.
+        if (thread.archivedAt !== null || isProviderNativeSubagentThread(thread)) continue;
         next.push(scopedThread(environmentId, thread));
       }
     }

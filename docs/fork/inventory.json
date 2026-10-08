@@ -1211,6 +1211,22 @@
       }
     },
     {
+      "id": "sidebar-thread-family",
+      "name": "Child tasks and parent links in the sidebar",
+      "paths": [
+        "apps/web/src/fork/SidebarThreadFamily.tsx",
+        "apps/web/src/components/Sidebar.tsx",
+        "apps/web/src/components/Sidebar.logic.ts",
+        "packages/client-runtime/src/state/threadShell.ts",
+        "packages/contracts/src/orchestrationV2.ts"
+      ],
+      "mustSurvive": "Moatless child tasks are threads of their own, so the sidebar and thread navigation list a subagent thread unless isProviderNativeSubagentThread says it is the provider's: isSidebarSubagentThread and the navigationThreadShellsAtom filter both read it. A card row whose thread has lineage.parentThreadId shows SidebarParentLink, and one whose shell carries a non-zero childCount (fork-only optional field on OrchestrationV2ThreadShell) shows SidebarChildTasksBadge, which lists subtasks.list in a popover. Both mount after the owner name in SidebarThreadRow's card meta line; the slim row has neither.",
+      "guard": {
+        "symbol": "SidebarChildTasksBadge",
+        "files": ["apps/web/src/components/Sidebar.tsx"]
+      }
+    },
+    {
       "id": "navigation-gates",
       "name": "Navigation gates",
       "paths": [

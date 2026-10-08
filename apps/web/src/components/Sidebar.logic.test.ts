@@ -397,6 +397,21 @@ describe("resolveSidebarStageBadgeLabel", () => {
 });
 
 describe("sidebar thread lineage helpers", () => {
+  // Fork: a subagent's `source` decides whether the sidebar lists it.
+  const makeSubagentFixture = (
+    overrides: ThreadFixtureOverrides & {
+      readonly lineage: Thread["lineage"];
+      readonly creationSource: Thread["source"]["creationSource"];
+    },
+  ) => {
+    const { creationSource, ...rest } = overrides;
+    const thread = makeThreadFixture(rest);
+    return {
+      ...thread,
+      source: { ...thread.source, lineage: overrides.lineage, creationSource },
+    };
+  };
+
   it("keeps only top-level, unarchived threads in the Sidebar V2 project scope", () => {
     const parentId = ThreadId.make("thread-parent");
     const projectId = ProjectId.make("project-visible");
@@ -406,7 +421,8 @@ describe("sidebar thread lineage helpers", () => {
       environmentId,
       projectId,
     });
-    const subagent = makeThreadFixture({
+    // Fork: a provider-native subagent stays hidden; a delegated child task is listed.
+    const subagent = makeSubagentFixture({
       id: ThreadId.make("thread-subagent"),
       environmentId,
       projectId,
@@ -415,6 +431,18 @@ describe("sidebar thread lineage helpers", () => {
         parentThreadId: parentId,
         relationshipToParent: "subagent",
       },
+      creationSource: "provider",
+    });
+    const childTask = makeSubagentFixture({
+      id: ThreadId.make("thread-child-task"),
+      environmentId,
+      projectId,
+      lineage: {
+        rootThreadId: parentId,
+        parentThreadId: parentId,
+        relationshipToParent: "subagent",
+      },
+      creationSource: "mcp",
     });
     const fork = makeThreadFixture({
       id: ThreadId.make("thread-fork"),
@@ -440,23 +468,27 @@ describe("sidebar thread lineage helpers", () => {
 
     expect(
       filterSidebarV2VisibleThreads(
-        [root, subagent, fork, archived, otherProject],
+        [root, subagent, childTask, fork, archived, otherProject],
         new Set([`${environmentId}:${projectId}`]),
       ).map((thread) => thread.id),
-    ).toEqual([parentId, fork.id]);
+    ).toEqual([parentId, childTask.id, fork.id]);
   });
 
   it("identifies subagent threads so the sidebar can hide them", () => {
     const parentId = ThreadId.make("thread-parent");
-    const subagent = makeThreadFixture({
-      lineage: {
-        rootThreadId: parentId,
-        parentThreadId: parentId,
-        relationshipToParent: "subagent",
-      },
-    });
+    const lineage = {
+      rootThreadId: parentId,
+      parentThreadId: parentId,
+      relationshipToParent: "subagent",
+    } as const;
 
-    expect(isSidebarSubagentThread(subagent)).toBe(true);
+    // Fork: only a provider-native subagent is hidden.
+    expect(
+      isSidebarSubagentThread(makeSubagentFixture({ lineage, creationSource: "provider" })),
+    ).toBe(true);
+    expect(isSidebarSubagentThread(makeSubagentFixture({ lineage, creationSource: "mcp" }))).toBe(
+      false,
+    );
     expect(isSidebarSubagentThread(makeThreadFixture())).toBe(false);
   });
 
@@ -1897,7 +1929,19 @@ describe("sortSidebarV2ProjectGroups", () => {
           relationshipToParent: "subagent",
         },
       }),
-    ];
+    ].map((thread) =>
+      // Fork: only a provider-native subagent is hidden.
+      thread.lineage.relationshipToParent === "subagent"
+        ? {
+            ...thread,
+            source: {
+              ...thread.source,
+              lineage: thread.lineage,
+              creationSource: "provider" as const,
+            },
+          }
+        : thread,
+    );
 
     expect(
       sortSidebarV2ProjectGroups(projects, threads, "updated_at").map(

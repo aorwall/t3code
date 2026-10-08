@@ -9,6 +9,8 @@ import {
 import { defaultAnimateLayoutChanges, type AnimateLayoutChanges } from "@dnd-kit/sortable";
 import { threadSearchMatchKey } from "@t3tools/client-runtime/state/thread-search";
 import type { ContextMenuItem, EnvironmentId, ThreadId } from "@t3tools/contracts";
+// Fork: the subagent filter keeps a Moatless child task listed.
+import { isProviderNativeSubagentThread } from "@t3tools/contracts";
 import type { SidebarProjectSortOrder, SidebarThreadSortOrder } from "@t3tools/contracts/settings";
 import type { AsyncResult } from "effect/reactivity";
 import { planPinnedReorder } from "@t3tools/client-runtime/state/thread-sort";
@@ -563,12 +565,18 @@ export function buildMultiSelectThreadContextMenuItems(input: {
   ];
 }
 
-export function isSidebarSubagentThread(thread: Pick<SidebarThreadSummary, "lineage">): boolean {
-  return thread.lineage.relationshipToParent === "subagent";
+export function isSidebarSubagentThread(
+  // Fork: reads `source` for `creationSource`, which the summary does not lift.
+  thread: Pick<SidebarThreadSummary, "lineage" | "source">,
+): boolean {
+  // Fork: a Moatless child task (`creationSource: "mcp"`) is listed beside
+  // its parent; only a provider-native subagent stays inside its parent.
+  return isProviderNativeSubagentThread(thread.source);
 }
 
 export function filterSidebarV2VisibleThreads<
-  T extends Pick<SidebarThreadSummary, "archivedAt" | "lineage"> & {
+  // Fork: `source` for the subagent filter's `creationSource`.
+  T extends Pick<SidebarThreadSummary, "archivedAt" | "lineage" | "source"> & {
     environmentId: string;
     projectId: string;
   },
@@ -1391,7 +1399,8 @@ export function sortLogicalProjectsForSidebar<
 
 export function sortSidebarV2ProjectGroups<
   TProject extends LogicalSidebarProject,
-  TThread extends ScopedSidebarThread & Pick<SidebarThreadSummary, "lineage">,
+  // Fork: `source` tells a provider-native subagent from a child task.
+  TThread extends ScopedSidebarThread & Pick<SidebarThreadSummary, "lineage" | "source">,
 >(
   projects: readonly TProject[],
   threads: readonly TThread[],

@@ -1958,6 +1958,12 @@ export const OrchestrationV2ThreadShell = Schema.Struct({
    * is never told who it is signed in as.
    */
   ownerName: Schema.optional(Schema.NullOr(TrimmedNonEmptyString)),
+  /**
+   * Fork: how many child tasks the viewer may read, spawned by this thread or
+   * forked from it — the length `subtasks.list` answers with. Absent from a
+   * server that does not count them.
+   */
+  childCount: Schema.optional(NonNegativeInt),
 });
 export type OrchestrationV2ThreadShell = typeof OrchestrationV2ThreadShell.Type;
 

@@ -156,6 +156,8 @@ import { FEATURES } from "../fork/features";
 import { useTouchContextMenu } from "../fork/touchContextMenu";
 // Fork: the sidebar's own thread filter, and the list it produces.
 import { useSidebarThreadList } from "../fork/browsedThreadShells";
+// Fork: links from a row to its child tasks and its parent task.
+import { SidebarChildTasksBadge, SidebarParentLink } from "../fork/SidebarThreadFamily";
 import {
   readThreadShell,
   useAllEnvironmentProjectSnapshotsReady,
@@ -2204,6 +2206,17 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
                   {thread.source.ownerName}
                 </span>
               ) : null}
+              {/* Fork: a child task links up to its parent, and a parent counts
+                  its child tasks and lists them on click. */}
+              <SidebarParentLink
+                environmentId={thread.environmentId}
+                parentThreadId={thread.lineage.parentThreadId}
+              />
+              <SidebarChildTasksBadge
+                environmentId={thread.environmentId}
+                threadId={thread.id}
+                childCount={thread.source.childCount}
+              />
               <span
                 aria-hidden
                 className="pointer-events-none ml-auto inline-flex shrink-0 items-center gap-1"
