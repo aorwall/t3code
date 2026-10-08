@@ -28,6 +28,33 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-08 — merged upstream to 0f09627a11
+
+- Upstream: `0f09627a11` from base `cd41c4ada0` (`44` commits).
+- Landed: `320` files from `git diff --stat HEAD^1 HEAD` against `320` in the
+  upstream range, an exact match; fork delta `765` files from
+  `git diff --stat HEAD^2 HEAD`, unchanged since 2026-10-07.
+- Branch point: `main` at `75baf5f94`. No open merge PR to stack on.
+- Conflicts: 2 files, both `converged`.
+  - `ChatMarkdown.tsx`: kept the fork's Moatless Artifact chip ahead of
+    upstream's new thread-link renderer (#17017); both imports kept.
+  - `ThreadDetailsPanel.tsx`: took upstream's merged environment and branch
+    row (#16823) and re-applied `FEATURES.openInEditor` on the Open in picker.
+- Sweep: 4 new upstream files hit owned concerns (mobile shell-cache decoding,
+  mobile `ComposerPopoverHost`, client-runtime `mcpApps/host`). All are false
+  positives, taken as upstream's.
+- Unsupported methods: ADD 4 (`mcpApps.callTool`, `toolInfo`, `readResource`,
+  `updateModelContext`), DROP 0.
+- Gaps: extended
+  [methods the backend does not dispatch](./gaps.md#methods-the-backend-does-not-dispatch)
+  with MCP apps and
+  [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server)
+  with this range's server fixes.
+- Verification: `verify.mjs` passed every check except `test`. web failed the
+  full run and passed in isolation. server: `OpenCodeServerLedger`,
+  `AcpAdapterV2`, `OrchestratorReplayFixtures` and `ServerBrowserPage` fail
+  alone, as on 2026-10-07. Machine, not code.
+
 ### 2026-10-07 — merged upstream to cd41c4ada0
 
 - Upstream: `cd41c4ada0` from base `442735897f` (`81` commits).

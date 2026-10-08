@@ -1233,7 +1233,10 @@
     {
       "id": "thread-automations-gate",
       "name": "Thread Automations panel gate",
-      "paths": ["apps/web/src/components/chat/ThreadDetailsPanel.tsx", "apps/web/src/fork/features.ts"],
+      "paths": [
+        "apps/web/src/components/chat/ThreadDetailsPanel.tsx",
+        "apps/web/src/fork/features.ts"
+      ],
       "mustSurvive": "Thread details shows no Automations panel. It subscribes to scheduledTasks.subscribe, which Moatless does not serve: it schedules work as Loops, so the panel only ever shows \"Could not load automations\". One additive FEATURES.scheduledTasks conjunct on the ThreadAutomationsPanel mount in ThreadDetailsPanel.tsx, the same flag that holds the Scheduled tasks settings page. Drop the conjunct with the flag once the backend serves scheduledTasks.*.",
       "guard": {
         "symbol": "FEATURES.scheduledTasks",
