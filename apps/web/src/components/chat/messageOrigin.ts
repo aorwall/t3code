@@ -5,7 +5,14 @@ import { type OrchestrationMessageOrigin } from "@t3tools/contracts";
  * adapter kind the client does not recognize — a newer backend can name a
  * source this build has no icon for, and the chip still renders.
  */
-export type MessageOriginIconKey = "slack" | "github" | "linear" | "telegram" | "task" | "generic";
+export type MessageOriginIconKey =
+  | "slack"
+  | "github"
+  | "linear"
+  | "telegram"
+  | "task"
+  | "loop"
+  | "generic";
 
 /** Everything the origin chip needs to render, derived from one origin. */
 export interface MessageOriginChipModel {
@@ -29,6 +36,8 @@ const KNOWN_SOURCES: Record<
   slack: { iconKey: "slack", name: "Slack" },
   linear: { iconKey: "linear", name: "Linear" },
   telegram: { iconKey: "telegram", name: "Telegram" },
+  // A message a Loop sent on its schedule; the label is the Loop's name.
+  scheduled: { iconKey: "loop", name: "Loop" },
 };
 
 /** Title-cases an unknown adapter kind for display: `custom_adapter` → `Custom adapter`. */

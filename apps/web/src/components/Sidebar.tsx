@@ -158,6 +158,8 @@ import { useTouchContextMenu } from "../fork/touchContextMenu";
 import { useSidebarThreadList } from "../fork/browsedThreadShells";
 // Fork: links from a row to its child tasks and its parent task.
 import { SidebarChildTasksBadge, SidebarParentLink } from "../fork/SidebarThreadFamily";
+// Fork: the hover card says which thread a fork or subtask came from.
+import { ThreadParentLine } from "../fork/ThreadParentLine";
 import {
   readThreadShell,
   useAllEnvironmentProjectSnapshotsReady,
@@ -507,6 +509,8 @@ function SidebarThreadTooltip({
             <div className="min-w-0 truncate text-foreground/75">{thread.source.ownerName}</div>
           </div>
         ) : null}
+        {/* Fork: whether the row is a fork or a subtask, and of which thread. */}
+        <ThreadParentLine thread={thread} />
         {thread.branch ? (
           <div className="flex min-w-0 items-center gap-2">
             <GitBranchIcon className="size-3 shrink-0 stroke-muted-foreground" />

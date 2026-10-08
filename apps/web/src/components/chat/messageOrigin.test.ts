@@ -45,6 +45,20 @@ describe("message origin chip", () => {
     expect(model.url).toBe("https://moatless.example/tasks/task-xyz");
   });
 
+  it("names the Loop a scheduled message came from", () => {
+    const model = resolveMessageOriginChip({
+      kind: "scheduled",
+      label: "Nightly sweep",
+      url: "https://moatless.example/settings/loops/loop-1",
+      user: null,
+    });
+
+    expect(model.iconKey).toBe("loop");
+    expect(model.segments).toEqual(["Loop", "Nightly sweep"]);
+    expect(model.url).toBe("https://moatless.example/settings/loops/loop-1");
+    expect(model.ariaLabel).toBe("Sent from Loop, Nightly sweep");
+  });
+
   it("drops empty label and author rather than showing blank segments", () => {
     const model = resolveMessageOriginChip({
       kind: "github_pr",

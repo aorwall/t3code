@@ -141,6 +141,8 @@ import {
   PaintbrushIcon,
   MinusIcon,
   Redo2Icon,
+  // Fork: RepeatIcon for the Loop message-origin chip.
+  RepeatIcon,
   Minimize2Icon,
   SearchIcon,
   SendIcon,
@@ -2417,6 +2419,8 @@ function MessageOriginIcon({ iconKey }: { iconKey: MessageOriginIconKey }) {
       return <SendIcon className={className} />;
     case "task":
       return <Share2Icon className={className} />;
+    case "loop":
+      return <RepeatIcon className={className} />;
     case "generic":
       return <GlobeIcon className={className} />;
   }

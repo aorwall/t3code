@@ -978,7 +978,7 @@
         "apps/web/src/components/chat/messageOrigin.ts",
         "apps/web/src/components/chat/messageOrigin.test.ts"
       ],
-      "mustSurvive": "A message that reached the thread through an adapter or from another Task says so, and a message typed into the composer renders exactly as upstream renders it. The contract field is optional rather than nullable so the absent case stays byte-identical to upstream's payload."
+      "mustSurvive": "A message that reached the thread through an adapter, from another Task or from a Loop says so, and a message typed into the composer renders exactly as upstream renders it. A Loop's message has kind `scheduled`, labelled with the Loop's name under a repeat icon. The contract field is optional rather than nullable so the absent case stays byte-identical to upstream's payload."
     },
     {
       "id": "thread-fork",
@@ -1220,9 +1220,11 @@
         "apps/web/src/components/Sidebar.tsx",
         "apps/web/src/components/Sidebar.logic.ts",
         "packages/client-runtime/src/state/threadShell.ts",
-        "packages/contracts/src/orchestrationV2.ts"
+        "packages/contracts/src/orchestrationV2.ts",
+        "apps/web/src/fork/ThreadParentLine.tsx",
+        "apps/web/src/fork/ThreadParentLine.test.ts"
       ],
-      "mustSurvive": "Moatless child tasks are threads of their own, so the sidebar and thread navigation list a subagent thread unless isProviderNativeSubagentThread says it is the provider's: isSidebarSubagentThread and the navigationThreadShellsAtom filter both read it. A card row whose thread has lineage.parentThreadId shows SidebarParentLink, and one whose shell carries a non-zero childCount (fork-only optional field on OrchestrationV2ThreadShell) shows SidebarChildTasksBadge, which lists subtasks.list in a popover. Both mount after the owner name in SidebarThreadRow's card meta line; the slim row has neither.",
+      "mustSurvive": "Moatless child tasks are threads of their own, so the sidebar and thread navigation list a subagent thread unless isProviderNativeSubagentThread says it is the provider's: isSidebarSubagentThread and the navigationThreadShellsAtom filter both read it. A card row whose thread has lineage.parentThreadId shows SidebarParentLink, and one whose shell carries a non-zero childCount (fork-only optional field on OrchestrationV2ThreadShell) shows SidebarChildTasksBadge, which lists subtasks.list in a popover. Both mount after the owner name in SidebarThreadRow's card meta line; the slim row has neither. SidebarThreadTooltip shows ThreadParentLine after the owner name: \"Fork of {parent title}\" or \"Subtask of {parent title}\", or the bare noun while the parent has no shell.",
       "guard": {
         "symbol": "SidebarChildTasksBadge",
         "files": ["apps/web/src/components/Sidebar.tsx"]
