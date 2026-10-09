@@ -71,7 +71,8 @@ not report is every boolean added since that handshake was written —
 2026-08-16), `questionAttachments` (upstream, 2026-09-08),
 `projectSettingsOverrides` (upstream, 2026-09-09) and
 `requiredWorktreeBootstrap`, `storageCleanup` and `projectWorktreeCleanup`
-(upstream, 2026-09-18) and `threadAutoSettleOptOut` (upstream, 2026-09-25) — so
+(upstream, 2026-09-18), `threadAutoSettleOptOut` (upstream, 2026-09-25) and
+`threadFind` / `threadFindProgressive` (upstream, 2026-10-09) — so
 each of those
 surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
@@ -261,7 +262,7 @@ what a person loses, which is the part the derivation cannot tell you:
   `getFullThreadDiff`, `getWorkflowScript`), plus
   `assets.persistChatAttachments`. The rest are whole upstream families Moatless
   has no counterpart for: `scheduledTasks.*` (held by the `scheduledTasks`
-  flag, which also hides the thread details Automations panel), `server.*AcpRegistry*`, `secrets.answerRequest` and `projects.mutate`.
+  flag, which also hides the thread details Automations panel), `server.*AcpRegistry*` and `secrets.answerRequest`.
   The 2026-10-08 merge added **MCP apps** (#16236): `mcpApps.callTool`,
   `toolInfo`, `readResource` and `updateModelContext` let a tool call that
   returns an MCP app UI render and run inline in the transcript
@@ -521,7 +522,20 @@ what a person loses, which is the part the derivation cannot tell you:
   capability, which Moatless does not, so the fork's web client keeps its
   frame runtime (`isPreviewSupportedInRuntime`) and these two methods are never
   sent. Agent control of the preview, which `previewAutomation` carried, now
-  rides the server browser and closes with it.
+  rides the server browser and closes with it. The 2026-10-09 merge added
+  `preview.reportProfiles` (#16956): `BrowserProfileReporter` tells each
+  environment which browser profiles the client holds, and sends it only to an
+  environment reporting `serverBrowser`, so it is never sent here either.
+- **Find in thread** — `orchestration.searchThread` and
+  `orchestration.searchThreadStream`, new upstream in the 2026-10-09 merge
+  (#10439). Find-in-page for the current thread's messages and plans
+  (`apps/web/src/components/chat/useThreadFind.ts`, `ThreadFindBar.tsx`). The
+  client opens the bar only when the server config reports the optional
+  `threadFind` capability (`threadFindProgressive` for the streamed count);
+  Moatless reports neither, so opening it shows "Thread search is unavailable on
+  this server" and no request is sent. No fork gate is needed. Closes when the
+  backend searches a thread's projected messages and reports `threadFind`;
+  delete the two union entries then.
 - **Passive terminal observation** — `terminal.observe` (#9791). The client
   sends it only with `terminal:read` and without `terminal:operate`; Moatless
   grants operate to every session, so it attaches instead. It becomes owed
@@ -993,6 +1007,15 @@ The 2026-10-07 merge added two more for the pull-request half:
 - **A settled thread stops polling its pull requests.** #16762 drops settled
   threads from the PR refresh set, so their polling stops costing requests.
   Moatless polls linked PRs itself and would save the same work.
+
+The 2026-10-09 merge added two more:
+
+- **A thread settles as soon as branch status sees its PR merge.** #17148
+  settles from the branch-status read rather than waiting for the PR sweep
+  (`apps/server/src/orchestration/ThreadSettlementReactor.ts`).
+- **An agent can settle its own thread when its turn ends.** #17145 lets the
+  orchestrator MCP toolkit record a settlement that takes effect at turn end.
+  Moatless agents have no settle tool today.
 
 - **Closes when:** the backend's settlement decision reads pin and snooze state,
   settles a snoozed thread immediately, settles on the pull-request event rather
@@ -1731,7 +1754,14 @@ One more arrived in the 2026-10-01 merge:
   merges (#15150, #14847) without deleting files hidden by
   `showUntrackedFiles=no` (#15834), replaying a command or opening a long thread
   no longer blocks the server (#17041, #17029), and the orchestrator MCP thread
-  list reports and filters on snooze state (#16782).
+  list reports and filters on snooze state (#16782). The 2026-10-09 merge adds:
+  a message sent during a rollback no longer undoes it (#17079), held queued
+  wakes no longer keep delegated tasks running (#17028), long thread message
+  sync is paged faster (#17387), shell snapshots stop blocking other database
+  reads while they decode (#17141), ACP tool updates stop persisting a snapshot
+  per streamed chunk (#16682), agent browser tools stop bloating history and
+  respect tab ownership (#16956), authenticated GitHub Enterprise hosts are
+  recognised (#11059), and a session's lifetime is enforced (#17370).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

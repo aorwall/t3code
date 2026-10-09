@@ -28,6 +28,51 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-09 — merged upstream to c9fa1367ca
+
+- Upstream: `c9fa1367ca` from base `0f09627a11` (`99` commits).
+- Landed: `940` files from `git diff --stat HEAD^1 HEAD` against `939` in the
+  upstream range; the one extra is `docs/fork/inventory.json`. Fork delta `775`
+  files from `git diff --stat HEAD^2 HEAD`, up from `765` on 2026-10-08.
+- Branch point: `main` at `393208e23d`. No open merge PR to stack on.
+- Conflicts: 8 files.
+  - `apps/web/package.json` (`converged`): kept `@t3tools/moatless-api` beside
+    upstream's six new `provider-*` workspace deps.
+  - `ChatMarkdown.tsx` (`converged`): upstream moved the remark/rehype pipeline
+    to `@t3tools/shared/markdownPipeline`; kept only the two Moatless Artifact
+    imports.
+  - `ProviderSettingsPanel.tsx` (`converged`): upstream moved Add provider into
+    the section's `titleAction` (#17152); took that and moved the
+    `FEATURES.providerConfiguration` gate onto it. Inventory note re-pointed.
+  - `PreviewView.tsx` / `.test.tsx` (`decide`): kept the fork's framed
+    `navigate` and `PreviewFrameUnrendered` beside upstream's `close`,
+    move-tab and `PreviewFileNotShown`; the test mock carries both.
+  - `AppRoot.tsx`, `ThreadTerminalDrawer.tsx` (unlisted, `theirs` plus the
+    fork line): kept `WebBrowserHost` and the `FEATURES` import beside
+    upstream's `BrowserProfileReporter` and `@t3tools/shared/fileLinks` import.
+    The fork-only `AppRoot.test.tsx` now expects five children.
+  - `pnpm-lock.yaml`: upstream's copy, re-derived by install.
+- Duplicate adds: one `grok` fixture line in
+  `ProviderSettingsPanel.environment.test.tsx`, two distinct objects, declared
+  as `provider-panel-grok-fixtures`.
+- Sweep: 13 new upstream files hit owned concerns, all from the provider
+  package extraction (`packages/provider-*`) and #17370's read-only
+  `SessionPermissions.tsx`, which renders inside the `connections`-gated page.
+  All are false positives, taken as upstream's.
+- Unsupported methods: ADD 3 (`orchestration.searchThread`,
+  `searchThreadStream`, `preview.reportProfiles`), DROP 1 (`projects.mutate`,
+  served since moatless #1075).
+- Gaps: extended
+  [methods the backend does not dispatch](./gaps.md#methods-the-backend-does-not-dispatch),
+  [capabilities](./gaps.md#capabilities-are-reported-but-not-the-ones-the-newer-surfaces-need),
+  [settlement rules](./gaps.md#settlement-rules-moatless-owns) and
+  [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: `verify.mjs` passed every check except `test`. web failed on
+  `AppRoot.test.tsx` and passes after the fix above. Confirmed failing alone,
+  as on 2026-10-08: server `ServerBrowserPage`, `AcpAdapterV2`,
+  `OrchestratorReplayFixtures`, and `OpenCodeServerLedger` (now in
+  `@t3tools/provider-opencode`). Machine, not code.
+
 ### 2026-10-08 — merged upstream to 0f09627a11
 
 - Upstream: `0f09627a11` from base `cd41c4ada0` (`44` commits).

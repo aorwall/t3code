@@ -30,7 +30,7 @@ export function PreviewEmptyState({ threadRef, recentEntries, onRemoveRecent, on
   }
 
   return (
-    <div className="flex h-full min-h-0 overflow-y-auto px-5 py-8">
+    <div className="scrollbar-gutter-both flex h-full min-h-0 overflow-y-auto px-5 py-8">
       <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">

@@ -204,10 +204,11 @@ vi.mock("~/previewStateStore", () => ({
 vi.mock("~/state/environments", () => ({
   useEnvironment: () => ({ label: "WSL" }),
   useEnvironmentHttpBaseUrl: () => "http://172.25.85.75:3773",
+  usePrimaryEnvironmentId: () => null,
 }));
 
 vi.mock("~/state/preview", () => ({
-  previewEnvironment: { open: {}, navigate: {}, resize: {} },
+  previewEnvironment: { open: {}, navigate: {}, close: {}, resize: {} },
 }));
 
 vi.mock("~/state/use-atom-command", () => ({

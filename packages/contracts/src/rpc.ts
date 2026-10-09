@@ -1,3 +1,8 @@
+import {
+  OrchestrationV2SearchThreadError,
+  OrchestrationV2SearchThreadInput,
+  OrchestrationV2SearchThreadResult,
+} from "./orchestrationV2.ts";
 import { OrchestrationDispatchCommandError } from "./orchestrationDispatch.ts";
 import {
   McpAppCallToolInput,
@@ -252,6 +257,7 @@ import {
   PreviewListResult,
   PreviewClearProfileError,
   PreviewClearProfileInput,
+  PreviewReportProfilesInput,
   PreviewNavigateInput,
   PreviewOpenInput,
   PreviewRefreshInput,
@@ -474,6 +480,7 @@ export const WS_METHODS = {
   previewClose: "preview.close",
   previewList: "preview.list",
   previewClearProfile: "preview.clearProfile",
+  previewReportProfiles: "preview.reportProfiles",
   previewReportStatus: "preview.reportStatus",
 
   // Fork: the threads a thread spawned; upstream has no task tree.
@@ -1361,11 +1368,7 @@ const WsProjectsWriteFileRpc = Rpc.make(WS_METHODS.projectsWriteFile, {
 const WsProjectsMutateRpc = Rpc.make(WS_METHODS.projectsMutate, {
   payload: ProjectMutation,
   success: Project,
-  error: Schema.Union([
-    ProjectMutationError,
-    EnvironmentAuthorizationError,
-    UnsupportedMethodError,
-  ]),
+  error: Schema.Union([ProjectMutationError, EnvironmentAuthorizationError]),
 });
 
 // Finds or creates the Scratch project rooted at ServerConfig.scratchWorkspaceRoot.
@@ -1703,6 +1706,12 @@ const WsPreviewClearProfileRpc = Rpc.make(WS_METHODS.previewClearProfile, {
   ]),
 });
 
+const WsPreviewReportProfilesRpc = Rpc.make(WS_METHODS.previewReportProfiles, {
+  payload: PreviewReportProfilesInput,
+  // Fork: Moatless does not dispatch preview.reportProfiles. See gaps.md.
+  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
+});
+
 const WsPreviewReportStatusRpc = Rpc.make(WS_METHODS.previewReportStatus, {
   payload: PreviewReportStatusInput,
   error: Schema.Union([PreviewError, EnvironmentAuthorizationError]),
@@ -2015,6 +2024,31 @@ const WsOrchestrationV2GetFullThreadDiffRpc = Rpc.make(
       EnvironmentAuthorizationError,
       UnsupportedMethodError,
     ]),
+  },
+);
+
+const WsOrchestrationV2SearchThreadRpc = Rpc.make(ORCHESTRATION_V2_WS_METHODS.searchThread, {
+  payload: OrchestrationV2SearchThreadInput,
+  success: OrchestrationV2SearchThreadResult,
+  // Fork: Moatless does not dispatch orchestration.searchThread{,Stream}. See gaps.md.
+  error: Schema.Union([
+    OrchestrationV2SearchThreadError,
+    EnvironmentAuthorizationError,
+    UnsupportedMethodError,
+  ]),
+});
+
+const WsOrchestrationV2SearchThreadStreamRpc = Rpc.make(
+  ORCHESTRATION_V2_WS_METHODS.searchThreadStream,
+  {
+    payload: OrchestrationV2SearchThreadInput,
+    success: OrchestrationV2SearchThreadResult,
+    error: Schema.Union([
+      OrchestrationV2SearchThreadError,
+      EnvironmentAuthorizationError,
+      UnsupportedMethodError,
+    ]),
+    stream: true,
   },
 );
 
@@ -2403,6 +2437,7 @@ export const WsRpcGroup = RpcGroup.make(
   WsPreviewCloseRpc,
   WsPreviewListRpc,
   WsPreviewClearProfileRpc,
+  WsPreviewReportProfilesRpc,
   WsPreviewReportStatusRpc,
   WsSubscribePreviewEventsRpc,
   // Fork: the threads a thread spawned.
@@ -2447,6 +2482,8 @@ export const WsRpcGroup = RpcGroup.make(
   WsOrchestrationV2GetTurnDiffRpc,
   WsOrchestrationV2GetFullThreadDiffRpc,
   WsOrchestrationV2SearchThreadsRpc,
+  WsOrchestrationV2SearchThreadRpc,
+  WsOrchestrationV2SearchThreadStreamRpc,
   WsOrchestrationV2GetArchivedShellSnapshotRpc,
   WsOrchestrationV2GetThreadProjectionRpc,
   WsOrchestrationV2LaunchThreadRpc,
