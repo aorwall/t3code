@@ -7,14 +7,11 @@
  * workspace, and a popover row is too easy a place to reach it from.
  */
 import type { ScopedThreadRef } from "@t3tools/contracts";
-import { ChevronDownIcon, LoaderCircleIcon } from "lucide-react";
+import { LoaderCircleIcon } from "lucide-react";
 
 import { useEnvironment } from "~/state/environments";
 
-import {
-  THREAD_DETAILS_PANEL_CHEVRON_CLASS,
-  THREAD_DETAILS_PANEL_ICON_CLASS,
-} from "../chat/threadDetailsPanelStyles";
+import { THREAD_DETAILS_PANEL_ICON_CLASS } from "../chat/threadDetailsPanelStyles";
 import { ThreadDetailsControl } from "../chat/ThreadDetailsControl";
 import { Menu, MenuItem, MenuItemLabel, MenuPopup, MenuTrigger } from "../ui/menu";
 import { toastManager } from "../ui/toast";
@@ -78,9 +75,6 @@ export function SandboxDetailsRow({ threadRef }: { readonly threadRef: ScopedThr
           </span>
         </span>
         <SandboxCommandsBadge commands={status.data?.commands} />
-        <span data-slot="select-icon">
-          <ChevronDownIcon className={THREAD_DETAILS_PANEL_CHEVRON_CLASS} />
-        </span>
       </MenuTrigger>
       <MenuPopup align="end" className="w-(--anchor-width)">
         {offered.length > 0 ? (
