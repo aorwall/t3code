@@ -1,6 +1,7 @@
 "use client";
 
 import { scopedThreadKey } from "@t3tools/client-runtime/environment";
+import { previewStreamDownloadUrl } from "@t3tools/client-runtime/preview/server-browser-stream";
 import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
@@ -16,7 +17,7 @@ import {
   PREVIEW_ZOOM_LEVELS,
   type PreviewAdjustInput,
 } from "@t3tools/contracts";
-import { normalizePreviewUrl } from "@t3tools/shared/preview";
+import { normalizePreviewUrl, resolveAddressBarInput } from "@t3tools/shared/preview";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
@@ -36,8 +37,14 @@ import {
   useThreadPreviewState,
 } from "~/previewStateStore";
 import { resolveDiscoveredServerUrl } from "~/browser/browserTargetResolver";
-import { useEnvironmentHttpBaseUrl } from "~/state/environments";
+import { useEnvironmentSupportsServerBrowser } from "~/state/entities";
+import {
+  useEnvironment,
+  useEnvironmentHttpBaseUrl,
+  usePrimaryEnvironmentId,
+} from "~/state/environments";
 import { previewEnvironment } from "~/state/preview";
+import { usePreviewStreamAccess } from "~/state/previewStream";
 import { useAtomCommand } from "~/state/use-atom-command";
 import {
   browserMiniPlayerSource,
@@ -49,7 +56,9 @@ import { useRightPanelStore } from "~/rightPanelStore";
 
 import { previewBridge } from "./previewBridge";
 import { subscribePreviewAction } from "./previewActionBus";
+import { closePreviewSession } from "./closePreviewSession";
 import { openPreviewSession } from "./openPreviewSession";
+import { showPreviewPopup } from "./showPreviewPopup";
 import { PreviewChromeRow } from "./PreviewChromeRow";
 import { PreviewEmptyState } from "./PreviewEmptyState";
 import { PreviewMoreMenu, type PreviewMoreMenuActions } from "./PreviewMoreMenu";
@@ -75,13 +84,13 @@ import { previewRuntimeTabId } from "~/browser/previewRuntimeTabId";
 import { reloadHostedFrame } from "~/browser/hostedFrameReload";
 import { readPreviewAnnotationTheme } from "~/browser/annotationTheme";
 import { BrowserSettingsReadError } from "~/browser/openFileInPreview";
-import { PreviewUnreachable } from "./PreviewUnreachable";
+import { PreviewFileNotShown, PreviewUnreachable } from "./PreviewUnreachable";
 import { PreviewFrameUnrendered, useFrameUnrenderedHint } from "./PreviewFrameUnrendered";
 import { revealInFileExplorerLabel } from "./fileExplorerLabel";
 import { shouldShowPreviewEmptyState } from "./previewEmptyStateLogic";
 import { Badge } from "~/components/ui/badge";
 import { BrowserSurfaceSlot } from "~/browser/BrowserSurfaceSlot";
-import { useRendersServerTabNatively } from "~/browser/previewRuntime";
+import { alternatePreviewRuntime, useRendersServerTabNatively } from "~/browser/previewRuntime";
 import { ServerBrowserSurface, type ServerBrowserHandle } from "~/browser/ServerBrowserSurface";
 import { cn } from "~/lib/utils";
 import { useBrowserSurfaceStore } from "~/browser/browserSurfaceStore";
@@ -118,6 +127,31 @@ function previewProfileName(
 }
 
 const localApi = typeof window === "undefined" ? null : ensureLocalApi();
+
+/** Resolves stream access only while a server tab shows a file it downloaded. */
+function ServerTabFileNotShown(props: {
+  readonly threadRef: ScopedThreadRef;
+  readonly tabId: string;
+  readonly url: string;
+  readonly download: { readonly id: string; readonly fileName: string };
+}) {
+  const access = usePreviewStreamAccess(props.threadRef.environmentId);
+  return (
+    <PreviewFileNotShown
+      url={props.url}
+      fileName={props.download.fileName}
+      downloadUrl={
+        access
+          ? previewStreamDownloadUrl(
+              { access, threadId: props.threadRef.threadId, tabId: props.tabId },
+              props.download.id,
+            )
+          : null
+      }
+      onOpen={() => void localApi?.shell.openExternal(props.url).catch(() => undefined)}
+    />
+  );
+}
 
 /**
  * Single-tab preview surface: chrome row on top, one webview below, empty
@@ -157,6 +191,10 @@ export function PreviewView({
     : null;
   const open = useAtomCommand(previewEnvironment.open);
   const navigate = useAtomCommand(previewEnvironment.navigate, "preview navigate");
+  const closePreview = useAtomCommand(previewEnvironment.close, "preview close");
+  const environmentLabel = useEnvironment(threadRef.environmentId)?.label ?? "the environment";
+  const primaryEnvironmentId = usePrimaryEnvironmentId();
+  const serverBrowser = useEnvironmentSupportsServerBrowser(threadRef.environmentId);
   const resize = useAtomCommand(previewEnvironment.resize, "preview viewport resize");
   // A frame is driven, never read: it cannot report where it went, so the
   // server's record of the tab is the only account of it there is.
@@ -302,12 +340,12 @@ export function PreviewView({
   const handleSubmitUrl = useCallback(
     async (next: string) => {
       try {
-        const normalized = normalizePreviewUrl(next);
-        if (await navigateToResolvedUrl(normalized)) {
-          recordVisitForThread(threadRef, normalized);
+        const resolved = resolveAddressBarInput(next);
+        if (await navigateToResolvedUrl(resolved)) {
+          recordVisitForThread(threadRef, resolved);
         }
       } catch {
-        // Server-side `failed` event renders the unreachable view.
+        // Only empty input or an unsupported scheme lands here; the bar keeps the text.
       }
     },
     [navigateToResolvedUrl, threadRef],
@@ -471,6 +509,48 @@ export function PreviewView({
     if (!localApi) return;
     void localApi.shell.openExternal(url).catch(() => undefined);
   }, [framed, url]);
+
+  // A desktop tab of a remote environment can only reach what this computer
+  // reaches; the environment's browser reaches its own network, and its agents.
+  const moveTarget = alternatePreviewRuntime(
+    threadRef.environmentId,
+    primaryEnvironmentId,
+    serverBrowser,
+    snapshot,
+  );
+  const moveLabel =
+    moveTarget === "server" ? `Open in ${environmentLabel}'s browser` : "Open on this computer";
+  const handleMoveTab = useCallback(async () => {
+    if (!moveTarget || !tabId || !snapshot) return;
+    const result = await openPreviewSession({
+      openPreview: open,
+      threadRef,
+      // Loopback means the environment's machine, which this computer reaches by its address.
+      ...(url
+        ? {
+            url:
+              moveTarget === "desktop"
+                ? resolveDiscoveredServerUrl(threadRef.environmentId, url)
+                : url,
+          }
+        : {}),
+      viewport,
+      ...(snapshot.profileId === undefined ? {} : { profileId: snapshot.profileId }),
+      runtime: moveTarget,
+    });
+    if (result._tag === "Failure") {
+      if (isAtomCommandInterrupted(result)) return;
+      const error = squashAtomCommandFailure(result);
+      toastManager.add({
+        type: "error",
+        title: "Unable to move the browser tab",
+        description: error instanceof Error ? error.message : "An error occurred.",
+      });
+      return;
+    }
+    useRightPanelStore.getState().openBrowser(threadRef, result.value.tabId);
+    await closePreviewSession({ closePreview, snapshot, tabId, threadRef });
+  }, [closePreview, moveTarget, open, snapshot, tabId, threadRef, url, viewport]);
 
   const handlePictureInPicture = useCallback(() => {
     if (!tabId) return;
@@ -1100,6 +1180,9 @@ export function PreviewView({
                 (serverOwnsRendering || (desktopOverlay?.hasWebContents ?? false))
               }
               actions={moreMenuActions}
+              {...(moveTarget
+                ? { move: { label: moveLabel, onMove: () => void handleMoveTab() } }
+                : {})}
               profileName={activeProfileName}
               zoomFactor={
                 serverOwnsRendering ? serverZoomFactor : (desktopOverlay?.zoomFactor ?? 1)
@@ -1146,6 +1229,7 @@ export function PreviewView({
                 onControl={(control) =>
                   setServerControlledTabId(control?.controller === "you" ? runtimeTabId : null)
                 }
+                onPopup={(popupTabId) => showPreviewPopup(threadRef, popupTabId, "panel")}
                 // Stays connected under the empty state so a URL picked there reaches the page.
                 className={cn(
                   "absolute inset-0 h-full w-full",
@@ -1196,13 +1280,25 @@ export function PreviewView({
             controller={controller}
           />
         ) : null}
-        {navStatus._tag === "LoadFailed" ? (
+        {navStatus._tag === "LoadFailed" && navStatus.download ? (
+          <div className="absolute inset-0 z-10 bg-background">
+            <ServerTabFileNotShown
+              threadRef={threadRef}
+              tabId={snapshot?.tabId ?? ""}
+              url={navStatus.url}
+              download={navStatus.download}
+            />
+          </div>
+        ) : navStatus._tag === "LoadFailed" ? (
           <div className="absolute inset-0 z-10 bg-background">
             <PreviewUnreachable
               url={navStatus.url}
               code={navStatus.code}
               description={navStatus.description}
               onReload={handleRefresh}
+              {...(moveTarget === "server"
+                ? { move: { label: moveLabel, onMove: () => void handleMoveTab() } }
+                : {})}
             />
           </div>
         ) : null}
