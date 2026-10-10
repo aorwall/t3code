@@ -664,7 +664,7 @@
       "id": "draft-hero-headline",
       "paths": ["apps/web/src/components/chat/DraftHeroHeadline.tsx"],
       "verdict": "converged",
-      "note": "Take upstream, then re-wrap the project picker's New project item and the separator above it in `FEATURES.projectManagement`. One fragment around upstream's two elements; do not re-indent anything else in the menu. See the `navigation-gates` inventory entry."
+      "note": "Take upstream, then gate the picker's `ADD_PROJECT_VALUE` entry on `FEATURES.projectManagement` where `pickerItems` is built: a conditional spread in place of the one array element. Upstream turned the picker into a Combobox whose Add project row is a list item rather than a separate menu item, so the gate sits at the item filter and the render path stays upstream's. See the `navigation-gates` inventory entry."
     },
     {
       "id": "thread-adoption-graft",

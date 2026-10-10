@@ -84,7 +84,7 @@ export function SectionSearch({
         }}
         placeholder={`Search ${label}`}
         aria-label={`Search ${label}`}
-        className="h-6 w-44 rounded-md border border-input bg-background pr-2 pl-7 text-2xs text-foreground outline-none placeholder:text-muted-foreground/72 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/24"
+        className="h-6 w-44 rounded-md border border-input bg-background pr-2 pl-7 text-2xs text-foreground outline-none placeholder:text-muted-foreground/72 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/24"
       />
     </div>
   );
