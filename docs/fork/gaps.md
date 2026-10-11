@@ -297,6 +297,16 @@ what a person loses, which is the part the derivation cannot tell you:
   The fix that closes both at once is a `settingsPathEnabled(item.to)` filter in
   `filterAvailableSettingsSearchItems`, which is a behaviour change to make
   outside a merge.
+  The 2026-10-10 merge added **storage cleanup** to the Storage page:
+  `server.getStorageCleanupReport` (a pushed report of what browser artifacts,
+  logs and worktrees a sweep would reclaim) and `server.runStorageCleanup`.
+  Both controls render only for a server advertising
+  `capabilities.storageCleanup` / `storageCleanupRun`, which a Moatless
+  handshake omits, so no fork gate was added and the two union entries are the
+  only stand-in. The retention settings beside them save through
+  `server.updateSettings` and inherit this bullet. Closes when Moatless sweeps
+  its own sandboxes and advertises the capabilities; delete the two union
+  entries then.
 - **Diagnostics** — `server.getTraceDiagnostics`, `getProcessDiagnostics`,
   `getProcessResourceHistory`, `getResourceTelemetryHistory`, `signalProcess`,
   `retryResourceTelemetry`, `subscribeResourceTelemetry`. Holds open
@@ -1016,6 +1026,11 @@ The 2026-10-09 merge added two more:
 - **An agent can settle its own thread when its turn ends.** #17145 lets the
   orchestrator MCP toolkit record a settlement that takes effect at turn end.
   Moatless agents have no settle tool today.
+
+The 2026-10-10 merge added one more: **a snoozed thread's inactivity clock
+restarts when it wakes** (#16674), so a thread that slept past the auto-settle
+window is not settled the moment it wakes
+(`apps/server/src/orchestration/ThreadSettlementReactor.ts`).
 
 - **Closes when:** the backend's settlement decision reads pin and snooze state,
   settles a snoozed thread immediately, settles on the pull-request event rather
@@ -1762,6 +1777,12 @@ One more arrived in the 2026-10-01 merge:
   per streamed chunk (#16682), agent browser tools stop bloating history and
   respect tab ownership (#16956), authenticated GitHub Enterprise hosts are
   recognised (#11059), and a session's lifetime is enforced (#17370).
+  The 2026-10-10 merge adds: pulls and rebases during a turn no longer flood
+  its changed-files list (#17161), a pull request can be opened from a dirty
+  worktree (#15625), the Claude MCP token stays out of process arguments
+  (#17408), a logged-out Claude CLI no longer reports as authenticated
+  (#15459), passive terminal output keeps flowing (#17178), and a pending
+  subagent question surfaces on its parent thread (#16634).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
@@ -1852,6 +1873,22 @@ assumes the bundled server brokering between a client and a registered device,
 which is what device pairing is decided out for above. The scope notes were
 re-applied over the rewritten skills rather than extended — saying more would
 mean asserting something about Moatless that nobody has checked.
+
+### Three `apps/server` CLI test files fail typecheck on `anyUnknownInErrorContext`
+
+Since the 2026-10-10 merge, `tsc --noEmit` in `apps/server` reports
+`TS377030` ("any in the requirements channel") at every `runCli` in
+`src/cli/app.test.ts`, `project.test.ts` and `theme.test.ts`. The fork has no
+delta in those files, in `binCli.ts` beyond removing `pairCommand`, or in the
+server's tsconfig and dependencies; upstream's own `apps/server` tree checked
+out over this one reports the same errors, and the requirements type probed
+directly is `never`. So the `typecheck` step of `verify.mjs` is red for a reason
+that came in with upstream (the Effect 4.0.2 bump, #17571, and the
+`HostProcess` module, #17641, are the likely sources).
+
+- **Closes when:** `vp run typecheck` in `apps/server` reports no `TS377030`,
+  either after an upstream fix lands or after a fork-side cause is found.
+- **Then here:** delete this entry.
 
 ### Merges must be merge commits
 

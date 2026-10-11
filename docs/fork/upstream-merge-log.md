@@ -28,6 +28,55 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-10 — merged upstream to aacefcd7e9
+
+- Upstream: `aacefcd7e9` from base `c9fa1367ca` (`101` commits).
+- Landed: `929` files from `git diff --stat HEAD^1 HEAD` against `927` in the
+  upstream range. Extra on the fork side: `docs/fork/gaps.md`,
+  `docs/fork/inventory.json` and `SectionSearch.tsx` (lint fix below); missing:
+  `apps/server/src/cli/pair.test.ts`, which the fork deletes. Fork delta `775`
+  files from `git diff --stat HEAD^2 HEAD`, unchanged from 2026-10-09.
+- Branch point: `main` at `ce2c269a9f`. No open merge PR to stack on.
+- Conflicts: 9 files.
+  - `apps/server/src/cli/pair.test.ts` (modify/delete): kept deleted, per
+    `deletedUpstreamPaths`.
+  - `apps/web/package.json` (`converged`): kept `@t3tools/moatless-api` beside
+    upstream's `@t3tools/provider-acp-registry`.
+  - `ChatView.tsx` (`converged`): took upstream's `childInputBannerItem`
+    (#16634) and kept the fork's sandbox-commands banner beside it.
+  - `RightPanelTabs.tsx` (`converged`): both import blocks.
+  - `DraftHeroHeadline.tsx` (`converged`, went stale): upstream made the
+    picker a searchable Combobox (#17664) with Add project as a list item. The
+    `FEATURES.projectManagement` gate moved onto `pickerItems`; inventory
+    note rewritten.
+  - `SidebarChrome.tsx` (`decide`): upstream's change was brand-row styling
+    only (#16134); kept the fork's `APP_BASE_NAME` span.
+  - `textarea.tsx` (`converged`): upstream's `ring-inset` class plus the
+    fork's `font === "mono"` line.
+  - `threadShell.ts` (unlisted): upstream now imports
+    `isProviderNativeSubagentThread` itself; took its import without the fork
+    comment, fork filter intact.
+  - `pnpm-lock.yaml`: upstream's copy, re-derived by install.
+- Auto-merged, unlisted: `RpcInstrumentation.ts`, `ThreadTerminalDrawer.tsx`,
+  `docs/README.md` — outside fork concerns, `theirs`.
+- Sweep: 14 new upstream files hit owned concerns, all from the
+  source-control and provider package extractions and the `HostProcess`
+  rename. False positives, taken as upstream's.
+- Lint: upstream's `no-outset-state-indicators` (#16675) flagged the fork-only
+  `SectionSearch.tsx`; added `focus-visible:ring-inset`.
+- Unsupported methods: ADD 2 (`server.getStorageCleanupReport`,
+  `server.runStorageCleanup`), DROP 0.
+- Gaps: extended
+  [methods the backend does not dispatch](./gaps.md#methods-the-backend-does-not-dispatch),
+  [settlement rules](./gaps.md#settlement-rules-moatless-owns) and
+  [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server);
+  added the [`TS377030` typecheck entry](./gaps.md#three-appsserver-cli-test-files-fail-typecheck-on-anyunknowninerrorcontext).
+- Verification: `verify.mjs` passed every check except `typecheck` (the
+  upstream-origin `TS377030` above) and `test`. Confirmed failing alone, as on
+  2026-10-09: server `ServerBrowserPage` (no Playwright browser),
+  `AcpAdapterV2`, `OrchestratorReplayFixtures` (`CLAUDE_CONFIG_DIR` leak) and
+  `OpenCodeServerLedger`. Machine, not code.
+
 ### 2026-10-09 — merged upstream to c9fa1367ca
 
 - Upstream: `c9fa1367ca` from base `0f09627a11` (`99` commits).
