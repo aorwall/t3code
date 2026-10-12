@@ -28,6 +28,61 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-12 — merged upstream to e688034b5f
+
+- Upstream: `e688034b5f` from base `aacefcd7e9` (`223` commits).
+- Landed: `1226` files from `git diff --stat HEAD^1 HEAD` against `1226` in the
+  upstream range. Extra on the fork side: `docs/fork/inventory.json`; missing:
+  `AGENTS.md`, where upstream's only change (a user count) sits in a section
+  the fork's slimmed copy drops. Fork delta `775` files from
+  `git diff --stat HEAD^2 HEAD` before the docs and `server.ts` edits below.
+- Branch point: `main` at `a82baaf5ae`. No open merge PR to stack on.
+- Conflicts: 9 files.
+  - `AGENTS.md` (`decide`): kept the fork's copy; upstream's 400k→500k user
+    count lives in a section the fork does not carry. `resolution-check`
+    flags it as unchanged; that is this decision.
+  - `apps/mobile/src/lib/nativeMarkdownText.test.ts` (modify/delete): took
+    upstream's deletion (#16979 replaced the renderer); the fork's delta was a
+    wording tweak.
+  - `RightPanelTabs.tsx` (`converged`): upstream's `@dnd-kit` imports plus the
+    fork's `Box as BoxIcon`.
+  - `MessagesTimeline.tsx` / `.test.tsx` (`converged`): fork `FEATURES` import
+    and origin chip kept beside upstream's `forwardWheelToTimeline` and
+    `attribution === "automation"`; the `turnDiffs` mock kept beside upstream's
+    `legendListTestState`.
+  - `ProviderInstanceCard.tsx` (`converged`): `!FEATURES.providerConfiguration`
+    OR'd into upstream's new project-override `disabled` condition.
+  - `settingsSearch.ts` (`converged`): both `/settings/version-control` and
+    upstream's `/settings/diagnostics` scope rows.
+  - `contextMenuFallback.ts` (`converged`): upstream's viewport-height cap with
+    the fork's `min(24rem, 100vw - 0.5rem)` width.
+  - `threadRoutes.ts` (unlisted): upstream now returns `ready` before the
+    bootstrap check; the fork's `serverThreadAwaitingFirstAnswer` rule kept as
+    the final fallback.
+  - `pnpm-lock.yaml`: upstream's copy, re-derived by install.
+- `duplicateAddExceptions`: all three entries reported stale and deleted.
+- Sweep: 7 new upstream files hit owned concerns (PR cache, source-control
+  host secrets and settings, GitCafe hosts, DeviceHubProxy test). False
+  positives, taken as upstream's.
+- New workflow `mobile-android-apk.yml` arrives enabled; disable it after this
+  lands.
+- Typecheck: `Ws.layer` widened to `any` when first inferred inside
+  `layerMakeRoutes`, failing `binCli.ts`, `cli/server.ts`, `server.ts` and the
+  cli tests. This is the `TS377030` gap the 2026-10-10 merge blamed on
+  upstream; hoisting it to its own statement after the imports fixes it, see
+  inventory `server-ws-layer-hoist`. Gap entry struck.
+- Unsupported methods: ADD 3 (`filesystem.getMetadata`,
+  `orchestration.stopWorkflow`, `server.checkOtlpEndpoint`), DROP 0.
+- Gaps: extended
+  [methods the backend does not dispatch](./gaps.md#methods-the-backend-does-not-dispatch)
+  (stop workflow, file metadata, OTLP check, guided PR reviews).
+- Verification: `verify.mjs` passed every check except `test`. Confirmed
+  failing alone, as on 2026-10-10: server `ServerBrowserPage` (no Playwright
+  browser), `AcpAdapterV2`, `OrchestratorReplayFixtures` and
+  `OpenCodeServerLedger`. New: `@t3tools/shared` `AgentScope.test.ts` (#17662)
+  expects `oom_score_adj` 800, but the sandbox's processes inherit 935 and an
+  unprivileged process cannot lower it. Machine, not code.
+
 ### 2026-10-10 — merged upstream to aacefcd7e9
 
 - Upstream: `aacefcd7e9` from base `c9fa1367ca` (`101` commits).

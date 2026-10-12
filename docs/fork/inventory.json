@@ -191,29 +191,7 @@
     }
   ],
 
-  "duplicateAddExceptions": [
-    {
-      "id": "project-defaults-switch-handlers",
-      "path": "apps/web/src/components/settings/ProjectDefaultsSettings.tsx",
-      "line": "onCheckedChange={(enabled) =>",
-      "reason": "Distinct switches (agent credits upstream, agent browser access fork) that both wrap their handler; not a duplicated statement.",
-      "retiredWhen": "The two lines stop colliding, which the check reports as stale."
-    },
-    {
-      "id": "thread-route-ready-branches",
-      "path": "apps/web/src/threadRoutes.ts",
-      "line": "return \"ready\";",
-      "reason": "Two branches of the route render state (draft thread, server thread) each return ready; not a duplicated statement.",
-      "retiredWhen": "The two lines stop colliding, which the check reports as stale."
-    },
-    {
-      "id": "provider-panel-grok-fixtures",
-      "path": "apps/web/src/components/settings/ProviderSettingsPanel.environment.test.tsx",
-      "line": "driver: ProviderDriverKind.make(\"grok\"),",
-      "reason": "Upstream's legacy-config test sets a grok settings entry and the fork's narrowing stub publishes a grok provider snapshot; two objects, not a duplicated statement.",
-      "retiredWhen": "The two lines stop colliding, which the check reports as stale."
-    }
-  ],
+  "duplicateAddExceptions": [],
 
   "pathPolicy": [
     {
@@ -424,6 +402,12 @@
       "paths": ["apps/server/src/binCli.ts"],
       "verdict": "converged",
       "note": "Take upstream, then re-drop the two `pairCommand` lines (the command list lives in binCli.ts since upstream split it out of bin.ts in 2026-10) — the `./cli/pair.ts` import and the entry in the command list. This is the companion to the deletedUpstreamPaths entry for apps/server/src/cli/pair.ts: deleting the module without dropping its two references here is a build failure, and taking upstream's side of this file whole restores a command whose module does not exist. Moatless replaces device pairing, so the command has nothing to talk to. Drop this entry if the fork ever restores cli/pair.ts."
+    },
+    {
+      "id": "server-ws-layer-hoist",
+      "paths": ["apps/server/src/server.ts"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-add `const layerWsRoutes = Ws.layer;` straight after the imports and use it in place of `Ws.layer` inside `layerMakeRoutes`. The fork's extra WebSocket RPC handlers make `Ws.layer` costly to infer; when it is first inferred from inside `layerMakeRoutes`, after `layerRuntimeDependencies` has been checked, the checker silently widens its requirements to `any` and every type that reaches the server layer fails (binCli.ts, cli/server.ts, server.ts, and the cli test files the 2026-10-10 merge blamed on upstream). Retire the entry when typecheck passes with the hoist removed."
     },
     {
       "id": "fork-registry",

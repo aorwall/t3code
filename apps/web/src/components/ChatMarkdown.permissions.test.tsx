@@ -40,6 +40,7 @@ vi.mock("../browser/previewRuntime", async (importOriginal) => ({
 }));
 vi.mock("@effect/atom-react", () => ({ useAtomValue: () => serverConfig }));
 vi.mock("../hooks/useTheme", () => ({ useTheme: () => ({ resolvedTheme: "dark" }) }));
+vi.mock("../hooks/useFileMetadata", () => ({ useFileMetadata: () => undefined }));
 vi.mock("../hooks/useSettings", () => ({
   getClientSettings: () => DEFAULT_CLIENT_SETTINGS,
   useClientSettings: (select?: (value: typeof DEFAULT_CLIENT_SETTINGS) => unknown) =>
