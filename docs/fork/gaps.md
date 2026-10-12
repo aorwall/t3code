@@ -271,6 +271,15 @@ what a person loses, which is the part the derivation cannot tell you:
   sends, so nothing renders and no fork gate was added; the four union entries
   are the only stand-in. Closes when Moatless projects MCP app snapshots and
   dispatches the family; delete the four union entries then.
+  The 2026-10-12 merge added two more. `orchestration.stopWorkflow` (#17826)
+  stops a Claude workflow's subagents without stopping their owner, from a Stop
+  button in `ThreadRelationshipsControl.tsx`. The button shows only for a thread
+  carrying workflow members, which upstream's Claude adapter projects; no fork
+  gate was added, so if Moatless ever sends them the Stop button renders and
+  its call is refused. `filesystem.getMetadata` (#17923) gives file chips a server-derived
+  icon via `packages/client-runtime/src/state/fileMetadata.ts`; refused, the
+  chips keep their extension-derived icon. Closes when Moatless dispatches
+  them; delete the two union entries then.
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
   `getConfig`), so Settings renders and nothing in it can be saved. Holds open
@@ -310,7 +319,11 @@ what a person loses, which is the part the derivation cannot tell you:
 - **Diagnostics** — `server.getTraceDiagnostics`, `getProcessDiagnostics`,
   `getProcessResourceHistory`, `getResourceTelemetryHistory`, `signalProcess`,
   `retryResourceTelemetry`, `subscribeResourceTelemetry`. Holds open
-  `diagnostics`.
+  `diagnostics`. The 2026-10-12 merge added `server.checkOtlpEndpoint` (#12538),
+  which tests an OpenTelemetry export endpoint from the Diagnostics page's new
+  `TelemetryExportSettings` panel; the panel saves through
+  `server.updateSettings` and the page is already behind `diagnostics`, so the
+  union entry is the only new stand-in.
 - **Project and repository management** — `project.create` / `project.delete`
   (commands, see below), `sourceControl.cloneRepository`, `lookupRepository`,
   `publishRepository`, `filesystem.browse`, `vcs.init`, `createRef`,
@@ -455,6 +468,12 @@ what a person loses, which is the part the derivation cannot tell you:
   conclusion as routing: it is a refinement of a panel the capability keeps off.
   Closes when
   the backend reports `capabilities.pullRequests: true` and dispatches the rest.
+  The 2026-10-12 merge added **guided PR reviews** (#18124, #18143):
+  `pullRequests.reviewGuide`, `generateReviewGuide` and `reportState` drive a
+  Guide tab (`PullRequestGuideTab.tsx`, `guide/*`) that walks a reviewer through
+  an agent-written tour of the diff. All three declare `PullRequestRpcError` and
+  sit inside the panel the capability keeps off, so nothing new is lost; they
+  close with the rest of this bullet.
 - **Usage writes** — `server.refreshUsageRates` (#9146-era usage-pricing work,
   `apps/server/src/usage/usagePricing.ts`), which re-fetches provider price
   tables on the machine the server runs on, and `provider.consumeResetCredit`,
@@ -1873,22 +1892,6 @@ assumes the bundled server brokering between a client and a registered device,
 which is what device pairing is decided out for above. The scope notes were
 re-applied over the rewritten skills rather than extended — saying more would
 mean asserting something about Moatless that nobody has checked.
-
-### Three `apps/server` CLI test files fail typecheck on `anyUnknownInErrorContext`
-
-Since the 2026-10-10 merge, `tsc --noEmit` in `apps/server` reports
-`TS377030` ("any in the requirements channel") at every `runCli` in
-`src/cli/app.test.ts`, `project.test.ts` and `theme.test.ts`. The fork has no
-delta in those files, in `binCli.ts` beyond removing `pairCommand`, or in the
-server's tsconfig and dependencies; upstream's own `apps/server` tree checked
-out over this one reports the same errors, and the requirements type probed
-directly is `never`. So the `typecheck` step of `verify.mjs` is red for a reason
-that came in with upstream (the Effect 4.0.2 bump, #17571, and the
-`HostProcess` module, #17641, are the likely sources).
-
-- **Closes when:** `vp run typecheck` in `apps/server` reports no `TS377030`,
-  either after an upstream fix lands or after a fork-side cause is found.
-- **Then here:** delete this entry.
 
 ### Merges must be merge commits
 
