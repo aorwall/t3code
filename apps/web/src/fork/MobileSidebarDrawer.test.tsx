@@ -103,3 +103,78 @@ describe("MobileSidebarDrawer onPanelElementChange", () => {
     expect(onPanelElementChange).toHaveBeenLastCalledWith(null);
   });
 });
+
+describe("MobileSidebarDrawer row gestures", () => {
+  type Listener = (event: object) => void;
+  let windowListeners: Map<string, Listener>;
+  let documentListeners: Map<string, Listener>;
+  const fakeTarget = (listeners: Map<string, Listener>) => ({
+    addEventListener: (type: string, listener: Listener) => listeners.set(type, listener),
+    removeEventListener: (type: string) => listeners.delete(type),
+  });
+
+  beforeEach(() => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    windowListeners = new Map();
+    documentListeners = new Map();
+    vi.stubGlobal("document", {
+      ...fakeTarget(documentListeners),
+      body: { style: { overflow: "" } },
+    });
+    vi.stubGlobal("window", { ...fakeTarget(windowListeners), innerWidth: 390 });
+    vi.stubGlobal(
+      "PointerEvent",
+      class extends Event {
+        readonly pointerId: number;
+        constructor(type: string, init: { pointerId: number }) {
+          super(type);
+          this.pointerId = init.pointerId;
+        }
+      },
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // A finger lands on a thread row in the open drawer and moves by `dx`, `dy`.
+  function swipeOnRow(dx: number, dy: number) {
+    act(() => {
+      create(<MobileSidebarDrawer onOpenChange={() => {}} open />, {
+        createNodeMock: () => PANEL,
+      });
+    });
+    const row = { dispatchEvent: vi.fn() };
+    const touch = (x: number, y: number) => ({ touches: [{ clientX: x, clientY: y }] });
+    const pointerMove = { pointerType: "touch", stopImmediatePropagation: vi.fn() };
+    act(() => {
+      windowListeners.get("pointerdown")!({
+        isPrimary: true,
+        pointerId: 7,
+        pointerType: "touch",
+        target: row,
+      });
+      documentListeners.get("touchstart")!({ ...touch(100, 100), preventDefault: () => {} });
+      windowListeners.get("pointermove")!(pointerMove);
+      documentListeners.get("touchmove")!({ ...touch(100 + dx, 100 + dy), preventDefault: () => {} });
+    });
+    return { row, pointerMove };
+  }
+
+  it("holds back pointer moves and cancels the row's pointer on a horizontal swipe", () => {
+    const { row, pointerMove } = swipeOnRow(-20, 2);
+    expect(pointerMove.stopImmediatePropagation).toHaveBeenCalled();
+    expect(row.dispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "pointercancel", pointerId: 7 }),
+    );
+  });
+
+  it("leaves the row's pointer alone once a swipe turns out vertical", () => {
+    const { row } = swipeOnRow(2, 20);
+    const laterMove = { pointerType: "touch", stopImmediatePropagation: vi.fn() };
+    windowListeners.get("pointermove")!(laterMove);
+    expect(laterMove.stopImmediatePropagation).not.toHaveBeenCalled();
+    expect(row.dispatchEvent).not.toHaveBeenCalled();
+  });
+});

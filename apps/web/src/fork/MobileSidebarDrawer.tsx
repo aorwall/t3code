@@ -94,6 +94,38 @@ export function MobileSidebarDrawer({
       width: SIDEBAR_DRAG_FALLBACK_WIDTH,
       offset: 0,
     };
+    // The touch's pointer, so a horizontal drag can cancel what it started.
+    let pointer: { readonly id: number; readonly target: EventTarget | null } | null = null;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.pointerType === "touch" && event.isPrimary) {
+        pointer = { id: event.pointerId, target: event.target };
+      }
+    };
+
+    // Window capture runs before the sidebar's sensors on `document`. Without
+    // it, a row's 6px drag threshold starts a thread reorder or settle sweep
+    // before the 8px axis lock hands the swipe to the drawer.
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType === "touch" && gesture.claimed && gesture.axis !== "vertical") {
+        event.stopImmediatePropagation();
+      }
+    };
+
+    // What the browser sends when it takes a touch for scrolling: row drags,
+    // sweeps and the long-press menu all already end on it.
+    const cancelPointer = () => {
+      if (!pointer) return;
+      pointer.target?.dispatchEvent(
+        new PointerEvent("pointercancel", {
+          bubbles: true,
+          isPrimary: true,
+          pointerId: pointer.id,
+          pointerType: "touch",
+        }),
+      );
+      pointer = null;
+    };
 
     const handleTouchStart = (event: TouchEvent) => {
       const touch = event.touches[0];
@@ -148,6 +180,7 @@ export function MobileSidebarDrawer({
           gesture.claimed = false;
           return;
         }
+        cancelPointer();
         setIsDragging(true);
       }
 
@@ -168,15 +201,20 @@ export function MobileSidebarDrawer({
       }
       gesture.claimed = false;
       gesture.axis = "undecided";
+      pointer = null;
       setIsDragging(false);
       setDragOffset(null);
     };
 
+    window.addEventListener("pointerdown", handlePointerDown, { capture: true });
+    window.addEventListener("pointermove", handlePointerMove, { capture: true });
     document.addEventListener("touchstart", handleTouchStart, { passive: false });
     document.addEventListener("touchmove", handleTouchMove, { passive: false });
     document.addEventListener("touchend", handleTouchEnd);
     document.addEventListener("touchcancel", handleTouchEnd);
     return () => {
+      window.removeEventListener("pointerdown", handlePointerDown, { capture: true });
+      window.removeEventListener("pointermove", handlePointerMove, { capture: true });
       document.removeEventListener("touchstart", handleTouchStart);
       document.removeEventListener("touchmove", handleTouchMove);
       document.removeEventListener("touchend", handleTouchEnd);
