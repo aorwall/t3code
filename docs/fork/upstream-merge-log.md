@@ -28,6 +28,32 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-13 — merged upstream to 5070a83a32
+
+- Upstream: `5070a83a32` from base `e688034b5f` (`48` commits).
+- Landed: `240` files from `git diff --stat HEAD^1 HEAD` against `240` in the
+  upstream range, an exact match. Fork delta `775` files from
+  `git diff --stat HEAD^2 HEAD`.
+- Branch point: `main` at `53ecdd7220`. No open merge PR to stack on.
+- Conflicts: 1 file. `apps/web/src/routeTree.gen.ts` (unlisted, generated):
+  took upstream's copy and regenerated it for upstream's new `/_chat/new` route.
+  18 more files both sides touched auto-merged; `duplicate-adds` and
+  `resolution-check` found nothing, and `ThreadTerminalDrawer.tsx` (unlisted)
+  keeps its `FEATURES.openInEditor` gate.
+- `pnpm-lock.yaml`: upstream's copy, re-derived by install.
+- Sweep: `apps/web/src/components/promptLinks/HostedPromptLinkLanding.tsx`
+  matched an owned concern. It renders only for the `hosted-static` auth state,
+  which a Moatless deployment never reaches; taken as upstream's.
+- Unsupported methods: ADD 0, DROP 0. Upstream added no RPC method.
+- Gaps: extended
+  [methods the backend does not dispatch](./gaps.md#methods-the-backend-does-not-dispatch)
+  (prompt-link cloning) and
+  [runtime fixes upstream made](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: `verify.mjs` passed every check except `test`. Confirmed
+  failing alone, as on 2026-10-12: shared `AgentScope` (`oom_score_adj` 935),
+  server `ServerBrowserPage` (no Playwright browser), `AcpAdapterV2`,
+  `OrchestratorReplayFixtures` and `OpenCodeServerLedger`. Machine, not code.
+
 ### 2026-10-12 — merged upstream to e688034b5f
 
 - Upstream: `e688034b5f` from base `aacefcd7e9` (`223` commits).

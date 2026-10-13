@@ -343,6 +343,11 @@ what a person loses, which is the part the derivation cannot tell you:
   gated client-side on `capabilities.projectCloneTracking`, which a Moatless
   handshake omits — so the four union entries are the only stand-in, and they
   close with the rest of this bullet.
+  The 2026-10-13 merge's prompt links (#18454, `/new` and
+  `components/promptLinks/**`) inherit the same gate: a link naming a repository
+  that is not a project offers "clone", which refuses with an "update T3 Code"
+  message because the handshake omits `projectCloneTracking`. The rest of the
+  link (pick a project, place the prompt in a draft) works against Moatless.
   The 2026-10-01 merge added **threads without a project** (#13612):
   `projects.ensureScratch` finds or creates a server-owned scratch project
   rooted at `ServerConfig.scratchWorkspaceRoot`, and the draft hero, command
@@ -1805,6 +1810,16 @@ One more arrived in the 2026-10-01 merge:
   (#17408), a logged-out Claude CLI no longer reports as authenticated
   (#15459), passive terminal output keeps flowing (#17178), and a pending
   subagent question surfaces on its parent thread (#16634).
+  The 2026-10-13 merge adds: a confirmed Claude subagent outcome settles that
+  task and its child work (#18778, `thread.background-work.settle`'s new
+  `subagent` target), Claude thinking before a tool call stays a collapsed
+  Thought (#18887), Codex title and branch-name generation no longer starts the
+  user's MCP servers (#17058), the event store resyncs a thread holding an event
+  type from a newer build (#15937), a migration id clash stops startup instead
+  of crash-looping (#15925), cached branch PR lookups start no git process
+  (#17063), Forgejo, GitLab and Bitbucket PRs report their head commit (#18463,
+  #18608, #18402), configured PR bases resolve to branch names (#18754), and a
+  custom model entry with a built-in slug renames that built-in (#18840).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
