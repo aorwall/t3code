@@ -1,4 +1,7 @@
-# Typecheck the whole workspace on every pull request and every push to main.
+# Typecheck `apps/web` and the workspace packages it depends on, on every pull
+# request and every push to main. The rest of the workspace (`apps/server`,
+# `apps/desktop`, `apps/mobile`, ...) is not shipped by this fork and is not
+# checked here; `tsc` peaks at 8.5 GiB on `apps/server`, more than this runner has.
 #
 # This is a fork-only workflow. It exists because the sentence "CI owns the full
 # suite" is not true here: every workflow inherited from upstream is switched off
@@ -64,10 +67,10 @@ jobs:
       # here, so this cannot drift from what a developer's install resolves.
       - run: corepack enable
 
-      # The full workspace: every project has to be installed for a `-r`
-      # typecheck to mean anything. Dependency build scripts stay off because
-      # `node-pty`, which only `apps/server` declares, compiles through node-gyp
-      # and this runner image carries no `make`. A package's `.d.ts` files ship
+      # The full workspace, so every package `apps/web` imports is installed.
+      # Dependency build scripts stay off because `node-pty`, which only
+      # `apps/server` declares, compiles through node-gyp and this runner image
+      # carries no `make`. A package's `.d.ts` files ship
       # in its tarball, so nothing those builds produce is a typecheck input.
       - run: pnpm install --frozen-lockfile --ignore-scripts
 
@@ -78,7 +81,5 @@ jobs:
       # Before the typecheck, so a runner lost to its memory still reports these.
       - run: pnpm --filter @t3tools/contracts test
 
-      # One project at a time, not `pnpm typecheck`'s two: tsgo peaks near
-      # 6.3 GB on apps/server and 3.5 GB on apps/web, so the two together
-      # starve this 8 GiB runner until it stops answering GitHub.
-      - run: pnpm exec vp run -r --concurrency-limit 1 typecheck
+      # One project at a time, to stay inside this 8 GiB runner.
+      - run: pnpm exec vp run --filter '@t3tools/web...' --fail-if-no-match --concurrency-limit 1 typecheck
