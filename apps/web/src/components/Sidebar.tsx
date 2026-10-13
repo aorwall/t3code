@@ -163,6 +163,8 @@ import { FEATURES } from "../fork/features";
 import { useTouchContextMenu } from "../fork/touchContextMenu";
 // Fork: the sidebar's own thread filter, and the list it produces.
 import { useSidebarThreadList } from "../fork/browsedThreadShells";
+// Fork: the filter's "hide subtasks" rule.
+import { isSidebarSubtaskThread } from "../fork/threadBrowseFilter";
 // Fork: links from a row to its child tasks and its parent task.
 import { SidebarChildTasksBadge, SidebarParentLink } from "../fork/SidebarThreadFamily";
 // Fork: the hover card says which thread a fork or subtask came from.
@@ -2470,7 +2472,8 @@ export default function Sidebar() {
   // filter beside the project scope both narrows it and reaches past it — see
   // fork/browsedThreadShells.
   const listedThreads = useThreadShells();
-  const { threads, isBrowsing, showsClosed, isTruncated } = useSidebarThreadList(listedThreads);
+  const { threads, isBrowsing, showsClosed, hidesSubtasks, isTruncated } =
+    useSidebarThreadList(listedThreads);
   const router = useRouter();
   const { isMobile, setOpenMobile } = useSidebar();
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
@@ -2825,6 +2828,10 @@ export default function Sidebar() {
   useEffect(() => {
     clearSelection();
   }, [clearSelection, projectScopeKey]);
+  // Fork: hiding subtasks hides rows the same way a scope flip does.
+  useEffect(() => {
+    if (hidesSubtasks) clearSelection();
+  }, [clearSelection, hidesSubtasks]);
 
   const openProjectSettings = useCallback(
     (projectGroup: SidebarProjectSnapshot, projectRef?: ScopedProjectRef) => {
@@ -2910,6 +2917,10 @@ export default function Sidebar() {
               scopedProjectKeys.has(`${thread.environmentId}:${thread.projectId}`)),
         )
       : filterSidebarV2VisibleThreads(threads, scopedProjectKeys);
+    // Fork: the filter's "hide subtasks" drops child tasks from the shown rows only.
+    const shown = hidesSubtasks
+      ? visible.filter((thread) => !isSidebarSubtaskThread(thread))
+      : visible;
     inboxReturns.observe(workingShelfEnabled ? threads : null);
     const pinned: EnvironmentThreadShell[] = [];
     const active: EnvironmentThreadShell[] = [];
@@ -2922,7 +2933,8 @@ export default function Sidebar() {
     const settled: EnvironmentThreadShell[] = [];
     const draggable = new Set<string>();
     const activeReorderable = new Set<string>();
-    for (const thread of visible) {
+    // Fork: `shown` is `visible` less the subtasks the filter hides.
+    for (const thread of shown) {
       const capabilities = serverConfigs.get(thread.environmentId)?.environment.capabilities;
       // Threads on servers without the settlement capability (old server,
       // or descriptor not loaded yet) never classify as settled: the user
@@ -3022,6 +3034,8 @@ export default function Sidebar() {
       snoozeNow: preciseNow,
     };
   }, [
+    // Fork: the "hide subtasks" filter.
+    hidesSubtasks,
     isBrowsing,
     nowMinute,
     optimisticDrop,

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   composeSidebarThreadList,
   isThreadBrowseActive,
+  isSidebarSubtaskThread,
   isThreadFilterActive,
   NO_THREAD_BROWSE_FILTER,
   threadBrowseInput,
@@ -17,12 +18,19 @@ describe("threadBrowseInput", () => {
   });
 
   it("leaves an unset filter out, so one filter is one payload", () => {
-    expect(threadBrowseInput({ ownerUserId: "user-1", tag: null, includeClosed: false })).toEqual({
+    expect(threadBrowseInput({ ...NO_THREAD_BROWSE_FILTER, ownerUserId: "user-1" })).toEqual({
       ownerUserId: "user-1",
       includeClosed: false,
     });
     expect(
-      JSON.stringify(threadBrowseInput({ ownerUserId: "user-1", tag: "bug", includeClosed: true })),
+      JSON.stringify(
+        threadBrowseInput({
+          ownerUserId: "user-1",
+          tag: "bug",
+          includeClosed: true,
+          hideSubtasks: true,
+        }),
+      ),
     ).toBe(JSON.stringify({ ownerUserId: "user-1", tag: "bug", includeClosed: true }));
   });
 });
@@ -33,6 +41,21 @@ describe("isThreadBrowseActive", () => {
     expect(isThreadBrowseActive({ ...NO_THREAD_BROWSE_FILTER, includeClosed: true })).toBe(false);
     expect(isThreadBrowseActive({ ...NO_THREAD_BROWSE_FILTER, tag: "bug" })).toBe(true);
     expect(isThreadFilterActive({ ...NO_THREAD_BROWSE_FILTER, includeClosed: true })).toBe(true);
+  });
+
+  it("leaves hiding subtasks to the client", () => {
+    const filter = { ...NO_THREAD_BROWSE_FILTER, hideSubtasks: true };
+    expect(isThreadBrowseActive(filter)).toBe(false);
+    expect(threadBrowseInput(filter)).toBeNull();
+    expect(isThreadFilterActive(filter)).toBe(true);
+  });
+});
+
+describe("isSidebarSubtaskThread", () => {
+  it("is a delegated child task, and not a fork or a root thread", () => {
+    expect(isSidebarSubtaskThread({ lineage: { relationshipToParent: "subagent" } })).toBe(true);
+    expect(isSidebarSubtaskThread({ lineage: { relationshipToParent: "fork" } })).toBe(false);
+    expect(isSidebarSubtaskThread({ lineage: { relationshipToParent: null } })).toBe(false);
   });
 });
 

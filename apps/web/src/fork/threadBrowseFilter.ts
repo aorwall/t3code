@@ -7,7 +7,8 @@
  * rather than what they follow, and the rows come back in place of the listing
  * rather than filtered out of it. "Include closed" stays inside it: closed work
  * the viewer follows is already served by `orchestration.getArchivedShellSnapshot`,
- * and it is appended.
+ * and it is appended. "Hide subtasks" is neither: it only drops rows the sidebar
+ * already holds, so it never reaches the server.
  *
  * Its own store rather than a field in `uiStateStore`: that one is upstream's,
  * and this whole surface disappears with the fork.
@@ -24,18 +25,22 @@ export interface ThreadBrowseFilter {
   /** Tag name a listed thread must carry, or null for any. */
   readonly tag: string | null;
   readonly includeClosed: boolean;
+  /** Whether a Moatless child task is left out of the list, beside its parent's badge. */
+  readonly hideSubtasks: boolean;
 }
 
 export const NO_THREAD_BROWSE_FILTER: ThreadBrowseFilter = {
   ownerUserId: null,
   tag: null,
   includeClosed: false,
+  hideSubtasks: false,
 };
 
 interface ThreadBrowseFilterStore extends ThreadBrowseFilter {
   readonly setOwnerUserId: (ownerUserId: string | null) => void;
   readonly setTag: (tag: string | null) => void;
   readonly setIncludeClosed: (includeClosed: boolean) => void;
+  readonly setHideSubtasks: (hideSubtasks: boolean) => void;
   readonly reset: () => void;
 }
 
@@ -46,6 +51,7 @@ export const useThreadBrowseFilterStore = create<ThreadBrowseFilterStore>()(
       setOwnerUserId: (ownerUserId) => set({ ownerUserId }),
       setTag: (tag) => set({ tag }),
       setIncludeClosed: (includeClosed) => set({ includeClosed }),
+      setHideSubtasks: (hideSubtasks) => set({ hideSubtasks }),
       reset: () => set({ ...NO_THREAD_BROWSE_FILTER }),
     }),
     {
@@ -58,6 +64,7 @@ export const useThreadBrowseFilterStore = create<ThreadBrowseFilterStore>()(
         ownerUserId: state.ownerUserId,
         tag: state.tag,
         includeClosed: state.includeClosed,
+        hideSubtasks: state.hideSubtasks,
       }),
     },
   ),
@@ -70,7 +77,19 @@ export function isThreadBrowseActive(filter: ThreadBrowseFilter): boolean {
 
 /** Whether anything is narrowed at all — what the trigger's dot reports. */
 export function isThreadFilterActive(filter: ThreadBrowseFilter): boolean {
-  return isThreadBrowseActive(filter) || filter.includeClosed;
+  return isThreadBrowseActive(filter) || filter.includeClosed || filter.hideSubtasks;
+}
+
+/**
+ * Whether a row is a child task an agent delegated, which "hide subtasks" drops.
+ *
+ * A fork has a parent too, but the user made it, so it stays listed. A
+ * provider-native subagent never reaches the list in the first place.
+ */
+export function isSidebarSubtaskThread(thread: {
+  readonly lineage: { readonly relationshipToParent: "fork" | "subagent" | null };
+}): boolean {
+  return thread.lineage.relationshipToParent === "subagent";
 }
 
 /**

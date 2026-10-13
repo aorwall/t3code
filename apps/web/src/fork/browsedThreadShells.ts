@@ -89,6 +89,11 @@ export interface SidebarThreadList {
   /** Whether closed threads belong in the list — they arrive archived. */
   readonly showsClosed: boolean;
   /**
+   * Whether child tasks are left out of the rows shown. `threads` still holds
+   * them, because the drag-reorder slots are reserved for every row.
+   */
+  readonly hidesSubtasks: boolean;
+  /**
    * Whether a server capped the browse, so the list is the newest matches and
    * not every one. False whenever `isBrowsing` is, since only a browse is
    * capped.
@@ -141,6 +146,7 @@ export function useSidebarThreadList(
       }),
       isBrowsing: input !== null,
       showsClosed: filter.includeClosed,
+      hidesSubtasks: filter.hideSubtasks,
       isTruncated: input !== null && browsed.isTruncated,
       isLoading: browsed.isLoading || archived.isLoading,
       error: browsed.error ?? archived.error,
@@ -150,6 +156,7 @@ export function useSidebarThreadList(
       archived.isLoading,
       archivedThreads,
       browsed,
+      filter.hideSubtasks,
       filter.includeClosed,
       input,
       listed,
@@ -162,5 +169,9 @@ export function useThreadBrowseFilter(): ThreadBrowseFilter {
   const ownerUserId = useThreadBrowseFilterStore((store) => store.ownerUserId);
   const tag = useThreadBrowseFilterStore((store) => store.tag);
   const includeClosed = useThreadBrowseFilterStore((store) => store.includeClosed);
-  return useMemo(() => ({ ownerUserId, tag, includeClosed }), [includeClosed, ownerUserId, tag]);
+  const hideSubtasks = useThreadBrowseFilterStore((store) => store.hideSubtasks);
+  return useMemo(
+    () => ({ ownerUserId, tag, includeClosed, hideSubtasks }),
+    [hideSubtasks, includeClosed, ownerUserId, tag],
+  );
 }

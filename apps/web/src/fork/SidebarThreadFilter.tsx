@@ -6,7 +6,8 @@
  * Moatless decides what a browse may return from the same read rules the rest of
  * the listing uses, and a non-administrator narrowing by owner would get the
  * public work of that person and nothing else. "Include closed" is nobody's
- * privilege — it is the viewer's own archive — so it is offered to everyone.
+ * privilege — it is the viewer's own archive — so it is offered to everyone, and
+ * so is "Hide subtasks", which only narrows rows the sidebar already holds.
  */
 import { ListFilterIcon, XIcon } from "lucide-react";
 
@@ -35,6 +36,7 @@ const ANY = "__any__";
 export function SidebarThreadFilter() {
   const filter = useThreadBrowseFilter();
   const setIncludeClosed = useThreadBrowseFilterStore((store) => store.setIncludeClosed);
+  const setHideSubtasks = useThreadBrowseFilterStore((store) => store.setHideSubtasks);
   const reset = useThreadBrowseFilterStore((store) => store.reset);
   const { isAdmin } = useMoatlessSession();
   const serverConfigs = useServerConfigs();
@@ -95,6 +97,20 @@ export function SidebarThreadFilter() {
               size="sm"
               checked={filter.includeClosed}
               onCheckedChange={setIncludeClosed}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <label
+              htmlFor="sidebar-thread-filter-subtasks"
+              className="text-muted-foreground text-xs"
+            >
+              Hide subtasks
+            </label>
+            <Switch
+              id="sidebar-thread-filter-subtasks"
+              size="sm"
+              checked={filter.hideSubtasks}
+              onCheckedChange={setHideSubtasks}
             />
           </div>
         </div>
