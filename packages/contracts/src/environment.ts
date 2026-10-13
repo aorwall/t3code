@@ -242,6 +242,15 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
       servers that serve the lifecycle status alone, where the panel would have
       nothing to show and no control to offer, so clients do not open it. */
   sandboxDetail: Schema.optionalKey(Schema.Boolean),
+  /** Fork: surfaces this server cannot back, by the web client's `FeatureName`
+      (`apps/web/src/fork/features.ts`). Strings rather than a literal union so
+      a server naming a surface this client does not know still decodes.
+      Absent, every surface is shown. */
+  unsupportedSurfaces: Schema.optionalKey(Schema.Array(Schema.String)),
+  /** Fork: the same origin also serves the Moatless REST API under `/api/v1`
+      with its cookie login. Absent, the client offers T3 pairing instead of
+      `/login` and none of the Moatless administration pages. */
+  moatlessApi: Schema.optionalKey(Schema.Boolean),
   /** Server can durably mark running provider turns before a self-update and
       continue them after the replacement process starts. */
   serverUpdateThreadContinuation: Schema.optionalKey(Schema.Boolean),

@@ -12,11 +12,16 @@ import {
   submitMoatlessPasswordLogin,
   type MoatlessAuthModeState,
 } from "../environments/primary";
+import { signInPath } from "../fork/features";
 
 export const Route = createFileRoute("/login")({
   beforeLoad: async ({ context }) => {
     if (context.authGateState.status === "authenticated") {
       throw redirect({ to: "/", replace: true });
+    }
+    // A T3 server has no Moatless login to offer; it pairs instead.
+    if (signInPath() === "/pair") {
+      throw redirect({ to: "/pair", replace: true });
     }
   },
   component: LoginRouteView,

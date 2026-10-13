@@ -12,6 +12,7 @@ import {
   type MoatlessResponse,
   ok,
 } from "@t3tools/moatless-api/customInstance";
+import { moatlessApiAvailable } from "../fork/features";
 import { appAtomRegistry } from "../rpc/atomRegistry";
 
 /**
@@ -64,7 +65,12 @@ const queryFamily = Atom.family((key: string) => {
   }
   return Atom.make(
     Effect.tryPromise({
-      try: execute,
+      // A T3 server has no `/api/v1`. Failing here keeps every Moatless read
+      // off the network instead of turning each one into a 404.
+      try: () =>
+        moatlessApiAvailable()
+          ? execute()
+          : Promise.reject(new MoatlessUnexpectedError("This server has no Moatless API")),
       catch: asMoatlessError,
     }),
   ).pipe(

@@ -65,7 +65,11 @@ import {
 import { useUiStateStore } from "../uiStateStore";
 import { syncBrowserChromeTheme } from "../hooks/useTheme";
 import { configureClientTracing } from "../observability/clientTracing";
-import { resolveInitialServerAuthGateState } from "../environments/primary";
+import {
+  resolveInitialServerAuthGateState,
+  // Fork: see the descriptor read in beforeLoad.
+  resolveInitialPrimaryEnvironmentDescriptor,
+} from "../environments/primary";
 import { hasHostedPairingRequest, isHostedStaticApp } from "../hostedPairing";
 import { useHostedPromptLinkLanding } from "../components/promptLinks/HostedPromptLinkLanding";
 import { isLocalEnvironmentDisabled } from "../localEnvironment";
@@ -104,6 +108,9 @@ export const Route = createRootRoute({
       };
     }
 
+    // Fork: fork/features.ts gates read the descriptor synchronously, and the
+    // auth gate below reads whether this server is Moatless.
+    await resolveInitialPrimaryEnvironmentDescriptor();
     const authGateState = await resolveInitialServerAuthGateState();
     if (
       authGateState.status === "authenticated" &&

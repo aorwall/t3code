@@ -8,7 +8,7 @@ import { SettingsBreadcrumb } from "../components/settings/SettingsBreadcrumb";
 import { SidebarInset } from "../components/ui/sidebar";
 import { useNavigateToMainApp } from "../components/sidebar/mainAppLocation";
 import { rememberMoatlessAuthReturnTo } from "../environments/primary";
-import { settingsPathEnabled } from "../fork/features";
+import { settingsPathEnabled, signInPath } from "../fork/features";
 import { isMoatlessAdminPath } from "../components/settings/settingsSearch";
 import { readIsMoatlessAdmin } from "../moatless/session";
 import { WorkspacePageHeader } from "../components/WorkspacePageHeader";
@@ -190,7 +190,8 @@ export const Route = createFileRoute("/settings")({
       rememberMoatlessAuthReturnTo(
         window.location.pathname + window.location.search + window.location.hash,
       );
-      throw redirect({ to: "/login", replace: true });
+      // Fork: Moatless signs in at /login, a T3 server through pairing.
+      throw redirect({ to: signInPath(), replace: true });
     }
 
     if (location.pathname === "/settings" || !settingsPathEnabled(location.pathname)) {

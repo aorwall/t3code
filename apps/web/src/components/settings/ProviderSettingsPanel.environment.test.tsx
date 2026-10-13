@@ -143,6 +143,13 @@ vi.mock("../../state/entities", () => ({
   useServerConfigs: () => new Map(),
 }));
 
+// Fork: these assertions describe the Moatless UI, which lists
+// providerConfiguration in its descriptor's unsupportedSurfaces.
+vi.mock("../../fork/features", async (importActual) => {
+  const actual = await importActual<typeof import("../../fork/features")>();
+  return { ...actual, FEATURES: { ...actual.FEATURES, providerConfiguration: false } };
+});
+
 import { EnvironmentProviderSettings } from "./ProviderSettingsPanel";
 import { AddProviderInstanceDialog } from "./AddProviderInstanceDialog";
 

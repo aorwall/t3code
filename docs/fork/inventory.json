@@ -35,7 +35,7 @@
     {
       "id": "auth-session",
       "name": "Authentication and session",
-      "forkPosition": "Moatless cookie session and /login; no T3 backend session.",
+      "forkPosition": "Against a server whose descriptor declares `moatlessApi`: Moatless cookie session and /login, no T3 backend session. Against any other server: upstream's session probe and /pair.",
       "upstreamAddition": "Do not adopt upstream auth work."
     },
     {
@@ -198,7 +198,7 @@
       "id": "primary-auth",
       "paths": ["apps/web/src/environments/primary/auth.ts"],
       "verdict": "decide",
-      "note": "Keep the Moatless cookie session. Upstream owns this file and changes the environment layer around it; take those changes and re-state the fork's session behavior on top."
+      "note": "Keep the Moatless cookie session behind `moatlessApiAvailable()`, with upstream's plain `fetchSessionState()` on the other branch. Upstream owns this file and changes the environment layer around it; take those changes and re-state the fork's session behavior on top."
     },
     {
       "id": "primary-http-layer",
@@ -213,7 +213,7 @@
       "id": "login-route",
       "paths": ["apps/web/src/routes/login.tsx"],
       "verdict": "ours",
-      "note": "Fork-only /login."
+      "note": "Fork-only /login. Redirects to /pair when the server has no Moatless API."
     },
     {
       "id": "moatless-task-link-route",
@@ -603,7 +603,7 @@
       "id": "root-route",
       "paths": ["apps/web/src/routes/__root.tsx"],
       "verdict": "converged",
-      "note": "Take upstream, then keep `/login` in the chrome-less pathname list beside upstream's /pair and /connect. The fork's login route is its own full-page surface and must not render inside the app shell. Upstream's routing-recovery work — a notFoundComponent, and router.invalidate() in place of reset() so startup retries once the server is back — is additive and welcome; take all of it."
+      "note": "Take upstream, then keep `/login` in the chrome-less pathname list beside upstream's /pair and /connect, and the `resolveInitialPrimaryEnvironmentDescriptor()` await in `beforeLoad` ahead of the auth gate: every fork surface gate and the auth branch read that descriptor synchronously, so it must resolve before anything renders. The fork's login route is its own full-page surface and must not render inside the app shell. Upstream's routing-recovery work — a notFoundComponent, and router.invalidate() in place of reset() so startup retries once the server is back — is additive and welcome; take all of it."
     },
     {
       "id": "branch-toolbar-gates",
@@ -707,7 +707,7 @@
       "id": "chat-layout-route",
       "paths": ["apps/web/src/routes/_chat.tsx"],
       "verdict": "converged",
-      "note": "Take upstream, then re-point the unauthenticated redirect in `beforeLoad`: the fork remembers where the viewer was with `rememberMoatlessAuthReturnTo` and redirects to `/login` (the fork's own route, inventory login-route) instead of upstream's `/pair`. Pairing is a desktop flow with no Moatless equivalent, and without the return-to the viewer lands on `/` after signing in rather than on the thread they followed a link to. Everything else in the file — the layout, the global shortcuts, the ThreadRouteView render — is upstream's and changes steadily; #12015 moved the whole thread view into this layout."
+      "note": "Take upstream, then re-point the unauthenticated redirect in `beforeLoad`: the fork remembers where the viewer was with `rememberMoatlessAuthReturnTo` and redirects to `signInPath()` — `/login` (the fork's own route, inventory login-route) against Moatless, upstream's `/pair` against a T3 server. Pairing is a desktop flow with no Moatless equivalent, and without the return-to the viewer lands on `/` after signing in rather than on the thread they followed a link to. Everything else in the file — the layout, the global shortcuts, the ThreadRouteView render — is upstream's and changes steadily; #12015 moved the whole thread view into this layout."
     },
     {
       "id": "client-runtime-exports",
@@ -923,7 +923,7 @@
       "id": "surface-gating-registry",
       "name": "Surface-gating registry",
       "paths": ["apps/web/src/fork/features.ts", "apps/web/src/fork/features.test.ts"],
-      "mustSurvive": "Keep as the only source of fork surface flags. Unknown route/action keys default enabled; tests must read upstream keys rather than restating them."
+      "mustSurvive": "Keep as the only source of fork surface flags. A surface is shown unless the primary environment's descriptor lists it in `capabilities.unsupportedSurfaces`, so a T3 server gets upstream's whole UI; Moatless lists its names in `crates/t3code/src/rpc/config.rs`. `applyPrimaryEnvironmentDescriptor` is called from `writePrimaryEnvironmentDescriptor` in environments/primary/context.ts, a one-line hook in an upstream file. Unknown route/action keys default enabled; tests must read upstream keys rather than restating them."
     },
     {
       "id": "chat-surface-gates",

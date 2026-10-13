@@ -10,6 +10,8 @@ import { PrimaryEnvironmentRequestError, retryTransientBootstrap } from "./auth"
 import { PrimaryEnvironmentHttpClient } from "./httpClient";
 
 import { runPrimaryHttp } from "../../lib/runtime";
+// Fork: see applyPrimaryEnvironmentDescriptor.
+import { applyPrimaryEnvironmentDescriptor } from "../../fork/features";
 import { readPrimaryEnvironmentTarget } from "./target";
 
 let primaryEnvironmentDescriptor: ExecutionEnvironmentDescriptor | null = null;
@@ -62,6 +64,8 @@ export function writePrimaryEnvironmentDescriptor(
   descriptor: ExecutionEnvironmentDescriptor | null,
 ): void {
   primaryEnvironmentDescriptor = descriptor;
+  // Fork: the descriptor decides which surfaces this client shows.
+  applyPrimaryEnvironmentDescriptor(descriptor);
 }
 
 export function getPrimaryKnownEnvironment(): KnownEnvironment | null {

@@ -1,64 +1,52 @@
+import type { ExecutionEnvironmentDescriptor } from "@t3tools/contracts";
+
 /**
- * Which product surfaces this fork's build shows.
+ * Which product surfaces this client shows, decided by the server it serves.
  *
- * Fork-only, and the one place any of it is decided. The Moatless backend
- * implements part of the T3 client contract, and now refuses the rest with a
- * typed `UnsupportedMethodError` the client can render. That fixed the worst of
- * it — a person no longer sees "unexpected server error" where they should have
- * seen an explanation — and it does not make this table redundant.
+ * Fork-only, and the one place any of it is decided. One build serves both a
+ * Moatless deployment and a T3 server, so a surface is shown unless the primary
+ * environment's descriptor names it in `capabilities.unsupportedSurfaces`. A T3
+ * server sends no such list and gets upstream's whole UI; Moatless lists what
+ * it cannot back. `moatlessApi` says the same origin also serves Moatless's own
+ * REST API, which the login route and the administration pages need.
  *
- * A typed refusal is the right answer to a *call*. It is the wrong answer to a
- * Terminal tab that should never have been on the screen: nothing renders a
- * refusal until someone reaches for the feature, and by then they have already
- * been told the feature exists. A surface we cannot serve is still absent here,
- * and what the refusal buys is that being wrong about one is now survivable.
+ * A typed `UnsupportedMethodError` is the right answer to a *call*. It is the
+ * wrong answer to a Terminal tab that should never have been on the screen, so
+ * a surface the server cannot back is still absent rather than refused.
+ *
+ * # Read synchronously, not through a hook
+ *
+ * The root route's `beforeLoad` resolves the primary descriptor before anything
+ * renders, and it does not change for the life of the page. So `FEATURES.x`
+ * stays one expression inside upstream code, with no props, hook or
+ * subscription, which is what keeps merges cheap. Do not read it at module
+ * scope: that runs before the descriptor arrives and sees every surface on.
  *
  * # Turning one on
  *
- * Delete it. Not `false` → `true`: remove the entry from `FEATURES` and remove
- * every gate that named it, so the code reads the way upstream's does. A flag
- * left at `true` is a gate that can never be false — dead weight on every merge
- * and a standing invitation to wonder what it is still protecting.
- *
- * Every name below is therefore a surface this build does *not* show, and the
- * table's length is how much of T3 the backend has yet to reach. Deleting a
- * flag is the last commit of the work that made its surface real, not a
- * separate cleanup to schedule.
- *
- * # Why a constant and not a server capability
- *
- * A capability on the wire would be the more general answer, and it is the
- * wrong trade here: it costs a contract field, a decode path, a default that
- * must point the opposite way to every flag beside it, and a subscription at
- * every call site — all to express something that does not vary at runtime.
- * A constant is importable anywhere, so a gate needs no props threaded to it
- * and no hook, which is what keeps each one to a single expression inside
- * upstream code and keeps merges cheap.
- *
- * # Keeping the merge cost down
- *
- * Every gate reads `FEATURES.x` in one expression and adds nothing else — no
- * new props, no effects, no state. Upstream can rewrite the code around it and
- * git will usually carry the gate through untouched.
+ * Drop the name from the backend's `unsupportedSurfaces` when the backend
+ * serves it. Once no deployment in service lists it, remove the entry here and
+ * every gate that named it, so the code reads the way upstream's does.
  */
 
 /**
- * The surfaces, and what each one covers.
+ * The surfaces a server can opt out of, and what each one covers. Only the
+ * keys matter.
  *
  * A name is one thing a person can see, not one RPC method. Where the backend
  * simply never produces data — no approvals raised, no checkpoints recorded —
  * the surface is already empty and a flag would gate nothing.
  */
-export const FEATURES = {
+const SURFACES = {
   /**
    * Per-turn git diffs: the diff panel's "Latest turn" / "Turn" scopes and the
    * inline changed-files cards under each assistant turn. Backed by the
    * `orchestration.getTurnDiff` / `getFullThreadDiff` RPCs, which the backend
    * does not serve. Working-tree and branch-range diffs are unaffected.
    */
-  turnDiffs: false,
+  turnDiffs: true,
   /** Adding and removing projects, and the source-control settings behind them. */
-  projectManagement: false,
+  projectManagement: true,
   /**
    * Searching workspace files by *content*. Path search, reading and listing
    * are served.
@@ -67,7 +55,7 @@ export const FEATURES = {
    * search: the Sandbox has a file-name search RPC and no content-search one,
    * so the two halves stopped sharing a fate.
    */
-  workspaceSearchContents: false,
+  workspaceSearchContents: true,
   /**
    * Opening a workspace path in an external editor, through
    * `shell.openInEditor`. An editor runs on the machine the workspace is on,
@@ -81,9 +69,9 @@ export const FEATURES = {
    * file manager rides the same method and goes with them. What stays is the
    * file panel, where a transcript path link and a diff's file already open.
    */
-  openInEditor: false,
+  openInEditor: true,
   /** Editing server-side settings: keybindings. */
-  serverAdministration: false,
+  serverAdministration: true,
   /**
    * Configuring a provider instance: adding and removing one, its display name
    * and accent colour, its runtime flags, its environment variables, its custom
@@ -96,23 +84,23 @@ export const FEATURES = {
    * serves, and the Models section's hidden, favourite and order controls are
    * client settings, so the page is otherwise whole.
    */
-  providerConfiguration: false,
+  providerConfiguration: true,
   /**
    * Trace, process and resource-telemetry diagnostics, and the General page's
    * View diagnostics row that links to them.
    */
-  diagnostics: false,
+  diagnostics: true,
   /**
    * The Connections settings page: device pairing, SSH environments, WSL, and
    * server-exposure controls for a self-hosted T3 server. The Moatless backend
    * is reached over the web and manages none of this.
    */
-  connections: false,
+  connections: true,
   /**
    * Streaming assistant output token-by-token. The Moatless backend delivers
    * each assistant message once it is complete, so the setting governs nothing.
    */
-  assistantStreaming: false,
+  assistantStreaming: true,
   /**
    * The composer's "Server update available" banner, raised on version skew
    * between this web build and the connected server. It offers to run T3's
@@ -121,13 +109,13 @@ export const FEATURES = {
    * the npx command does not apply. Gating it drops the idle offer along with
    * the in-flight and failed update progress that offer drives.
    */
-  serverUpdateBanner: false,
+  serverUpdateBanner: true,
   /**
    * The sidebar's project-grouping setting, which combines matching
    * repositories across environments. This build runs a single environment, so
    * there is nothing to group across.
    */
-  projectGrouping: false,
+  projectGrouping: true,
   /**
    * The composer's Access picker, which chooses how much an agent may do
    * without asking. Every Moatless task runs in its own throwaway sandbox, so a
@@ -136,7 +124,7 @@ export const FEATURES = {
    * Also the General page's Permissions row under New threads, which sets the
    * same tier as the default for every new thread.
    */
-  accessMode: false,
+  accessMode: true,
   /**
    * The composer's Workspace picker, which runs a thread either in the
    * project's own checkout or in a git worktree cut for it. Moatless has no
@@ -153,7 +141,7 @@ export const FEATURES = {
    * the defaults behind the same picker: where a new thread starts, how a new
    * worktree populates submodules, and which ref it is cut from.
    */
-  worktreeSelection: false,
+  worktreeSelection: true,
   /**
    * The browser's "Recently used" list: the URLs a thread's preview has
    * opened, offered in an empty browser tab. The history is keyed by project
@@ -166,7 +154,7 @@ export const FEATURES = {
    * The store behind the list still records a visit and its title. This gates
    * the surface, not the writes.
    */
-  browserHistory: false,
+  browserHistory: true,
   /**
    * The SnapShots settings page, which configures T3's cross-platform window
    * capture: a global shortcut grabs the foreground window and hands the image,
@@ -176,7 +164,7 @@ export const FEATURES = {
    * hiding it, so without this gate a hosted build lists a sidebar section and
    * six searchable rows for a feature it can never run.
    */
-  snapShots: false,
+  snapShots: true,
   /**
    * The "Revert files too" choice in the rewind dialog, which sends
    * `thread.checkpoint.revert`. Moatless rewinds the conversation and refuses
@@ -184,7 +172,7 @@ export const FEATURES = {
    * state to put the files back to. "Revert and keep changes" is served and is
    * the whole dialog without this.
    */
-  checkpointFileRestore: false,
+  checkpointFileRestore: true,
   /**
    * The right panel's Pull request surface: one pull request read from its
    * host, with its summary, its files and its timeline. Everything behind it —
@@ -200,7 +188,7 @@ export const FEATURES = {
    * surface on screen with a one-line reason: upstream's reads "No pull request
    * on this branch yet", a wait that never ends here. This drops the row.
    */
-  pullRequestSurface: false,
+  pullRequestSurface: true,
   /**
    * The device hub: an iOS Simulator or Android Emulator a person and the agent
    * share, offered as a right-panel surface and a Devices settings section.
@@ -213,20 +201,20 @@ export const FEATURES = {
    * from the other side: it saves hosts through `server.updateSettings`, which
    * the backend does not dispatch either.
    */
-  deviceHub: false,
+  deviceHub: true,
   /**
    * Merging a fork back into the thread it came from, from the Lineage
    * section. `thread.merge_back` carries the fork's conversation into its
    * parent as handed-off context; the backend refuses it, since a Moatless
    * fork shares no conversation store with its parent to merge.
    */
-  mergeBack: false,
+  mergeBack: true,
   /**
    * The Scheduled tasks settings page and the thread details Automations
    * panel. Moatless schedules work as Loops, and the backend serves none of
    * the `scheduledTasks.*` methods behind them.
    */
-  scheduledTasks: false,
+  scheduledTasks: true,
   /**
    * The General page's Model row under New threads: the environment's default
    * model and effort. The client applies it to a new draft itself, so the
@@ -235,7 +223,7 @@ export const FEATURES = {
    * shows the built-in default and every change fails to save. A Workspace's
    * own default model is edited on its project page and is served.
    */
-  defaultModelSetting: false,
+  defaultModelSetting: true,
   /**
    * General page rows that tune what upstream's server does on its own:
    * snoozing and auto-resuming usage-limited threads, checking provider CLIs
@@ -244,10 +232,45 @@ export const FEATURES = {
    * it — its agents live in sandbox images and name their own threads — and
    * every row saves through `server.updateSettings`, which it refuses.
    */
-  serverBehaviorSettings: false,
-} satisfies Record<string, boolean>;
+  serverBehaviorSettings: true,
+} satisfies Record<string, true>;
 
-export type FeatureName = keyof typeof FEATURES;
+export type FeatureName = keyof typeof SURFACES;
+
+let unsupportedSurfaces: ReadonlySet<string> = new Set();
+let moatlessApi = false;
+
+/**
+ * Adopt the primary environment's descriptor. `null` restores the state before
+ * one arrived: every surface on and no Moatless API.
+ */
+export function applyPrimaryEnvironmentDescriptor(
+  descriptor: ExecutionEnvironmentDescriptor | null,
+): void {
+  unsupportedSurfaces = new Set(descriptor?.capabilities.unsupportedSurfaces ?? []);
+  moatlessApi = descriptor?.capabilities.moatlessApi === true;
+}
+
+/** Whether each surface is shown against the primary environment. */
+export const FEATURES = Object.defineProperties(
+  {},
+  Object.fromEntries(
+    Object.keys(SURFACES).map((name) => [
+      name,
+      { enumerable: true, get: () => !unsupportedSurfaces.has(name) },
+    ]),
+  ),
+) as Readonly<Record<FeatureName, boolean>>;
+
+/** Whether the primary origin serves the Moatless REST API and cookie login. */
+export function moatlessApiAvailable(): boolean {
+  return moatlessApi;
+}
+
+/** Where an unauthenticated browser signs in: Moatless's login or T3 pairing. */
+export function signInPath(): "/login" | "/pair" {
+  return moatlessApi ? "/login" : "/pair";
+}
 
 /**
  * Settings sections that are the whole of one feature.
@@ -270,8 +293,15 @@ export const FEATURE_BY_SETTINGS_PATH: Readonly<Record<string, FeatureName>> = {
   "/settings/scheduled-tasks": "scheduledTasks",
 };
 
-/** Whether a settings path is reachable in this build. Unlisted paths are. */
+/**
+ * Settings sections served by the Moatless REST API alone. The administration
+ * pages are gated by `readIsMoatlessAdmin`, which answers no without the API.
+ */
+const MOATLESS_API_SETTINGS_PATHS: ReadonlySet<string> = new Set(["/settings/version-control"]);
+
+/** Whether a settings path is reachable against this server. Unlisted paths are. */
 export function settingsPathEnabled(pathname: string): boolean {
+  if (MOATLESS_API_SETTINGS_PATHS.has(pathname)) return moatlessApi;
   const feature = FEATURE_BY_SETTINGS_PATH[pathname];
   return feature === undefined || FEATURES[feature];
 }

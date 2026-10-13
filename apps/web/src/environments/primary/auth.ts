@@ -22,6 +22,8 @@ import {
 import { PrimaryEnvironmentHttpClient } from "./httpClient";
 import { runPrimaryHttp } from "../../lib/runtime";
 import { resolvePrimaryEnvironmentHttpUrl } from "./target";
+// Fork: see bootstrapServerAuth.
+import { moatlessApiAvailable } from "../../fork/features";
 
 const PrimaryEnvironmentRequestOperation = Schema.Literals([
   "fetch-session-state",
@@ -346,9 +348,11 @@ function isTransientBootstrapError(error: unknown): boolean {
 async function bootstrapServerAuth(urlCredential: string | null): Promise<ServerAuthGateState> {
   // Fork: Moatless answers the session probe with a cookie session instead of
   // upstream's pairing state, so read it from there and treat 401/404 as an
-  // unauthenticated browser rather than a request failure.
-  const currentSession =
-    import.meta.env.VITE_MOATLESS_PROXY_AUTH === "true"
+  // unauthenticated browser rather than a request failure. A T3 server takes
+  // upstream's probe unchanged.
+  const currentSession = !moatlessApiAvailable()
+    ? await fetchSessionState()
+    : import.meta.env.VITE_MOATLESS_PROXY_AUTH === "true"
       ? await fetchMoatlessCurrentSessionState()
       : await fetchSessionState().catch((error) => {
           if (isPrimaryEnvironmentRequestError(error) && error.status === 401) {

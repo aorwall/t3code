@@ -31,6 +31,7 @@ import { useThreadSelectionStore } from "../threadSelectionStore";
 import { stackedThreadToast, toastManager } from "~/components/ui/toast";
 import { primaryServerKeybindingsAtom } from "~/state/server";
 import { rememberMoatlessAuthReturnTo } from "../environments/primary";
+import { signInPath } from "../fork/features";
 
 function ChatRouteGlobalShortcuts() {
   const clearSelection = useThreadSelectionStore((state) => state.clearSelection);
@@ -243,7 +244,8 @@ export const Route = createFileRoute("/_chat")({
       rememberMoatlessAuthReturnTo(
         window.location.pathname + window.location.search + window.location.hash,
       );
-      throw redirect({ to: "/login", replace: true });
+      // Fork: Moatless signs in at /login, a T3 server through pairing.
+      throw redirect({ to: signInPath(), replace: true });
     }
   },
   component: ChatRouteLayout,

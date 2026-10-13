@@ -18,19 +18,76 @@ import providersRouteSource from "../routes/settings.providers.tsx?raw";
 import scheduledTasksRouteSource from "../routes/settings.scheduled-tasks.tsx?raw";
 import snapShotRouteSource from "../routes/settings.snap-shot.tsx?raw";
 import sourceControlRouteSource from "../routes/settings.source-control.tsx?raw";
+import type { ExecutionEnvironmentDescriptor } from "@t3tools/contracts";
+import { afterEach } from "vite-plus/test";
+
 import {
   filterAvailableSettingsSearchItems,
   SETTINGS_SEARCH_ITEMS,
 } from "../components/settings/settingsSearch";
 import {
+  applyPrimaryEnvironmentDescriptor,
   FEATURE_BY_PALETTE_ACTION,
   FEATURE_BY_SETTINGS_PATH,
   FEATURE_BY_SETTINGS_SEARCH_ID,
   FEATURES,
+  moatlessApiAvailable,
   paletteActionEnabled,
   settingsPathEnabled,
   settingsSearchItemEnabled,
+  signInPath,
 } from "./features";
+
+function descriptorWith(
+  capabilities: ExecutionEnvironmentDescriptor["capabilities"],
+): ExecutionEnvironmentDescriptor {
+  return {
+    environmentId: "env" as ExecutionEnvironmentDescriptor["environmentId"],
+    label: "Server",
+    platform: { os: "linux", arch: "x64" },
+    serverVersion: "1.0.0",
+    capabilities,
+  };
+}
+
+afterEach(() => {
+  applyPrimaryEnvironmentDescriptor(null);
+});
+
+describe("the primary environment's descriptor", () => {
+  it("shows every surface to a T3 server, which lists none", () => {
+    applyPrimaryEnvironmentDescriptor(descriptorWith({ repositoryIdentity: true }));
+
+    expect(Object.values(FEATURES).every(Boolean)).toBe(true);
+    expect(moatlessApiAvailable()).toBe(false);
+    expect(signInPath()).toBe("/pair");
+    expect(settingsPathEnabled("/settings/version-control")).toBe(false);
+  });
+
+  it("hides what a Moatless server lists and nothing else", () => {
+    applyPrimaryEnvironmentDescriptor(
+      descriptorWith({
+        repositoryIdentity: false,
+        moatlessApi: true,
+        unsupportedSurfaces: ["turnDiffs", "connections", "aSurfaceThisClientLacks"],
+      }),
+    );
+
+    expect(FEATURES.turnDiffs).toBe(false);
+    expect(FEATURES.openInEditor).toBe(true);
+    expect(settingsPathEnabled("/settings/connections")).toBe(false);
+    expect(settingsPathEnabled("/settings/version-control")).toBe(true);
+    expect(signInPath()).toBe("/login");
+  });
+
+  it("survives a spread, which is how tests override one surface", () => {
+    applyPrimaryEnvironmentDescriptor(
+      descriptorWith({ repositoryIdentity: false, unsupportedSurfaces: ["deviceHub"] }),
+    );
+
+    expect({ ...FEATURES, turnDiffs: false }).toMatchObject({ deviceHub: false, turnDiffs: false });
+  });
+});
 
 const ROUTE_SOURCES: Readonly<Record<string, string>> = {
   "/settings/keybindings": keybindingsRouteSource,

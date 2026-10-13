@@ -148,6 +148,19 @@ async function installAuthApi(input: {
   return testApi;
 }
 
+// Fork: the Moatless session branches run only where the primary descriptor
+// declares `moatlessApi`, which the root route resolves before the auth gate.
+async function declareMoatlessApi(): Promise<void> {
+  const { applyPrimaryEnvironmentDescriptor } = await import("./fork/features");
+  applyPrimaryEnvironmentDescriptor({
+    environmentId: "moatless" as never,
+    label: "Moatless",
+    platform: { os: "linux", arch: "x64" },
+    serverVersion: "1.0.0",
+    capabilities: { repositoryIdentity: false, moatlessApi: true },
+  });
+}
+
 describe("resolveInitialServerAuthGateState", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -160,6 +173,8 @@ describe("resolveInitialServerAuthGateState", () => {
     disposeHttpTest = undefined;
     const { __resetServerAuthBootstrapForTests } = await import("./environments/primary");
     __resetServerAuthBootstrapForTests();
+    // Fork: see declareMoatlessApi.
+    (await import("./fork/features")).applyPrimaryEnvironmentDescriptor(null);
     __setPrimaryHttpRunnerForTests();
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
@@ -232,6 +247,7 @@ describe("resolveInitialServerAuthGateState", () => {
   });
 
   it("treats Moatless cookie-auth 401 session checks as requiring login", async () => {
+    await declareMoatlessApi();
     const request = HttpClientRequest.get("http://localhost/api/auth/session");
     const response = HttpClientResponse.fromWeb(
       request,
@@ -256,7 +272,28 @@ describe("resolveInitialServerAuthGateState", () => {
     });
   });
 
+  it("leaves a T3 server's failed session check to upstream rather than Moatless", async () => {
+    const request = HttpClientRequest.get("http://localhost/api/auth/session");
+    const response = HttpClientResponse.fromWeb(
+      request,
+      new Response("Unauthorized", { status: 401 }),
+    );
+    __setPrimaryHttpRunnerForTests(async () => {
+      throw new HttpClientError.HttpClientError({
+        reason: new HttpClientError.StatusCodeError({ request, response }),
+      });
+    });
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { resolveInitialServerAuthGateState } = await import("./environments/primary");
+
+    await expect(resolveInitialServerAuthGateState()).rejects.toMatchObject({ status: 401 });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("falls back to Moatless current-user auth when the T3 session route is unavailable", async () => {
+    await declareMoatlessApi();
     const request = HttpClientRequest.get("http://localhost/api/auth/session");
     const response = HttpClientResponse.fromWeb(request, new Response(null, { status: 404 }));
     __setPrimaryHttpRunnerForTests(async () => {
@@ -288,6 +325,7 @@ describe("resolveInitialServerAuthGateState", () => {
   });
 
   it("uses Moatless current-user auth directly when configured as a Moatless proxy", async () => {
+    await declareMoatlessApi();
     vi.stubEnv("VITE_MOATLESS_PROXY_AUTH", "true");
     __setPrimaryHttpRunnerForTests(async () => {
       throw new Error("T3 session endpoint should not be called");

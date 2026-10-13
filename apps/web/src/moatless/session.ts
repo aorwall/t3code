@@ -1,6 +1,7 @@
 import { meHandler } from "@t3tools/moatless-api/generated/auth/auth";
 import type { SessionResponse } from "@t3tools/moatless-api/generated/model";
 
+import { moatlessApiAvailable } from "../fork/features";
 import { moatlessQuery, useMoatlessQuery } from "./query.ts";
 
 /**
@@ -42,6 +43,7 @@ export function useMoatlessSession(): MoatlessSession {
 
 /** The same answer outside React, for a router `beforeLoad`. */
 export async function readIsMoatlessAdmin(): Promise<boolean> {
+  if (!moatlessApiAvailable()) return false;
   const response = await meHandler();
   if (response.status !== 200) return false;
   return response.data.user?.role === "admin";
