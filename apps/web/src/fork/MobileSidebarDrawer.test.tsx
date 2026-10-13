@@ -157,7 +157,10 @@ describe("MobileSidebarDrawer row gestures", () => {
       });
       documentListeners.get("touchstart")!({ ...touch(100, 100), preventDefault: () => {} });
       windowListeners.get("pointermove")!(pointerMove);
-      documentListeners.get("touchmove")!({ ...touch(100 + dx, 100 + dy), preventDefault: () => {} });
+      documentListeners.get("touchmove")!({
+        ...touch(100 + dx, 100 + dy),
+        preventDefault: () => {},
+      });
     });
     return { row, pointerMove };
   }
