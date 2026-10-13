@@ -14,6 +14,7 @@ import * as Path from "effect/Path";
 import * as Queue from "effect/Queue";
 import * as Ref from "effect/Ref";
 import * as Schedule from "effect/Schedule";
+import type * as Scope from "effect/Scope";
 import * as Schema from "effect/Schema";
 import * as Result from "effect/Result";
 import * as Stream from "effect/Stream";
@@ -111,6 +112,7 @@ import {
   HttpServerResponse,
 } from "effect/http";
 import { RpcSerialization, RpcServer } from "effect/rpc";
+import type { Rpc, RpcGroup } from "effect/rpc";
 
 import * as CheckpointDiffQuery from "./checkpointing/CheckpointDiffQuery.ts";
 import * as ServerConfig from "./config.ts";
@@ -228,6 +230,8 @@ import * as HostResources from "./resourceTelemetry/HostResources.ts";
 import * as AnalyticsService from "./telemetry/AnalyticsService.ts";
 import * as UsageService from "./usage/UsageService.ts";
 import * as TraceDiagnostics from "./diagnostics/TraceDiagnostics.ts";
+import type { ProjectFaviconResolver } from "./project/ProjectFaviconResolver.ts";
+import type { ServerSecretStore } from "./auth/ServerSecretStore.ts";
 import * as PullRequestService from "./pullRequest/PullRequestService.ts";
 import * as PullRequestReviewGuideService from "./pullRequest/PullRequestReviewGuideService.ts";
 import { listLinkedPullRequestThreads } from "./pullRequest/linkedThreads.ts";
@@ -550,6 +554,40 @@ const PROVIDER_STATUS_DEBOUNCE_MS = 200;
 
 // Middleware added later wraps middleware added earlier, so instrumentation wraps authorization.
 const ServerWsRpcGroup = WsRpcGroup.middleware(RpcInstrumentation);
+// Fork: services the WS handlers may require. A handler needing one not listed
+// fails type-check at `const handlers: WsRpcHandlers`.
+type WsRpcHandlerServices =
+  | Crypto.Crypto
+  | FileSystem.FileSystem
+  | Path.Path
+  | ServerConfig.ServerConfig
+  | WorkspacePaths.WorkspacePaths
+  | Orchestrator.OrchestratorV2
+  | ProjectFaviconResolver
+  | ServerSecretStore
+  | ProjectEnrichmentService.ProjectEnrichmentService
+  | OrchestrationEventStore.OrchestrationEventStore
+  | ProjectService.ProjectService
+  | ProjectStore.ProjectStoreV2
+  | SqlClient.SqlClient
+  | ThreadManagementService.ThreadManagementService
+  | TraceDiagnostics.TraceDiagnostics;
+type WsRpcHandlers = {
+  readonly [Current in RpcGroup.Rpcs<typeof ServerWsRpcGroup> as Current["_tag"]]: Rpc.ToHandlerFn<
+    Current,
+    WsRpcHandlerServices
+  >;
+};
+// Fork: `toLayer` with its layer type declared, because inferring it from ~200
+// handlers hits TS2589 and widens the requirements to `any` (TS377030) through
+// `Ws.layer` into `server.ts` and `binCli.ts`.
+const toWsRpcLayer = ServerWsRpcGroup.toLayer.bind(ServerWsRpcGroup) as unknown as <E, R>(
+  build: Effect.Effect<WsRpcHandlers, E, R>,
+) => Layer.Layer<
+  Rpc.ToHandler<RpcGroup.Rpcs<typeof ServerWsRpcGroup>>,
+  E,
+  Exclude<R | WsRpcHandlerServices, Scope.Scope>
+>;
 // When a resuming client's cursor is more than this many events behind the
 // current head, skip the per-event catch-up replay and send a fresh shell
 // snapshot instead. Replaying each intervening event costs a shell refetch;
@@ -1205,7 +1243,7 @@ const layerWsRpc = (
   previewAutomationBroker: PreviewAutomationBroker.PreviewAutomationBroker["Service"],
   serverBrowser: ServerBrowser.ServerBrowser["Service"],
 ) =>
-  ServerWsRpcGroup.toLayer(
+  toWsRpcLayer(
     Effect.gen(function* () {
       const currentSessionId = currentSession.sessionId;
       const sql = yield* SqlClient.SqlClient;
@@ -1833,7 +1871,8 @@ const layerWsRpc = (
         return result;
       });
 
-      const handlers = ServerWsRpcGroup.of({
+      // Fork: annotated; see `WsRpcHandlerServices`.
+      const handlers: WsRpcHandlers = ServerWsRpcGroup.of({
         [ORCHESTRATION_V2_WS_METHODS.dispatchCommand]: (command) =>
           Effect.annotateCurrentSpan({
             "orchestration_v2.command_id": command.commandId,
