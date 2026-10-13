@@ -19,11 +19,17 @@ import scheduledTasksRouteSource from "../routes/settings.scheduled-tasks.tsx?ra
 import snapShotRouteSource from "../routes/settings.snap-shot.tsx?raw";
 import sourceControlRouteSource from "../routes/settings.source-control.tsx?raw";
 import {
+  filterAvailableSettingsSearchItems,
+  SETTINGS_SEARCH_ITEMS,
+} from "../components/settings/settingsSearch";
+import {
   FEATURE_BY_PALETTE_ACTION,
   FEATURE_BY_SETTINGS_PATH,
+  FEATURE_BY_SETTINGS_SEARCH_ID,
   FEATURES,
   paletteActionEnabled,
   settingsPathEnabled,
+  settingsSearchItemEnabled,
 } from "./features";
 
 const ROUTE_SOURCES: Readonly<Record<string, string>> = {
@@ -51,6 +57,40 @@ describe("the settings path map", () => {
   it("refuses a listed path whose feature is off", () => {
     for (const [path, feature] of Object.entries(FEATURE_BY_SETTINGS_PATH)) {
       expect(settingsPathEnabled(path)).toBe(FEATURES[feature]);
+    }
+  });
+});
+
+describe("the settings search id map", () => {
+  const availableIds = new Set(
+    filterAvailableSettingsSearchItems({
+      hasCloudPublicConfig: true,
+      hasEnvironment: true,
+      hasProviderSettingsEnvironment: true,
+      hasMacProviderSettingsEnvironment: true,
+      canManageLocalBackend: true,
+      isWslSettingsRowVisible: true,
+      hasThreadAutoSettlement: true,
+      forgejoEnabled: true,
+    }).map((item) => item.id),
+  );
+
+  it("names only ids that are search items", () => {
+    const ids = new Set<string>(SETTINGS_SEARCH_ITEMS.map((item) => item.id));
+    for (const id of Object.keys(FEATURE_BY_SETTINGS_SEARCH_ID)) {
+      expect(ids.has(id), id).toBe(true);
+    }
+  });
+
+  it("leaves unlisted ids searchable", () => {
+    expect(settingsSearchItemEnabled("time-format")).toBe(true);
+    expect(availableIds.has("time-format")).toBe(true);
+  });
+
+  it("drops a listed id whose feature is off from the available items", () => {
+    for (const [id, feature] of Object.entries(FEATURE_BY_SETTINGS_SEARCH_ID)) {
+      expect(settingsSearchItemEnabled(id)).toBe(FEATURES[feature]);
+      expect(availableIds.has(id), id).toBe(FEATURES[feature]);
     }
   });
 });

@@ -43,6 +43,8 @@ import {
 } from "./useScopedSettings";
 import { featureFlagsQuery } from "./moatless/queries";
 import { useMoatlessQuery } from "~/moatless/query";
+// Fork: gates the rows for choices the Moatless backend does not offer.
+import { FEATURES } from "~/fork/features";
 
 /**
  * Rows for the settings a project may override. The same rows edit
@@ -97,6 +99,9 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
   // stay at an environment scope, where they are still the deployment default.
   const workspaceOwnsProjectDefaults =
     useMoatlessQuery(featureFlagsQuery).data?.workspace_settings === true && isProjectScope;
+  // Fork: and at every scope where the backend cannot save or honour the row.
+  const hideModelRow = workspaceOwnsProjectDefaults || !FEATURES.defaultModelSetting;
+  const hideWorktreeRows = workspaceOwnsProjectDefaults || !FEATURES.worktreeSelection;
 
   // File-backed keys show their effective value; the target already carries
   // the checkout's t3.json, and a null file here only fills the built-in.
@@ -264,6 +269,15 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
     />
   );
 
+  // Fork: with every New threads row hidden, the section would be an empty card.
+  if (
+    hideModelRow &&
+    hideWorktreeRows &&
+    (category === "project" || (category === "general" && !FEATURES.accessMode))
+  ) {
+    return null;
+  }
+
   return (
     <SettingsSection
       id={
@@ -283,75 +297,81 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
     >
       {category === "project" ? (
         <>
-          {workspaceOwnsProjectDefaults ? null : modelRow}
-          {workspaceOwnsProjectDefaults ? null : workspaceRow}
+          {/* Fork: hideModelRow and hideWorktreeRows widen workspaceOwnsProjectDefaults. */}
+          {hideModelRow ? null : modelRow}
+          {hideWorktreeRows ? null : workspaceRow}
         </>
       ) : category === "general" ? (
         <>
-          {workspaceOwnsProjectDefaults ? null : modelRow}
-          <SettingsRow
-            serverScoped
-            settingKeys={["defaultRuntimeMode"]}
-            mixed={mixedPermissions}
-            {...searchableSetting("default-permissions")}
-            description={
-              isProjectScope
-                ? "Permissions for new threads in this project."
-                : "Default permissions for new threads. Projects can override them."
-            }
-            resetAction={
-              settings.defaultRuntimeMode !== DEFAULT_SERVER_SETTINGS.defaultRuntimeMode ? (
-                <SettingResetButton
-                  label="default permissions"
-                  onClick={() =>
-                    updateSettings({
-                      defaultRuntimeMode: DEFAULT_SERVER_SETTINGS.defaultRuntimeMode,
-                    })
-                  }
-                />
-              ) : null
-            }
-            control={
-              <Select
-                value={mixedPermissions ? null : settings.defaultRuntimeMode}
-                onValueChange={(value) => {
-                  if (value) updateSettings({ defaultRuntimeMode: value });
-                }}
-              >
-                <SelectTrigger size="sm" aria-label="Default permissions">
-                  {!mixedPermissions && (
-                    <PermissionIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                  )}
-                  <SelectValue>
-                    {mixedPermissions
-                      ? "Mixed"
-                      : runtimeModeConfig[settings.defaultRuntimeMode].label}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectPopup align="end" alignItemWithTrigger={false}>
-                  {runtimeModeOptions.map((mode) => {
-                    const option = runtimeModeConfig[mode];
-                    const Icon = option.icon;
-                    return (
-                      <SelectItem key={mode} value={mode} className="min-w-64">
-                        <div className="grid gap-0.5">
-                          <span className="inline-flex items-center gap-1.5 font-medium">
-                            <Icon className="size-3.5 shrink-0 text-muted-foreground" />
-                            {option.label}
-                          </span>
-                          <span className="text-xs leading-4 text-muted-foreground">
-                            {option.description}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectPopup>
-              </Select>
-            }
-          />
-          {workspaceOwnsProjectDefaults ? null : workspaceRow}
-          {workspaceOwnsProjectDefaults ? null : (
+          {/* Fork: hideModelRow widens workspaceOwnsProjectDefaults. */}
+          {hideModelRow ? null : modelRow}
+          {/* Fork: every Moatless task runs with full access; see FEATURES.accessMode. */}
+          {FEATURES.accessMode ? (
+            <SettingsRow
+              serverScoped
+              settingKeys={["defaultRuntimeMode"]}
+              mixed={mixedPermissions}
+              {...searchableSetting("default-permissions")}
+              description={
+                isProjectScope
+                  ? "Permissions for new threads in this project."
+                  : "Default permissions for new threads. Projects can override them."
+              }
+              resetAction={
+                settings.defaultRuntimeMode !== DEFAULT_SERVER_SETTINGS.defaultRuntimeMode ? (
+                  <SettingResetButton
+                    label="default permissions"
+                    onClick={() =>
+                      updateSettings({
+                        defaultRuntimeMode: DEFAULT_SERVER_SETTINGS.defaultRuntimeMode,
+                      })
+                    }
+                  />
+                ) : null
+              }
+              control={
+                <Select
+                  value={mixedPermissions ? null : settings.defaultRuntimeMode}
+                  onValueChange={(value) => {
+                    if (value) updateSettings({ defaultRuntimeMode: value });
+                  }}
+                >
+                  <SelectTrigger size="sm" aria-label="Default permissions">
+                    {!mixedPermissions && (
+                      <PermissionIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                    )}
+                    <SelectValue>
+                      {mixedPermissions
+                        ? "Mixed"
+                        : runtimeModeConfig[settings.defaultRuntimeMode].label}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectPopup align="end" alignItemWithTrigger={false}>
+                    {runtimeModeOptions.map((mode) => {
+                      const option = runtimeModeConfig[mode];
+                      const Icon = option.icon;
+                      return (
+                        <SelectItem key={mode} value={mode} className="min-w-64">
+                          <div className="grid gap-0.5">
+                            <span className="inline-flex items-center gap-1.5 font-medium">
+                              <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+                              {option.label}
+                            </span>
+                            <span className="text-xs leading-4 text-muted-foreground">
+                              {option.description}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectPopup>
+                </Select>
+              }
+            />
+          ) : null}
+          {/* Fork: hideWorktreeRows widens workspaceOwnsProjectDefaults. */}
+          {hideWorktreeRows ? null : workspaceRow}
+          {hideWorktreeRows ? null : (
             <SettingsRow
               serverScoped
               settingKeys={["worktreeSubmodules"]}

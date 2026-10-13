@@ -1,7 +1,7 @@
 import { HOSTED_APP_CHANNEL } from "~/branding";
 import { isElectron } from "~/env";
-// Fork: see providerConfigurationOnly on SettingsSearchItem.
-import { FEATURES } from "~/fork/features";
+// Fork: see providerConfigurationOnly on SettingsSearchItem, and filterAvailableSettingsSearchItems.
+import { FEATURES, settingsSearchItemEnabled } from "~/fork/features";
 import { isMacPlatform, isWindowsPlatform, normalizeSearchText } from "~/lib/utils";
 import { STATIC_KEYBINDING_COMMANDS, type KeybindingCommand } from "@t3tools/contracts";
 import type { EnvironmentId } from "@t3tools/contracts";
@@ -1351,6 +1351,8 @@ export function filterAvailableSettingsSearchItems(
       (!item.providerConfigurationOnly || FEATURES.providerConfiguration) &&
       // Fork: see assistantStreamingOnly above.
       (!item.assistantStreamingOnly || FEATURES.assistantStreaming) &&
+      // Fork: rows a settings page gates inline, by search id.
+      settingsSearchItemEnabled(item.id) &&
       (!item.managedTunnelOnly || availability.managedTunnelActive === true),
   );
 }

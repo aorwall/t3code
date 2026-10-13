@@ -97,7 +97,10 @@ export const FEATURES = {
    * client settings, so the page is otherwise whole.
    */
   providerConfiguration: false,
-  /** Trace, process and resource-telemetry diagnostics. */
+  /**
+   * Trace, process and resource-telemetry diagnostics, and the General page's
+   * View diagnostics row that links to them.
+   */
   diagnostics: false,
   /**
    * The Connections settings page: device pairing, SSH environments, WSL, and
@@ -129,6 +132,9 @@ export const FEATURES = {
    * The composer's Access picker, which chooses how much an agent may do
    * without asking. Every Moatless task runs in its own throwaway sandbox, so a
    * thread is always `full-access` and there is no tier to pick between.
+   *
+   * Also the General page's Permissions row under New threads, which sets the
+   * same tier as the default for every new thread.
    */
   accessMode: false,
   /**
@@ -142,6 +148,10 @@ export const FEATURES = {
    *
    * Off also swaps the thread details panel's workspace row for a sandbox row:
    * the sandbox's state and a menu to start, stop, restart or redeploy it.
+   *
+   * The General page's Workspace, Submodules and Start from origin rows set
+   * the defaults behind the same picker: where a new thread starts, how a new
+   * worktree populates submodules, and which ref it is cut from.
    */
   worktreeSelection: false,
   /**
@@ -217,6 +227,24 @@ export const FEATURES = {
    * the `scheduledTasks.*` methods behind them.
    */
   scheduledTasks: false,
+  /**
+   * The General page's Model row under New threads: the environment's default
+   * model and effort. The client applies it to a new draft itself, so the
+   * backend only has to store `defaultModelSelection` — but its server config
+   * carries `settings: {}` and it refuses `server.updateSettings`, so the row
+   * shows the built-in default and every change fails to save. A Workspace's
+   * own default model is edited on its project page and is served.
+   */
+  defaultModelSetting: false,
+  /**
+   * General page rows that tune what upstream's server does on its own:
+   * snoozing and auto-resuming usage-limited threads, checking provider CLIs
+   * for updates, continuing threads after a restart, the background-activity
+   * policy, and the model that writes thread titles. The backend does none of
+   * it — its agents live in sandbox images and name their own threads — and
+   * every row saves through `server.updateSettings`, which it refuses.
+   */
+  serverBehaviorSettings: false,
 } satisfies Record<string, boolean>;
 
 export type FeatureName = keyof typeof FEATURES;
@@ -245,6 +273,36 @@ export const FEATURE_BY_SETTINGS_PATH: Readonly<Record<string, FeatureName>> = {
 /** Whether a settings path is reachable in this build. Unlisted paths are. */
 export function settingsPathEnabled(pathname: string): boolean {
   const feature = FEATURE_BY_SETTINGS_PATH[pathname];
+  return feature === undefined || FEATURES[feature];
+}
+
+/**
+ * Settings search results for a row this build does not render, by item `id`.
+ *
+ * A gate inside a settings page leaves the row's search item behind, and a
+ * result for it lands on the page at an anchor that is not there.
+ */
+export const FEATURE_BY_SETTINGS_SEARCH_ID: Readonly<Record<string, FeatureName>> = {
+  "project-defaults": "defaultModelSetting",
+  "default-model": "defaultModelSetting",
+  "default-permissions": "accessMode",
+  "new-threads": "worktreeSelection",
+  "worktree-submodules": "worktreeSelection",
+  "start-from-origin": "worktreeSelection",
+  "project-grouping": "projectGrouping",
+  "add-project-starts-in": "projectManagement",
+  "snooze-limited-threads": "serverBehaviorSettings",
+  "auto-resume-limited-threads": "serverBehaviorSettings",
+  "provider-update-checks": "serverBehaviorSettings",
+  "continue-threads-after-server-update": "serverBehaviorSettings",
+  "background-activity": "serverBehaviorSettings",
+  "text-generation-model": "serverBehaviorSettings",
+  diagnostics: "diagnostics",
+};
+
+/** Whether a settings search item is offered in this build. Unlisted ids are. */
+export function settingsSearchItemEnabled(id: string): boolean {
+  const feature = FEATURE_BY_SETTINGS_SEARCH_ID[id];
   return feature === undefined || FEATURES[feature];
 }
 

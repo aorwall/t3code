@@ -283,7 +283,11 @@ what a person loses, which is the part the derivation cannot tell you:
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
   `getConfig`), so Settings renders and nothing in it can be saved. Holds open
-  `serverAdministration` and `providerConfiguration`. The 2026-10-02 merge's
+  `serverAdministration` and `providerConfiguration`, and on General
+  `defaultModelSetting` and `serverBehaviorSettings`. The default model is the
+  cheap one to close: the client applies `defaultModelSelection` to a new draft
+  itself, so storing that key per viewer and returning it in the server
+  config's `settings` (and `server.getSettings`) is the whole backend change. The 2026-10-02 merge's
   one-click "update every machine" button (#14678, `ProviderUpdatesAction.tsx`)
   calls `updateProvider` and sits behind `providerConfiguration` too — it would
   render nothing anyway, because Moatless publishes no `versionAdvisory`. `server.getSettings`
@@ -384,9 +388,8 @@ what a person loses, which is the part the derivation cannot tell you:
   settings page, writing a `worktreeSubmodules` setting that decides whether a
   new worktree runs `submodule update` recursively, one level, or not at all.
   Moatless cuts no worktree, so the setting governs nothing it does; the row is
-  gated at a project scope with the other four (inventory
-  `project-defaults-settings`) and left at an environment scope, where it is
-  still a deployment default that the backend ignores. The clone-time half is
+  hidden at every scope behind `worktreeSelection`, with the Workspace and
+  Start from origin rows beside it (inventory `settings-gates`). The clone-time half is
   worth serving on its own — see the submodule bullet under _Runtime fixes
   upstream made to its own server_.
 - **Content search** — `projects.searchContents`. Path search, read and list are

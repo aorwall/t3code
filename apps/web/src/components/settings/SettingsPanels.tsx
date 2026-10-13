@@ -2350,38 +2350,44 @@ export function GeneralSettingsPanel() {
           }
         />
 
-        <SettingsRow
-          serverScoped
-          {...searchableSetting("auto-resume-limited-threads")}
-          description="Resume usage-limit stops at the reported reset time. Each thread can cancel its scheduled continuation."
-          settingKeys={["autoResumeLimitedThreads"]}
-          control={
-            <ScopedSwitch
+        {/* Fork: Moatless neither snoozes nor resumes limited threads; see
+            FEATURES.serverBehaviorSettings. */}
+        {FEATURES.serverBehaviorSettings ? (
+          <>
+            <SettingsRow
+              serverScoped
+              {...searchableSetting("auto-resume-limited-threads")}
+              description="Resume usage-limit stops at the reported reset time. Each thread can cancel its scheduled continuation."
               settingKeys={["autoResumeLimitedThreads"]}
-              checked={settings.autoResumeLimitedThreads}
-              onCheckedChange={(checked) =>
-                updateSettings({ autoResumeLimitedThreads: Boolean(checked) })
+              control={
+                <ScopedSwitch
+                  settingKeys={["autoResumeLimitedThreads"]}
+                  checked={settings.autoResumeLimitedThreads}
+                  onCheckedChange={(checked) =>
+                    updateSettings({ autoResumeLimitedThreads: Boolean(checked) })
+                  }
+                  aria-label="Auto-resume limited threads"
+                />
               }
-              aria-label="Auto-resume limited threads"
             />
-          }
-        />
-        <SettingsRow
-          serverScoped
-          {...searchableSetting("snooze-limited-threads")}
-          description="Snooze usage-limit stops until the reported reset time. Combine with auto-resume to continue when they wake."
-          settingKeys={["snoozeLimitedThreads"]}
-          control={
-            <ScopedSwitch
+            <SettingsRow
+              serverScoped
+              {...searchableSetting("snooze-limited-threads")}
+              description="Snooze usage-limit stops until the reported reset time. Combine with auto-resume to continue when they wake."
               settingKeys={["snoozeLimitedThreads"]}
-              checked={settings.snoozeLimitedThreads}
-              onCheckedChange={(checked) =>
-                updateSettings({ snoozeLimitedThreads: Boolean(checked) })
+              control={
+                <ScopedSwitch
+                  settingKeys={["snoozeLimitedThreads"]}
+                  checked={settings.snoozeLimitedThreads}
+                  onCheckedChange={(checked) =>
+                    updateSettings({ snoozeLimitedThreads: Boolean(checked) })
+                  }
+                  aria-label="Snooze limited threads"
+                />
               }
-              aria-label="Snooze limited threads"
             />
-          }
-        />
+          </>
+        ) : null}
 
         <SettingsRow
           {...searchableSetting("working-shelf")}
@@ -2896,235 +2902,249 @@ export function GeneralSettingsPanel() {
           }
         />
 
-        <SettingsRow
-          serverScoped
-          settingKeys={["enableProviderUpdateChecks"]}
-          {...searchableSetting("provider-update-checks")}
-          description="Check installed provider CLIs for newer available versions."
-          resetAction={
-            settings.enableProviderUpdateChecks !==
-            DEFAULT_UNIFIED_SETTINGS.enableProviderUpdateChecks ? (
-              <SettingResetButton
-                label="provider update checks"
-                onClick={() =>
-                  updateSettings({
-                    enableProviderUpdateChecks: DEFAULT_UNIFIED_SETTINGS.enableProviderUpdateChecks,
-                  })
-                }
-              />
-            ) : null
-          }
-          control={
-            <ScopedSwitch
+        {/* Fork: upstream server housekeeping Moatless does not run; see
+            FEATURES.serverBehaviorSettings. */}
+        {FEATURES.serverBehaviorSettings ? (
+          <>
+            <SettingsRow
+              serverScoped
               settingKeys={["enableProviderUpdateChecks"]}
-              checked={settings.enableProviderUpdateChecks}
-              onCheckedChange={(checked) =>
-                updateSettings({ enableProviderUpdateChecks: Boolean(checked) })
-              }
-              aria-label="Check provider versions"
-            />
-          }
-        />
-
-        <SettingsRow
-          {...searchableSetting("continue-threads-after-server-update")}
-          serverScoped
-          settingKeys={["continueThreadsAfterServerUpdate"]}
-          description="Automatically resume interrupted threads after an update, crash, or machine restart on the selected environments."
-          status={
-            !supportsRestartContinuation
-              ? "All selected connected environments must support restart continuation."
-              : undefined
-          }
-          resetAction={
-            supportsRestartContinuation &&
-            settings.continueThreadsAfterServerUpdate !==
-              DEFAULT_UNIFIED_SETTINGS.continueThreadsAfterServerUpdate ? (
-              <SettingResetButton
-                label="continue threads after restarts"
-                onClick={() =>
-                  updateSettings({
-                    continueThreadsAfterServerUpdate:
-                      DEFAULT_UNIFIED_SETTINGS.continueThreadsAfterServerUpdate,
-                  })
-                }
-              />
-            ) : null
-          }
-          control={
-            <ScopedSwitch
-              settingKeys={["continueThreadsAfterServerUpdate"]}
-              checked={settings.continueThreadsAfterServerUpdate}
-              disabled={!supportsRestartContinuation}
-              onCheckedChange={(checked) =>
-                updateSettings({ continueThreadsAfterServerUpdate: Boolean(checked) })
-              }
-              aria-label="Continue threads after restarts"
-            />
-          }
-        />
-
-        <SettingsRow
-          serverScoped
-          settingKeys={["backgroundActivity"]}
-          id={searchableSetting("background-activity").id}
-          title={
-            <span className="inline-flex items-center gap-1.5">
-              {searchableSetting("background-activity").title}
-              <PolicyTooltip>
-                This shared policy gates background work such as Git refreshes and provider health
-                probes after their individual intervals elapse.
-              </PolicyTooltip>
-            </span>
-          }
-          description={backgroundActivityDescription}
-          resetAction={
-            canResetBackgroundActivity ? (
-              <SettingResetButton
-                label="background activity"
-                onClick={() => updateSettings(resetBackgroundActivitySettings())}
-              />
-            ) : null
-          }
-          control={
-            <>
-              <Select
-                value={mixedBackgroundActivity ? null : backgroundActivityProfileOption}
-                onValueChange={(value) => {
-                  if (value === "advanced") {
-                    if (isEnvironmentScope) setBackgroundActivityDialogOpen(true);
-                    return;
-                  }
-                  if (
-                    value === "balanced" ||
-                    value === "performance" ||
-                    value === "battery-saver"
-                  ) {
-                    updateSettings(backgroundActivityProfileSettings(value));
-                  }
-                }}
-              >
-                <SelectTrigger
-                  size="sm"
-                  className="w-full sm:w-40"
-                  aria-label="Background activity profile"
-                >
-                  <SelectValue>
-                    {(value: BackgroundActivityProfileOption | null) =>
-                      value === null ? "Mixed" : BACKGROUND_ACTIVITY_PROFILE_OPTION_LABELS[value]
-                    }
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectPopup align="end" alignItemWithTrigger={false}>
-                  <SelectItem hideIndicator value="balanced">
-                    {BACKGROUND_ACTIVITY_PROFILE_LABELS.balanced}
-                  </SelectItem>
-                  <SelectItem hideIndicator value="performance">
-                    {BACKGROUND_ACTIVITY_PROFILE_LABELS.performance}
-                  </SelectItem>
-                  <SelectItem hideIndicator value="battery-saver">
-                    {BACKGROUND_ACTIVITY_PROFILE_LABELS["battery-saver"]}
-                  </SelectItem>
-                  <SelectItem hideIndicator value="advanced" disabled={!isEnvironmentScope}>
-                    {isEnvironmentScope
-                      ? BACKGROUND_ACTIVITY_PROFILE_OPTION_LABELS.advanced
-                      : `${BACKGROUND_ACTIVITY_PROFILE_OPTION_LABELS.advanced} (one environment)`}
-                  </SelectItem>
-                </SelectPopup>
-              </Select>
-              {backgroundActivityProfileOption === "advanced" && isEnvironmentScope ? (
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        size="icon-sm"
-                        variant="outline"
-                        aria-label="Configure advanced background activity"
-                        onClick={() => setBackgroundActivityDialogOpen(true)}
-                      >
-                        <SettingsIcon className="size-4" />
-                      </Button>
+              {...searchableSetting("provider-update-checks")}
+              description="Check installed provider CLIs for newer available versions."
+              resetAction={
+                settings.enableProviderUpdateChecks !==
+                DEFAULT_UNIFIED_SETTINGS.enableProviderUpdateChecks ? (
+                  <SettingResetButton
+                    label="provider update checks"
+                    onClick={() =>
+                      updateSettings({
+                        enableProviderUpdateChecks:
+                          DEFAULT_UNIFIED_SETTINGS.enableProviderUpdateChecks,
+                      })
                     }
                   />
-                  <TooltipPopup side="top">Configure background activity</TooltipPopup>
-                </Tooltip>
-              ) : null}
-              <BackgroundActivityAdvancedDialog
-                open={backgroundActivityDialogOpen && isEnvironmentScope}
-                onOpenChange={setBackgroundActivityDialogOpen}
-              />
-            </>
-          }
-        />
-      </SettingsSection>
-
-      <SettingsSection id="projects-and-threads" title="Projects & threads">
-        <SettingsRow
-          serverScoped
-          settingKeys={["newWorktreesStartFromOrigin"]}
-          {...searchableSetting("start-from-origin")}
-          description="Creates the worktree from the latest matching branch on origin instead of your local branch."
-          resetAction={
-            settings.newWorktreesStartFromOrigin !==
-            DEFAULT_UNIFIED_SETTINGS.newWorktreesStartFromOrigin ? (
-              <SettingResetButton
-                label="new worktrees start from origin"
-                onClick={() =>
-                  updateSettings({
-                    newWorktreesStartFromOrigin:
-                      DEFAULT_UNIFIED_SETTINGS.newWorktreesStartFromOrigin,
-                  })
-                }
-              />
-            ) : null
-          }
-          control={
-            <ScopedSwitch
-              settingKeys={["newWorktreesStartFromOrigin"]}
-              checked={settings.newWorktreesStartFromOrigin}
-              onCheckedChange={(checked) =>
-                updateSettings({ newWorktreesStartFromOrigin: Boolean(checked) })
+                ) : null
               }
-              aria-label="Start new worktrees from origin by default"
-            />
-          }
-        />
-
-        {/* Fork: the Moatless backend doesn't support server-managed project
-            directories or the Add Project browser. */}
-        {FEATURES.projectManagement ? (
-          <SettingsRow
-            serverScoped
-            settingKeys={["addProjectBaseDirectory"]}
-            {...searchableSetting("add-project-starts-in")}
-            description='Leave empty to use "~/" when the Add Project browser opens.'
-            resetAction={
-              settings.addProjectBaseDirectory !==
-              DEFAULT_UNIFIED_SETTINGS.addProjectBaseDirectory ? (
-                <SettingResetButton
-                  label="add project base directory"
-                  onClick={() =>
-                    updateSettings({
-                      addProjectBaseDirectory: DEFAULT_UNIFIED_SETTINGS.addProjectBaseDirectory,
-                    })
+              control={
+                <ScopedSwitch
+                  settingKeys={["enableProviderUpdateChecks"]}
+                  checked={settings.enableProviderUpdateChecks}
+                  onCheckedChange={(checked) =>
+                    updateSettings({ enableProviderUpdateChecks: Boolean(checked) })
                   }
+                  aria-label="Check provider versions"
                 />
-              ) : null
-            }
-            control={
-              <DraftInput
-                size="sm"
-                className="w-full sm:w-72"
-                value={mixedAddProjectBaseDirectory ? "" : settings.addProjectBaseDirectory}
-                onCommit={(next) => updateSettings({ addProjectBaseDirectory: next })}
-                placeholder={mixedAddProjectBaseDirectory ? "Mixed" : "~/"}
-                spellCheck={false}
-                aria-label="Add project base directory"
-              />
-            }
-          />
+              }
+            />
+
+            <SettingsRow
+              {...searchableSetting("continue-threads-after-server-update")}
+              serverScoped
+              settingKeys={["continueThreadsAfterServerUpdate"]}
+              description="Automatically resume interrupted threads after an update, crash, or machine restart on the selected environments."
+              status={
+                !supportsRestartContinuation
+                  ? "All selected connected environments must support restart continuation."
+                  : undefined
+              }
+              resetAction={
+                supportsRestartContinuation &&
+                settings.continueThreadsAfterServerUpdate !==
+                  DEFAULT_UNIFIED_SETTINGS.continueThreadsAfterServerUpdate ? (
+                  <SettingResetButton
+                    label="continue threads after restarts"
+                    onClick={() =>
+                      updateSettings({
+                        continueThreadsAfterServerUpdate:
+                          DEFAULT_UNIFIED_SETTINGS.continueThreadsAfterServerUpdate,
+                      })
+                    }
+                  />
+                ) : null
+              }
+              control={
+                <ScopedSwitch
+                  settingKeys={["continueThreadsAfterServerUpdate"]}
+                  checked={settings.continueThreadsAfterServerUpdate}
+                  disabled={!supportsRestartContinuation}
+                  onCheckedChange={(checked) =>
+                    updateSettings({ continueThreadsAfterServerUpdate: Boolean(checked) })
+                  }
+                  aria-label="Continue threads after restarts"
+                />
+              }
+            />
+
+            <SettingsRow
+              serverScoped
+              settingKeys={["backgroundActivity"]}
+              id={searchableSetting("background-activity").id}
+              title={
+                <span className="inline-flex items-center gap-1.5">
+                  {searchableSetting("background-activity").title}
+                  <PolicyTooltip>
+                    This shared policy gates background work such as Git refreshes and provider
+                    health probes after their individual intervals elapse.
+                  </PolicyTooltip>
+                </span>
+              }
+              description={backgroundActivityDescription}
+              resetAction={
+                canResetBackgroundActivity ? (
+                  <SettingResetButton
+                    label="background activity"
+                    onClick={() => updateSettings(resetBackgroundActivitySettings())}
+                  />
+                ) : null
+              }
+              control={
+                <>
+                  <Select
+                    value={mixedBackgroundActivity ? null : backgroundActivityProfileOption}
+                    onValueChange={(value) => {
+                      if (value === "advanced") {
+                        if (isEnvironmentScope) setBackgroundActivityDialogOpen(true);
+                        return;
+                      }
+                      if (
+                        value === "balanced" ||
+                        value === "performance" ||
+                        value === "battery-saver"
+                      ) {
+                        updateSettings(backgroundActivityProfileSettings(value));
+                      }
+                    }}
+                  >
+                    <SelectTrigger
+                      size="sm"
+                      className="w-full sm:w-40"
+                      aria-label="Background activity profile"
+                    >
+                      <SelectValue>
+                        {(value: BackgroundActivityProfileOption | null) =>
+                          value === null
+                            ? "Mixed"
+                            : BACKGROUND_ACTIVITY_PROFILE_OPTION_LABELS[value]
+                        }
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectPopup align="end" alignItemWithTrigger={false}>
+                      <SelectItem hideIndicator value="balanced">
+                        {BACKGROUND_ACTIVITY_PROFILE_LABELS.balanced}
+                      </SelectItem>
+                      <SelectItem hideIndicator value="performance">
+                        {BACKGROUND_ACTIVITY_PROFILE_LABELS.performance}
+                      </SelectItem>
+                      <SelectItem hideIndicator value="battery-saver">
+                        {BACKGROUND_ACTIVITY_PROFILE_LABELS["battery-saver"]}
+                      </SelectItem>
+                      <SelectItem hideIndicator value="advanced" disabled={!isEnvironmentScope}>
+                        {isEnvironmentScope
+                          ? BACKGROUND_ACTIVITY_PROFILE_OPTION_LABELS.advanced
+                          : `${BACKGROUND_ACTIVITY_PROFILE_OPTION_LABELS.advanced} (one environment)`}
+                      </SelectItem>
+                    </SelectPopup>
+                  </Select>
+                  {backgroundActivityProfileOption === "advanced" && isEnvironmentScope ? (
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            size="icon-sm"
+                            variant="outline"
+                            aria-label="Configure advanced background activity"
+                            onClick={() => setBackgroundActivityDialogOpen(true)}
+                          >
+                            <SettingsIcon className="size-4" />
+                          </Button>
+                        }
+                      />
+                      <TooltipPopup side="top">Configure background activity</TooltipPopup>
+                    </Tooltip>
+                  ) : null}
+                  <BackgroundActivityAdvancedDialog
+                    open={backgroundActivityDialogOpen && isEnvironmentScope}
+                    onOpenChange={setBackgroundActivityDialogOpen}
+                  />
+                </>
+              }
+            />
+          </>
         ) : null}
       </SettingsSection>
+
+      {/* Fork: Moatless cuts no worktrees and adds no projects, so both rows go. */}
+      {FEATURES.worktreeSelection || FEATURES.projectManagement ? (
+        <SettingsSection id="projects-and-threads" title="Projects & threads">
+          {FEATURES.worktreeSelection ? (
+            <SettingsRow
+              serverScoped
+              settingKeys={["newWorktreesStartFromOrigin"]}
+              {...searchableSetting("start-from-origin")}
+              description="Creates the worktree from the latest matching branch on origin instead of your local branch."
+              resetAction={
+                settings.newWorktreesStartFromOrigin !==
+                DEFAULT_UNIFIED_SETTINGS.newWorktreesStartFromOrigin ? (
+                  <SettingResetButton
+                    label="new worktrees start from origin"
+                    onClick={() =>
+                      updateSettings({
+                        newWorktreesStartFromOrigin:
+                          DEFAULT_UNIFIED_SETTINGS.newWorktreesStartFromOrigin,
+                      })
+                    }
+                  />
+                ) : null
+              }
+              control={
+                <ScopedSwitch
+                  settingKeys={["newWorktreesStartFromOrigin"]}
+                  checked={settings.newWorktreesStartFromOrigin}
+                  onCheckedChange={(checked) =>
+                    updateSettings({ newWorktreesStartFromOrigin: Boolean(checked) })
+                  }
+                  aria-label="Start new worktrees from origin by default"
+                />
+              }
+            />
+          ) : null}
+
+          {/* Fork: the Moatless backend doesn't support server-managed project
+            directories or the Add Project browser. */}
+          {FEATURES.projectManagement ? (
+            <SettingsRow
+              serverScoped
+              settingKeys={["addProjectBaseDirectory"]}
+              {...searchableSetting("add-project-starts-in")}
+              description='Leave empty to use "~/" when the Add Project browser opens.'
+              resetAction={
+                settings.addProjectBaseDirectory !==
+                DEFAULT_UNIFIED_SETTINGS.addProjectBaseDirectory ? (
+                  <SettingResetButton
+                    label="add project base directory"
+                    onClick={() =>
+                      updateSettings({
+                        addProjectBaseDirectory: DEFAULT_UNIFIED_SETTINGS.addProjectBaseDirectory,
+                      })
+                    }
+                  />
+                ) : null
+              }
+              control={
+                <DraftInput
+                  size="sm"
+                  className="w-full sm:w-72"
+                  value={mixedAddProjectBaseDirectory ? "" : settings.addProjectBaseDirectory}
+                  onCommit={(next) => updateSettings({ addProjectBaseDirectory: next })}
+                  placeholder={mixedAddProjectBaseDirectory ? "Mixed" : "~/"}
+                  spellCheck={false}
+                  aria-label="Add project base directory"
+                />
+              }
+            />
+          ) : null}
+        </SettingsSection>
+      ) : null}
 
       <SettingsSection id="confirmations" title="Confirmations">
         <SettingsRow
@@ -3248,118 +3268,121 @@ export function GeneralSettingsPanel() {
         ) : null}
       </SettingsSection>
 
-      <SettingsSection id="text-generation" title="Text generation">
-        <SettingsRow
-          serverScoped
-          settingKeys={["textGenerationModelSelection"]}
-          {...searchableSetting("text-generation-model")}
-          description="Used for thread titles and other generated text on connected devices with this provider. Source control can override it."
-          resetAction={
-            hasServerTargets && isTextGenerationModelDirty ? (
-              <SettingResetButton
-                label="text generation model"
-                onClick={() =>
-                  updateSettings({
-                    textGenerationModelSelection:
-                      DEFAULT_UNIFIED_SETTINGS.textGenerationModelSelection,
-                  })
-                }
-              />
-            ) : null
-          }
-          control={
-            !hasServerTargets ? (
-              <span className="text-sm text-muted-foreground">
-                Connect an environment to choose its text generation model.
-              </span>
-            ) : !hasTextGenerationProvider ? (
-              <span className="text-sm text-muted-foreground">
-                No text generation providers available.
-              </span>
-            ) : (
-              <div className="flex flex-wrap items-center justify-end gap-1.5">
-                <ProviderModelPicker
-                  environmentId={environmentId}
-                  activeInstanceId={textGenInstanceId}
-                  model={textGenModel}
-                  lockedProvider={null}
-                  instanceEntries={textGenerationModelInstanceEntries}
-                  modelOptionsByInstance={textGenerationModelOptionsByInstance}
-                  triggerClassName={SETTINGS_PICKER_TRIGGER_CLASSNAME}
-                  {...(mixedTextGenerationModel ? { triggerLabel: "Mixed" } : {})}
-                  getModelDisabledReason={textGenerationModelDisabledReason}
-                  {...(environmentId
-                    ? {
-                        onOpenProviderSetup: (instanceId: ProviderInstanceId) => {
-                          void navigate({
-                            to: "/settings/providers",
-                            search: { environmentId, instanceId },
-                          });
-                        },
-                      }
-                    : {})}
-                  onInstanceModelChange={(instanceId, model) => {
-                    const reason = textGenerationModelDisabledReason(instanceId, model);
-                    if (reason) {
-                      toastManager.add({
-                        type: "error",
-                        title: "Text generation model not saved",
-                        description: reason,
-                      });
-                      return;
-                    }
+      {/* Fork: Moatless agents name their own threads; see FEATURES.serverBehaviorSettings. */}
+      {FEATURES.serverBehaviorSettings ? (
+        <SettingsSection id="text-generation" title="Text generation">
+          <SettingsRow
+            serverScoped
+            settingKeys={["textGenerationModelSelection"]}
+            {...searchableSetting("text-generation-model")}
+            description="Used for thread titles and other generated text on connected devices with this provider. Source control can override it."
+            resetAction={
+              hasServerTargets && isTextGenerationModelDirty ? (
+                <SettingResetButton
+                  label="text generation model"
+                  onClick={() =>
                     updateSettings({
-                      textGenerationModelSelection: resolveAppModelSelectionState(
-                        {
-                          ...settings,
-                          textGenerationModelSelection: createModelSelection(instanceId, model),
-                        },
-                        textGenerationProviders,
-                      ),
-                    });
-                  }}
+                      textGenerationModelSelection:
+                        DEFAULT_UNIFIED_SETTINGS.textGenerationModelSelection,
+                    })
+                  }
                 />
-                {textGenInstanceEntry ? (
-                  <TraitsPicker
-                    provider={textGenProvider}
-                    models={
-                      // Use the exact instance's models (rather than the
-                      // first-kind-match) so a custom text-gen instance like
-                      // `codex_personal` gets its own model list, not the
-                      // default Codex one.
-                      textGenInstanceEntry?.models ?? []
-                    }
+              ) : null
+            }
+            control={
+              !hasServerTargets ? (
+                <span className="text-sm text-muted-foreground">
+                  Connect an environment to choose its text generation model.
+                </span>
+              ) : !hasTextGenerationProvider ? (
+                <span className="text-sm text-muted-foreground">
+                  No text generation providers available.
+                </span>
+              ) : (
+                <div className="flex flex-wrap items-center justify-end gap-1.5">
+                  <ProviderModelPicker
+                    environmentId={environmentId}
+                    activeInstanceId={textGenInstanceId}
                     model={textGenModel}
-                    prompt=""
-                    onPromptChange={() => {}}
-                    modelOptions={textGenModelOptions}
-                    allowPromptInjectedEffort={false}
-                    planModeEnabled={
-                      settings.planModeEnabled || selectsPlanAgent(textGenModelOptions)
-                    }
+                    lockedProvider={null}
+                    instanceEntries={textGenerationModelInstanceEntries}
+                    modelOptionsByInstance={textGenerationModelOptionsByInstance}
                     triggerClassName={SETTINGS_PICKER_TRIGGER_CLASSNAME}
-                    onModelOptionsChange={(nextOptions) => {
+                    {...(mixedTextGenerationModel ? { triggerLabel: "Mixed" } : {})}
+                    getModelDisabledReason={textGenerationModelDisabledReason}
+                    {...(environmentId
+                      ? {
+                          onOpenProviderSetup: (instanceId: ProviderInstanceId) => {
+                            void navigate({
+                              to: "/settings/providers",
+                              search: { environmentId, instanceId },
+                            });
+                          },
+                        }
+                      : {})}
+                    onInstanceModelChange={(instanceId, model) => {
+                      const reason = textGenerationModelDisabledReason(instanceId, model);
+                      if (reason) {
+                        toastManager.add({
+                          type: "error",
+                          title: "Text generation model not saved",
+                          description: reason,
+                        });
+                        return;
+                      }
                       updateSettings({
                         textGenerationModelSelection: resolveAppModelSelectionState(
                           {
                             ...settings,
-                            textGenerationModelSelection: createModelSelection(
-                              textGenInstanceId,
-                              textGenModel,
-                              nextOptions,
-                            ),
+                            textGenerationModelSelection: createModelSelection(instanceId, model),
                           },
                           textGenerationProviders,
                         ),
                       });
                     }}
                   />
-                ) : null}
-              </div>
-            )
-          }
-        />
-      </SettingsSection>
+                  {textGenInstanceEntry ? (
+                    <TraitsPicker
+                      provider={textGenProvider}
+                      models={
+                        // Use the exact instance's models (rather than the
+                        // first-kind-match) so a custom text-gen instance like
+                        // `codex_personal` gets its own model list, not the
+                        // default Codex one.
+                        textGenInstanceEntry?.models ?? []
+                      }
+                      model={textGenModel}
+                      prompt=""
+                      onPromptChange={() => {}}
+                      modelOptions={textGenModelOptions}
+                      allowPromptInjectedEffort={false}
+                      planModeEnabled={
+                        settings.planModeEnabled || selectsPlanAgent(textGenModelOptions)
+                      }
+                      triggerClassName={SETTINGS_PICKER_TRIGGER_CLASSNAME}
+                      onModelOptionsChange={(nextOptions) => {
+                        updateSettings({
+                          textGenerationModelSelection: resolveAppModelSelectionState(
+                            {
+                              ...settings,
+                              textGenerationModelSelection: createModelSelection(
+                                textGenInstanceId,
+                                textGenModel,
+                                nextOptions,
+                              ),
+                            },
+                            textGenerationProviders,
+                          ),
+                        });
+                      }}
+                    />
+                  ) : null}
+                </div>
+              )
+            }
+          />
+        </SettingsSection>
+      ) : null}
 
       <SettingsSection id="about" title="About">
         {isElectron || HOSTED_APP_CHANNEL ? (
@@ -3389,25 +3412,31 @@ export function GeneralSettingsPanel() {
         />
       </SettingsSection>
       <SettingsSection title="Diagnostics">
-        <SettingsRow
-          {...searchableSetting("diagnostics")}
-          description={
-            isEnvironmentScope
-              ? "Inspect processes, resource use, and logs on this environment."
-              : "Inspect processes, resource use, and logs on one environment at a time."
-          }
-          control={
-            <Button
-              render={
-                <Link to="/settings/diagnostics" search={{ machine: environmentId ?? undefined }} />
-              }
-              size="sm"
-              variant="outline"
-            >
-              View diagnostics
-            </Button>
-          }
-        />
+        {/* Fork: the page it links to is gated; see FEATURES.diagnostics. */}
+        {FEATURES.diagnostics ? (
+          <SettingsRow
+            {...searchableSetting("diagnostics")}
+            description={
+              isEnvironmentScope
+                ? "Inspect processes, resource use, and logs on this environment."
+                : "Inspect processes, resource use, and logs on one environment at a time."
+            }
+            control={
+              <Button
+                render={
+                  <Link
+                    to="/settings/diagnostics"
+                    search={{ machine: environmentId ?? undefined }}
+                  />
+                }
+                size="sm"
+                variant="outline"
+              >
+                View diagnostics
+              </Button>
+            }
+          />
+        ) : null}
         <SettingsRow
           {...searchableSetting("open-source-licenses")}
           description="Notices for dependencies, assets, and optional tools used by T3 Code."
