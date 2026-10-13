@@ -967,6 +967,7 @@
       "name": "Mobile touch affordances",
       "paths": [
         "apps/web/src/fork/MobileSidebarDrawer.tsx",
+        "apps/web/src/fork/MobileSidebarDrawer.test.tsx",
         "apps/web/src/fork/mobileSidebarDrag.ts",
         "apps/web/src/fork/touchContextMenu.ts",
         "apps/web/src/components/ui/sidebar.tsx",

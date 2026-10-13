@@ -260,6 +260,8 @@ function Sidebar({
         <MobileSidebarDrawer
           className={className}
           onOpenChange={setOpenMobile}
+          // Fork: hides the floating trigger while the drawer shows its own, as the sheet's ref does.
+          onPanelElementChange={setMobileSheetElement}
           open={openMobile}
           side={side}
           {...props}

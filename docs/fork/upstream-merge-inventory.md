@@ -151,7 +151,8 @@ re-state:
   sheet branch stays and still serves `side="right"`. If upstream restructures
   `Sidebar` so the branch has no anchor, the path-policy entry is stale:
   re-derive the branch from the drawer's own contract — it needs `openMobile`,
-  `setOpenMobile` and `side`, and nothing else.
+  `setOpenMobile`, `side`, and `setMobileSheetElement` (so `mobileSheetMounted`
+  hides the floating trigger while the drawer is open), and nothing else.
 - **`Sidebar.tsx` and `LegacySidebar.tsx`** — `useTouchContextMenu(handler)`
   beside the row's existing `onContextMenu` handler, spread onto the row element
   in place of the bare `onContextMenu` attribute. Two rows in `Sidebar.tsx`

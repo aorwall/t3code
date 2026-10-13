@@ -14,10 +14,18 @@ import {
 /** Matches the width upstream's mobile sheet uses, so the two look identical. */
 const DRAWER_WIDTH = "calc(100vw - 0.75rem)";
 
+/** The panel's `duration-200` slide. */
+const CLOSE_TRANSITION_MS = 200;
+
 interface MobileSidebarDrawerProps extends React.ComponentProps<"div"> {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   readonly side?: SidebarDragSide;
+  /**
+   * Receives the panel while it is on screen and `null` once it has slid away,
+   * the contract upstream's sheet `ref` meets for `mobileSheetMounted`.
+   */
+  readonly onPanelElementChange?: (element: HTMLDivElement | null) => void;
 }
 
 /**
@@ -42,7 +50,9 @@ export function MobileSidebarDrawer({
   open,
   onOpenChange,
   side = "left",
+  onPanelElementChange,
   className,
+  style,
   children,
   ...props
 }: MobileSidebarDrawerProps) {
@@ -174,8 +184,23 @@ export function MobileSidebarDrawer({
     };
   }, [onOpenChange, open, side]);
 
-  const progress = resolveBackdropProgress({ isOpen: open, offset: dragOffset, panelWidth });
   const isVisible = open || isDragging;
+
+  React.useEffect(() => {
+    if (!onPanelElementChange) return;
+    if (isVisible) {
+      onPanelElementChange(panelRef.current);
+      return;
+    }
+    // Wait out the slide, or the floating trigger reappears over the panel
+    // while it is still leaving.
+    const timeout = window.setTimeout(() => onPanelElementChange(null), CLOSE_TRANSITION_MS);
+    return () => window.clearTimeout(timeout);
+  }, [isVisible, onPanelElementChange]);
+
+  React.useEffect(() => () => onPanelElementChange?.(null), [onPanelElementChange]);
+
+  const progress = resolveBackdropProgress({ isOpen: open, offset: dragOffset, panelWidth });
 
   return (
     <>
@@ -212,8 +237,11 @@ export function MobileSidebarDrawer({
         inert={!isVisible}
         ref={panelRef}
         role="dialog"
+        // A caller's style is merged under ours: spread last, it would drop the
+        // drawer's width and the drag transform.
         style={
           {
+            ...style,
             "--sidebar-width": DRAWER_WIDTH,
             ...(dragOffset === null ? {} : { transform: `translate3d(${dragOffset}px, 0, 0)` }),
           } as React.CSSProperties
