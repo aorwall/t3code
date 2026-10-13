@@ -106,11 +106,15 @@ vp lint <files>
 vp run --filter <package> typecheck
 ```
 
-TypeScript workspaces typecheck with tsc-rs, which has Effect diagnostics built in.
-Keep `typescript`, `@effect/tsgo`, and the `effect-tsgo patch` prepare step: editors
-still use them for Effect quick fixes and refactors. Keep `@effect/tsgo` on the
-effect-tsgo version that tsc-rs ports (see the tsc-rs README), or the two disagree
-on rule names.
+TypeScript workspaces typecheck with `tsc` from the `typescript` package (TypeScript 7, the
+native compiler). The `effect-tsgo patch` prepare step adds the Effect diagnostics to it, so
+run `pnpm run prepare` after an install that skipped scripts.
+
+Do not bring back `tsc-rs`, the unofficial Rust port upstream typechecks with. It is a
+vibe-coded early release, by its author's own account, and we cannot trust it as a gate: on
+`apps/server` it reported a different set of errors from `tsc`, and its error count changed
+with `--checkers`. A tripwire in [inventory.json](../fork/inventory.json) fails the merge
+checks if an upstream merge restores it.
 Marketing keeps `astro check` for Astro files.
 
 Use `vp run lint:mobile` for native mobile changes. CI owns the full suite; see

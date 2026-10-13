@@ -89,6 +89,22 @@
 
   "tripwires": [
     {
+      "id": "tsc-rs",
+      "name": "tsc-rs typechecker",
+      "status": "removed",
+      "args": [
+        "grep",
+        "-ln",
+        "tsc-rs",
+        "--",
+        "*package.json",
+        "pnpm-workspace.yaml",
+        ":(exclude).repos"
+      ],
+      "unit": "files",
+      "expect": "no-matches"
+    },
+    {
       "id": "clerk",
       "name": "Clerk / T3 Connect",
       "status": "decided-not-removed",
