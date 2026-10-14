@@ -1820,6 +1820,21 @@ One more arrived in the 2026-10-01 merge:
   (#17063), Forgejo, GitLab and Bitbucket PRs report their head commit (#18463,
   #18608, #18402), configured PR bases resolve to branch names (#18754), and a
   custom model entry with a built-in slug renames that built-in (#18840).
+  The 2026-10-14 merge adds: a delegated task can run in its own worktree cut
+  from the parent's commit (#19102, `isolation` on the orchestrator MCP
+  `delegate_task` and `workspaceStrategy` on the child-launch command), a
+  snoozed thread still takes queued automatic wakes (#19099), a failed thread's
+  error lookup is indexed rather than scanning every tool item (#18628), SQLite
+  stops fsyncing every commit and collects planner statistics on open (#19205,
+  #18471), git file paths keep their whitespace (#12465), distinct CI checks
+  with overlapping names stay distinct (#19162), Bitbucket review guides
+  resolve short-hash heads (#18900), webhook templates avoid catastrophic
+  backtracking (#19160), OpenCode timeouts no longer crash the error formatter
+  (#12469), Pi loads T3 tool schemas for completion gateways and queues
+  turn-start prompts behind native work (#18643, #18639), usage hubs with a
+  host-less URL stay listed and one Antigravity account counts once (#11368,
+  #19207), and Claude background text generation defaults to Haiku 5.5
+  (#18781).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

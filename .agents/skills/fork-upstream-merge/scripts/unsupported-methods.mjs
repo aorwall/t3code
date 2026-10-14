@@ -7,8 +7,10 @@
  *
  * Contract side: every `Rpc.make(WS_METHODS.x, …)` / `Rpc.make(ORCHESTRATION_V2_WS_METHODS.x, …)`
  * in packages/contracts/src/rpc.ts, resolved through the method maps to wire strings.
- * Backend side: the `"method.name" =>` arms of the frame dispatch in soaplabs/moatless
- * (crates/t3code/src/rpc/dispatch/), read over the API since a sandbox has no checkout.
+ * Backend side: the method table in soaplabs/moatless (crates/t3code/src/rpc/dispatch/),
+ * read over the API since a sandbox has no checkout. `.detached`, `.session` and
+ * `.stream` registrations serve a tag; `.declared` registers one only to refuse it.
+ * The older `"method.name" =>` match-arm form is still read.
  *
  * Both directions are findings. A method the backend has started serving keeps a
  * union entry that can never fire; a method it has stopped serving loses the typed
@@ -41,7 +43,9 @@ const ORCHESTRATION_PATH = "packages/contracts/src/orchestrationV2.ts";
  * The dispatch keeps moving — inline in `lib.rs` until the backend split `rpc/`
  * into its own module on 2026-09-07, then again on 2026-09-13 when `dispatch.rs`
  * became a module stub over an `rpc/dispatch/` directory whose `routing.rs` holds
- * the arms and whose siblings hold the handler bodies. A read that finds the file
+ * the arms and whose siblings hold the handler bodies. On 2026-10-14 the arms became
+ * `MethodTable` registrations (moatless#1138), parsed by `REGISTRATION` below. A
+ * read that finds the file
  * but no arms reports "0 dispatched methods", which reads as "the backend serves
  * nothing" and turns every union entry into a finding. Try each known location
  * and take the first that actually holds arms.
@@ -221,11 +225,18 @@ function dispatchReadFailure() {
   ];
 }
 
+/**
+ * A `MethodTable` registration that serves its tag. The handler is the third
+ * argument, captured up to the call's close paren by `balancedSlice`.
+ * `.declared(tag, scope)` is deliberately absent: it answers `UnsupportedMethodError`.
+ */
+const REGISTRATION = /\.(?:detached|session|stream)\(\s*"([a-zA-Z._]+)"\s*,\s*Scope::\w+\s*,/g;
+
 function parseBackend() {
   let source = "";
   for (const api of BACKEND_APIS) {
     const decoded = fetchBackend(api);
-    if (decoded && /"[a-zA-Z._]+"\s*=>/.test(decoded)) {
+    if (decoded && (/"[a-zA-Z._]+"\s*=>/.test(decoded) || REGISTRATION.test(decoded))) {
       source = decoded;
       break;
     }
@@ -237,6 +248,7 @@ function parseBackend() {
     // `"on" =>` is a match arm on a different enum, not a wire method.
     if (match[1] !== "on") dispatched.add(match[1]);
   }
+  for (const match of source.matchAll(REGISTRATION)) dispatched.add(match[1]);
 
   /**
    * An arm that can still return `unsupported_exit` refuses conditionally, so
@@ -254,6 +266,13 @@ function parseBackend() {
     if (refusesInside(source, armBody(source, arm.index + arm[0].length), 2, new Set())) {
       conditional.add(arm[1]);
     }
+  }
+  for (const entry of source.matchAll(REGISTRATION)) {
+    const handler = balancedSlice(source, entry.index + entry[0].length);
+    // A handler passed by name has no `(` for `refusesInside` to follow, so call it.
+    const named = handler.match(/^\s*([a-z_][a-z0-9_]*)\s*,?\s*\)$/i);
+    const code = named ? `${named[1]}()` : handler;
+    if (refusesInside(source, code, 2, new Set())) conditional.add(entry[1]);
   }
   return { dispatched, conditional };
 }
