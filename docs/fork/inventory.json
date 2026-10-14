@@ -730,6 +730,27 @@
       "paths": ["packages/client-runtime/package.json"],
       "verdict": "converged",
       "note": "Take upstream, then re-add the fork's subpath exports. They are entries in the `exports` map for fork-only modules under `src/state/` — sandbox, scripts, subtasks, thread-shell-lookup and thread-browse — and the package resolves a deep import only through this map, so a lost entry is a resolve failure in apps/web at build time rather than a silent drop. Upstream adds its own entries to the same map constantly, which is why both sides change the file; keep upstream's whole and append. The modules themselves are inventory sandbox-state-surfaces and the Moatless task-tree entries."
+    },
+    {
+      "id": "root-package-json",
+      "paths": ["package.json"],
+      "verdict": "decide",
+      "note": "Upstream owns the root manifest; take its changes, but keep `tsc-rs` out of devDependencies (the `tsc-rs` tripwire). Upstream bumps it as a one-line change that conflicts with the fork's removal. Strip its `tsc-rs`/`@tsc-rs/*` entries from upstream's `pnpm-lock.yaml` before the re-derive install too: they are younger than `minimumReleaseAge` and fail the lockfile policy check before resolution can prune them."
+    },
+    {
+      "id": "terminal-drawer-open-in-editor",
+      "paths": ["apps/web/src/components/ThreadTerminalDrawer.tsx"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply the `FEATURES.openInEditor` early return on the path branch of a terminal link activation, after the URL branch, plus its import. The `open-in-editor-gate` inventory entry and guard own the behavior."
+    },
+    {
+      "id": "thread-shell-subtasks",
+      "paths": [
+        "packages/client-runtime/src/state/threadShell.ts",
+        "packages/client-runtime/src/state/threadShell.test.ts"
+      ],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply the listing filter that skips only `isProviderNativeSubagentThread` children rather than every `relationshipToParent === \"subagent\"` thread, so a Moatless child task stays listed and navigable. The `sidebar-thread-family` inventory entry owns the behavior."
     }
   ],
 

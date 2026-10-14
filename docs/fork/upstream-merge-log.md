@@ -28,6 +28,42 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-14 — merged upstream to 6002c5c68c
+
+- Upstream: `6002c5c68c` from base `5070a83a32` (`42` commits).
+- Landed: `136` files from `git diff --stat HEAD^1 HEAD` against `136` in the
+  upstream range. Extra on the fork side: `docs/fork/inventory.json`; missing:
+  `package.json`, whose only upstream change was the `tsc-rs` bump dropped
+  below. Fork delta `809` files from `git diff --stat HEAD^2 HEAD`.
+- Branch point: `main` at `882bb0a638`. No open merge PR to stack on.
+- Conflicts: 2 files.
+  - `package.json` (unlisted): dropped upstream's `tsc-rs` 0.6.0 bump (#19187);
+    the fork removed `tsc-rs` and its tripwire holds that. Added path-policy
+    entry `root-package-json` (`decide`).
+  - `pnpm-lock.yaml` (`theirs`): upstream's copy failed `minimumReleaseAge` on
+    the seven `tsc-rs@0.6.0` entries before resolution could prune them, so
+    they were stripped from upstream's copy and the install re-derived the
+    rest. The `root-package-json` note says to repeat this.
+  - 14 more files both sides touched auto-merged; `duplicate-adds` and
+    `resolution-check` found nothing. `FilePreviewPanel.tsx` (`decide`) took
+    upstream's `threadRef` prop with both fork deltas intact. Added `converged`
+    entries for the two unlisted ones: `terminal-drawer-open-in-editor`
+    (`ThreadTerminalDrawer.tsx`) and `thread-shell-subtasks` (`threadShell.ts`,
+    which composed upstream's `isChildRunLive` with the fork's listing filter).
+- Sweep: no keyword hits; no new upstream workflow.
+- Gaps: extended
+  [runtime fixes upstream made](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Unsupported methods: ADD 0, DROP 0, KEEP 2 (`vcs.switchRef`,
+  `git.preparePullRequestThread`). The backend replaced its `"tag" =>` match
+  arms with `MethodTable` registrations (moatless#1138), so
+  `unsupported-methods.mjs` reported nothing until it learned to read
+  `.detached`/`.session`/`.stream` and to follow a handler passed by name.
+- Verification: `verify.mjs` passed every check except `test`, and
+  `unsupported-methods` after the script fix. Confirmed failing alone, the same
+  five files as on 2026-10-13: shared `AgentScope`, server `ServerBrowserPage`,
+  `AcpAdapterV2`, `OrchestratorReplayFixtures` and `OpenCodeServerLedger`.
+  Machine, not code.
+
 ### 2026-10-13 — merged upstream to 5070a83a32
 
 - Upstream: `5070a83a32` from base `e688034b5f` (`48` commits).
