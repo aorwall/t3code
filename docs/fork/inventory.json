@@ -857,6 +857,15 @@
       "mustSurvive": "A chat link to /api/v1/artifacts/<id>[/v<n>] on the primary environment's origin renders as a chip titled from GET /api/v1/tasks/<thread id>/artifacts, and a plain click opens it in the in-app browser regardless of the Open links in setting. A browser tab on that route renders with the sandbox stopped (ENVIRONMENT_PAGE_PREFIXES in sandboxSurfaces.ts). The ChatMarkdown.tsx delta is two imports and one early return in MarkdownAnchor after the citation check."
     },
     {
+      "id": "thread-artifacts-section",
+      "name": "Artifacts section in thread details",
+      "paths": [
+        "apps/web/src/fork/ThreadArtifactsSection.tsx",
+        "apps/web/src/components/chat/ThreadDetailsPanel.tsx"
+      ],
+      "mustSurvive": "Against Moatless, the thread details panel lists the task's published Artifacts below the Lineage (agents) section, read from GET /api/v1/tasks/<thread id>/artifacts through moatless/query.ts and refetched when the thread's latest run changes status. A row opens the latest version (/api/v1/artifacts/<id> on the primary origin) in the right panel's browser, and a modifier click opens a new tab. The section renders nothing on a server without the Moatless API or for a thread with no Artifacts. The ThreadDetailsPanel.tsx delta is one import and one element after ThreadRelationshipsPanel."
+    },
+    {
       "id": "subtasks-agents-panel",
       "name": "Subtasks section in the agents panel",
       "paths": ["apps/web/src/fork/SubtasksSection.tsx", "apps/web/src/state/subtasks.ts"],

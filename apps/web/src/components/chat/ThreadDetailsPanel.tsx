@@ -9,6 +9,8 @@ import type {
 import { FEATURES } from "../../fork/features";
 // Fork: the sandbox row that stands in for the workspace row.
 import { SandboxDetailsRow } from "../sandbox/SandboxDetailsRow";
+// Fork: the task's published Artifacts, below the agents.
+import { ThreadArtifactsSection } from "../../fork/ThreadArtifactsSection";
 
 import type { DraftId } from "../../composerDraftStore";
 import { useT3ProjectFileScripts } from "../../hooks/useT3ProjectFileScripts";
@@ -200,6 +202,11 @@ export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
               environmentId={props.environmentId}
               threadId={props.threadId}
             />
+          ) : null}
+
+          {/* Fork: the task's published Artifacts. */}
+          {density === "full" && !props.draftId ? (
+            <ThreadArtifactsSection environmentId={props.environmentId} threadId={props.threadId} />
           ) : null}
         </>
       )}
