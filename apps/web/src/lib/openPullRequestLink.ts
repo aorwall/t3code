@@ -1,4 +1,6 @@
 import type { EnvironmentId, PullRequestRef, ScopedThreadRef } from "@t3tools/contracts";
+// Fork: gates the pull request list page.
+import { FEATURES } from "~/fork/features";
 import { useAtomValue } from "@effect/atom-react";
 import { useNavigate } from "@tanstack/react-router";
 import { type MouseEvent, useCallback, useMemo } from "react";
@@ -152,6 +154,8 @@ export function useOpenChangeRequestLink(
       const resolvedPanelRef = panelRef ?? resolvedThreadRef;
       const parsed = parseChangeRequestUrl(targetUrl);
       if (parsed === null) return false;
+      // Fork: away from a thread a link opens the list page, which a server may not serve.
+      if (!resolvedPanelRef && !FEATURES.pullRequestList) return false;
       const reads = (environmentId: string) =>
         serverConfigs.get(environmentId as EnvironmentId)?.environment.capabilities.pullRequests ===
         true;

@@ -28,8 +28,9 @@ import type { RightPanelKind, RightPanelSurface } from "~/rightPanelStore";
  * Surfaces the environment serves rather than the live workspace.
  *
  * `files`/`file` are here because the backend reads them from the S3 snapshot
- * when no sandbox is running, and `pull-requests` because
- * `pullRequests.summary` reads the backend's own store. A kind absent from here
+ * when no sandbox is running, `pull-requests` because
+ * `pullRequests.summary` reads the backend's own store, and `pull-request`
+ * because its detail, diff and guide are read from the git host. A kind absent from here
  * needs the sandbox, which is the safe default: a new surface is a window onto
  * the live workspace until someone says otherwise.
  *
@@ -40,6 +41,7 @@ const SANDBOX_INDEPENDENT_KINDS: ReadonlySet<RightPanelKind> = new Set<RightPane
   "files",
   "file",
   "pull-requests",
+  "pull-request",
   "sandbox",
 ]);
 

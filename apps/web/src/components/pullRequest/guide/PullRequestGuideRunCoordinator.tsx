@@ -1,4 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
+// Fork: gates the pull request list page.
+import { FEATURES } from "~/fork/features";
 import { CircleAlertIcon, CircleCheckIcon } from "lucide-react";
 import { useEffect, useRef } from "react";
 
@@ -76,6 +78,8 @@ function GuideRunWatcher({ runKey, watch }: { runKey: string; watch: GuideRunWat
     const body = watch.title ?? `${watch.reference.repository} #${watch.reference.number}`;
     const open = () => {
       useGuideRunStore.getState().requestOpen(runKey);
+      // Fork: the guide stays in its thread's panel where the list page is not served.
+      if (!FEATURES.pullRequestList) return;
       void navigate({
         to: "/pull-requests",
         search: {

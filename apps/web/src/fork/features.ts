@@ -175,20 +175,26 @@ const SURFACES = {
   checkpointFileRestore: true,
   /**
    * The right panel's Pull request surface: one pull request read from its
-   * host, with its summary, its files and its timeline. Everything behind it —
-   * `pullRequests.detail`, `activity`, the review and comment actions — reads a
-   * git host, which the backend does not do. `pullRequests.summary` is the
-   * exception and is served off a task's own binding, which is what keeps the
-   * Linked pull requests surface and the sidebar status chip whole.
+   * host, with its summary, its files and its timeline. Moatless serves
+   * `pullRequests.detail`, the diff and the guided review for a pull request a
+   * task is bound to; `activity` and the review actions are not served and
+   * degrade inside the surface.
    *
-   * `capabilities.pullRequests` decides everything else that reaches the
-   * surface — the sidebar tab, the `/pull-requests` route, and a pull request
-   * link in the transcript, which falls back to opening the host. What a
-   * capability cannot decide is the launcher, which keeps an unavailable
-   * surface on screen with a one-line reason: upstream's reads "No pull request
-   * on this branch yet", a wait that never ends here. This drops the row.
+   * What `capabilities.pullRequests` cannot decide is the launcher, which keeps
+   * an unavailable surface on screen with a one-line reason: upstream's reads
+   * "No pull request on this branch yet", a wait that never ends on a server
+   * that lists this surface as unsupported. This drops the row there.
    */
   pullRequestSurface: true,
+  /**
+   * The Pull Requests page: every change request on a server, listed and
+   * searched through `pullRequests.list`, and reached from the sidebar entry,
+   * the palette's "Open pull requests" and a pull request link opened away
+   * from any thread. A server can back one pull request a thread links — its
+   * detail, diff and guided review — without listing a host; then a link
+   * outside a thread opens the host instead.
+   */
+  pullRequestList: true,
   /**
    * The device hub: an iOS Simulator or Android Emulator a person and the agent
    * share, offered as a right-panel surface and a Devices settings section.
@@ -347,6 +353,7 @@ export function settingsSearchItemEnabled(id: string): boolean {
 export const FEATURE_BY_PALETTE_ACTION: Readonly<Record<string, FeatureName>> = {
   "action:add-project": "projectManagement",
   "action:search-project-contents": "workspaceSearchContents",
+  "action:pull-requests": "pullRequestList",
 };
 
 /** Whether a palette item is offered in this build. Unlisted values are. */
