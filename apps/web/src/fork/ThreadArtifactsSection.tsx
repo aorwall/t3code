@@ -24,6 +24,7 @@ import { openUrlInPreview } from "~/browser/openFileInPreview";
 import { ThreadDetailsSection } from "~/components/chat/ThreadDetailsSection";
 import {
   THREAD_DETAILS_PANEL_ICON_CLASS,
+  THREAD_DETAILS_PANEL_LABEL_CLASS,
   THREAD_DETAILS_PANEL_ROW_CLASS,
 } from "~/components/chat/threadDetailsPanelStyles";
 import { resolvePrimaryEnvironmentHttpUrl } from "~/environments/primary/target";
@@ -151,7 +152,7 @@ function ArtifactRow(props: {
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`Open artifact ${artifact.title}`}
-      className={cn("flex h-auto items-center py-1.5", THREAD_DETAILS_PANEL_ROW_CLASS)}
+      className={cn("flex items-center", THREAD_DETAILS_PANEL_ROW_CLASS)}
       onClick={(event) => {
         if (
           !canOpenInPreview ||
@@ -176,15 +177,13 @@ function ArtifactRow(props: {
       }}
     >
       <FileTextIcon aria-hidden className={THREAD_DETAILS_PANEL_ICON_CLASS} />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-foreground/80">
-          {artifact.title}
-        </span>
-        <span className="block truncate text-2xs font-normal text-muted-foreground">
-          {[`v${artifact.version}`, updated === "" ? null : `updated ${updated}`]
-            .filter((part): part is string => part !== null)
-            .join(" · ")}
-        </span>
+      <span className={cn("min-w-0 flex-1 truncate", THREAD_DETAILS_PANEL_LABEL_CLASS)}>
+        {artifact.title}
+      </span>
+      <span className="shrink-0 text-2xs font-normal tabular-nums text-muted-foreground">
+        {[`v${artifact.version}`, updated === "" ? null : updated]
+          .filter((part): part is string => part !== null)
+          .join(" · ")}
       </span>
     </a>
   );
