@@ -28,6 +28,53 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-15 — merged upstream to e536bfd33b
+
+- Upstream: `e536bfd33b` from base `6002c5c68c` (`106` commits).
+- Landed: `475` files from `git diff --stat HEAD^1 HEAD` against `476` in the
+  upstream range; missing: `package.json`, whose only upstream change was the
+  `tsc-rs` 0.7.0 bump dropped below. Fork delta `809` files from
+  `git diff --stat HEAD^2 HEAD`.
+- Branch point: `main` at `d985e2dcd`. No open merge PR to stack on.
+- Conflicts: 5 files.
+  - `package.json` (`decide`): dropped upstream's `tsc-rs` 0.7.0 bump (#19408)
+    per `root-package-json`.
+  - `pnpm-lock.yaml` (`theirs`): stripped the seven `tsc-rs@0.7.0` entries
+    from upstream's copy, as the `root-package-json` note says, then
+    re-derived. Taken whole they fail `minimumReleaseAge`, and once past it
+    `tsc-rs`'s postinstall trips `ERR_PNPM_IGNORED_BUILDS`.
+  - `Sidebar.tsx` (`converged`): kept `useSidebarThreadList`; took upstream's
+    `useSidebarProjectGroups` hook (#19179), which sorts project groups by all
+    thread shells rather than the fork's filtered list.
+  - `SettingsPanels.tsx` (`converged`): kept the `serverBehaviorSettings` gate;
+    took upstream's new provider-update-checks description (#18208).
+  - `threadShell.ts` (`converged`): kept `isProviderNativeSubagentThread`;
+    took upstream's `subagentRequests` argument to `scopedThread`.
+  - 24 more files both sides touched auto-merged; `duplicate-adds` and
+    `resolution-check` found nothing. Upstream's new
+    `useProjectScriptSettings.test.tsx` built a `NewProjectScriptInput` with
+    `previewUrl`/`autoOpenPreview`; changed it to the fork's `port`.
+- Sweep: 2 hits (`apps/mobile/src/features/connection/environmentStatusText*`),
+  mobile connection copy, not an owned concern; no new upstream workflow.
+- Gaps: extended
+  [capabilities](./gaps.md#capabilities-are-reported-but-not-the-ones-the-newer-surfaces-need),
+  [settlement rules](./gaps.md#settlement-rules-moatless-owns),
+  [pull request link](./gaps.md#a-pull-request-link-is-a-listing-change-not-an-event),
+  [Orchestrator V2](./gaps.md#orchestrator-v2-is-served-by-translation-and-only-in-part)
+  (transcript HTTP read) and
+  [runtime fixes upstream made](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Unsupported methods: ADD 0, DROP 0, KEEP 2 (`vcs.switchRef`,
+  `git.preparePullRequestThread`).
+- Verification: `verify.mjs` green except `test`, after the typecheck fix
+  (re-run `--only typecheck` and `--only test --package @t3tools/web`, both
+  green). Confirmed failing alone, the same five files as on 2026-10-14
+  (shared `AgentScope`, server `ServerBrowserPage`, `AcpAdapterV2`,
+  `OrchestratorReplayFixtures`, `OpenCodeServerLedger`). New: `@t3tools/ssh`
+  `tunnel.test.ts` "still replaces its managed server when the runner changes"
+  (#19432), which asserts a killed PID is gone, the same unreaped-process
+  sandbox failure as `AcpAdapterV2`; the fork does not touch `packages/ssh`.
+  Machine, not code.
+
 ### 2026-10-14 — merged upstream to 6002c5c68c
 
 - Upstream: `6002c5c68c` from base `5070a83a32` (`42` commits).
