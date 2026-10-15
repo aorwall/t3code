@@ -72,7 +72,9 @@ not report is every boolean added since that handshake was written —
 `projectSettingsOverrides` (upstream, 2026-09-09) and
 `requiredWorktreeBootstrap`, `storageCleanup` and `projectWorktreeCleanup`
 (upstream, 2026-09-18), `threadAutoSettleOptOut` (upstream, 2026-09-25) and
-`threadFind` / `threadFindProgressive` (upstream, 2026-10-09) — so
+`threadFind` / `threadFindProgressive` (upstream, 2026-10-09) and
+`threadAutoSettlementScope` and `settledWorktreeCleanup` (upstream,
+2026-10-15) — so
 each of those
 surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
@@ -221,8 +223,11 @@ thread detail already loaded keeps the set it was loaded with. One line in
 (`packages/client-runtime/src/state/threadDetail.ts`) holds the gap open: the
 shell speaks for `pullRequests`, where upstream's merge keeps the detail's.
 
+The 2026-10-15 merge added a fourth frame, `thread.pull-request-link-updated`
+(#19248), which upstream emits only when a link's stored fields change.
+
 - **Closes when:** the backend has a path from a domain event to the T3 event
-  feed, and emits the three pull-request frames on it.
+  feed, and emits the pull-request frames on it.
 - **Then here:** delete the `pullRequests` line from `mergeEnvironmentThread`,
   and the two `entities.test.ts` cases that assert the shell wins.
 
@@ -1059,6 +1064,20 @@ restarts when it wakes** (#16674), so a thread that slept past the auto-settle
 window is not settled the moment it wakes
 (`apps/server/src/orchestration/ThreadSettlementReactor.ts`).
 
+The 2026-10-15 merge added three more, all behind capabilities Moatless leaves
+absent, so their settings rows stay hidden:
+
+- **Inactivity does not settle a thread with a pull request.** #14642 adds the
+  `sidebarAutoSettleKeepPullRequests` setting, read by the inactivity rule and
+  shown when `threadAutoSettlementScope` is reported. Merge and close still
+  settle.
+- **A settled thread's worktree is removed after a retention period.** #15208
+  adds `worktreeSettledAfterDays` and its sweep, shown in Storage settings when
+  `settledWorktreeCleanup` is reported; #19418 stops the sweeps running back to
+  back. Moatless has sandboxes rather than worktrees, but the same "reclaim a
+  settled thread's workspace" rule applies.
+- **A settled or idle-released thread stops reading as Waiting.** #19355.
+
 - **Closes when:** the backend's settlement decision reads pin and snooze state,
   settles a snoozed thread immediately, settles on the pull-request event rather
   than on the next sweep, and records a cancelled setup's settlement before
@@ -1121,6 +1140,13 @@ command onto a V1 one or refuses it.
   `curl -s <backend>/.well-known/t3/environment | jq .orchestrationProtocolVersion`
   prints `2`.
 - **Then here:** strike this entry.
+
+The 2026-10-15 merge added an HTTP read the backend does not route,
+`GET /api/orchestration/threads/:threadId/transcript` (#15210,
+`packages/client-runtime/src/state/threadTranscriptHttp.ts`). The composer
+calls it only for a thread dropped from _another_ environment, which a
+single-environment Moatless deployment cannot produce, so it holds nothing open
+here; it becomes owed the day a client connects two Moatless environments.
 
 ### Runtime fixes upstream made to its own server
 
@@ -1835,6 +1861,17 @@ One more arrived in the 2026-10-01 merge:
   host-less URL stay listed and one Antigravity account counts once (#11368,
   #19207), and Claude background text generation defaults to Haiku 5.5
   (#18781).
+  The 2026-10-15 merge adds: a delegated task's pending question reaches the
+  parent's wait as `hasPendingQuestion` on the orchestrator MCP task result
+  (#18459, #19521, #19538), a pull request link is stored only when it changes
+  and a merged PR is not re-read each turn (#19248, #19344), GitHub reviewers
+  include requested teams (#19375), new worktrees survive a concurrent fetch
+  (#19411), commit and title generation fall back to the custom model (#19386),
+  Claude managed-mcp.json is honoured and a 403 no longer says to log in
+  (#18706, #15872), Codex "Always allow this session" works and slow MCP
+  servers no longer drop tools (#19635, #19368), CLIs behind mise wrappers no
+  longer time out (#19340), cold usage scans stop stalling the server (#19446),
+  and one database owner is enforced with exit code 78 (#16102).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
