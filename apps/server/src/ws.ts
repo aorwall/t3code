@@ -2727,6 +2727,15 @@ const layerWsRpc = (
                 }),
             ),
           ),
+        // Fork: go to definition needs a language server, which only a
+        // Moatless sandbox runs; this server has none to ask.
+        [WS_METHODS.projectsGoToDefinition]: (_input) =>
+          Effect.fail(
+            new UnsupportedMethodError({
+              method: WS_METHODS.projectsGoToDefinition,
+              message: "This environment has no language server for go to definition.",
+            }),
+          ),
         [WS_METHODS.projectsWriteFile]: (input) =>
           workspaceFileSystem.writeFile(input).pipe(
             Effect.mapError(

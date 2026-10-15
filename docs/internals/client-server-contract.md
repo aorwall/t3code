@@ -44,7 +44,7 @@ are part of the contract: every method can fail with
 return an Effect `Stream`; unary methods return an `Effect`.
 
 **Fork addition.** Methods no environment in this deployment serves also declare
-[`UnsupportedMethodError`][unsupportederr] — 47 of them today. It is not on every method,
+[`UnsupportedMethodError`][unsupportederr] — 48 of them today. It is not on every method,
 deliberately: the list is a statement about the surface, so adding a method to it says
 nobody answers it and removing one says somebody now does. Without a declared error an
 absent method can only answer with a defect, and a defect does not decode into anything

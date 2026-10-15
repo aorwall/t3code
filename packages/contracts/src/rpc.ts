@@ -346,6 +346,12 @@ import {
   SandboxSetIdleTimeoutInput,
   SandboxSetIdleTimeoutResult,
 } from "./sandboxDetail.ts";
+// Fork: go to definition in a workspace file, a fork-only surface.
+import {
+  ProjectGoToDefinitionError,
+  ProjectGoToDefinitionInput,
+  ProjectGoToDefinitionResult,
+} from "./projectDefinition.ts";
 // Fork: the threads a thread spawned, a fork-only surface.
 import { SubtasksListInput, SubtasksListResult } from "./subtasks.ts";
 // Fork: the listing rows a filter names, a fork-only surface.
@@ -414,6 +420,8 @@ export const WS_METHODS = {
   projectsSearchContents: "projects.searchContents",
   projectsSearchEntries: "projects.searchEntries",
   projectsWriteFile: "projects.writeFile",
+  // Fork: go to definition, answered by the sandbox's language servers.
+  projectsGoToDefinition: "projects.goToDefinition",
   projectsMutate: "projects.mutate",
   projectsEnsureScratch: "projects.ensureScratch",
   projectsCreateNew: "projects.createNew",
@@ -1413,6 +1421,23 @@ const WsProjectsReadFileRpc = Rpc.make(WS_METHODS.projectsReadFile, {
   payload: ProjectReadFileInput,
   success: ProjectReadFileResult,
   error: Schema.Union([ProjectReadFileError, EnvironmentAuthorizationError]),
+});
+
+/**
+ * Fork: where the symbol at a position is defined, answered by a language
+ * server in the Moatless sandbox.
+ *
+ * Declared with `UnsupportedMethodError` because `apps/server` has no language
+ * server to ask — see "Go to definition" in docs/fork/gaps.md.
+ */
+export const WsProjectsGoToDefinitionRpc = Rpc.make(WS_METHODS.projectsGoToDefinition, {
+  payload: ProjectGoToDefinitionInput,
+  success: ProjectGoToDefinitionResult,
+  error: Schema.Union([
+    ProjectGoToDefinitionError,
+    EnvironmentAuthorizationError,
+    UnsupportedMethodError,
+  ]),
 });
 
 const WsProjectsWriteFileRpc = Rpc.make(WS_METHODS.projectsWriteFile, {
@@ -2464,6 +2489,8 @@ export const WsRpcGroup = RpcGroup.make(
   WsSubscribeProjectClonesRpc,
   WsProjectsListEntriesRpc,
   WsProjectsReadFileRpc,
+  // Fork: go to definition in a workspace file.
+  WsProjectsGoToDefinitionRpc,
   WsProjectsSearchContentsRpc,
   WsProjectsSearchEntriesRpc,
   WsProjectsEnsureScratchRpc,

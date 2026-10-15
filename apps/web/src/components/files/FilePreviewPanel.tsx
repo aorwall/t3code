@@ -51,6 +51,8 @@ import { OpenInPicker } from "~/components/chat/OpenInPicker";
 import { FEATURES } from "~/fork/features";
 // Fork: Moatless refuses a binary file as text, so it is offered as a download.
 import { WorkspaceBinaryFile } from "~/fork/WorkspaceBinaryFile";
+// Fork: Cmd/Ctrl-click go to definition, answered by the sandbox's language server.
+import { useGoToDefinitionClick } from "~/fork/goToDefinition";
 import { MediaVideoPlayer } from "~/components/media/MediaVideoPlayer";
 import { MediaActions, type MediaActionSource } from "~/components/media/MediaActions";
 import { MorphIcon } from "~/components/MorphIcon";
@@ -1081,6 +1083,13 @@ export default function FilePreviewPanel({
   // A file outside the workspace (an absolute path) is shown, never edited.
   const isHostFile =
     attachment !== undefined || (relativePath !== null && isAbsolutePath(relativePath));
+  // Fork: Cmd/Ctrl-click a symbol to open its definition.
+  const onDefinitionClick = useGoToDefinitionClick({
+    environmentId,
+    cwd,
+    relativePath: isHostFile ? null : relativePath,
+    threadRef,
+  });
   const fileAccess = useFilesystemReadAccess(environmentId);
   const { canReadFiles } = fileAccess;
   const canWriteFiles = useEnvironmentScope(environmentId, AuthFilesystemWriteScope);
@@ -1370,6 +1379,8 @@ export default function FilePreviewPanel({
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <div
           className={cn("min-w-0 flex-1 flex-col overflow-hidden", previewPath ? "flex" : "hidden")}
+          // Fork: go to definition from a rendered code line.
+          onClickCapture={onDefinitionClick}
         >
           {isDirectory ? null : relativePath && attachment ? (
             <AttachmentFilePreview

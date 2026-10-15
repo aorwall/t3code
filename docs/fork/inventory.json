@@ -182,6 +182,14 @@
       "see": "inventory `hosted-env-contract`, and 'A subtask is a Moatless concept' in gaps.md"
     },
     {
+      "id": "projects-go-to-definition-upstream-refusal",
+      "method": "projects.goToDefinition",
+      "direction": "DROP",
+      "reason": "Go to definition is answered by a language server in the Moatless sandbox; `apps/server` has none to ask, so it answers the method with `UnsupportedMethodError` unconditionally while Moatless dispatches it.",
+      "retiredWhen": "Upstream grows code intelligence in its file viewer, or the method leaves the contract — at which point delete this entry and let the DROP stand.",
+      "see": "inventory `hosted-env-contract`, and 'Go to definition' in gaps.md"
+    },
+    {
       "id": "threads-get-shell-upstream-refusal",
       "method": "threads.getShell",
       "direction": "DROP",
@@ -816,11 +824,12 @@
         "packages/contracts/src/index.ts",
         "packages/contracts/src/preview.ts",
         "packages/contracts/src/subtasks.ts",
+        "packages/contracts/src/projectDefinition.ts",
         "packages/contracts/src/threadShellLookup.ts",
         "packages/contracts/src/threadBrowse.ts",
         "packages/contracts/fixtures/moatless/**"
       ],
-      "mustSurvive": "Keep fork methods: sandbox status, sandbox status subscription, sandbox start, sandbox stop, and subtasks.list. sandbox.subscribeStatus is gated on the sandboxStatusPush capability: absent, the client polls sandbox.status instead, so both paths have to keep working. subtasks.ts, threadShellLookup.ts and threadBrowse.ts are fork-only, and subtasks.list, threads.getShell and threads.browse each keep their UnsupportedMethodError union entry for as long as apps/server refuses the method, whatever unsupported-methods.mjs reports. threads.getShell and threads.browse both return the listing's own OrchestrationThreadShell and must keep doing so: a thread fetched by id, or reached through a browse, has to be indistinguishable from the same thread delivered by the listing. Every field of ThreadBrowseInput is optional and the backend refuses a browse that names neither an ownerUserId nor a tag, so the schema cannot express 'list everything'."
+      "mustSurvive": "Keep fork methods: sandbox status, sandbox status subscription, sandbox start, sandbox stop, subtasks.list and projects.goToDefinition. sandbox.subscribeStatus is gated on the sandboxStatusPush capability: absent, the client polls sandbox.status instead, so both paths have to keep working. subtasks.ts, projectDefinition.ts, threadShellLookup.ts and threadBrowse.ts are fork-only, and subtasks.list, projects.goToDefinition, threads.getShell and threads.browse each keep their UnsupportedMethodError union entry for as long as apps/server refuses the method, whatever unsupported-methods.mjs reports. threads.getShell and threads.browse both return the listing's own OrchestrationThreadShell and must keep doing so: a thread fetched by id, or reached through a browse, has to be indistinguishable from the same thread delivered by the listing. Every field of ThreadBrowseInput is optional and the backend refuses a browse that names neither an ownerUserId nor a tag, so the schema cannot express 'list everything'."
     },
     {
       "id": "sandbox-subtask-state-client-runtime",
@@ -852,6 +861,12 @@
       "name": "Subtasks section in the agents panel",
       "paths": ["apps/web/src/fork/SubtasksSection.tsx", "apps/web/src/state/subtasks.ts"],
       "mustSurvive": "The agents panel has two sections against Moatless: the child threads this thread spawned, and upstream's subagent fleet. Only AgentsPanel.tsx is upstream's, and the whole fork delta there is one import, one useThreadSubtasks call above the empty-state return, the empty-state copy, and two elements in the scroll area. Everything else lives in fork/SubtasksSection.tsx, which mirrors AgentsPanel's STATUS_VISUALS classes on purpose rather than importing them."
+    },
+    {
+      "id": "file-viewer-go-to-definition",
+      "name": "Go to definition in the file viewer",
+      "paths": ["apps/web/src/fork/goToDefinition.ts", "apps/web/src/fork/goToDefinition.test.ts"],
+      "mustSurvive": "Cmd- or Ctrl-click on a rendered code line in the file viewer asks projects.goToDefinition and opens the first location through rightPanelStore.openFile at its line. The fork delta in FilePreviewPanel.tsx is one import, one useGoToDefinitionClick call, and one onClickCapture on the viewer container; everything else is in fork/goToDefinition.ts. The column sent is 1-based UTF-16, counted over the text nodes of the [data-line] element, which holds only that line's code."
     },
     {
       "id": "unlisted-thread-adoption",

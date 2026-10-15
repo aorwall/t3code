@@ -860,6 +860,20 @@ The client half is fork-only and self-gating rather than flagged: the section is
 absent when the read comes back with a typed refusal, so a build pointed at
 upstream's server shows the agents panel exactly as upstream does.
 
+### Go to definition needs a language server, which only a Moatless sandbox runs
+
+`projects.goToDefinition` is answered by a language server the sandbox starts
+from the Workspace's `languageServers`, so the backend dispatches it and
+`apps/server` answers `UnsupportedMethodError` unconditionally.
+
+- **Keep the union entry** for as long as `apps/server` refuses the method,
+  whatever `unsupported-methods.mjs` reports it under.
+- **Closes when:** upstream grows code intelligence in its file viewer, or the
+  method leaves the contract.
+
+Only TypeScript and JavaScript answer for now. Moatless leaves Rust out because
+the agent's own rust-analyzer already uses most of the sandbox's memory.
+
 ### A thread outside the listing is a Moatless idea, so upstream's server refuses it
 
 `threads.getShell` runs the derivation backwards for the same reason
