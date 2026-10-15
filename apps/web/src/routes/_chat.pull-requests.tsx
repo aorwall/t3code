@@ -20,9 +20,7 @@ import type {
   SourceControlProviderKind,
 } from "@t3tools/contracts";
 import { useAtomValue } from "@effect/atom-react";
-// Fork: `redirect` and FEATURES gate this page on the server listing pull requests.
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { FEATURES } from "~/fork/features";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ArrowDownUpIcon,
   CalendarArrowDownIcon,
@@ -307,10 +305,6 @@ function pullRequestSearchLabels(raw: unknown): Partial<Pick<PullRequestsSearch,
 }
 
 export const Route = createFileRoute("/_chat/pull-requests")({
-  // Fork: a typed URL to the list page of a server that cannot list lands home.
-  beforeLoad: () => {
-    if (!FEATURES.pullRequestList) throw redirect({ to: "/", replace: true });
-  },
   validateSearch: (raw: Record<string, unknown>): PullRequestsSearch => ({
     involvement:
       raw.involvement === "reviewing" || raw.involvement === "authored" ? raw.involvement : "all",

@@ -451,14 +451,13 @@ what a person loses, which is the part the derivation cannot tell you:
   not carry: a binding records those on its first refresh, and until then a link
   in `thread.pullRequests` carries a null `snapshot` and every surface that
   names it resolves one through this call, which is also what performs that
-  refresh. A backend that also serves `pullRequests.detail`, the HTTP diff and
-  the guided review (`reviewGuide`, `generateReviewGuide`) reports
-  `capabilities.pullRequests` and drops `pullRequestSurface`, so the panel opens
-  on a thread's linked pull request; it lists `pullRequestList` instead, which
-  hides the sidebar entry, the palette action and the `/pull-requests` route,
-  and sends a link opened away from any thread to the host. `activity`,
-  `subscribeRefreshes` and every write stay refused there, so the panel's
-  Timeline tab and Summary conversation show their unavailable states. Grown once more in this merge by per-project and
+  refresh. Moatless now also serves `pullRequests.list` (each readable project's
+  primary GitHub repository), `detail`, the HTTP diff and the guided review
+  (`reviewGuide`, `generateReviewGuide`), reports `capabilities.pullRequests`
+  and drops `pullRequestSurface`, so the Pull Requests page and the panel are
+  upstream's. `activity`, `subscribeRefreshes` and every write stay refused
+  there, so the panel's Timeline tab and Summary conversation show their
+  unavailable states and the page refreshes only on request. Grown once more in this merge by per-project and
   last-used **merge-method defaults** (upstream, 2026-09-08): a
   `pullRequestMergeMethodOverrides` client setting plus a project-level default
   that preselect merge/squash/rebase in the PR detail panel's merge control

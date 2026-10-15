@@ -201,8 +201,8 @@
       "id": "pull-requests-summary-shared-union",
       "method": "pullRequests.summary",
       "direction": "DROP",
-      "reason": "Moatless dispatches `pullRequests.summary`, `pullRequests.detail`, `pullRequests.reviewGuide` and `pullRequests.generateReviewGuide`, but the family shares `PullRequestRpcError` with `pullRequests.list` and `pullRequests.activity`, which it does not dispatch. Splitting a private union off costs more fork delta than an entry the client never receives.",
-      "retiredWhen": "Moatless dispatches `pullRequests.list` and `pullRequests.activity`, or the served methods take an error union of their own — at which point delete this entry and let the DROP stand.",
+      "reason": "Moatless dispatches `pullRequests.list`, `listStats`, `invalidate`, `summary`, `detail`, `reviewGuide` and `generateReviewGuide`, but the family shares `PullRequestRpcError` with `pullRequests.activity` and the write methods, which it does not dispatch. Splitting a private union off costs more fork delta than an entry the client never receives.",
+      "retiredWhen": "Moatless dispatches `pullRequests.activity` and the write methods, or the served methods take an error union of their own — at which point delete this entry and let the DROP stand.",
       "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
     }
   ],
@@ -1291,27 +1291,6 @@
       "guard": {
         "symbol": "FEATURES.scheduledTasks",
         "files": ["apps/web/src/components/chat/ThreadDetailsPanel.tsx"]
-      }
-    },
-    {
-      "id": "pull-request-list-gate",
-      "name": "Pull request list page gate",
-      "paths": [
-        "apps/web/src/fork/features.ts",
-        "apps/web/src/components/sidebar/SidebarChrome.tsx",
-        "apps/web/src/lib/openPullRequestLink.ts",
-        "apps/web/src/routes/_chat.pull-requests.tsx",
-        "apps/web/src/components/pullRequest/guide/PullRequestGuideRunCoordinator.tsx"
-      ],
-      "mustSurvive": "A server that serves one bound pull request's detail, diff and guided review without `pullRequests.list` reports `capabilities.pullRequests` and lists `pullRequestList` in `unsupportedSurfaces`. The capability alone would offer the Pull Requests page, which then fails on its first read. Five additive FEATURES.pullRequestList checks close it: the sidebar entry in SidebarChrome.tsx, the palette action through FEATURE_BY_PALETTE_ACTION, `openPullRequestLink` returning false away from a thread so the link opens the host, the route's `beforeLoad` redirecting home, and the guide run coordinator's open action staying in the thread. Drop the flag and its checks once the backend serves `pullRequests.list`.",
-      "guard": {
-        "symbol": "FEATURES.pullRequestList",
-        "files": [
-          "apps/web/src/components/sidebar/SidebarChrome.tsx",
-          "apps/web/src/lib/openPullRequestLink.ts",
-          "apps/web/src/routes/_chat.pull-requests.tsx",
-          "apps/web/src/components/pullRequest/guide/PullRequestGuideRunCoordinator.tsx"
-        ]
       }
     },
     {

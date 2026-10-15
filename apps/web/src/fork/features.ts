@@ -187,15 +187,6 @@ const SURFACES = {
    */
   pullRequestSurface: true,
   /**
-   * The Pull Requests page: every change request on a server, listed and
-   * searched through `pullRequests.list`, and reached from the sidebar entry,
-   * the palette's "Open pull requests" and a pull request link opened away
-   * from any thread. A server can back one pull request a thread links — its
-   * detail, diff and guided review — without listing a host; then a link
-   * outside a thread opens the host instead.
-   */
-  pullRequestList: true,
-  /**
    * The device hub: an iOS Simulator or Android Emulator a person and the agent
    * share, offered as a right-panel surface and a Devices settings section.
    * Every method behind it is refused — `device.configure`, `list`, `open`,
@@ -353,7 +344,6 @@ export function settingsSearchItemEnabled(id: string): boolean {
 export const FEATURE_BY_PALETTE_ACTION: Readonly<Record<string, FeatureName>> = {
   "action:add-project": "projectManagement",
   "action:search-project-contents": "workspaceSearchContents",
-  "action:pull-requests": "pullRequestList",
 };
 
 /** Whether a palette item is offered in this build. Unlisted values are. */
