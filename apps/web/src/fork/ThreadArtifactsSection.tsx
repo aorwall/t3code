@@ -44,8 +44,6 @@ import { moatlessApiAvailable } from "./features";
 export interface TaskArtifact {
   readonly artifactId: string;
   readonly title: string;
-  /** The latest published version, starting at 1. */
-  readonly version: number;
   readonly updatedAt: string;
 }
 
@@ -180,11 +178,11 @@ function ArtifactRow(props: {
       <span className={cn("min-w-0 flex-1 truncate", THREAD_DETAILS_PANEL_LABEL_CLASS)}>
         {artifact.title}
       </span>
-      <span className="shrink-0 text-2xs font-normal tabular-nums text-muted-foreground">
-        {[`v${artifact.version}`, updated === "" ? null : updated]
-          .filter((part): part is string => part !== null)
-          .join(" · ")}
-      </span>
+      {updated === "" ? null : (
+        <span className="shrink-0 text-2xs font-normal tabular-nums text-muted-foreground">
+          {updated}
+        </span>
+      )}
     </a>
   );
 }
