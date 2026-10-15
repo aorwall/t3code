@@ -1,7 +1,7 @@
 import type { DesktopBridge } from "@t3tools/contracts";
 import { afterEach, describe, expect, it, vi } from "@effect/vitest";
 import * as Effect from "effect/Effect";
-import { HttpBody, HttpClient } from "effect/http";
+import { FetchHttpClient, HttpBody, HttpClient } from "effect/http";
 
 import { __resetDesktopPrimaryAuthForTests } from "./desktopAuth";
 import * as PrimaryEnvironmentHttpLayer from "./httpLayer";
@@ -64,6 +64,41 @@ describe("primary environment HTTP layer", { concurrent: false }, () => {
       const request = new Request(fetchMock.mock.calls[0]?.[0], fetchMock.mock.calls[0]?.[1]);
       expect(request.headers.get("x-csrf-token")).toBe("csrf-token-value");
     }).pipe(Effect.provide(PrimaryEnvironmentHttpLayer.layerForCurrentOrigin()));
+  });
+
+  // Fork: the shared runtime client sends the pull request diff POST, and also
+  // reaches other hosts that must not receive the token.
+  it.effect("echoes the Moatless CSRF cookie only to the page's own origin", () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+    Object.defineProperty(globalThis, "document", {
+      configurable: true,
+      value: { cookie: "moatless_csrf=csrf-token-value" },
+    });
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: {
+        location: {
+          href: "https://moatless.soaplabstest.com/pull-requests",
+          origin: "https://moatless.soaplabstest.com",
+        },
+      },
+    });
+
+    return Effect.gen(function* () {
+      const client = PrimaryEnvironmentHttpLayer.withSameOriginMoatlessCsrfToken(
+        yield* HttpClient.HttpClient,
+      );
+      yield* client.post("https://moatless.soaplabstest.com/api/pull-requests/diff", {
+        body: yield* HttpBody.json({}),
+      });
+      yield* client.post("https://relay.example.com/v1/x", { body: yield* HttpBody.json({}) });
+
+      const sent = fetchMock.mock.calls.map(([input, init]) =>
+        new Request(input, init).headers.get("x-csrf-token"),
+      );
+      expect(sent).toEqual(["csrf-token-value", null]);
+    }).pipe(Effect.provide(FetchHttpClient.layer));
   });
 
   it.effect("uses bearer auth without cookies for desktop-managed primaries", () => {

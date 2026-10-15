@@ -19,9 +19,9 @@ function isBrowserPrimary(): boolean {
 // double-submit CSRF token, so one that does not echo the `moatless_csrf`
 // cookie in `x-csrf-token` is 403ed by the auth middleware before any handler
 // sees it. The cookie is not HttpOnly precisely so this can read it. The
-// client's only such request today is the OTLP export in
-// `observability/clientTracing.ts`; every other write rides the `/ws` socket,
-// whose upgrade is a GET.
+// unsafe HTTP requests are the OTLP export in `observability/clientTracing.ts`
+// and the pull request diff, which goes through `lib/runtime.ts`'s client
+// (`withSameOriginMoatlessCsrfToken`); every other write rides the `/ws` socket.
 const MOATLESS_CSRF_COOKIE = "moatless_csrf";
 
 /** Read per request: a re-login mints a new token under the same cookie. */
@@ -41,6 +41,33 @@ function withMoatlessCsrfToken(client: HttpClient.HttpClient): HttpClient.HttpCl
       return token === null ? request : HttpClientRequest.setHeader(request, "x-csrf-token", token);
     }),
   );
+}
+
+/**
+ * Fork: see MOATLESS_CSRF_COOKIE. For a client that also reaches other hosts,
+ * such as the relay: the token goes only to this page's origin, rather than
+ * to every host the client calls.
+ */
+export function withSameOriginMoatlessCsrfToken(
+  client: HttpClient.HttpClient,
+): HttpClient.HttpClient {
+  return client.pipe(
+    HttpClient.mapRequest((request) => {
+      if (typeof window === "undefined" || !isSameOrigin(request.url)) {
+        return request;
+      }
+      const token = readMoatlessCsrfToken();
+      return token === null ? request : HttpClientRequest.setHeader(request, "x-csrf-token", token);
+    }),
+  );
+}
+
+function isSameOrigin(url: string): boolean {
+  try {
+    return new URL(url, window.location.href).origin === window.location.origin;
+  } catch {
+    return false;
+  }
 }
 
 function withPrimaryBearerToken(client: HttpClient.HttpClient): HttpClient.HttpClient {

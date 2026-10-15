@@ -1,7 +1,8 @@
 import * as ManagedRuntime from "effect/ManagedRuntime";
-import type * as Effect from "effect/Effect";
+import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Socket from "effect/socket/Socket";
+import { HttpClient } from "effect/http";
 
 import { layerRemoteHttpClient } from "@t3tools/client-runtime/rpc";
 import * as RelayTracing from "@t3tools/shared/relayTracing";
@@ -17,7 +18,12 @@ function configuredRelayUrl(): string {
   return resolveCloudPublicConfig().relayUrl ?? "http://relay.invalid";
 }
 
-const layerHttpClient = layerRemoteHttpClient((input, init) => globalThis.fetch(input, init));
+// Fork: the pull request diff is a cookie-authenticated POST through this
+// client, so it needs the CSRF header the primary layer adds.
+const layerHttpClient = Layer.effect(
+  HttpClient.HttpClient,
+  Effect.map(HttpClient.HttpClient, PrimaryEnvironmentHttpLayer.withSameOriginMoatlessCsrfToken),
+).pipe(Layer.provide(layerRemoteHttpClient((input, init) => globalThis.fetch(input, init))));
 const layerRelayTracing = RelayTracing.layer(resolveRelayTracingConfig(), {
   serviceName: "t3code-web",
   serviceVersion: import.meta.env.APP_VERSION,
