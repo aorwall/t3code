@@ -28,6 +28,58 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-16 — merged upstream to 3962ae8586
+
+- Upstream: `3962ae8586` from base `e536bfd33b` (`96` commits).
+- Landed: `738` files from `git diff --stat HEAD^1 HEAD` against `736` in the
+  upstream range; missing: `apps/web/index.html`, whose only upstream change
+  was the "T3 Code (Beta)" title the fork replaces; extra: the three fork docs.
+  Fork delta `815` files from `git diff --stat HEAD^2 HEAD`.
+- Branch point: `main` at `08f8e42420`. No open merge PR to stack on.
+- Conflicts: 8 files.
+  - `ChatView.tsx` (`converged`): upstream #19869 replaced `useCallback` with
+    plain functions plus `useStableCallback`. Took upstream and re-stated each
+    fork delta in that style: `startSandboxForScript`, the draft-thread create
+    and host-driven path in `runProjectScript`, the `scriptsEditable` branch of
+    `persistProjectScripts`, `addSandboxSurface`, `retargetFileSurface`, the
+    announced preview/terminal effects, the sandbox-commands banner, the
+    `pullRequestSurface` gate, and the fork dialog (`onForkFromRun` opens it,
+    `onConfirmForkFromRun` forks). Dropped upstream's `configuredPreviewUrls`.
+  - `rightPanelStore.ts` (`converged`): kept `retargetFile` and the
+    `RIGHT_PANEL_KINDS` filter; took `navigateFolder` and the `folderTrail`
+    normalization (#15045). `FilePreviewPanel.tsx` (`decide`) takes both
+    `onRetargetFile` and `onNavigateFolder`/`folderTrail`.
+  - `ci.yml` (`converged`): upstream folded `typecheck` into `build` (#19633);
+    the Moatless spec check now follows `build`'s final `Typecheck` step, and
+    the delta prose says so.
+  - `Sidebar.tsx` (`converged`): upstream's `useStableCallback` context menu, no
+    deps list. `ProjectSettingsPanel.tsx` (`converged`): both import sets.
+  - `index.html` (unlisted, now `branding-shell`, `decide`): kept the Moatless
+    title. `source-control-github/package.json` (unlisted): upstream's
+    `generate` script with the fork's `tsc --noEmit`.
+  - `pnpm-lock.yaml` (`theirs`): stripped `tsc-rs@0.7.0`, re-derived.
+  - `duplicateAddExceptions`: added `chatview-fork-request-field`.
+- Sweep: 9 hits (mobile theme hosts, video audio session, permission notice,
+  an ACP malformed-update fixture, a Clerk patch). False positives, taken as
+  upstream's; no new workflow.
+- Unsupported methods: ADD 2 (`orchestration.subscribeCommandOutput`,
+  `server.getDatabaseStorage`); DROP 11 `pullRequests.*` reads now served
+  (moatless #1161, #1164, #1169), declared as `pull-requests-*-shared-union`
+  exceptions because they share `PullRequestRpcError` with refused methods;
+  KEEP 2. Gaps: extended
+  [methods not dispatched](./gaps.md#methods-the-backend-does-not-dispatch) and
+  [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: every check but `test` green. The full pass hit its 3600s
+  deadline in `t3`'s single-file retries, so the 23 packages it never reached
+  ran one at a time. Red, confirmed alone, the same machine failures as
+  2026-10-15: `shared` `AgentScope`, `t3` `ServerBrowserPage` and
+  `AcpAdapterV2`, `provider-opencode` `OpenCodeServerLedger`, `ssh`
+  `tunnel.test.ts`. `t3` `OrchestratorReplayFixtures` `claude_result_is_error`
+  fails because the sandbox sets `CLAUDE_CONFIG_DIR`, and passes with it unset.
+  `web` `sandboxSurfaces.test.ts` was already red on `main` since
+  `95dcaca54f` made `pull-request` sandbox-independent; the test and module
+  doc now say so.
+
 ### 2026-10-15 — merged upstream to e536bfd33b
 
 - Upstream: `e536bfd33b` from base `6002c5c68c` (`106` commits).

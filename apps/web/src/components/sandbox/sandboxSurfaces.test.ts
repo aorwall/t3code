@@ -2,9 +2,9 @@
  * Fork-only: the rule for which right-panel surfaces survive a stopped sandbox.
  *
  * The split frees the surfaces the environment serves, and gates the ones that
- * read the live machine. Files and linked pull requests are served:
- * the backend reads a file from the S3 snapshot and a pull request summary
- * from its own store. A browser tab splits on the page it holds instead of on
+ * read the live machine. Files and pull requests are served:
+ * the backend reads a file from the S3 snapshot, a pull request summary
+ * from its own store, and a pull request's detail from the git host. A browser tab splits on the page it holds instead of on
  * its kind. Get either wrong and a working surface hides behind a
  * machine it never needed, or a dead one offers to open.
  */
@@ -24,10 +24,10 @@ describe("surfaceNeedsSandbox", () => {
   it("frees the surfaces the environment serves and gates the rest", () => {
     // `sandbox` is here for the opposite reason to the others: it reads the
     // live machine, but it is also the only way to start one.
-    for (const kind of ["files", "file", "pull-requests", "sandbox"] as const) {
+    for (const kind of ["files", "file", "pull-requests", "pull-request", "sandbox"] as const) {
       expect(surfaceNeedsSandbox(kind)).toBe(false);
     }
-    for (const kind of ["diff", "preview", "terminal", "pull-request"] as const) {
+    for (const kind of ["diff", "preview", "terminal"] as const) {
       expect(surfaceNeedsSandbox(kind)).toBe(true);
     }
   });

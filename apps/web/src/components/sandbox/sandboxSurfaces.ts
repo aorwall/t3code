@@ -11,11 +11,9 @@
  * mirror, or a tar-only fork) answers the file read as "sandbox not running",
  * so the surface shows that in its own panel rather than being closed outright.
  *
- * Linked pull requests are not either: the list is the thread's own
- * `pullRequests` and each row's summary comes from the backend's store. A
- * single pull request's detail reads the git host through
- * `capabilities.pullRequests`, which Moatless does not report, so that surface
- * stays gated and never opens on this backend anyway.
+ * Pull requests are not either: the list is the thread's own
+ * `pullRequests` and each row's summary comes from the backend's store, and a
+ * single pull request's detail, diff and guide are read from the git host.
  *
  * A browser tab is the one surface whose answer depends on the page it holds
  * rather than on the kind alone — see [`previewTabNeedsSandbox`].

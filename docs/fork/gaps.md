@@ -285,6 +285,14 @@ what a person loses, which is the part the derivation cannot tell you:
   icon via `packages/client-runtime/src/state/fileMetadata.ts`; refused, the
   chips keep their extension-derived icon. Closes when Moatless dispatches
   them; delete the two union entries then.
+  The 2026-10-16 merge added `orchestration.subscribeCommandOutput` (#15094),
+  which streams a running command's output into `CommandOutputPanel.tsx` in the
+  item inspector instead of showing it only once the command ends. It mounts
+  only for a server advertising `capabilities.commandOutputStreaming`, which a
+  Moatless handshake omits, so a command's output appears whole when it
+  finishes and the union entry is the only stand-in. Closes when Moatless
+  streams command output and advertises the capability; delete the union entry
+  then.
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
   `getConfig`), so Settings renders and nothing in it can be saved. Holds open
@@ -325,6 +333,14 @@ what a person loses, which is the part the derivation cannot tell you:
   `server.updateSettings` and inherit this bullet. Closes when Moatless sweeps
   its own sandboxes and advertises the capabilities; delete the two union
   entries then.
+  The 2026-10-16 merge added `server.getDatabaseStorage` (#19436, #19437): a
+  pushed count of the server's SQLite freed pages, behind
+  `DatabaseStorageNotice.tsx` on the Storage page, which suggests `t3 doctor`
+  once a gigabyte can be reclaimed. It renders only for a server advertising
+  `capabilities.databaseStorage`, which a Moatless handshake omits, so the union
+  entry is the only stand-in. Moatless has no T3 SQLite database to compact, so
+  this is unlikely ever to close; delete the union entry if the backend ever
+  answers it.
 - **Diagnostics** — `server.getTraceDiagnostics`, `getProcessDiagnostics`,
   `getProcessResourceHistory`, `getResourceTelemetryHistory`, `signalProcess`,
   `retryResourceTelemetry`, `subscribeResourceTelemetry`. Holds open
@@ -452,12 +468,20 @@ what a person loses, which is the part the derivation cannot tell you:
   in `thread.pullRequests` carries a null `snapshot` and every surface that
   names it resolves one through this call, which is also what performs that
   refresh. Moatless now also serves `pullRequests.list` (each readable project's
-  primary GitHub repository), `detail`, the HTTP diff and the guided review
-  (`reviewGuide`, `generateReviewGuide`), reports `capabilities.pullRequests`
-  and drops `pullRequestSurface`, so the Pull Requests page and the panel are
-  upstream's. `activity`, `subscribeRefreshes` and every write stay refused
-  there, so the panel's Timeline tab and Summary conversation show their
-  unavailable states and the page refreshes only on request. Grown once more in this merge by per-project and
+  primary GitHub repository), `listStats`, `detail`, `preview`, `activity`,
+  `linkedThreads`, `threadComments`, `diffFileContents`, `invalidate`, the HTTP
+  diff and the guided review (`reviewGuide`, `generateReviewGuide`; moatless
+  #1161, #1164, #1169), and reports `capabilities.pullRequests`, so the Pull
+  Requests page and the panel are upstream's. `routing`, `routingIdentity`,
+  `stack`, `checks`, `filesViewed`, `subscribeRefreshes` and every write stay
+  refused, so the panel's write controls fail and the page refreshes only on
+  request. The served reads keep their `UnsupportedMethodError` member because
+  the family shares `PullRequestRpcError` with the refused ones; the
+  `pull-requests-*-shared-union` exceptions in `inventory.json` declare that,
+  and retire together when the rest is served. The 2026-10-16 merge added
+  deleting a PR's branch after it merges or closes (#19257, a `runAction`
+  option, so refused here) and dragging a linked PR into the composer as a
+  context chip (#20102, client-side). Grown once more in this merge by per-project and
   last-used **merge-method defaults** (upstream, 2026-09-08): a
   `pullRequestMergeMethodOverrides` client setting plus a project-level default
   that preselect merge/squash/rebase in the PR detail panel's merge control
@@ -1890,6 +1914,19 @@ One more arrived in the 2026-10-01 merge:
   servers no longer drop tools (#19635, #19368), CLIs behind mise wrappers no
   longer time out (#19340), cold usage scans stop stalling the server (#19446),
   and one database owner is enforced with exit code 78 (#16102).
+  The 2026-10-16 merge adds: resumed Claude subagents keep updating their own
+  thread and pick up a parent's renamed worktree branch (#20061, #20079),
+  steering no longer ends running subagents (#19210), worktrees shared by
+  subagents are cleaned up and orphaned managed worktrees are reported (#19748,
+  #19749), superseded history is compacted in the background (#19435), a run
+  whose provider stream ends without a terminal event fails instead of hanging
+  (#19131), one malformed ACP session update no longer ends the session
+  (#20015), a dropped HTTP/2 connection no longer crashes the server (#18378),
+  PR refreshes are bounded by each tracker read (#19403), a branch can be deleted
+  after its PR merges or closes (#19257), Cursor threads in Auto use Cursor's
+  Auto-review (#19712), Grok health checks no longer start its updater (#18075),
+  expanding a wide ignored folder no longer classifies every child (#20062), and
+  OTLP exports name the machine and build (#19370).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
