@@ -209,13 +209,109 @@
       "id": "pull-requests-summary-shared-union",
       "method": "pullRequests.summary",
       "direction": "DROP",
-      "reason": "Moatless dispatches `pullRequests.list`, `listStats`, `invalidate`, `summary`, `detail`, `reviewGuide` and `generateReviewGuide`, but the family shares `PullRequestRpcError` with `pullRequests.activity` and the write methods, which it does not dispatch. Splitting a private union off costs more fork delta than an entry the client never receives.",
-      "retiredWhen": "Moatless dispatches `pullRequests.activity` and the write methods, or the served methods take an error union of their own — at which point delete this entry and let the DROP stand.",
+      "reason": "Moatless dispatches the pull request reads (`list`, `listStats`, `summary`, `detail`, `preview`, `activity`, `linkedThreads`, `threadComments`, `diffFileContents`, `reviewGuide`, `generateReviewGuide`, `invalidate`), but the family shares `PullRequestRpcError` with `routing`, `routingIdentity`, `stack`, `checks`, `filesViewed` and every write method, which it does not dispatch. Splitting a private union off costs more fork delta than an entry the client never receives.",
+      "retiredWhen": "Moatless dispatches the rest of the `PullRequestRpcError` family, or the served methods take an error union of their own — at which point delete every `pull-requests-*-shared-union` entry and let the DROPs stand.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-activity-shared-union",
+      "method": "pullRequests.activity",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-detail-shared-union",
+      "method": "pullRequests.detail",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-diffFileContents-shared-union",
+      "method": "pullRequests.diffFileContents",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-generateReviewGuide-shared-union",
+      "method": "pullRequests.generateReviewGuide",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-invalidate-shared-union",
+      "method": "pullRequests.invalidate",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-linkedThreads-shared-union",
+      "method": "pullRequests.linkedThreads",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-list-shared-union",
+      "method": "pullRequests.list",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-listStats-shared-union",
+      "method": "pullRequests.listStats",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-preview-shared-union",
+      "method": "pullRequests.preview",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-reviewGuide-shared-union",
+      "method": "pullRequests.reviewGuide",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-threadComments-shared-union",
+      "method": "pullRequests.threadComments",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
       "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
     }
   ],
 
-  "duplicateAddExceptions": [],
+  "duplicateAddExceptions": [
+    {
+      "id": "chatview-fork-request-field",
+      "path": "apps/web/src/components/ChatView.tsx",
+      "line": "readonly sourceThreadId: ThreadId;",
+      "reason": "Upstream's onForkFromRun signature, reflowed onto several lines in #19869, and the fork's forkDialogRequest state type share this field line. Both declarations are wanted; neither is a copy of the other.",
+      "retiredWhen": "Either declaration stops spelling the field on its own line, or the thread-fork delta retires."
+    }
+  ],
 
   "pathPolicy": [
     {
@@ -616,6 +712,12 @@
       "paths": ["apps/web/src/components/sidebar/SidebarChrome.tsx"],
       "verdict": "decide",
       "note": "Upstream owns the file; the fork owns one span inside it. SidebarBrand's body is replaced wholesale by the single APP_BASE_NAME span (inventory moatless-branding, which is also the guard), and the T3Wordmark import goes with it. Take upstream everywhere else in the file, and read upstream's SidebarBrand hunk each merge for anything outside the replaced span. When upstream's only change here is brand-row styling — wordmark cap alignment, the wordmark/\"Code\" split — there is nothing to take and the file correctly lands unchanged; that is why this is `decide` and not `converged`, which would fail resolution-check every time upstream restyles the brand. Not a convergence item either: upstream's T3 wordmark and the fork's Moatless name never meet."
+    },
+    {
+      "id": "branding-shell",
+      "paths": ["apps/web/index.html", "apps/web/src/branding.ts"],
+      "verdict": "decide",
+      "note": "Take upstream outside the branded spans, then re-state the Moatless branding delta (inventory moatless-branding): index.html keeps the `Moatless` title, the Moatless splash `aria-label`, and the `/moatless-logo.png` boot logo with its sizing; branding.ts keeps `APP_BASE_NAME` falling back to \"Moatless\". Upstream edits both for its own splash and title (\"T3 Code (Beta)\" in this merge), which is the conflict to expect. When upstream's only change is to a branded span, as with its title bump in this merge, the file correctly lands as the fork's copy; that is why this is `decide` and not `converged`, which would fail resolution-check every time."
     },
     {
       "id": "sidebar-fork-chrome",
