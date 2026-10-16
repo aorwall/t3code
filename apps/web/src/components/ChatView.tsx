@@ -305,6 +305,8 @@ import { SandboxedRightPanelTabs as RightPanelTabs } from "./SandboxedRightPanel
 import { SandboxPanel } from "./sandbox/SandboxPanel";
 // Fork: an in-thread banner for `moat cmd` commands running behind an ended turn.
 import { useSandboxCommandsBanner } from "./sandbox/useSandboxCommandsBanner";
+// Fork: whether the thread's sandbox is up, so a warm one never reads as starting.
+import { useSandboxAvailability } from "./sandbox/useSandboxAvailability";
 import { LinkPullRequestDialogHost } from "./pullRequest/LinkPullRequestDialog";
 import { ThreadPullRequestsPanel } from "./pullRequest/ThreadPullRequestsPanel";
 import { useDeviceState } from "~/state/device";
@@ -3716,6 +3718,9 @@ export default function ChatView(props: ChatViewProps) {
   // minutes, and a send stops counting as busy once the server has the message
   // (`hasServerAcknowledgedLocalDispatch`). The timeline shows this as working.
   const isStartingRun = phase === "connecting" && !isWorking;
+  // Fork: a send to a sandbox that is already up is `connecting` too, until the
+  // agent accepts the turn, so only a sandbox that is not ready says "Starting sandbox…".
+  const sandboxReady = useSandboxAvailability(activeThreadRef).ready;
   const activeContextWindow = useMemo(
     () =>
       deriveLatestContextWindowSnapshot(
@@ -12051,7 +12056,8 @@ export default function ChatView(props: ChatViewProps) {
                   : {})}
                 // Fork: keep the working row up while the run's sandbox starts.
                 isWorking={!paintOnlyDisplayedTimeline && (isWorking || isStartingRun)}
-                isStartingRun={!paintOnlyDisplayedTimeline && isStartingRun}
+                // Fork: see `sandboxReady`.
+                isStartingRun={!paintOnlyDisplayedTimeline && isStartingRun && !sandboxReady}
                 runlessWorkActive={runlessWorkStartedAt !== null}
                 activeTurnInProgress={
                   !paintOnlyDisplayedTimeline && (isWorking || !latestRunSettled)
