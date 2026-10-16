@@ -13,7 +13,7 @@ import { useEnvironment } from "~/state/environments";
 import { useEnvironmentQuery, type EnvironmentQueryView } from "~/state/query";
 import { sandboxEnvironment } from "~/state/sandbox";
 
-import { useRetryFailedSandboxStream } from "./useSandboxAvailability";
+import { useRetryFailedSandboxStream, useSandboxThreadRef } from "./useSandboxAvailability";
 
 export interface SandboxDetailView extends EnvironmentQueryView<SandboxDetailResult> {
   /** False on a server without `capabilities.sandboxDetail`, where nothing was
@@ -21,7 +21,8 @@ export interface SandboxDetailView extends EnvironmentQueryView<SandboxDetailRes
   readonly supported: boolean;
 }
 
-export function useSandboxDetail(threadRef: ScopedThreadRef | null): SandboxDetailView {
+export function useSandboxDetail(requestedThreadRef: ScopedThreadRef | null): SandboxDetailView {
+  const threadRef = useSandboxThreadRef(requestedThreadRef);
   const environment = useEnvironment(threadRef?.environmentId ?? null);
   const capabilities = environment?.serverConfig?.environment.capabilities;
   const supported = capabilities?.sandboxDetail === true;

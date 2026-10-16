@@ -1,6 +1,8 @@
 import type { SandboxStatusResult, ScopedThreadRef } from "@t3tools/contracts";
 import { useEffect, useMemo } from "react";
 
+import { useComposerDraftStore } from "~/composerDraftStore";
+import { useThreadShell } from "~/state/entities";
 import { useEnvironment } from "~/state/environments";
 import { useEnvironmentQuery, type EnvironmentQueryView } from "~/state/query";
 import { sandboxEnvironment } from "~/state/sandbox";
@@ -18,7 +20,9 @@ function disabledReason(
   status: SandboxStatus | null,
   isPending: boolean,
   error: string | null,
+  isDraft: boolean,
 ): string {
+  if (isDraft) return "The sandbox starts when the first message is sent.";
   if (error) return error;
   if (isPending) return "Checking sandbox status.";
   switch (status) {
@@ -38,10 +42,24 @@ function disabledReason(
 const FAILED_STREAM_RETRY_MS = 3_000;
 
 /**
+ * `threadRef`, or null while it names a draft the server has no task for yet.
+ * The backend refuses a sandbox read of such a thread as "This thread is not
+ * available.", so subscribing then only buys a refusal; the ref appears once
+ * the draft's shell row does, and the read starts from there.
+ */
+export function useSandboxThreadRef(threadRef: ScopedThreadRef | null): ScopedThreadRef | null {
+  const shell = useThreadShell(threadRef);
+  const isDraft = useComposerDraftStore((store) =>
+    threadRef === null ? false : store.getDraftThreadByRef(threadRef) !== null,
+  );
+  return isDraft && shell === null ? null : threadRef;
+}
+
+/**
  * Resubscribes a pushed sandbox stream that ended in a failure. The client
- * never retries a refusal, and the atom keeps it per thread, so a draft that
- * subscribed before its task existed reads "This thread is not available."
- * until a reload. Each failed retry toggles `isPending`, which schedules the next.
+ * never retries a refusal and the atom keeps it per thread, so without this a
+ * stream that failed once reads failed until a reload. Each failed retry
+ * toggles `isPending`, which schedules the next.
  */
 export function useRetryFailedSandboxStream(
   enabled: boolean,
@@ -55,7 +73,10 @@ export function useRetryFailedSandboxStream(
   }, [enabled, error, isPending, refresh]);
 }
 
-export function useSandboxAvailability(threadRef: ScopedThreadRef | null): SandboxAvailability {
+export function useSandboxAvailability(
+  requestedThreadRef: ScopedThreadRef | null,
+): SandboxAvailability {
+  const threadRef = useSandboxThreadRef(requestedThreadRef);
   // Where the environment pushes lifecycle, one subscription replaces the
   // poll entirely — it is seeded with the current status, so there is nothing
   // left for a read to answer first.
@@ -115,7 +136,12 @@ export function useSandboxAvailability(threadRef: ScopedThreadRef | null): Sandb
   return {
     ready,
     surfaceDisabled: !ready,
-    surfaceDisabledReason: disabledReason(sandboxStatus, isPending, error),
+    surfaceDisabledReason: disabledReason(
+      sandboxStatus,
+      isPending,
+      error,
+      requestedThreadRef !== null && threadRef === null,
+    ),
     status,
   };
 }
