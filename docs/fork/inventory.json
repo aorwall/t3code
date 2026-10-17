@@ -303,15 +303,7 @@
     }
   ],
 
-  "duplicateAddExceptions": [
-    {
-      "id": "chatview-fork-request-field",
-      "path": "apps/web/src/components/ChatView.tsx",
-      "line": "readonly sourceThreadId: ThreadId;",
-      "reason": "Upstream's onForkFromRun signature, reflowed onto several lines in #19869, and the fork's forkDialogRequest state type share this field line. Both declarations are wanted; neither is a copy of the other.",
-      "retiredWhen": "Either declaration stops spelling the field on its own line, or the thread-fork delta retires."
-    }
-  ],
+  "duplicateAddExceptions": [],
 
   "pathPolicy": [
     {
@@ -485,10 +477,11 @@
       "paths": [
         "apps/web/src/components/RightPanelTabs.tsx",
         "apps/web/src/rightPanelStore.ts",
-        "apps/web/src/rightPanelStore.test.ts"
+        "apps/web/src/rightPanelStore.test.ts",
+        "apps/web/src/components/chat/RightPanelSurfaceContent.tsx"
       ],
       "verdict": "converged",
-      "note": "Take upstream, then re-apply the fork's right-panel deltas: the 'sandbox' RightPanelKind and its store action, the Sandbox entry in the surface launcher and the tab-bar '+' menu, the sandboxControl indicator riding that entry, and the per-surface gating described in the Sandbox lifecycle controls and Sandbox right-panel surface inventory entries. Upstream restructures the launcher — it went from cards to compact rows in #11111 — so the delta is what must survive, not a hunk to replay: put the indicator back on whatever element opens the Sandbox surface, additively, without threading a prop or re-indenting upstream's JSX. rightPanelStore.test.ts holds the fork's own cases for the sandbox kind alongside upstream's; both sides add to it, so append rather than choosing a side."
+      "note": "Take upstream, then re-apply the fork's right-panel deltas: the 'sandbox' RightPanelKind and its store action, the Sandbox entry in the surface launcher and the tab-bar '+' menu, the sandboxControl indicator riding that entry, and the per-surface gating described in the Sandbox lifecycle controls and Sandbox right-panel surface inventory entries. Upstream restructures the launcher — it went from cards to compact rows in #11111 — so the delta is what must survive, not a hunk to replay: put the indicator back on whatever element opens the Sandbox surface, additively, without threading a prop or re-indenting upstream's JSX. rightPanelStore.test.ts holds the fork's own cases for the sandbox kind alongside upstream's; both sides add to it, so append rather than choosing a side. Upstream moved the panel body out of ChatView into chat/RightPanelSurfaceContent.tsx on 2026-10, so the `sandbox` case (SandboxPanel, rendered only with a thread ref) and the file surface's `onRetargetFile` pass-through now live there; ChatView passes `files.onRetargetFile`. Neither file has a `configuredPreviewUrls` prop in the fork, because the fork deleted getConfiguredPreviewUrls with the local-server discovery."
     },
     {
       "id": "client-runtime-rpc-client",
@@ -861,6 +854,13 @@
       ],
       "verdict": "converged",
       "note": "Take upstream, then re-apply the listing filter that skips only `isProviderNativeSubagentThread` children rather than every `relationshipToParent === \"subagent\"` thread, so a Moatless child task stays listed and navigable. The `sidebar-thread-family` inventory entry owns the behavior."
+    },
+    {
+      "id": "root-vite-config",
+      "paths": ["vite.config.ts"],
+      "verdict": "converged",
+      "delta": "Root Vite Lint Delta",
+      "note": "Take upstream, then apply Root Vite Lint Delta: one lint override that turns `t3code/no-low-value-comments` off for packages/moatless-api/src/generated/**. Nothing else in the file is fork-owned."
     }
   ],
 
@@ -1066,7 +1066,8 @@
         "apps/web/src/rightPanelStore.ts",
         "apps/web/src/components/sandbox/**",
         "apps/web/src/components/RightPanelTabs.tsx",
-        "apps/web/src/components/ChatView.tsx"
+        "apps/web/src/components/ChatView.tsx",
+        "apps/web/src/components/chat/RightPanelSurfaceContent.tsx"
       ],
       "mustSurvive": "Keep the 'sandbox' RightPanelKind and everything behind it until upstream has a machine to describe. sandbox.detail is deliberately a second projection beside sandbox.status rather than more keys on it: every client holds the status subscription open for its indicator, and only the one client with the panel open should pay for the wider read. Every runtime-sourced key is absent rather than empty, and the panel drops the section instead of rendering a blank one; a docker-compose deployment publishes no containers and no events, so it shows Status, Image, Idle stop and Commands alone. The whole surface is gated on the sandboxDetail capability, and the contract file is fork-only so the schema stays out of a file every upstream merge touches. Restart is pod-granularity, the Status section's Restart button."
     },
@@ -1168,7 +1169,7 @@
         "apps/web/src/components/threadActionMenu.logic.test.ts",
         "apps/web/src/contextMenuFallback.ts"
       ],
-      "mustSurvive": "Right-clicking a thread in the sidebar, or opening the chat header's menu, offers one visibility item: \"Make public\" on a private thread and \"Make private\" on a public one. The label is the only indicator \u2014 a sidebar row shows no badge \u2014 so it names the level the click moves to, not the one the thread is on. It sits directly above \"Archive thread\" and opens that group, so it carries the group's separator and `archive` gives it up while the item is present. Going public confirms first (`confirmAndSetThreadVisibility` in useThreadActions.ts, shared by both surfaces); going private dispatches straight away. Only that direction confirms because public is not read-only on Moatless: `ScopeContext::can_control` treats it as the whole of the control grant, so a public thread hands every signed-in viewer its turns, terminal, scripts and sandbox. The confirmation copy says so, and must keep saying so. The item is gated on the `threadVisibility` capability, which covers both halves: the `thread.visibility.set` command and the `visibility` field on a thread row that the label reads. A server sending neither leaves the item out rather than showing a control it cannot label. The level is sent whole rather than toggled, so two clients that disagree about the current value cannot flip each other's write. Moatless carries visibility on the Task itself and keeps writes with the owner, so a public reader's toggle is refused; the bundled server refuses the command outright. LegacySidebar.tsx builds its own menu array and is deliberately left without the item."
+      "mustSurvive": "Right-clicking a thread in the sidebar, or opening the chat header's menu, offers one visibility item: \"Make public\" on a private thread and \"Make private\" on a public one. The label is the only indicator — a sidebar row shows no badge — so it names the level the click moves to, not the one the thread is on. It sits directly above \"Archive thread\" and opens that group, so it carries the group's separator and `archive` gives it up while the item is present. Going public confirms first (`confirmAndSetThreadVisibility` in useThreadActions.ts, shared by both surfaces); going private dispatches straight away. Only that direction confirms because public is not read-only on Moatless: `ScopeContext::can_control` treats it as the whole of the control grant, so a public thread hands every signed-in viewer its turns, terminal, scripts and sandbox. The confirmation copy says so, and must keep saying so. The item is gated on the `threadVisibility` capability, which covers both halves: the `thread.visibility.set` command and the `visibility` field on a thread row that the label reads. A server sending neither leaves the item out rather than showing a control it cannot label. The level is sent whole rather than toggled, so two clients that disagree about the current value cannot flip each other's write. Moatless carries visibility on the Task itself and keeps writes with the owner, so a public reader's toggle is refused; the bundled server refuses the command outright. LegacySidebar.tsx builds its own menu array and is deliberately left without the item."
     },
     {
       "id": "thread-follow",
@@ -1192,7 +1193,7 @@
         "symbol": "useAutoFollowThread",
         "files": ["apps/web/src/components/ThreadRouteView.tsx"]
       },
-      "mustSurvive": "A Moatless listing is the open work a viewer follows, so a thread reached by link is readable and absent from the sidebar at the same time. Opening one follows it: `useAutoFollowThread` in fork/unlistedThread.ts dispatches `thread.follow` once per thread from the thread view, and the row stays in the sidebar after the route closes. Upstream's #12015 moved that view out of the route file and into components/ThreadRouteView.tsx, rendered by the `_chat` layout for both `/draft/$draftId` and `/$environmentId/$threadId`; the hook moved with it and takes `target.kind === \"server\" ? target.threadRef : null`, because a draft's reserved ref is the viewer's own work and the listing carries it without being asked. Four conditions bound it, and each one is a bug that does not happen. It fires once per ref and never again after an unfollow, because the row menu's Unfollow acts on the thread the viewer is looking at and a re-follow on the next render would make that item do nothing. It decides against the listing's own snapshot rather than the grafted one, for the reason `missingThreadIds` gives \u2014 the graft is what put the thread on screen. It waits for a non-null snapshot, because a listing that has not answered yet was about to carry the thread. It skips a thread with an `archivedAt`, because the sidebar filters on `archivedAt === null` and a followed closed thread would be a follow with no row to unfollow it from. The way out is \"Unfollow thread\" in the per-thread menu, directly below the visibility item and above \"Archive thread\", on both surfaces `buildThreadActionMenuItems` serves; it opens the archive group when the visibility item is absent. It dispatches `thread.unfollow` with no confirmation, because the thread keeps running and only this viewer's listing changes. Both halves are gated on the `threadFollow` capability, so a server without it follows nothing and offers no item. Moatless makes the follow row the listing's membership (`Reach::Followed` over `task_follows`) and records a listing change on each write, so the sidebar updates live for that viewer alone; the bundled server refuses both commands."
+      "mustSurvive": "A Moatless listing is the open work a viewer follows, so a thread reached by link is readable and absent from the sidebar at the same time. Opening one follows it: `useAutoFollowThread` in fork/unlistedThread.ts dispatches `thread.follow` once per thread from the thread view, and the row stays in the sidebar after the route closes. Upstream's #12015 moved that view out of the route file and into components/ThreadRouteView.tsx, rendered by the `_chat` layout for both `/draft/$draftId` and `/$environmentId/$threadId`; the hook moved with it and takes `target.kind === \"server\" ? target.threadRef : null`, because a draft's reserved ref is the viewer's own work and the listing carries it without being asked. Four conditions bound it, and each one is a bug that does not happen. It fires once per ref and never again after an unfollow, because the row menu's Unfollow acts on the thread the viewer is looking at and a re-follow on the next render would make that item do nothing. It decides against the listing's own snapshot rather than the grafted one, for the reason `missingThreadIds` gives — the graft is what put the thread on screen. It waits for a non-null snapshot, because a listing that has not answered yet was about to carry the thread. It skips a thread with an `archivedAt`, because the sidebar filters on `archivedAt === null` and a followed closed thread would be a follow with no row to unfollow it from. The way out is \"Unfollow thread\" in the per-thread menu, directly below the visibility item and above \"Archive thread\", on both surfaces `buildThreadActionMenuItems` serves; it opens the archive group when the visibility item is absent. It dispatches `thread.unfollow` with no confirmation, because the thread keeps running and only this viewer's listing changes. Both halves are gated on the `threadFollow` capability, so a server without it follows nothing and offers no item. Moatless makes the follow row the listing's membership (`Reach::Followed` over `task_follows`) and records a listing change on each write, so the sidebar updates live for that viewer alone; the bundled server refuses both commands."
     },
     {
       "id": "thread-owner-name",
@@ -1277,9 +1278,10 @@
         "apps/web/src/components/settings/ProjectActionsList.tsx",
         "apps/web/src/components/ChatView.tsx",
         "apps/web/src/components/settings/useProjectScriptSettings.ts",
-        "packages/contracts/src/orchestrationProject.ts"
+        "packages/contracts/src/orchestrationProject.ts",
+        "apps/web/src/components/chat/useProjectScriptEditing.ts"
       ],
-      "mustSurvive": "A project that reports scriptsEditable is a Moatless Workspace, and its scripts are saved with projects.mutate's project.update (updateWorkspaceScripts in ChatView's persistProjectScripts and in useProjectScriptSettings, which also skips its settings:write check for it), never with upstream's server.updateSettings, which Moatless does not serve. A merge that routes these saves back through updateSettings breaks Add project script. A project's scripts can be edited only when the backend says so per workspace: a git-synced workspace owns its scripts in .moatless/workspaces.json and is projected read-only, a manual one is writable. That answer rides the wire as scriptsEditable on OrchestrationProject / OrchestrationProjectShell, threaded to ProjectScriptsControl and the settings Actions section as an `editable` prop that gates the per-script Edit button, the t3.json import items and the Add action. Upstream extracted the row list into ProjectActionsList.tsx on 2026-09-07, so the Edit gate now lives there behind an `editable` prop that defaults to upstream's always-editable behavior; upstream then moved the Actions section itself out of ProjectSettingsPanel.tsx into ProjectActionsSettings.tsx on 2026-09-10, which is where scriptsEditable is now derived and where upstream's Reset button, which writes, is gated. It is NOT a FEATURES flag — projectScriptEditing was deleted when the capability arrived, because the answer varies per deployment and per workspace. Running a script stays ungated: a read-only workspace still runs what it declares, and ProjectScriptsControl's no-primary-script branch returns null only when editing is also off. A merge that reintroduces FEATURES.projectScriptEditing or an always-on Add action has taken upstream's side back.",
+      "mustSurvive": "A project that reports scriptsEditable is a Moatless Workspace, and its scripts are saved with projects.mutate's project.update (updateWorkspaceScripts in the chat header's persistProjectScripts — in chat/useProjectScriptEditing.ts since upstream moved it out of ChatView on 2026-10 — and in useProjectScriptSettings's writeTargets, which also skips its settings:write check for it), never with upstream's server.updateSettings, which Moatless does not serve. A merge that routes these saves back through updateSettings breaks Add project script. A project's scripts can be edited only when the backend says so per workspace: a git-synced workspace owns its scripts in .moatless/workspaces.json and is projected read-only, a manual one is writable. That answer rides the wire as scriptsEditable on OrchestrationProject / OrchestrationProjectShell, threaded to ProjectScriptsControl and the settings Actions section as an `editable` prop that gates the per-script Edit button, the t3.json import items and the Add action. Upstream extracted the row list into ProjectActionsList.tsx on 2026-09-07, so the Edit gate now lives there behind an `editable` prop that defaults to upstream's always-editable behavior; upstream then moved the Actions section itself out of ProjectSettingsPanel.tsx into ProjectActionsSettings.tsx on 2026-09-10, which is where scriptsEditable is now derived and where upstream's Reset button, which writes, is gated. It is NOT a FEATURES flag — projectScriptEditing was deleted when the capability arrived, because the answer varies per deployment and per workspace. Running a script stays ungated: a read-only workspace still runs what it declares, and ProjectScriptsControl's no-primary-script branch returns null only when editing is also off. A merge that reintroduces FEATURES.projectScriptEditing or an always-on Add action has taken upstream's side back.",
       "guard": {
         "symbol": "scriptsEditable",
         "files": [

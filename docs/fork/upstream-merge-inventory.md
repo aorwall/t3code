@@ -119,6 +119,19 @@ For `apps/web/vite.config.ts`, take upstream first, then re-apply exactly:
 - `VITE_MOATLESS_PROXY_AUTH` define.
 - `NODE_ENV=production` to `development` pin for `command === "serve"`.
 
+### Root Vite Lint Delta
+
+For the root `vite.config.ts`, take upstream first, then re-apply exactly one
+entry in `lint.overrides`: `files: ["packages/moatless-api/src/generated/**"]`
+with `rules: { "t3code/no-low-value-comments": "off" }`.
+
+Why it exists: orval copies each schema's OpenAPI `description` into a doc
+comment, and many of the backend's descriptions restate the type name, which
+upstream's rule rejects. Editing the generated files does not hold, because the
+next `generate` restores them, and editing the backend's descriptions to suit
+one client's lint rule is the wrong way round. Every other rule still applies to
+the generated code.
+
 ### Moatless Spec Check Delta
 
 For `.github/workflows/ci.yml`, take upstream first, then re-apply exactly one

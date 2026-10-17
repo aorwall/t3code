@@ -110,8 +110,6 @@ function DetailHeader({
   );
 }
 
-// ---------------------------------------------------------------- GitHub ----
-
 function GithubDetail() {
   const { data, error, isPending, refresh } = useMoatlessQuery(githubAccessQuery);
   // The connect flow ends by loading this page again with its result in the
@@ -246,8 +244,6 @@ function GithubDetail() {
     </>
   );
 }
-
-// --------------------------------------------------------------- Forgejo ----
 
 /**
  * Forgejo access, one section per instance.

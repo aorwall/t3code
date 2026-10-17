@@ -133,7 +133,7 @@ A plain `cp` is only safe when no server has the source open, and must bring the
 
 Ambitious ideas, simple systems, software that feels obvious. Do not preserve complexity just because it already exists, and do not introduce machinery because it looks architecturally impressive. Understand the real constraint, then fight for the smallest model that makes the correct behavior unsurprising. Measure twice, cut once — and yagni.
 
-Complexity belongs at the adapter boundary: orchestration stays pure and the UI stays dumb. Prefer inferred types to annotations, and treat `any` as the enemy. Comments say how a thing is used and move when the code moves; they describe functions rather than annotating every line.
+Complexity belongs at the adapter boundary: orchestration stays pure and the UI stays dumb. Prefer inferred types to annotations, and treat `any` as the enemy. Comments say why: a constraint, an external quirk, or an invariant the code cannot show. They do not restate names or signatures, narrate steps, or record history, and `t3code/no-low-value-comments` fails lint on the mechanical cases.
 
 Client mutations use `createEnvironmentRpcCommand`. Add a protected method to `CLIENT_GUARDED_RPC_SCOPES` in contracts, and use the command's `permissionAtom` for UI availability. Grants are checked at execution against the destination environment, and the server remains authoritative. Keep raw RPC clients inside `rpc/`, and extend the permission behavior tests when you add a protected method.
 
