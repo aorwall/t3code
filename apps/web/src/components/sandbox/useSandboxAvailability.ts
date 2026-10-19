@@ -1,5 +1,5 @@
 import type { SandboxStatusResult, ScopedThreadRef } from "@t3tools/contracts";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 
 import { useComposerDraftStore } from "~/composerDraftStore";
 import { useThreadShell } from "~/state/entities";
@@ -115,21 +115,18 @@ export function useSandboxAvailability(
   useEffect(() => {
     if (threadRef === null || pushed) return;
     refresh();
-  }, [pushed, refresh, threadRef?.environmentId, threadRef?.threadId]);
+  }, [pushed, refresh, threadRef]);
   useRetryFailedSandboxStream(threadRef !== null && pushed, live);
 
-  const status = useMemo<EnvironmentQueryView<SandboxStatusResult>>(
-    () => ({
-      data,
-      dataUpdatedAt,
-      error,
-      failure,
-      isPending,
-      isSuccess,
-      refresh,
-    }),
-    [data, dataUpdatedAt, error, failure, isPending, isSuccess, refresh],
-  );
+  const status: EnvironmentQueryView<SandboxStatusResult> = {
+    data,
+    dataUpdatedAt,
+    error,
+    failure,
+    isPending,
+    isSuccess,
+    refresh,
+  };
 
   const ready = sandboxStatus === "ready";
 

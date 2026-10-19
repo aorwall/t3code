@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { BotIcon, ChevronRightIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { useMoatlessQuery } from "../../../moatless/query";
 import { ITEM_ROW_CLASSNAME, ITEM_ROW_INNER_CLASSNAME } from "../itemRows";
@@ -24,8 +24,8 @@ export function UsersPanel() {
 
   const [query, setQuery] = useState("");
 
-  const all = useMemo(() => [...(data?.users ?? [])].sort(compareUsers), [data]);
-  const rows = useMemo(() => filterUsers(all, query), [all, query]);
+  const all = [...(data?.users ?? [])].sort(compareUsers);
+  const rows = filterUsers(all, query);
 
   return (
     <SettingsPageContainer>

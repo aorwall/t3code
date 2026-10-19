@@ -1,5 +1,5 @@
 import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { deleteSecret, patchSecret } from "@t3tools/moatless-api/generated/secrets/secrets";
 import type {
@@ -64,13 +64,13 @@ function SecretsSection({
   readonly item: SettingsSearchItemId;
   readonly emptyLabel: string;
 }) {
-  const query = useMemo(() => secretsQuery(scope), [scope]);
+  const query = secretsQuery(scope);
   const { data, error, isPending, refresh } = useMoatlessQuery(query);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<SecretMetadataResponse | null>(null);
   const [pendingDelete, setPendingDelete] = useState<SecretMetadataResponse | null>(null);
 
-  const rows = useMemo(() => [...(data ?? [])].sort(compareSecrets), [data]);
+  const rows = [...(data ?? [])].sort(compareSecrets);
 
   function openCreate() {
     setEditing(null);

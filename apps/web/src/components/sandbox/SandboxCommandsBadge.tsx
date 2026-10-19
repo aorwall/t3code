@@ -24,18 +24,17 @@ import { formatElapsed, runningCommands } from "./commandDisplay";
 
 interface SandboxCommandsBadgeProps {
   readonly commands: readonly CommandSummary[] | undefined;
+  /** The status query's own timestamp, shared across every row in the
+      tooltip so they are all measured against the same instant. */
+  readonly nowMs: number;
   readonly className?: string | undefined;
 }
 
-export function SandboxCommandsBadge({ commands, className }: SandboxCommandsBadgeProps) {
+export function SandboxCommandsBadge({ commands, nowMs, className }: SandboxCommandsBadgeProps) {
   const running = runningCommands(commands);
   if (running.length === 0) {
     return null;
   }
-
-  // A single clock read per render, shared across the rows, so every elapsed
-  // in one tooltip is measured against the same instant.
-  const nowMs = Date.now();
 
   return (
     <Tooltip>

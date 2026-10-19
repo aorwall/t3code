@@ -1,5 +1,5 @@
 import { CheckIcon, LoaderIcon, SearchIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { createRepository } from "@t3tools/moatless-api/generated/repositories/repositories";
 import { addWorkspaceRepo } from "@t3tools/moatless-api/generated/workspaces/workspaces";
@@ -109,11 +109,8 @@ function AddRepositoryForm({
     { invalidates: ["workspaces"] },
   );
 
-  const available = useMemo(
-    () => availableRepositories(workspace, catalog.data ?? []),
-    [workspace, catalog.data],
-  );
-  const matches = useMemo(() => filterRepositories(available, search), [available, search]);
+  const available = availableRepositories(workspace, catalog.data ?? []);
+  const matches = filterRepositories(available, search);
 
   const trimmedRemote = remoteUrl.trim();
   const trimmedName = name.trim();

@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronRightIcon, LoaderIcon, PlusIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { createLoop } from "@t3tools/moatless-api/generated/loops/loops";
 import type {
@@ -61,9 +61,9 @@ export function LoopsPanel() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [query, setQuery] = useState("");
 
-  const all = useMemo(() => [...(data ?? [])].sort(compareLoops), [data]);
-  const matching = useMemo(() => filterLoops(all, query), [all, query]);
-  const { awaiting, rest } = useMemo(() => partitionLoopsByApproval(matching), [matching]);
+  const all = [...(data ?? [])].sort(compareLoops);
+  const matching = filterLoops(all, query);
+  const { awaiting, rest } = partitionLoopsByApproval(matching);
 
   return (
     <SettingsPageContainer>

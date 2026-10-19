@@ -18,7 +18,7 @@ import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import { threadKey } from "@t3tools/client-runtime/state/entities";
 import type { EnvironmentThreadStatus } from "@t3tools/client-runtime/state/threads";
 import { Atom } from "effect/reactivity";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import { adoptThread } from "./adoptedThreadShells";
 import { readEnvironmentSupportsFollow, useThreadShell, useThreadStatus } from "../state/entities";
@@ -83,10 +83,7 @@ export function threadAwaitsFirstAnswer(
 /** See `threadAwaitsFirstAnswer`. */
 export function useThreadAwaitingFirstAnswer(ref: ScopedThreadRef | null): boolean {
   const status = useThreadStatus(ref);
-  const errorAtom = useMemo(
-    () => (ref === null ? NO_THREAD_ERROR_ATOM : environmentThreadDetails.errorAtom(ref)),
-    [ref],
-  );
+  const errorAtom = ref === null ? NO_THREAD_ERROR_ATOM : environmentThreadDetails.errorAtom(ref);
   const error = useAtomValue(errorAtom);
   return ref !== null && threadAwaitsFirstAnswer(status, error);
 }
@@ -107,10 +104,7 @@ export function useThreadAwaitingFirstAnswer(ref: ScopedThreadRef | null): boole
  */
 export function useAutoFollowThread(ref: ScopedThreadRef | null): void {
   const follow = useAtomCommand(threadEnvironment.follow, { reportFailure: false });
-  const snapshotAtom = useMemo(
-    () => (ref === null ? NO_SNAPSHOT_ATOM : environmentSnapshotAtom(ref.environmentId)),
-    [ref],
-  );
+  const snapshotAtom = ref === null ? NO_SNAPSHOT_ATOM : environmentSnapshotAtom(ref.environmentId);
   const snapshot = useAtomValue(snapshotAtom);
   const shell = useThreadShell(ref);
   const attempted = useRef<string | null>(null);

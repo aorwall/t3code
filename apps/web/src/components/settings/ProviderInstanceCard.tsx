@@ -40,6 +40,7 @@ import {
 import { cn } from "../../lib/utils";
 import { FEATURES } from "../../fork/features";
 import { useCopyToClipboard } from "../../hooks/useCopyToClipboard";
+import { useStableCallback } from "../../hooks/useStableCallback";
 import { normalizeProviderAccentColor } from "../../providerInstances";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -133,11 +134,6 @@ function providerEnvironmentsEqual(
       );
     })
   );
-}
-
-function readConfigCustomModels(config: unknown): ReadonlyArray<CustomModelDefinition> {
-  if (config === null || typeof config !== "object") return [];
-  return readCustomModelEntries((config as Record<string, unknown>).customModels);
 }
 
 function readConfigString(config: unknown, key: string): string | null {
@@ -612,6 +608,7 @@ interface ProviderInstanceCardProps {
 }
 
 const EMPTY_ACP_PROJECTS: NonNullable<ProviderInstanceCardProps["acpProjects"]> = [];
+const NO_CUSTOM_MODELS: ReadonlyArray<CustomModelDefinition> = [];
 
 /**
  * Unknown drivers (`driverOption === undefined`) get a read-only
@@ -719,8 +716,16 @@ export function ProviderInstanceCard({
   const driverKind: ProviderDriverKind | null = isProviderDriverKind(instance.driver)
     ? instance.driver
     : null;
+  // Keyed on the stored list, not the whole instance, so writing another field
+  // leaves the models list (often ~50 rows) with the same props.
+  const storedCustomModels =
+    instance.config !== null && typeof instance.config === "object"
+      ? (instance.config as Record<string, unknown>).customModels
+      : undefined;
   const customModels =
-    instance.driver === "antigravity" ? [] : readConfigCustomModels(instance.config);
+    instance.driver === "antigravity"
+      ? NO_CUSTOM_MODELS
+      : readCustomModelEntries(storedCustomModels);
   const modelsForDisplay = deriveProviderModelsForDisplay({
     liveModels: liveProvider?.models,
     customModels,
@@ -762,7 +767,7 @@ export function ProviderInstanceCard({
     );
   };
 
-  const updateCustomModels = (next: ReadonlyArray<CustomModelDefinition>) => {
+  const updateCustomModels = useStableCallback((next: ReadonlyArray<CustomModelDefinition>) => {
     const nextConfig = nextConfigBlobWithValue(
       instance.config,
       "customModels",
@@ -770,7 +775,7 @@ export function ProviderInstanceCard({
     );
     const { config: _omit, ...rest } = instance;
     onUpdate({ ...rest, config: nextConfig } as ProviderInstanceConfig);
-  };
+  });
 
   const updateEnvironment = (environment: ReadonlyArray<ProviderInstanceEnvironmentVariable>) => {
     const cleaned = environment.filter((variable) => variable.name.trim().length > 0);
@@ -909,7 +914,7 @@ export function ProviderInstanceCard({
             </p>
             <p
               className={cn(
-                "text-xs leading-snug",
+                "text-xs leading-snug [overflow-wrap:anywhere]",
                 versionAdvisory.emphasis === "strong" ? "text-warning" : "text-muted-foreground",
               )}
             >
@@ -1200,26 +1205,24 @@ export function ProviderInstanceCard({
       {setup || environmentFields.length > 0 ? (
         <SettingsSection title="Setup">
           {setup}
-          <div
-            inert={readOnly}
-            aria-disabled={readOnly || undefined}
-            className={readOnly ? "opacity-50 select-none" : undefined}
-          >
-            {environmentFields.length > 0 ? (
-              <>
-                {environmentFields.map((field) => (
-                  <ProviderEnvironmentFieldRow
-                    key={field.name}
-                    field={field}
-                    variable={readProviderEnvironmentVariable(instance.environment, field.name)}
-                    idPrefix={`provider-instance-${instanceId}`}
-                    onCommit={updateEnvironmentField}
-                    onRemove={removeEnvironmentField}
-                  />
-                ))}
-              </>
-            ) : null}
-          </div>
+          {environmentFields.length > 0 ? (
+            <div
+              inert={readOnly}
+              aria-disabled={readOnly || undefined}
+              className={readOnly ? "opacity-50 select-none" : undefined}
+            >
+              {environmentFields.map((field) => (
+                <ProviderEnvironmentFieldRow
+                  key={field.name}
+                  field={field}
+                  variable={readProviderEnvironmentVariable(instance.environment, field.name)}
+                  idPrefix={`provider-instance-${instanceId}`}
+                  onCommit={updateEnvironmentField}
+                  onRemove={removeEnvironmentField}
+                />
+              ))}
+            </div>
+          ) : null}
         </SettingsSection>
       ) : null}
 

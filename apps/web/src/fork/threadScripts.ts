@@ -15,7 +15,6 @@
  * previous behaviour while the first read is in flight.
  */
 import type { EnvironmentId, ProjectScript, ThreadId, ThreadScript } from "@t3tools/contracts";
-import { useMemo } from "react";
 
 import { useEnvironment } from "~/state/environments";
 import { useEnvironmentQuery } from "~/state/query";
@@ -74,5 +73,5 @@ export function useThreadScripts({
   );
   const listed = data?.scripts ?? null;
 
-  return useMemo(() => threadScriptsView(listed, projectScripts), [listed, projectScripts]);
+  return threadScriptsView(listed, projectScripts);
 }

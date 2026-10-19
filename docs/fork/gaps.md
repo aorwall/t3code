@@ -1935,6 +1935,17 @@ One more arrived in the 2026-10-01 merge:
   subagents keep the T3 tools after their parent's turn ends and pending
   subagent work carries the owner's `providerInstanceId` (#19751), and a slow
   but healthy Codex is no longer reported Unavailable (#15945).
+  The 2026-10-19 merge adds: a conversation message carries `workflowScript:
+true` when its body is a provider-native workflow script, which the timeline
+  now renders as phases and agents instead of the raw script (#20857); an ended
+  pull request watch reports `endedWatch` so watching again does not repeat news
+  the thread already got (#21155); the orchestrator MCP thread list and read
+  results carry `pullRequests` (#17454); `vcs.createWorktree` clients always send
+  `path: null` and let the server place the worktree (not dispatched here, under
+  `projectManagement`); `thread.create` is refused for an existing id (#19704);
+  archiving cancels a preparing run (#20073); a parent Stop clears orphaned
+  delegated follow-ups (#20310); and workflow members stream their thinking and
+  tool calls into their own threads (#20786).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeftIcon, LoaderIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import {
   clearPluginActivation,
@@ -171,10 +171,7 @@ function ActivationSection({ plugin }: { readonly plugin: PluginResponse }) {
   const users = useMoatlessQuery(usersQuery);
   const [selected, setSelected] = useState(VIEWER_IDENTITY);
 
-  const identities = useMemo(
-    () => activationIdentities(users.data?.users ?? []),
-    [users.data?.users],
-  );
+  const identities = activationIdentities(users.data?.users ?? []);
   const identity = selectedIdentity(identities, selected);
 
   const skills = useMoatlessQuery(pluginSkillsQuery(plugin.id));
