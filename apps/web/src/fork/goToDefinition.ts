@@ -13,7 +13,7 @@
 import { createEnvironmentRpcQueryAtomFamily } from "@t3tools/client-runtime/state/runtime";
 import { WS_METHODS, type EnvironmentId, type ScopedThreadRef } from "@t3tools/contracts";
 import { Cause } from "effect";
-import { useCallback, type MouseEvent as ReactMouseEvent } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 
 import { toastManager } from "../components/ui/toast";
 import { connectionAtomRuntime } from "../connection/runtime";
@@ -111,38 +111,35 @@ export function useGoToDefinitionClick(options: {
     reportFailure: false,
     refresh: true,
   });
-  return useCallback(
-    (event: ReactMouseEvent) => {
-      if (relativePath === null || !(event.metaKey || event.ctrlKey) || event.button !== 0) {
+  return (event: ReactMouseEvent) => {
+    if (relativePath === null || !(event.metaKey || event.ctrlKey) || event.button !== 0) {
+      return;
+    }
+    const position = symbolPositionFromEvent(event.nativeEvent);
+    if (!position) return;
+    // Claimed so the click does not also select the line or move the caret.
+    event.preventDefault();
+    event.stopPropagation();
+    void (async () => {
+      const result = await lookUp({
+        environmentId,
+        input: { cwd, relativePath, ...position },
+      });
+      if (result._tag === "Failure") {
+        const error = Cause.squash(result.cause);
+        toastManager.add({
+          type: "error",
+          title: "Could not go to definition",
+          description: error instanceof Error ? error.message : undefined,
+        });
         return;
       }
-      const position = symbolPositionFromEvent(event.nativeEvent);
-      if (!position) return;
-      // Claimed so the click does not also select the line or move the caret.
-      event.preventDefault();
-      event.stopPropagation();
-      void (async () => {
-        const result = await lookUp({
-          environmentId,
-          input: { cwd, relativePath, ...position },
-        });
-        if (result._tag === "Failure") {
-          const error = Cause.squash(result.cause);
-          toastManager.add({
-            type: "error",
-            title: "Could not go to definition",
-            description: error instanceof Error ? error.message : undefined,
-          });
-          return;
-        }
-        const [first] = result.value.locations;
-        if (!first) {
-          toastManager.add({ type: "info", title: "No definition found in the workspace" });
-          return;
-        }
-        useRightPanelStore.getState().openFile(threadRef, first.relativePath, first.line);
-      })();
-    },
-    [cwd, environmentId, lookUp, relativePath, threadRef],
-  );
+      const [first] = result.value.locations;
+      if (!first) {
+        toastManager.add({ type: "info", title: "No definition found in the workspace" });
+        return;
+      }
+      useRightPanelStore.getState().openFile(threadRef, first.relativePath, first.line);
+    })();
+  };
 }

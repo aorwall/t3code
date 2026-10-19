@@ -13,7 +13,7 @@ import {
 } from "@t3tools/client-runtime/state/runtime";
 import type { SandboxStatusResult, ScopedThreadRef } from "@t3tools/contracts";
 import { LoaderCircleIcon, PlayIcon } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 
 import type { EnvironmentQueryView } from "~/state/query";
 import { sandboxEnvironment } from "~/state/sandbox";
@@ -43,7 +43,7 @@ export function SandboxStartControl({ threadRef, status }: SandboxStartControlPr
   const canStart = sandboxActionsFor(sandboxStatus).has("start");
   const starting = pending || status.data?.sandboxStatus === "initializing";
 
-  const run = useCallback(async () => {
+  const run = async () => {
     setError(null);
     setPending(true);
     const result = await start({
@@ -54,7 +54,7 @@ export function SandboxStartControl({ threadRef, status }: SandboxStartControlPr
     refresh();
     if (result._tag === "Success" || isAtomCommandInterrupted(result)) return;
     setError(failureMessage(squashAtomCommandFailure(result)));
-  }, [refresh, start, threadRef.environmentId, threadRef.threadId]);
+  };
 
   if (!canStart && !starting) return null;
 

@@ -7,7 +7,7 @@
  * `SandboxDetail` contract module.
  */
 import type { SandboxDetailResult, ScopedThreadRef } from "@t3tools/contracts";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 
 import { useEnvironment } from "~/state/environments";
 import { useEnvironmentQuery, type EnvironmentQueryView } from "~/state/query";
@@ -61,11 +61,8 @@ export function useSandboxDetail(requestedThreadRef: ScopedThreadRef | null): Sa
   useEffect(() => {
     if (threadRef === null || !supported || pushed) return;
     refresh();
-  }, [pushed, refresh, supported, threadRef?.environmentId, threadRef?.threadId]);
+  }, [pushed, refresh, supported, threadRef]);
   useRetryFailedSandboxStream(threadRef !== null && pushed, live);
 
-  return useMemo(
-    () => ({ data, dataUpdatedAt, error, failure, isPending, isSuccess, refresh, supported }),
-    [data, dataUpdatedAt, error, failure, isPending, isSuccess, refresh, supported],
-  );
+  return { data, dataUpdatedAt, error, failure, isPending, isSuccess, refresh, supported };
 }

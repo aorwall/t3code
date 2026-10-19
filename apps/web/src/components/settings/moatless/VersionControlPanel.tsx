@@ -8,7 +8,7 @@
  */
 
 import { GithubIcon, RefreshCwIcon, ServerIcon, Trash2Icon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   deleteForgejoConfig,
@@ -125,7 +125,7 @@ function GithubDetail() {
     refresh();
   }, [outcome, refresh]);
 
-  const credential = useMemo(() => githubCredential(data), [data]);
+  const credential = githubCredential(data);
   const canConnect = canConnectGithubApp(data);
   const connectLabel = githubConnectLabel(data);
 
@@ -323,7 +323,7 @@ function ForgejoInstanceSection({
   readonly status: ForgejoProviderTokenStatusResponse;
 }) {
   const host = status.host;
-  const credential = useMemo(() => forgejoCredential(status), [status]);
+  const credential = forgejoCredential(status);
   const connectLabel = forgejoConnectLabel(status);
   const [tokenFieldOpen, setTokenFieldOpen] = useState(false);
 

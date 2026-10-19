@@ -8,7 +8,7 @@ import {
   Trash2Icon,
   UserPlusIcon,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { createAdapterConnection } from "@t3tools/moatless-api/generated/adapters/adapters";
 import {
@@ -81,7 +81,7 @@ function ConnectionsSection() {
   const { data, error, isPending, refresh } = useMoatlessQuery(connectionsQuery);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  const rows = useMemo(() => [...(data ?? [])].sort(compareConnections), [data]);
+  const rows = [...(data ?? [])].sort(compareConnections);
 
   return (
     <SettingsSection
@@ -305,7 +305,7 @@ function CreateConnectionDialog({
  */
 function AppsSection() {
   const { data, error, isPending, refresh } = useMoatlessQuery(adapterAppsQuery);
-  const rows = useMemo(() => [...(data?.apps ?? [])].sort(compareAdapterApps), [data]);
+  const rows = [...(data?.apps ?? [])].sort(compareAdapterApps);
 
   return (
     <SettingsSection {...searchableSetting("integrations-apps")}>

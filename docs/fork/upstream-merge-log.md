@@ -28,6 +28,53 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-19 — merged upstream to ab6be13d43
+
+- Upstream: `ab6be13d43` from base `5c5dcbc60b` (`589` commits): the rest of
+  the React Compiler move, and apps/web DOM tests moved to vitest browser mode
+  (`*.browser.test.tsx`, real Chromium; jsdom and `react-test-renderer` gone).
+- Landed: `1275` files from `git diff --stat HEAD^1 HEAD` against `1233` in the
+  upstream range; missing: `useDiscoveredLocalServers.ts`, kept deleted; extra:
+  fork files fixed for the compiler rules, three fork tests re-ported to browser
+  mode, the deleted fork mermaid renderer, and the fork docs. Fork delta `815`
+  files from `git diff --stat HEAD^2 HEAD`.
+- Conflicts: 27 files, each by its verdict.
+  - Seven upstream tests moved to `*.browser.test.tsx`; the fork's mocks were
+    re-ported into the new files and the inventory re-pointed. Under
+    `providerConfiguration: false` the provider panel test switches the flag
+    back on only for upstream's per-instance write test. The fork's framed
+    preview tests moved to fork-only `PreviewView.frame.browser.test.tsx`: a
+    browser-mode mock binds its exports once, so one file cannot have the
+    desktop bridge and not have it.
+  - `ChatView.tsx`: upstream moved the rewind dialog to
+    `chat/ChatOverlayHosts.tsx`; the `checkpointFileRestore` gate went with it.
+    `ThreadDetailsPanel` props are inline JSX now; the script props were
+    re-stated there.
+  - `projectScriptEditor.tsx`, `ProjectActionsSettings.tsx`, `SettingsSidebarNav`,
+    `useAvailableSettingsSearchItems`, `useThreadActionMenu`, `LegacySidebar`,
+    `DraftHeroHeadline`, `ThreadRelationshipsControl`, `DiffPanel`,
+    `terminalSessions.ts`, both routes: took upstream's no-memo form and
+    re-stated each fork line.
+  - `apps/web/package.json`: upstream's, plus the `moatless-api` link and
+    `tsc --noEmit`. `pnpm-lock.yaml`: re-derived with `install.mjs`.
+- Converged: upstream renders mermaid (`chat/MermaidDiagram.tsx`); deleted
+  `fork/mermaidDiagram*`, the `mermaid-diagrams` and `rendered-fences` entries
+  and Mermaid Diagram Delta. New `duplicateAddExceptions`:
+  `messages-timeline-content-local`.
+- Fixed on the way: the provider list's own Add provider button was ungated on
+  `main` too; it now sits behind `providerConfiguration`. 64 compiler-lint
+  errors and two compiler bailouts (`finally` in a hook) in fork files.
+- Sweep: 10 new files matching a concern, all browser tests or
+  `ChatOverlayHosts.tsx`, taken as upstream's. No new workflow.
+- Unsupported methods: ADD 0, DROP 0, KEEP 2. Gaps: extended
+  [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: `verify.mjs --sequential`, every check but `test` green. The
+  same five files as 2026-10-17 confirmed failing alone. `@t3tools/web`: the
+  compiler-coverage failures are fixed, and
+  `WorkflowOpeningBlock.browser.test.tsx` (upstream's, unchanged) passes alone.
+  Browser tests need Playwright's `chromium-headless-shell`, which a fresh
+  sandbox lacks: `npx playwright install chromium-headless-shell`.
+
 ### 2026-10-17 — merged upstream to 5c5dcbc60b
 
 - Upstream: `5c5dcbc60b` from base `3962ae8586` (`134` commits), most of it

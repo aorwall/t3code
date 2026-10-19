@@ -3,7 +3,7 @@ import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import { AsyncResult, Atom } from "effect/reactivity";
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 
 import {
   MoatlessUnexpectedError,
@@ -136,19 +136,17 @@ export interface MoatlessQueryState<A> {
 
 export function useMoatlessQuery<A>(query: MoatlessQuery<A>): MoatlessQueryState<A> {
   const result = useAtomValue(query.atom);
-  const refresh = useCallback(() => {
+  const refresh = () => {
     appAtomRegistry.refresh(query.atom);
-  }, [query.atom]);
+  };
 
-  return useMemo(() => {
-    const error = result._tag === "Failure" ? asError(Cause.squash(result.cause)) : null;
-    return {
-      data: Option.getOrNull(AsyncResult.value(result)),
-      error,
-      isPending: result.waiting,
-      refresh,
-    };
-  }, [result, refresh]);
+  const error = result._tag === "Failure" ? asError(Cause.squash(result.cause)) : null;
+  return {
+    data: Option.getOrNull(AsyncResult.value(result)),
+    error,
+    isPending: result.waiting,
+    refresh,
+  };
 }
 
 function asError(value: unknown): Error {
@@ -178,29 +176,27 @@ export function useMoatlessCommand<Input, A>(
   const [error, setError] = useState<Error | null>(null);
   const invalidates = options?.invalidates;
 
-  const run = useCallback(
-    async (input: Input): Promise<A | null> => {
-      setIsRunning(true);
-      setError(null);
-      try {
-        const value = ok<A>(await request(input));
-        for (const prefix of invalidates ?? []) {
-          invalidate(prefix);
-        }
-        return value;
-      } catch (cause) {
-        setError(asMoatlessError(cause));
-        return null;
-      } finally {
-        setIsRunning(false);
-      }
-    },
-    [request, invalidates],
-  );
-
-  const reset = useCallback(() => {
+  const run = async (input: Input): Promise<A | null> => {
+    setIsRunning(true);
     setError(null);
-  }, []);
+    // No `finally`: the React Compiler cannot lower one and would skip this hook.
+    let value: A | null = null;
+    try {
+      const result = ok<A>(await request(input));
+      for (const prefix of invalidates ?? []) {
+        invalidate(prefix);
+      }
+      value = result;
+    } catch (cause) {
+      setError(asMoatlessError(cause));
+    }
+    setIsRunning(false);
+    return value;
+  };
+
+  const reset = () => {
+    setError(null);
+  };
 
   return { run, isRunning, error, reset };
 }

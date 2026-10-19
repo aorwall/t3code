@@ -12,7 +12,7 @@
 
 import type { ProviderDriverKind } from "@t3tools/contracts";
 import { ExternalLinkIcon, LoaderIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import {
   deleteCodexConfig,
@@ -84,9 +84,9 @@ function ActionError({ error }: { readonly error: Error | null }) {
 }
 
 function ClaudeAuthAction() {
-  const query = useMemo(() => secretsQuery("user"), []);
+  const query = secretsQuery("user");
   const { data } = useMoatlessQuery(query);
-  const stored = useMemo(() => claudeTokenSecret(data), [data]);
+  const stored = claudeTokenSecret(data);
   const remove = useMoatlessCommand<string, SecretMutationResponse>((id) => deleteSecret(id), {
     invalidates: ["secrets"],
   });
@@ -110,9 +110,9 @@ function ClaudeAuthAction() {
 }
 
 function ClaudeAuthSetup() {
-  const query = useMemo(() => secretsQuery("user"), []);
+  const query = secretsQuery("user");
   const { data, error, refresh } = useMoatlessQuery(query);
-  const stored = useMemo(() => claudeTokenSecret(data), [data]);
+  const stored = claudeTokenSecret(data);
   const save = useMoatlessCommand<string, SecretMutationResponse>(
     (value) => putSecret({ scope: "user", key: CLAUDE_TOKEN_SECRET_KEY, kind: "env", value }),
     { invalidates: ["secrets"] },
@@ -151,7 +151,7 @@ function ClaudeAuthSetup() {
 
 function CodexAuthAction() {
   const { data } = useMoatlessQuery(codexAccessQuery);
-  const state = useMemo(() => codexState(data), [data]);
+  const state = codexState(data);
   const disconnect = useMoatlessCommand<void, unknown>(() => deleteCodexConfig(), {
     invalidates: ["account/codex"],
   });
@@ -184,7 +184,7 @@ function CodexAuthAction() {
 
 function CodexAuthSetup() {
   const { data, error, refresh } = useMoatlessQuery(codexAccessQuery);
-  const state = useMemo(() => codexState(data), [data]);
+  const state = codexState(data);
 
   if (error) {
     return (

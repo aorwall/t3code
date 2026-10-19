@@ -10,7 +10,7 @@
  */
 import { useAtomValue } from "@effect/atom-react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 
 import { Button } from "../components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "../components/ui/empty";
@@ -24,10 +24,7 @@ function MoatlessTaskLinkRouteView() {
   const taskId = Route.useParams({ select: (params) => params.taskId });
   const primaryEnvironmentId = usePrimaryEnvironmentId();
   const catalogReady = useAtomValue(environmentCatalog.catalogValueAtom).isReady;
-  const resolution = useMemo(
-    () => resolveMoatlessTaskLink({ taskId, primaryEnvironmentId, catalogReady }),
-    [catalogReady, primaryEnvironmentId, taskId],
-  );
+  const resolution = resolveMoatlessTaskLink({ taskId, primaryEnvironmentId, catalogReady });
 
   useEffect(() => {
     if (resolution.kind !== "resolved") {

@@ -52,12 +52,22 @@ export function PreviewFrameUnrendered({
  * does not carry a stale verdict forward.
  */
 export function useFrameUnrenderedHint(url: string): boolean {
-  const [elapsed, setElapsed] = useState(false);
+  // Tracked alongside the url it was timed for, and reset during render when
+  // it moves on, so a stale "elapsed" from the previous page never flashes
+  // before the effect below gets a chance to restart the timer.
+  const [state, setState] = useState({ url, elapsed: false });
+  if (state.url !== url) {
+    setState({ url, elapsed: false });
+  }
+
   useEffect(() => {
-    setElapsed(false);
     if (url === "") return;
-    const timer = window.setTimeout(() => setElapsed(true), FRAME_UNRENDERED_HINT_DELAY_MS);
+    const timer = window.setTimeout(
+      () => setState({ url, elapsed: true }),
+      FRAME_UNRENDERED_HINT_DELAY_MS,
+    );
     return () => window.clearTimeout(timer);
   }, [url]);
-  return elapsed;
+
+  return state.elapsed;
 }

@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronRightIcon, GitBranchIcon, LoaderIcon, PlusIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { createPlugin } from "@t3tools/moatless-api/generated/plugins/plugins";
 import type { PluginResponse } from "@t3tools/moatless-api/generated/model";
@@ -38,7 +38,7 @@ export function SkillsPanel() {
   const { data, error, isPending, refresh } = useMoatlessQuery(pluginsQuery);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  const rows = useMemo(() => [...(data ?? [])].sort(comparePlugins), [data]);
+  const rows = [...(data ?? [])].sort(comparePlugins);
 
   return (
     <SettingsPageContainer>

@@ -144,8 +144,7 @@ function checkDeltaSections(inventory, report) {
   for (const [delta, id] of [...named].sort()) {
     if (headings.has(delta)) section.ok(`${delta} (${id})`);
     // A delta may also name another inventory entry, whose `mustSurvive` is
-    // then the description. `third-party-licenses-config` points at
-    // `mermaid-diagrams` that way.
+    // then the description.
     else if (ids.has(delta)) section.ok(`${delta} (${id}) — described by the ${delta} entry`);
     else
       section.fail(`${delta} has no section in ${INVENTORY_PROSE} — named by ${id}`, [

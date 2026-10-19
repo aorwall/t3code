@@ -74,7 +74,7 @@ export function SandboxDetailsRow({ threadRef }: { readonly threadRef: ScopedThr
             {status.error ? "Unavailable" : (presentation?.label ?? "Checking")}
           </span>
         </span>
-        <SandboxCommandsBadge commands={status.data?.commands} />
+        <SandboxCommandsBadge commands={status.data?.commands} nowMs={status.dataUpdatedAt} />
       </MenuTrigger>
       <MenuPopup align="end" className="w-(--anchor-width)">
         {offered.length > 0 ? (

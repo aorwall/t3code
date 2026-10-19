@@ -16,7 +16,6 @@
  */
 import type { TerminalMetadataState } from "@t3tools/client-runtime/state/terminal";
 import type { EnvironmentId, ThreadId } from "@t3tools/contracts";
-import { useMemo } from "react";
 
 import { useEnvironmentQuery } from "~/state/query";
 import { terminalEnvironment } from "~/state/terminal";
@@ -60,5 +59,5 @@ export function useAnnouncedTerminal(input: {
       : terminalEnvironment.metadata({ environmentId: input.environmentId, input: null }),
   );
   const state = metadata.data;
-  return useMemo(() => announcedTerminalFor(state, input.threadId), [state, input.threadId]);
+  return announcedTerminalFor(state, input.threadId);
 }

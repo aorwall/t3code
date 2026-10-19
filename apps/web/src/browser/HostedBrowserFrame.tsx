@@ -10,7 +10,9 @@
 
 import { useShallow } from "zustand/react/shallow";
 import type { ScopedThreadRef } from "@t3tools/contracts";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
+
+import { useStableCallback } from "~/hooks/useStableCallback";
 
 import { resolveBrowserSurfacePanelRect, useBrowserSurfaceStore } from "./browserSurfaceStore";
 import {
@@ -44,7 +46,6 @@ export function HostedBrowserFrame(props: {
   readonly url: string | null;
 }) {
   const { threadRef, tabId, runtimeTabId, url } = props;
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const presentation = useBrowserSurfaceStore(
     useShallow((state) => {
       const current = state.byTabId[runtimeTabId];
@@ -61,13 +62,9 @@ export function HostedBrowserFrame(props: {
   // from. They part company whenever the page routes itself — see
   // `hostedFrameLoad`. Adjusted during render rather than in an effect because
   // an effect would run after the frame had already been replaced once.
-  const reportedUrlRef = useRef<string | null>(null);
+  const [reportedUrl, setReportedUrl] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(() => initialHostedFrameLoad({ url, reloadNonce }));
-  const nextLoad = resolveHostedFrameLoad(loaded, {
-    url,
-    reloadNonce,
-    reportedUrl: reportedUrlRef.current,
-  });
+  const nextLoad = resolveHostedFrameLoad(loaded, { url, reloadNonce, reportedUrl });
   if (nextLoad !== loaded) setLoaded(nextLoad);
   const loadedUrl = nextLoad.url;
 
@@ -87,62 +84,57 @@ export function HostedBrowserFrame(props: {
     },
   });
 
-  const handleInspectorRouteChange = useCallback(
-    (change: FramePreviewInspectorRouteChange) => {
-      const snapshot = readThreadPreviewState(threadRef).sessions[tabId];
-      if (!snapshot || snapshot.navStatus._tag === "Idle") return;
-      const title = change.title ?? snapshot.navStatus.title;
-      if (
-        snapshot.navStatus.url === change.url &&
-        snapshot.navStatus.title === title &&
-        snapshot.canGoBack === change.canGoBack &&
-        snapshot.canGoForward === change.canGoForward
-      ) {
-        return;
-      }
-      // Recorded before the write that re-renders this component, so the render
-      // it triggers can tell this URL apart from one the host navigated to.
-      reportedUrlRef.current = change.url;
-      updatePreviewServerSnapshot(threadRef, {
-        ...snapshot,
-        navStatus: {
-          _tag: "Success",
-          url: change.url,
-          title,
-        },
-        canGoBack: change.canGoBack,
-        canGoForward: change.canGoForward,
-        updatedAt: new Date().toISOString(),
-      });
-      rememberPreviewUrl(threadRef, change.url);
-    },
-    [tabId, threadRef],
-  );
+  function handleInspectorRouteChange(change: FramePreviewInspectorRouteChange) {
+    const snapshot = readThreadPreviewState(threadRef).sessions[tabId];
+    if (!snapshot || snapshot.navStatus._tag === "Idle") return;
+    const title = change.title ?? snapshot.navStatus.title;
+    if (
+      snapshot.navStatus.url === change.url &&
+      snapshot.navStatus.title === title &&
+      snapshot.canGoBack === change.canGoBack &&
+      snapshot.canGoForward === change.canGoForward
+    ) {
+      return;
+    }
+    // Recorded before the write that re-renders this component, so the render
+    // it triggers can tell this URL apart from one the host navigated to.
+    setReportedUrl(change.url);
+    updatePreviewServerSnapshot(threadRef, {
+      ...snapshot,
+      navStatus: {
+        _tag: "Success",
+        url: change.url,
+        title,
+      },
+      canGoBack: change.canGoBack,
+      canGoForward: change.canGoForward,
+      updatedAt: new Date().toISOString(),
+    });
+    rememberPreviewUrl(threadRef, change.url);
+  }
 
-  // Held in a ref so that registration below does not depend on this
-  // callback's identity. `threadRef` is minted fresh by `WebBrowserHost` every
-  // time any thread's preview state changes, so the callback is new on most
-  // renders — and re-registering starts over from "the guest has not announced
-  // itself", which is what disables the annotate button.
-  const routeChangeRef = useRef(handleInspectorRouteChange);
-  useEffect(() => {
-    routeChangeRef.current = handleInspectorRouteChange;
-  }, [handleInspectorRouteChange]);
+  // `threadRef` is minted fresh by `WebBrowserHost` every time any thread's
+  // preview state changes, so this handler is new on most renders. The bridge
+  // below must call whichever one is current without that forcing a
+  // re-registration, which would start the guest handshake over.
+  const routeChange = useStableCallback(handleInspectorRouteChange);
 
-  // Keyed off the load rather than the tab's URL: a guest route change leaves
-  // the element — and so the window the bridge holds — exactly where it was.
-  useEffect(() => {
-    if (!loadedUrl) return;
-    const frameWindow = iframeRef.current?.contentWindow;
+  // A ref callback rather than a `useRef` plus effect: the element this binds
+  // to is replaced outright on reload (the `key` below includes the reload
+  // nonce), and a ref callback fires for every such replacement on its own,
+  // with no dependency array standing in for "the element changed".
+  function registerIframe(element: HTMLIFrameElement | null) {
+    if (!element || !loadedUrl) return;
+    const frameWindow = element.contentWindow;
     if (!frameWindow) return;
     return registerFramePreviewAnnotationHost({
       runtimeTabId,
       frameWindow,
       targetOrigin: resolveFramePreviewAnnotationOrigin(loadedUrl),
       url: loadedUrl,
-      onInspectorRouteChange: (change) => routeChangeRef.current(change),
+      onInspectorRouteChange: routeChange,
     });
-  }, [runtimeTabId, nextLoad.reloadNonce, loadedUrl]);
+  }
 
   return (
     <div
@@ -156,7 +148,7 @@ export function HostedBrowserFrame(props: {
         // navigation and every reload replaces the element instead.
         <iframe
           key={hostedFrameKey(loadedUrl, nextLoad.reloadNonce)}
-          ref={iframeRef}
+          ref={registerIframe}
           src={loadedUrl}
           title="Preview"
           sandbox="allow-scripts allow-forms allow-same-origin allow-popups"

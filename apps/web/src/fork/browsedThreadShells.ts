@@ -17,7 +17,6 @@ import type { EnvironmentThreadShell } from "@t3tools/client-runtime/state/shell
 import { EnvironmentId, type ThreadBrowseInput } from "@t3tools/contracts";
 import * as Option from "effect/Option";
 import { AsyncResult, Atom } from "effect/reactivity";
-import { useMemo } from "react";
 
 import { useArchivedThreadSnapshots } from "../lib/archivedThreadsState";
 import { useServerConfigs } from "../state/entities";
@@ -111,57 +110,36 @@ export function useSidebarThreadList(
   // A browse only reaches a server that understands the method; an older one
   // would answer every filter with an unsupported-method failure. With none of
   // them able to, the filter has nothing to apply and the listing stands.
-  const browsableEnvironmentIds = useMemo(
-    () =>
-      [...serverConfigs]
-        .filter(([, config]) => config.environment.capabilities.threadBrowse === true)
-        .map(([environmentId]) => environmentId)
-        .sort(),
-    [serverConfigs],
-  );
-  const archivedEnvironmentIds = useMemo(
-    () => (filter.includeClosed ? [...serverConfigs.keys()].sort() : EMPTY_ENVIRONMENT_IDS),
-    [filter.includeClosed, serverConfigs],
-  );
+  const browsableEnvironmentIds = [...serverConfigs]
+    .filter(([, config]) => config.environment.capabilities.threadBrowse === true)
+    .map(([environmentId]) => environmentId)
+    .sort();
+  const archivedEnvironmentIds = filter.includeClosed
+    ? [...serverConfigs.keys()].sort()
+    : EMPTY_ENVIRONMENT_IDS;
 
   const input = browsableEnvironmentIds.length === 0 ? null : threadBrowseInput(filter);
   const browsed = useAtomValue(browsedShellsAtom(JSON.stringify([browsableEnvironmentIds, input])));
   // Closed work the viewer follows is already a listing of its own, so the
   // toggle reads that rather than asking a browse for rows it can serve.
   const archived = useArchivedThreadSnapshots(archivedEnvironmentIds);
-  const archivedThreads = useMemo(
-    () =>
-      archived.snapshots.flatMap((entry) =>
-        entry.snapshot.threads.map((thread) => presentThreadShell(entry.environmentId, thread)),
-      ),
-    [archived.snapshots],
+  const archivedThreads = archived.snapshots.flatMap((entry) =>
+    entry.snapshot.threads.map((thread) => presentThreadShell(entry.environmentId, thread)),
   );
 
-  return useMemo(
-    () => ({
-      threads: composeSidebarThreadList({
-        listed,
-        browsed: input === null ? null : browsed.threads,
-        archived: archivedThreads,
-      }),
-      isBrowsing: input !== null,
-      showsClosed: filter.includeClosed,
-      hidesSubtasks: filter.hideSubtasks,
-      isTruncated: input !== null && browsed.isTruncated,
-      isLoading: browsed.isLoading || archived.isLoading,
-      error: browsed.error ?? archived.error,
-    }),
-    [
-      archived.error,
-      archived.isLoading,
-      archivedThreads,
-      browsed,
-      filter.hideSubtasks,
-      filter.includeClosed,
-      input,
+  return {
+    threads: composeSidebarThreadList({
       listed,
-    ],
-  );
+      browsed: input === null ? null : browsed.threads,
+      archived: archivedThreads,
+    }),
+    isBrowsing: input !== null,
+    showsClosed: filter.includeClosed,
+    hidesSubtasks: filter.hideSubtasks,
+    isTruncated: input !== null && browsed.isTruncated,
+    isLoading: browsed.isLoading || archived.isLoading,
+    error: browsed.error ?? archived.error,
+  };
 }
 
 /** The filter as one value, for a caller that needs all of it. */
@@ -170,8 +148,5 @@ export function useThreadBrowseFilter(): ThreadBrowseFilter {
   const tag = useThreadBrowseFilterStore((store) => store.tag);
   const includeClosed = useThreadBrowseFilterStore((store) => store.includeClosed);
   const hideSubtasks = useThreadBrowseFilterStore((store) => store.hideSubtasks);
-  return useMemo(
-    () => ({ ownerUserId, tag, includeClosed, hideSubtasks }),
-    [hideSubtasks, includeClosed, ownerUserId, tag],
-  );
+  return { ownerUserId, tag, includeClosed, hideSubtasks };
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { parseScopedThreadKey } from "@t3tools/client-runtime/environment";
-import { useMemo } from "react";
 
 import { previewRuntimeCapability, useActivePreviewSessions } from "~/previewStateStore";
 
@@ -18,24 +17,16 @@ import { previewRuntimeTabId } from "./previewRuntimeTabId";
  */
 export function WebBrowserHost() {
   const previewByThreadKey = useActivePreviewSessions();
-  const sessions = useMemo(
-    () =>
-      Object.entries(previewByThreadKey).flatMap(([threadKey, previewState]) => {
-        const threadRef = parseScopedThreadKey(threadKey);
-        return threadRef
-          ? Object.values(previewState.sessions).map((snapshot) => ({
-              threadRef,
-              snapshot,
-              runtimeTabId: previewRuntimeTabId(
-                threadRef,
-                previewState.serverEpoch,
-                snapshot.tabId,
-              ),
-            }))
-          : [];
-      }),
-    [previewByThreadKey],
-  );
+  const sessions = Object.entries(previewByThreadKey).flatMap(([threadKey, previewState]) => {
+    const threadRef = parseScopedThreadKey(threadKey);
+    return threadRef
+      ? Object.values(previewState.sessions).map((snapshot) => ({
+          threadRef,
+          snapshot,
+          runtimeTabId: previewRuntimeTabId(threadRef, previewState.serverEpoch, snapshot.tabId),
+        }))
+      : [];
+  });
 
   if (previewRuntimeCapability() !== "frame") return null;
   return (

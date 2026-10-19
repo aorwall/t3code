@@ -1,9 +1,7 @@
 import {
   lazy,
   Suspense,
-  useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type ComponentType,
@@ -139,7 +137,7 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
   const navigate = useNavigate();
   const currentHash = useLocation({ select: (location) => location.hash });
   const currentSearch = useLocation({ select: (location) => location.search });
-  const scopeSearch = useMemo(() => validateSettingsScopeSearch(currentSearch), [currentSearch]);
+  const scopeSearch = validateSettingsScopeSearch(currentSearch);
   // Fork: upstream's Project-overview gate, applied to the personal group the
   // fork splits the nav into. /settings/projects is not an administration path.
   //
@@ -162,19 +160,16 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
   // Fork: search is a second way into a section, so it filters alongside the
   // nav list — a result that jumps to a section the nav hides is the same hole.
   const { isAdmin } = useMoatlessSession();
-  const results = useMemo(
-    () =>
-      searchSettings(query, searchableItems).filter(
-        (item) => settingsPathEnabled(item.to) && (isAdmin || !isMoatlessAdminPath(item.to)),
-      ),
-    [query, searchableItems, isAdmin],
+  const results = searchSettings(query, searchableItems).filter(
+    (item) => settingsPathEnabled(item.to) && (isAdmin || !isMoatlessAdminPath(item.to)),
   );
   const isSearching = query.trim().length > 0;
   const hasResults = results.length > 0;
-
-  useEffect(() => {
-    setActiveResultIndex((index) => Math.min(index, Math.max(results.length - 1, 0)));
-  }, [results.length]);
+  const maxResultIndex = Math.max(results.length - 1, 0);
+  // Persist the clamp so a shrink-then-recover of results keeps the clamped highlight.
+  if (activeResultIndex > maxResultIndex) {
+    setActiveResultIndex(maxResultIndex);
+  }
 
   useEffect(() => {
     const result = results[activeResultIndex];
@@ -225,72 +220,66 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isMobile, open, setOpen, setOpenMobile]);
 
-  const handleSectionClick = useCallback(
-    (to: SettingsPath) => {
-      if (isMobile) {
-        setOpenMobile(false);
-      }
-      void navigate({
-        to,
-        hash: "",
-        replace: true,
-        hashScrollIntoView: false,
-      });
-    },
-    [isMobile, navigate, setOpenMobile],
-  );
-  const clearSearch = useCallback(() => {
+  const handleSectionClick = (to: SettingsPath) => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+    void navigate({
+      to,
+      hash: "",
+      replace: true,
+      hashScrollIntoView: false,
+    });
+  };
+
+  const clearSearch = () => {
     setQuery("");
     setActiveResultIndex(0);
-  }, []);
-  const handleSearchResultClick = useCallback(
-    (item: SettingsSearchItem) => {
+  };
+  const handleSearchResultClick = (item: SettingsSearchItem) => {
+    clearSearch();
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+    const targetId = item.targetId ?? item.id;
+    if (pathname === item.to && currentHash.replace(/^#/, "") === targetId) {
+      scrollToSettingsTarget(targetId);
+      return;
+    }
+    void navigate({
+      to: item.to,
+      hash: targetId,
+      replace: true,
+      hashScrollIntoView: false,
+      state: { settingsTargetHighlight: true },
+    });
+  };
+
+  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Escape" && isSearching) {
+      event.preventDefault();
+      event.stopPropagation();
       clearSearch();
-      if (isMobile) {
-        setOpenMobile(false);
-      }
-      const targetId = item.targetId ?? item.id;
-      if (pathname === item.to && currentHash.replace(/^#/, "") === targetId) {
-        scrollToSettingsTarget(targetId);
-        return;
-      }
-      void navigate({
-        to: item.to,
-        hash: targetId,
-        replace: true,
-        hashScrollIntoView: false,
-        state: { settingsTargetHighlight: true },
-      });
-    },
-    [clearSearch, currentHash, isMobile, navigate, pathname, setOpenMobile],
-  );
-  const handleSearchKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLInputElement>) => {
-      if (event.key === "Escape" && isSearching) {
-        event.preventDefault();
-        event.stopPropagation();
-        clearSearch();
-        return;
-      }
-      if (results.length === 0) return;
-      if (event.key === "ArrowDown") {
-        event.preventDefault();
-        setActiveResultIndex((index) => (index + 1) % results.length);
-        return;
-      }
-      if (event.key === "ArrowUp") {
-        event.preventDefault();
-        setActiveResultIndex((index) => (index - 1 + results.length) % results.length);
-        return;
-      }
-      if (event.key === "Enter") {
-        event.preventDefault();
-        const result = results[activeResultIndex];
-        if (result) handleSearchResultClick(result);
-      }
-    },
-    [activeResultIndex, clearSearch, handleSearchResultClick, isSearching, results],
-  );
+      return;
+    }
+    if (results.length === 0) return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveResultIndex((activeResultIndex + 1) % results.length);
+      return;
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveResultIndex((activeResultIndex - 1 + results.length) % results.length);
+      return;
+    }
+    if (event.key === "Enter") {
+      event.preventDefault();
+      const result = results[activeResultIndex];
+      if (result) handleSearchResultClick(result);
+    }
+  };
+
   // Fork: extracted so the personal and Administration groups below render
   // identical rows; upstream inlines this in its single nav list.
   const renderNavItem = (item: (typeof SETTINGS_NAV_ITEMS)[number]) => {

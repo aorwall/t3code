@@ -8,7 +8,7 @@ import {
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
 import type { ScopedThreadRef } from "@t3tools/contracts";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 
 import { requestConfirmDialog } from "~/confirmDialog";
 import { sandboxEnvironment } from "~/state/sandbox";
@@ -40,42 +40,30 @@ export function useSandboxAction(threadRef: ScopedThreadRef, onSettled: () => vo
   const [pending, setPending] = useState<SandboxAction | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const run = useCallback(
-    async (action: SandboxAction): Promise<string | null> => {
-      if (SANDBOX_CONFIRM_ACTIONS.has(action)) {
-        // Undefined means no themed host is mounted, and the click itself was
-        // the request; the same reading `ServerUpdateAction` takes.
-        const confirmed =
-          (await requestConfirmDialog(SANDBOX_ACTION_CONFIRMATIONS[action] ?? "", {
-            variant: "destructive",
-          })) ?? true;
-        if (!confirmed) return null;
-      }
-      const commands = { start, stop, restart, redeploy, cleanup };
-      setError(null);
-      setPending(action);
-      const result = await commands[action]({
-        environmentId: threadRef.environmentId,
-        input: { threadId: threadRef.threadId },
-      });
-      setPending(null);
-      onSettled();
-      if (result._tag === "Success" || isAtomCommandInterrupted(result)) return null;
-      const message = failureMessage(squashAtomCommandFailure(result));
-      setError(message);
-      return message;
-    },
-    [
-      cleanup,
-      onSettled,
-      redeploy,
-      restart,
-      start,
-      stop,
-      threadRef.environmentId,
-      threadRef.threadId,
-    ],
-  );
+  const run = async (action: SandboxAction): Promise<string | null> => {
+    if (SANDBOX_CONFIRM_ACTIONS.has(action)) {
+      // Undefined means no themed host is mounted, and the click itself was
+      // the request; the same reading `ServerUpdateAction` takes.
+      const confirmed =
+        (await requestConfirmDialog(SANDBOX_ACTION_CONFIRMATIONS[action] ?? "", {
+          variant: "destructive",
+        })) ?? true;
+      if (!confirmed) return null;
+    }
+    const commands = { start, stop, restart, redeploy, cleanup };
+    setError(null);
+    setPending(action);
+    const result = await commands[action]({
+      environmentId: threadRef.environmentId,
+      input: { threadId: threadRef.threadId },
+    });
+    setPending(null);
+    onSettled();
+    if (result._tag === "Success" || isAtomCommandInterrupted(result)) return null;
+    const message = failureMessage(squashAtomCommandFailure(result));
+    setError(message);
+    return message;
+  };
 
   return { run, pending, error };
 }

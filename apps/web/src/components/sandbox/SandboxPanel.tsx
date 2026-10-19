@@ -43,7 +43,7 @@ import {
   SquareIcon,
   Trash2Icon,
 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 
 import { cn } from "~/lib/utils";
 import type { EnvironmentQueryView } from "~/state/query";
@@ -203,7 +203,7 @@ export function SandboxPanel({ threadRef }: { readonly threadRef: ScopedThreadRe
                 </SandboxSection>
               ) : null}
               {status.data?.commands?.length ? (
-                <CommandsSection commands={status.data.commands} />
+                <CommandsSection commands={status.data.commands} nowMs={status.dataUpdatedAt} />
               ) : null}
             </div>
           </div>
@@ -227,10 +227,10 @@ function StatusSection({
   const available = sandboxActionsFor(status.isPending ? null : sandboxStatus);
   const { refresh: refreshStatus } = status;
   const { refresh: refreshDetail } = detail;
-  const refresh = useCallback(() => {
+  const refresh = () => {
     refreshStatus();
     refreshDetail();
-  }, [refreshDetail, refreshStatus]);
+  };
   const { run, pending, error: actionError } = useSandboxAction(threadRef, refresh);
 
   const offered = ACTION_ORDER.filter((action) => available.has(action));
@@ -349,21 +349,18 @@ function IdleStopSection({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const choose = useCallback(
-    async (next: number) => {
-      setError(null);
-      setPending(true);
-      const result = await setIdleTimeout({
-        environmentId: threadRef.environmentId,
-        input: { threadId: threadRef.threadId, minutes: next },
-      });
-      setPending(false);
-      onChanged();
-      if (result._tag === "Success" || isAtomCommandInterrupted(result)) return;
-      setError(failureMessage(squashAtomCommandFailure(result)));
-    },
-    [onChanged, setIdleTimeout, threadRef.environmentId, threadRef.threadId],
-  );
+  const choose = async (next: number) => {
+    setError(null);
+    setPending(true);
+    const result = await setIdleTimeout({
+      environmentId: threadRef.environmentId,
+      input: { threadId: threadRef.threadId, minutes: next },
+    });
+    setPending(false);
+    onChanged();
+    if (result._tag === "Success" || isAtomCommandInterrupted(result)) return;
+    setError(failureMessage(squashAtomCommandFailure(result)));
+  };
 
   return (
     <SandboxSection
@@ -448,10 +445,15 @@ function ContainersSection({
   );
 }
 
-function CommandsSection({ commands }: { readonly commands: ReadonlyArray<CommandSummary> }) {
-  // One clock read for the whole section, so every elapsed is measured against
-  // the same instant. There is no timer: these repaint when the status does.
-  const nowMs = Date.now();
+function CommandsSection({
+  commands,
+  nowMs,
+}: {
+  readonly commands: ReadonlyArray<CommandSummary>;
+  /** The status query's own timestamp, shared across the section so every
+      elapsed is measured against the same instant. */
+  readonly nowMs: number;
+}) {
   return (
     <SandboxSection title="Commands">
       {commands.map((command) => (

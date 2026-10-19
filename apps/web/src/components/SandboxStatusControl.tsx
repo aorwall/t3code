@@ -88,7 +88,7 @@ export function SandboxStatusControl({ status, className, compact }: SandboxStat
       {/* The commands the agent handed to `moat cmd`, so a build running behind
           an ended turn is not mistaken for a finished thread. Renders nothing
           when none are running. */}
-      <SandboxCommandsBadge commands={status.data?.commands} />
+      <SandboxCommandsBadge commands={status.data?.commands} nowMs={status.dataUpdatedAt} />
     </div>
   );
 

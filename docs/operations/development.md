@@ -106,6 +106,10 @@ vp lint <files>
 vp run --filter <package> typecheck
 ```
 
+In `apps/web`, a test that renders React or touches the DOM is named `*.browser.test.{ts,tsx}`
+and runs in headless Chromium with the React Compiler on, like the app. There is no jsdom; other
+`*.test.ts` files run in Node.
+
 TypeScript workspaces typecheck with `tsc` from the `typescript` package (TypeScript 7, the
 native compiler). The `effect-tsgo patch` prepare step adds the Effect diagnostics to it, so
 run `pnpm run prepare` after an install that skipped scripts.
