@@ -28,6 +28,55 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-17 — merged upstream to 5c5dcbc60b
+
+- Upstream: `5c5dcbc60b` from base `3962ae8586` (`134` commits), most of it
+  upstream moving `apps/web` onto the React Compiler (`useCallback`/`useMemo`
+  removed, ChatView split into hooks) and pruning narration comments (#19559).
+- Landed: `3247` files from `git diff --stat HEAD^1 HEAD` against `3247` in the
+  upstream range; missing: the three deliberately deleted paths
+  (`cli/pair.ts`, its test, `useDiscoveredLocalServers.ts`); extra: two fork
+  settings files cleaned for the new lint rule and the two fork docs. Fork
+  delta `818` files from `git diff --stat HEAD^2 HEAD`.
+- Branch point: `main` at `59369391d6`. No open merge PR to stack on.
+- Conflicts: 32 files.
+  - Three delete/modify (`pair.ts`, `pair.test.ts`,
+    `useDiscoveredLocalServers.ts`): kept deleted.
+  - `ChatView.tsx` (`converged`): took upstream's hook extraction. Deltas that
+    moved with upstream's code: the `scriptsEditable` branch of
+    `persistProjectScripts` into `chat/useProjectScriptEditing.ts`; the
+    `sandbox` surface and `onRetargetFile` into
+    `chat/RightPanelSurfaceContent.tsx`, which also loses upstream's
+    `configuredPreviewUrls`. Inventory entries re-pointed at both files.
+  - `Sidebar.tsx` (`converged`): upstream moved partitioning into
+    `useSidebarThreads`/`partitionSidebarThreads`; the browse filter
+    (`useSidebarThreadList`), `showsClosed`/`hidesSubtasks`/`isBrowsing` and
+    pin-outranks-settlement were re-stated there.
+  - `useThreadActions.ts`, `useProjectScriptSettings.ts`, `MessagesTimeline.tsx`,
+    `PreviewView.tsx`, `DiffPanel.tsx`, `BranchToolbar.tsx`: took upstream's
+    plain-function form and re-stated each fork line in it.
+  - Comment-only conflicts on the other files: took upstream's pruning, kept
+    `Fork:` comments. `AGENTS.md` (`decide`): restated upstream's new comment
+    rule in the fork's voice. `pnpm-workspace.yaml`: upstream's Expo bumps,
+    still no `tsc-rs`.
+  - `pnpm-lock.yaml` (`theirs`): stripped `tsc-rs@0.7.0`, re-derived.
+- New fork delta: root `vite.config.ts` turns upstream's new
+  `t3code/no-low-value-comments` off for the generated Moatless client
+  ([Root Vite Lint Delta](./upstream-merge-inventory.md#root-vite-lint-delta));
+  upstream's restored mobile-app store row is gated on `FEATURES.connections`.
+  `duplicateAddExceptions`: removed the stale `chatview-fork-request-field`.
+- Sweep: 1 hit, `patches/@clerk__expo-native-components@0.2.0.patch`, a false
+  positive taken as upstream's. No new workflow.
+- Unsupported methods: ADD 0, DROP 0, KEEP 2. Gaps: extended
+  [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: every check but `test` green. Confirmed failing alone, the same
+  machine failures as 2026-10-16: `shared` `AgentScope`, `t3`
+  `ServerBrowserPage`, `AcpAdapterV2` and `OrchestratorReplayFixtures`,
+  `provider-opencode` `OpenCodeServerLedger`, `ssh` `tunnel.test.ts`.
+  `web` first failed upstream's new `reactCompiledFiles.test.ts` on two fork
+  `try/finally` blocks (`startSandboxForScript`, the frame pick handler);
+  both now use `.finally()` on the promise, and `web` passes (544 files).
+
 ### 2026-10-16 — merged upstream to 3962ae8586
 
 - Upstream: `3962ae8586` from base `e536bfd33b` (`96` commits).

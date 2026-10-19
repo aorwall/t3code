@@ -325,6 +325,7 @@ export const FEATURE_BY_SETTINGS_SEARCH_ID: Readonly<Record<string, FeatureName>
   "background-activity": "serverBehaviorSettings",
   "text-generation-model": "serverBehaviorSettings",
   diagnostics: "diagnostics",
+  "mobile-app": "connections",
 };
 
 /** Whether a settings search item is offered in this build. Unlisted ids are. */

@@ -83,8 +83,6 @@ function ActionError({ error }: { readonly error: Error | null }) {
   return <span className="text-sm text-destructive-foreground">{error.message}</span>;
 }
 
-// ---------------------------------------------------------------- Claude ----
-
 function ClaudeAuthAction() {
   const query = useMemo(() => secretsQuery("user"), []);
   const { data } = useMoatlessQuery(query);
@@ -150,8 +148,6 @@ function ClaudeAuthSetup() {
     </AuthSetupSection>
   );
 }
-
-// ----------------------------------------------------------------- Codex ----
 
 function CodexAuthAction() {
   const { data } = useMoatlessQuery(codexAccessQuery);

@@ -1927,6 +1927,14 @@ One more arrived in the 2026-10-01 merge:
   Auto-review (#19712), Grok health checks no longer start its updater (#18075),
   expanding a wide ignored folder no longer classifies every child (#20062), and
   OTLP exports name the machine and build (#19370).
+  The 2026-10-17 merge adds: a follow-up sent while a `/compact` or `/logout`
+  turn runs is queued behind it rather than steered into it — the client now
+  sends `queue` when the active turn cannot take steering, so the backend has to
+  accept a queued dispatch mid-compaction (#20184) — threads whose background
+  subagent work a restart cut are woken to continue it (#19750), background
+  subagents keep the T3 tools after their parent's turn ends and pending
+  subagent work carries the owner's `providerInstanceId` (#19751), and a slow
+  but healthy Codex is no longer reported Unavailable (#15945).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
