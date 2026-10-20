@@ -42,6 +42,7 @@ import {
   type BranchToolbarBranchSelectorHandle,
 } from "./BranchToolbarBranchSelector";
 import { BranchToolbarEnvironmentSelector } from "./BranchToolbarEnvironmentSelector";
+import type { PendingServerUpdate } from "./ServerUpdateAction";
 import { BranchToolbarEnvModeSelector } from "./BranchToolbarEnvModeSelector";
 import { PreviousWorktreeItemContent } from "./PreviousWorktreeItemContent";
 import { ThreadDetailsControl } from "./chat/ThreadDetailsControl";
@@ -101,6 +102,7 @@ interface BranchToolbarProps {
   onEnvironmentChange?: (environmentId: EnvironmentId) => void;
   composerControlsHostRef?: (element: HTMLDivElement | null) => void;
   contextStripVisible?: boolean;
+  serverUpdate?: PendingServerUpdate | null;
 }
 
 function showWorkspaceContextMenu(event: ReactMouseEvent, workspacePath: string) {
@@ -428,8 +430,13 @@ function useLabelsOverflow(element: HTMLDivElement | null): boolean {
     const current = element;
     const compact = overflows;
     if (!current) return;
-    const available = current.clientWidth;
-    if (available === 0) return;
+    const stripWidth = current.clientWidth;
+    if (stripWidth === 0) return;
+    const stripStyle = getComputedStyle(current);
+    const available =
+      stripWidth -
+      (Number.parseFloat(stripStyle.paddingInlineStart) || 0) -
+      (Number.parseFloat(stripStyle.paddingInlineEnd) || 0);
     const contentWidth = (parent: Element): number => {
       const gap = Number.parseFloat(getComputedStyle(parent).columnGap) || 0;
       let width = 0;
@@ -448,7 +455,7 @@ function useLabelsOverflow(element: HTMLDivElement | null): boolean {
       }
       return width + gap * Math.max(0, counted - 1);
     };
-    const stripGap = Number.parseFloat(getComputedStyle(current).columnGap) || 0;
+    const stripGap = Number.parseFloat(stripStyle.columnGap) || 0;
     let needed = 0;
     let groups = 0;
     for (const child of current.children) {
@@ -583,6 +590,7 @@ export const BranchToolbar = memo(function BranchToolbar({
   onEnvironmentChange,
   composerControlsHostRef,
   contextStripVisible = true,
+  serverUpdate = null,
 }: BranchToolbarProps) {
   // Fork: stands in for upstream's `showGitControls` everywhere the strip draws
   // the workspace picker. `FEATURES.worktreeSelection` off leaves the branch
@@ -659,14 +667,16 @@ export const BranchToolbar = memo(function BranchToolbar({
     ],
   );
 
-  const showEnvironmentPicker = Boolean(
-    availableEnvironments && availableEnvironments.length > 1 && onEnvironmentChange,
-  );
+  const hasMultipleEnvironments = (availableEnvironments?.length ?? 0) > 1;
+  const showEnvironmentPicker = hasMultipleEnvironments && onEnvironmentChange !== undefined;
   const activeEnvironmentOption =
     availableEnvironments?.find((env) => env.environmentId === environmentId) ?? null;
+  // Started threads get no handler but still show which machine they run on,
+  // matching the strip visibility ChatView computes from the same inputs.
   const showEnvironmentIndicator = shouldShowEnvironmentIndicator({
     activeEnvironment: activeEnvironmentOption,
-    canPickEnvironment: showEnvironmentPicker,
+    canPickEnvironment: hasMultipleEnvironments,
+    serverUpdateAvailable: serverUpdate !== null,
   });
   const [stripElement, setStripElement] = useState<HTMLDivElement | null>(null);
   const labelsOverflow = useLabelsOverflow(stripElement);
@@ -731,6 +741,17 @@ export const BranchToolbar = memo(function BranchToolbar({
         !contextStripVisible && "pointer-events-none invisible absolute inset-x-0 top-full",
       )}
     >
+      {serverUpdate && availableEnvironments ? (
+        <BranchToolbarEnvironmentSelector
+          autoEnvironmentLabel={autoEnvironmentLabel}
+          onAutoEnvironment={onAutoEnvironment}
+          envLocked={envLocked}
+          environmentId={environmentId}
+          availableEnvironments={availableEnvironments}
+          {...(showEnvironmentPicker ? { onEnvironmentChange } : {})}
+          serverUpdate={serverUpdate}
+        />
+      ) : null}
       {/* Fork: showWorkspaceControls for showGitControls. */}
       {showWorkspaceControls ? (
         <div className="contents @3xl/composer-surface:hidden">
@@ -742,8 +763,8 @@ export const BranchToolbar = memo(function BranchToolbar({
             envModeLocked={envModeLocked}
             environmentId={environmentId}
             availableEnvironments={availableEnvironments}
-            showEnvironmentPicker={showEnvironmentPicker}
-            showEnvironmentIndicator={showEnvironmentIndicator}
+            showEnvironmentPicker={showEnvironmentPicker && serverUpdate === null}
+            showEnvironmentIndicator={showEnvironmentIndicator && serverUpdate === null}
             onEnvironmentChange={onEnvironmentChange}
             effectiveEnvMode={effectiveEnvMode}
             activeWorktreePath={activeWorktreePath}
@@ -755,7 +776,7 @@ export const BranchToolbar = memo(function BranchToolbar({
         </div>
       ) : null}
       {/* Fork: showWorkspaceControls for showGitControls, here and below. */}
-      {showWorkspaceControls || showEnvironmentIndicator ? (
+      {showWorkspaceControls || (showEnvironmentIndicator && serverUpdate === null) ? (
         <div
           className={cn(
             "min-h-7 min-w-10 items-center gap-1 sm:min-h-6",
@@ -765,14 +786,16 @@ export const BranchToolbar = memo(function BranchToolbar({
         >
           {showEnvironmentIndicator && availableEnvironments && (
             <>
-              <BranchToolbarEnvironmentSelector
-                autoEnvironmentLabel={autoEnvironmentLabel}
-                onAutoEnvironment={onAutoEnvironment}
-                envLocked={envLocked}
-                environmentId={environmentId}
-                availableEnvironments={availableEnvironments}
-                {...(showEnvironmentPicker && onEnvironmentChange ? { onEnvironmentChange } : {})}
-              />
+              {serverUpdate === null ? (
+                <BranchToolbarEnvironmentSelector
+                  autoEnvironmentLabel={autoEnvironmentLabel}
+                  onAutoEnvironment={onAutoEnvironment}
+                  envLocked={envLocked}
+                  environmentId={environmentId}
+                  availableEnvironments={availableEnvironments}
+                  {...(showEnvironmentPicker ? { onEnvironmentChange } : {})}
+                />
+              ) : null}
               {showWorkspaceControls ? (
                 <Separator
                   orientation="vertical"

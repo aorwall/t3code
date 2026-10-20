@@ -28,6 +28,53 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-20 — merged upstream to 143ab1606d
+
+- Upstream: `143ab1606d` from base `ab6be13d43` (`376` commits). Branch point:
+  `main`; no open merge PR to stack on.
+- Landed: `1177` files from `git diff --stat HEAD^1 HEAD` against `1177` in the
+  upstream range; missing: `apps/server/src/cli/pair.ts` and its test, kept
+  deleted; extra: `docs/fork/inventory.json` and the renamed fork test
+  `goToDefinition.browser.test.ts`. Fork delta `817` files from
+  `git diff --stat HEAD^2 HEAD`.
+- Conflicts: 14 files, each by its verdict.
+  - `AGENTS.md` (`decide`): kept the fork's prose Taste section and added
+    upstream's new `Effect.fn` rule as a paragraph.
+  - `apps/mobile/package.json` (unlisted): upstream's test script, `tsc` kept
+    over `tsc-rs`. `pnpm-lock.yaml`: stripped the `tsc-rs@0.7.0` entries, then
+    re-derived with `install.mjs`.
+  - `pair.ts`, `pair.test.ts`: modify/delete, kept deleted.
+  - `ProjectDefaultsSettings.tsx`: upstream moved agent browser access to
+    `IntegrationsSettings.tsx`; its `workspaceOwnsProjectDefaults` gate moved
+    with it, and the inventory note says so.
+  - `terminal.ts`: kept `EMPTY_TERMINAL_METADATA_STATE` and took upstream's
+    `Stream.drop(1)`; upstream's new `runtime.test.ts` metadata test now reads
+    `.terminals`.
+  - `Sidebar.tsx`: kept `useSidebarThreadList`; upstream's
+    `resolveSidebarRowThreadId` resolves against the unfiltered shells and takes
+    `source`, and its new test builds provider-native subagents.
+  - `BranchToolbar`, `ChatMarkdown` and its test, `GitActionsControl`,
+    `ThreadPreviewMiniPlayer`, `SettingsPanels`, the script-settings test:
+    upstream's change with each fork delta re-stated.
+- Auto-merged fixes: `ChatView.tsx` re-binds `storeSetActiveTerminal` for the
+  hosted script path and drops the early `setTerminalOpen` per upstream #18340;
+  `ThreadDetailsPrRows.browser.test.tsx` passes `activeProjectScriptsEditable`;
+  `fork/goToDefinition.test.ts` moved to browser mode for the new
+  `no-dom-test-environment` lint rule. New `duplicateAddExceptions` entry
+  `project-script-settings-continue`; retired `messages-timeline-content-local`.
+- Sweep: 8 hits (`HostedEmptyState`, `ElectronBrowserHost` test, relay API-pause
+  and monitoring files), upstream-owned and taken as upstream's. No new workflow.
+- Unsupported methods: ADD 0, DROP 0, KEEP 2. Gaps: extended
+  [capabilities](./gaps.md#capabilities-are-reported-but-not-the-ones-the-newer-surfaces-need)
+  (`threadStop`) and
+  [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: `verify.mjs --sequential`, every check but `test` green. The
+  same five files as 2026-10-19 confirmed failing alone. New and environmental:
+  `GitVcsDriver.test.ts` and `RepositoryIdentityResolver.test.ts` partial-clone
+  tests, because the sandbox's `~/.gitconfig` rewrites `git@github.com:` to
+  https with `insteadOf`. `@t3tools/web`'s one failure, the Sidebar subagent
+  test, is fixed and passes alone.
+
 ### 2026-10-19 — merged upstream to ab6be13d43
 
 - Upstream: `ab6be13d43` from base `5c5dcbc60b` (`589` commits): the rest of
