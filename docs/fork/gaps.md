@@ -74,7 +74,8 @@ not report is every boolean added since that handshake was written —
 (upstream, 2026-09-18), `threadAutoSettleOptOut` (upstream, 2026-09-25) and
 `threadFind` / `threadFindProgressive` (upstream, 2026-10-09) and
 `threadAutoSettlementScope` and `settledWorktreeCleanup` (upstream,
-2026-10-15) — so
+2026-10-15) and `threadStop` (upstream, 2026-10-20: `thread.stop` stops a
+thread without resolving its run, #22052) — so
 each of those
 surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
@@ -1946,6 +1947,18 @@ true` when its body is a provider-native workflow script, which the timeline
   archiving cancels a preparing run (#20073); a parent Stop clears orphaned
   delegated follow-ups (#20310); and workflow members stream their thinking and
   tool calls into their own threads (#20786).
+  The 2026-10-20 merge adds: an async question can carry `blocking: false` and
+  leave its thread Working (#15430); a terminal resubscribe sends `resume: true`
+  so the server does not reopen a closed shell (#18444); `git` diff and status
+  results carry `rootPath`, the worktree root their paths are relative to;
+  pull request links carry `repositoryWebUrl` (#21575); providers report
+  `optionDescriptors` and `installedVersion` (#19519, #19567); slow terminal
+  clients no longer queue unbounded output (#18429); file saves no longer
+  follow a symlink out of the workspace (#18819); ACP native foreground work
+  settles independently and child routing moves between runs (#21614–#21616);
+  an empty inactive thread auto-settles (#15783); and new worktrees fetch their
+  base branch's own tracked remote (#21032). Each field is optional, so the
+  client degrades to its older behaviour until the backend sends it.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

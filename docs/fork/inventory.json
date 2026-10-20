@@ -295,11 +295,11 @@
   ],
   "duplicateAddExceptions": [
     {
-      "id": "messages-timeline-content-local",
-      "path": "apps/web/src/components/chat/MessagesTimeline.tsx",
-      "line": "const content = (",
-      "reason": "Two locals in separate functions: the fork's MessageOriginChip (Message Origin Delta) and upstream's ContextCompactionTimelineRow each build a `content` element. Neither is a copy of the other.",
-      "retiredWhen": "Either function stops declaring a `content` local; the check then reports this entry stale."
+      "id": "project-script-settings-continue",
+      "path": "apps/web/src/components/settings/useProjectScriptSettings.ts",
+      "line": "continue;",
+      "reason": "Two `continue` statements in separate loops: the fork's Workspace branch in `writeTargets` skips the settings write, and upstream's keybinding loop skips an unchanged script. Neither is a copy of the other.",
+      "retiredWhen": "Either loop stops using `continue`; the check then reports this entry stale."
     }
   ],
   "pathPolicy": [
@@ -686,8 +686,7 @@
         "apps/web/src/routes/settings.tsx",
         "apps/web/src/components/settings/SettingsPanels.tsx",
         "apps/web/src/components/settings/SettingsSidebarNav.tsx",
-        "apps/web/src/components/settings/IntegrationsSettings.tsx",
-        "apps/web/src/components/settings/IntegrationsSettings.browser.test.tsx"
+        "apps/web/src/components/settings/IntegrationsSettings.tsx"
       ],
       "verdict": "converged",
       "note": "Take upstream, then re-state the FEATURES gates it wrote around. These are upstream's own files and it restructures them constantly, so the gates are written to survive that: each wraps a whole row or nav item additively and never re-indents the block beside it. SettingsSidebarNav also keeps the fork's extracted renderNavItem and its admin/feature filtering — carry upstream's collapsed-rail treatment into that helper rather than reverting it. When upstream replaces a gated control outright, the gate moves onto the replacement: the 2026-09-14 merge swapped enableLegacyTokenStreaming for the responseStreamingMode select and FEATURES.assistantStreaming moved with it. A gate silently dropped here un-hides a surface the backend cannot serve, and nothing else catches that."
@@ -787,7 +786,7 @@
       "id": "project-defaults-settings",
       "paths": ["apps/web/src/components/settings/ProjectDefaultsSettings.tsx"],
       "verdict": "converged",
-      "note": "Take upstream, then re-apply the additive delta described in the Workspace settings on the project page entry: the workspace_settings flag read as `workspaceOwnsProjectDefaults`, and `{workspaceOwnsProjectDefaults ? null : (…)}` around each row whose key names nothing a Moatless Workspace has. Wrap whole `<SettingsRow>` elements, never a re-indent of the rows beside them, and gate each row on its own rather than a run of adjacent ones so an upstream row inserted between two of them is not silently swept in. Upstream owns how these rows resolve their value and has restructured that — #12954 moved t3.json resolution into resolveProjectSettings and the rows onto the `effective` settings — so take that side whole and re-wrap. Apply the same test to every row upstream adds here: worktreeSubmodules joined the gated set on 2026-09-22 because a Workspace has no local git worktree to populate submodules into."
+      "note": "Take upstream, then re-apply the additive delta described in the Workspace settings on the project page entry: the workspace_settings flag read as `workspaceOwnsProjectDefaults`, and `{workspaceOwnsProjectDefaults ? null : (…)}` around each row whose key names nothing a Moatless Workspace has. Wrap whole `<SettingsRow>` elements, never a re-indent of the rows beside them, and gate each row on its own rather than a run of adjacent ones so an upstream row inserted between two of them is not silently swept in. Upstream owns how these rows resolve their value and has restructured that — #12954 moved t3.json resolution into resolveProjectSettings and the rows onto the `effective` settings — so take that side whole and re-wrap. Apply the same test to every row upstream adds here: worktreeSubmodules joined the gated set on 2026-09-22 because a Workspace has no local git worktree to populate submodules into. Upstream moved the agent-browser-access row to IntegrationsSettings.tsx's `AgentBrowserAccessSetting` (2026-10-20); its `workspaceOwnsProjectDefaults` gate moved with it and returns null there."
     },
     {
       "id": "project-actions-list",
@@ -977,7 +976,10 @@
     {
       "id": "file-viewer-go-to-definition",
       "name": "Go to definition in the file viewer",
-      "paths": ["apps/web/src/fork/goToDefinition.ts", "apps/web/src/fork/goToDefinition.test.ts"],
+      "paths": [
+        "apps/web/src/fork/goToDefinition.ts",
+        "apps/web/src/fork/goToDefinition.browser.test.ts"
+      ],
       "mustSurvive": "Cmd- or Ctrl-click on a rendered code line in the file viewer asks projects.goToDefinition and opens the first location through rightPanelStore.openFile at its line. The fork delta in FilePreviewPanel.tsx is one import, one useGoToDefinitionClick call, and one onClickCapture on the viewer container; everything else is in fork/goToDefinition.ts. The column sent is 1-based UTF-16, counted over the text nodes of the [data-line] element, which holds only that line's code."
     },
     {

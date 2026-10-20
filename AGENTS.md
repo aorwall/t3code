@@ -139,6 +139,8 @@ Client mutations use `createEnvironmentRpcCommand`. Add a protected method to `C
 
 `apps/web/src/components/ui` exports own their look. Pick a `variant` or a `size`; do not restyle one with `className`. If none fits and the look is a generic concept, add a variant to the component; a look that belongs to one feature stays in that feature's own component, not in `components/ui`. Layout classes — width, flex, margin, position — belong on the parent. `shadcn/no-restyle` fails `vp lint` on violations.
 
+Reusable Effect functions use `Effect.fn("Service.operation")` with a stable span name, not a function wrapping `Effect.gen`. Keep `Effect.gen` for inline programs and layer construction. Use `Effect.fnUntraced` only when spans would be too frequent — stream chunks, per-event projection, tight loops — or would duplicate an existing tracing boundary, and explain that choice nearby. Named `Effect.fn` creates a span; the unnamed form does not. Preserve existing span names and options, and pass combinators as additional function-builder arguments.
+
 People drive agents through this UI all day and notice a dropped frame, a lying spinner, and a stale label. Upstream's performance discipline is worth keeping: watch what you send over the socket, how long lists render, and what the GPU is asked to paint. No continuously repainting animations — they peg the GPU on high-refresh displays.
 
 Security matters but is not worth over-indexing on for dev-mode and maintainer-only features.
