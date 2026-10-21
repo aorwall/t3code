@@ -490,7 +490,7 @@
       "id": "thread-status-indicators",
       "paths": [
         "apps/web/src/components/ThreadStatusIndicators.tsx",
-        "apps/web/src/components/ThreadStatusIndicators.test.tsx"
+        "apps/web/src/components/ThreadStatusIndicators.test.ts"
       ],
       "verdict": "theirs",
       "note": "Upstream's component, whole. The fork's multi-link popover retired in the 2026-09-30 merge: upstream #13211 made a badge with `others > 0` a button that opens the `pull-requests` panel, which Moatless serves, so the `+N` has a surface of its own. A fork edit reappearing here is a delta with no entry."
