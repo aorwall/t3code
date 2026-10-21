@@ -12,12 +12,12 @@ import {
   FILL_PREVIEW_VIEWPORT,
   ThreadId,
 } from "@t3tools/contracts";
-import { act, type ComponentProps, type ReactNode } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { type ComponentProps } from "react";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { page, userEvent } from "vite-plus/test/browser";
 
 import "~/index.css";
+import { render } from "../../../test/render";
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(async (_tabId: string, _url: string): Promise<void> => undefined),
@@ -180,13 +180,6 @@ const TEST_THREAD_REF = {
 } as const;
 const TEST_RUNTIME_TAB_ID = previewRuntimeTabId(TEST_THREAD_REF, null, "tab-1");
 
-const roots: Root[] = [];
-let root: Root;
-
-async function render(node: ReactNode) {
-  await act(async () => root.render(node));
-}
-
 function view(onSendAnnotation?: ComponentProps<typeof PreviewView>["onSendAnnotation"]) {
   return (
     <PreviewView
@@ -205,52 +198,48 @@ async function submitAddress(text: string) {
   await userEvent.keyboard("{Enter}");
 }
 
+// The mocked modules and stores are shared by the whole file, so every test starts by
+// resetting them.
+function setup() {
+  vi.clearAllMocks();
+  mocks.readEnvironmentScope.mockReset().mockReturnValue(true);
+  mocks.showEmptyState = false;
+  mocks.pictureInPicture = false;
+  mocks.loading = false;
+  mocks.serverEpoch = null;
+  mocks.recordingTabIds = new Set();
+  mocks.recordingRuntimeTabId = null;
+  mocks.frameAnnotationReady = false;
+  mocks.frameNavigation = { ready: false, canGoBack: false, canGoForward: false };
+  useComposerDraftStore.setState({
+    addPreviewAnnotation: mocks.addPreviewAnnotation,
+    addImage: mocks.addImage,
+  });
+  usePreviewMiniPlayerStore.setState({ byThreadKey: {} });
+  useBrowserPointerStore.setState({ byTabId: {} });
+}
+
 describe("PreviewView under the frame capability", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mocks.readEnvironmentScope.mockReset().mockReturnValue(true);
-    mocks.showEmptyState = false;
-    mocks.pictureInPicture = false;
-    mocks.loading = false;
-    mocks.serverEpoch = null;
-    mocks.recordingTabIds = new Set();
-    mocks.recordingRuntimeTabId = null;
-    mocks.frameAnnotationReady = false;
-    mocks.frameNavigation = { ready: false, canGoBack: false, canGoForward: false };
-    useComposerDraftStore.setState({
-      addPreviewAnnotation: mocks.addPreviewAnnotation,
-      addImage: mocks.addImage,
-    });
-    usePreviewMiniPlayerStore.setState({ byThreadKey: {} });
-    useBrowserPointerStore.setState({ byTabId: {} });
-    const container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    roots.push(root);
-  });
-
-  afterEach(async () => {
-    for (const each of roots.splice(0)) await act(async () => each.unmount());
-    document.body.replaceChildren();
-  });
-
   it("offers no back or forward, because a frame keeps no history to walk", async () => {
-    await render(view());
+    setup();
+    await using _screen = await render(view());
 
     expect(page.getByRole("button", { name: "Back" }).query()).toBeNull();
     expect(page.getByRole("button", { name: "Forward" }).query()).toBeNull();
   });
 
   it("still offers refresh, which replaces the frame element", async () => {
-    await render(view());
+    setup();
+    await using _screen = await render(view());
 
     await userEvent.click(page.getByRole("button", { name: "Refresh" }));
     expect(mocks.reloadHostedFrame).toHaveBeenCalledWith(TEST_RUNTIME_TAB_ID);
   });
 
   it("wires inspector-backed frame history when the inspector is ready", async () => {
+    setup();
     mocks.frameNavigation = { ready: true, canGoBack: true, canGoForward: true };
-    await render(view());
+    await using _screen = await render(view());
 
     await userEvent.click(page.getByRole("button", { name: "Back" }));
     await userEvent.click(page.getByRole("button", { name: "Forward" }));
@@ -268,7 +257,8 @@ describe("PreviewView under the frame capability", () => {
   });
 
   it("navigates by writing to the server rather than through the desktop bridge", async () => {
-    await render(view());
+    setup();
+    await using _screen = await render(view());
     await submitAddress("localhost:5173/app");
 
     await vi.waitFor(() =>
@@ -285,14 +275,16 @@ describe("PreviewView under the frame capability", () => {
   });
 
   it("shows the annotation affordance disabled until the framed app announces the inspector", async () => {
-    await render(view());
+    setup();
+    await using _screen = await render(view());
 
     await expect.element(page.getByRole("button", { name: "Annotate preview" })).toBeDisabled();
   });
 
   it("starts browser-frame annotation picking once the inspector is ready", async () => {
+    setup();
     mocks.frameAnnotationReady = true;
-    await render(view());
+    await using _screen = await render(view());
 
     await userEvent.click(page.getByRole("button", { name: "Annotate preview" }));
 
@@ -306,7 +298,8 @@ describe("PreviewView under the frame capability", () => {
   });
 
   it("supports the in-app floating preview for frames", async () => {
-    await render(view());
+    setup();
+    await using _screen = await render(view());
     await userEvent.click(page.getByRole("button", { name: "Float preview over chat" }));
 
     expect(usePreviewMiniPlayerStore.getState().byThreadKey).toMatchObject({
@@ -315,7 +308,8 @@ describe("PreviewView under the frame capability", () => {
   });
 
   it("passes frame-safe actions to the preview menu", async () => {
-    await render(view());
+    setup();
+    await using _screen = await render(view());
     await userEvent.click(page.getByRole("button", { name: "Preview menu" }));
 
     // A frame has no native window to pop out; only the frame-safe items remain.

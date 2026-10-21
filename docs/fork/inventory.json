@@ -300,6 +300,13 @@
       "line": "continue;",
       "reason": "Two `continue` statements in separate loops: the fork's Workspace branch in `writeTargets` skips the settings write, and upstream's keybinding loop skips an unchanged script. Neither is a copy of the other.",
       "retiredWhen": "Either loop stops using `continue`; the check then reports this entry stale."
+    },
+    {
+      "id": "preview-session-use-atom-value",
+      "path": "apps/web/src/components/preview/usePreviewSession.ts",
+      "line": "useAtomValue(",
+      "reason": "Two hooks each open a multi-line `useAtomValue(` call: the fork's `useOptionalPreviewSession` and upstream's `useDesktopHostedPreviewSessions`. Neither is a copy of the other.",
+      "retiredWhen": "Either hook stops calling `useAtomValue` across lines; the check then reports this entry stale."
     }
   ],
   "pathPolicy": [
@@ -451,9 +458,12 @@
     },
     {
       "id": "fork-preview-files",
-      "paths": ["apps/web/src/components/preview/PreviewFrameMoreMenu.tsx"],
+      "paths": [
+        "apps/web/src/components/preview/PreviewFrameMoreMenu.tsx",
+        "apps/web/src/components/preview/addBrowserSurface.test.ts"
+      ],
       "verdict": "ours",
-      "note": "A deliberate sibling of upstream's PreviewMoreMenu.tsx, not a fork of it — keep upstream's file at zero delta.",
+      "note": "PreviewFrameMoreMenu.tsx is a deliberate sibling of upstream's PreviewMoreMenu.tsx, not a fork of it — keep upstream's file at zero delta. addBrowserSurface.test.ts was upstream's until #22557 pruned it; the fork keeps it for its test that a chosen server's `url` opens rather than an empty tab.",
       "verified": "2026-08-06"
     },
     {
@@ -706,6 +716,12 @@
       "paths": ["apps/web/src/components/sidebar/SidebarChrome.tsx"],
       "verdict": "decide",
       "note": "Upstream owns the file; the fork owns one span inside it. SidebarBrand's body is replaced wholesale by the single APP_BASE_NAME span (inventory moatless-branding, which is also the guard), and the T3Wordmark import goes with it. Take upstream everywhere else in the file, and read upstream's SidebarBrand hunk each merge for anything outside the replaced span. When upstream's only change here is brand-row styling — wordmark cap alignment, the wordmark/\"Code\" split — there is nothing to take and the file correctly lands unchanged; that is why this is `decide` and not `converged`, which would fail resolution-check every time upstream restyles the brand. Not a convergence item either: upstream's T3 wordmark and the fork's Moatless name never meet."
+    },
+    {
+      "id": "branding-test",
+      "paths": ["apps/web/src/branding.test.ts"],
+      "verdict": "ours",
+      "note": "Upstream pruned this test in #22557; the fork keeps it because it asserts `APP_DISPLAY_NAME` reads \"Moatless\" (inventory moatless-branding)."
     },
     {
       "id": "branding-shell",
@@ -991,11 +1007,13 @@
         "apps/web/src/fork/unlistedThread.test.ts",
         "apps/web/src/state/threadShellLookup.ts",
         "apps/web/src/threadRoutes.ts",
+        "apps/web/src/threadRoutes.test.ts",
         "apps/web/src/components/ThreadRouteView.tsx",
+        "apps/web/src/components/ChatView.tsx",
         "apps/web/src/state/threads.ts",
         "apps/web/src/components/settings/SettingsPanels.tsx"
       ],
-      "mustSurvive": "A Moatless shell listing is the open work a viewer follows, not every thread there is, so closed threads, threads followed by someone else, and subtasks all open by URL while absent from it. Three deltas hold that together and each is small in an upstream file. threadRoutes.ts takes an optional serverThreadAwaitingFirstAnswer that defaults to upstream's rule, so 'no shell row' stops meaning 'gone' before the environment has answered — without it the route redirects to / on the first frame of every unlisted thread. The caller that supplies it is components/ThreadRouteView.tsx, upstream's own file since #12015, alongside `useAdoptedThread`; both read the server target's ref and pass null for a draft. state/threads.ts passes adoptedEnvironmentSnapshotAtom where upstream passes environmentSnapshotAtom, which is the whole graft hook. SettingsPanels.tsx makes an archived row's title a link, because unarchiving was the only way back into a thread you may already read. The store in fork/adoptedThreadShells.ts must keep deciding what is missing against the listing's snapshot rather than the grafted one."
+      "mustSurvive": "A Moatless shell listing is the open work a viewer follows, not every thread there is, so closed threads, threads followed by someone else, and subtasks all open by URL while absent from it. Three deltas hold that together and each is small in an upstream file. threadRoutes.ts takes upstream's `unlistedThreadDetail` rule (#19724: an unlisted thread waits on its own detail) with two fork changes: an optional serverThreadAwaitingFirstAnswer, `false` with no detail loaded meaning the subscription failed, which is how Moatless refuses a thread the viewer cannot open — without it that route loads forever; and no `archivedAt` check on the detail, because a closed thread opens by URL and redirecting it races the graft. ChatView.tsx's `onOpenRelatedThread` likewise toasts \"no longer available\" only for a shell row with `deletedAt`, not for a missing row, so a subtask outside the listing still opens. The caller that supplies it is components/ThreadRouteView.tsx, upstream's own file since #12015, alongside `useAdoptedThread`; both read the server target's ref and pass null for a draft. state/threads.ts passes adoptedEnvironmentSnapshotAtom where upstream passes environmentSnapshotAtom, which is the whole graft hook. SettingsPanels.tsx makes an archived row's title a link, because unarchiving was the only way back into a thread you may already read. The store in fork/adoptedThreadShells.ts must keep deciding what is missing against the listing's snapshot rather than the grafted one."
     },
     {
       "id": "sidebar-thread-filter",

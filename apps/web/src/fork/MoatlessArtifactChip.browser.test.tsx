@@ -6,9 +6,10 @@
  */
 import type { EnvironmentId, ScopedThreadRef, ThreadId } from "@t3tools/contracts";
 import { AsyncResult } from "effect/reactivity";
-import { act, type ComponentProps, type ReactNode } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import type { ComponentProps, ReactNode } from "react";
+import { describe, expect, it, vi } from "vite-plus/test";
+
+import { act, render } from "../../test/render";
 
 // Tooltip hover/positioning is not under test here; render the trigger plain.
 vi.mock(import("~/components/ui/tooltip"), async () => {
@@ -38,52 +39,45 @@ const THREAD_REF = {
   threadId: "c8854591-8bbc-4c6b-b1e7-b531641ae4cd" as ThreadId,
 } as ScopedThreadRef;
 
-let root: Root;
-let container: HTMLDivElement;
+function chipElement(
+  openInPreview: ComponentProps<typeof MoatlessArtifactChip>["openInPreview"],
+  props: Partial<ComponentProps<typeof MoatlessArtifactChip>> = {},
+) {
+  return (
+    <MoatlessArtifactChip
+      href={HREF}
+      artifact={{ artifactId: "77e15557-209a-4e15-8e03-d524e230a88b", version: 1 }}
+      text={HREF}
+      threadRef={THREAD_REF}
+      openInPreview={openInPreview}
+      {...props}
+    />
+  );
+}
 
-beforeEach(() => {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-});
-
-afterEach(async () => {
-  await act(async () => root.unmount());
-  container.remove();
-  vi.unstubAllGlobals();
-});
-
-async function render(props: Partial<ComponentProps<typeof MoatlessArtifactChip>> = {}) {
-  const openInPreview = vi.fn(async () => AsyncResult.success(undefined));
-  await act(async () => {
-    root.render(
-      <MoatlessArtifactChip
-        href={HREF}
-        artifact={{ artifactId: "77e15557-209a-4e15-8e03-d524e230a88b", version: 1 }}
-        text={HREF}
-        threadRef={THREAD_REF}
-        openInPreview={openInPreview}
-        {...props}
-      />,
-    );
+async function findAnchor(container: HTMLElement) {
+  return vi.waitFor(() => {
+    const anchor = container.querySelector("a");
+    if (!anchor) throw new Error("No anchor rendered");
+    return anchor;
   });
-  const anchor = container.querySelector("a")!;
-  return { anchor, openInPreview };
 }
 
 // Dispatching the click directly (rather than clicking through Playwright's
 // pointer input) keeps this a synthetic, non-activating event, so an anchor
 // whose handler does not call preventDefault never actually navigates away.
-function clickAnchor(anchor: HTMLAnchorElement, init: MouseEventInit = {}) {
+async function clickAnchor(anchor: HTMLAnchorElement, init: MouseEventInit = {}) {
   const event = new MouseEvent("click", { bubbles: true, cancelable: true, button: 0, ...init });
-  act(() => anchor.dispatchEvent(event));
+  await act(() => anchor.dispatchEvent(event));
   return event;
 }
 
 describe("MoatlessArtifactChip", () => {
   it("shows the published title and version, and keeps the URL as the link", async () => {
-    const { anchor } = await render();
+    await using screen = await render(
+      chipElement(vi.fn(async () => AsyncResult.success(undefined))),
+    );
+    const anchor = await findAnchor(screen.container);
 
     expect(anchor.getAttribute("href")).toBe(HREF);
     await vi.waitFor(() => {
@@ -94,29 +88,35 @@ describe("MoatlessArtifactChip", () => {
   });
 
   it("opens a plain click in the right panel", async () => {
-    const { anchor, openInPreview } = await render();
+    const openInPreview = vi.fn(async () => AsyncResult.success(undefined));
+    await using screen = await render(chipElement(openInPreview));
+    const anchor = await findAnchor(screen.container);
 
-    const event = clickAnchor(anchor);
+    const event = await clickAnchor(anchor);
 
     expect(event.defaultPrevented).toBe(true);
     expect(openInPreview).toHaveBeenCalledWith(HREF);
   });
 
   it("leaves a modifier click to the browser", async () => {
-    const { anchor, openInPreview } = await render();
+    const openInPreview = vi.fn(async () => AsyncResult.success(undefined));
+    await using screen = await render(chipElement(openInPreview));
+    const anchor = await findAnchor(screen.container);
 
-    const event = clickAnchor(anchor, { metaKey: true });
+    const event = await clickAnchor(anchor, { metaKey: true });
 
     expect(event.defaultPrevented).toBe(false);
     expect(openInPreview).not.toHaveBeenCalled();
   });
 
   it("leaves the click to the browser without a thread to open beside", async () => {
-    const { anchor, openInPreview } = await render({ threadRef: undefined });
+    const openInPreview = vi.fn(async () => AsyncResult.success(undefined));
+    await using screen = await render(chipElement(openInPreview, { threadRef: undefined }));
+    const anchor = await findAnchor(screen.container);
 
     expect(anchor.getAttribute("aria-label")).toBe("Open artifact Artifact");
 
-    const event = clickAnchor(anchor);
+    const event = await clickAnchor(anchor);
 
     expect(event.defaultPrevented).toBe(false);
     expect(openInPreview).not.toHaveBeenCalled();

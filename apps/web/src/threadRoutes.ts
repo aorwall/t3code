@@ -1,6 +1,8 @@
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import type { EnvironmentShellStatus } from "@t3tools/client-runtime/state/shell";
+import type { EnvironmentThreadState } from "@t3tools/client-runtime/state/threads";
 import type { EnvironmentId, ScopedThreadRef, ThreadId } from "@t3tools/contracts";
+import * as Option from "effect/Option";
 import type { DraftId } from "./composerDraftStore";
 
 export type ThreadRouteTarget =
@@ -31,12 +33,12 @@ export function resolveThreadRouteRenderState(input: {
   bootstrapComplete: boolean;
   serverThreadExists: boolean;
   serverThreadDeleted: boolean;
+  unlistedThreadDetail: EnvironmentThreadState;
   draftThreadExists: boolean;
   // Fork: whether the environment has yet said anything about this thread.
-  // Against a listing that is every thread there is, absence from it settles
-  // the question; against a Moatless listing — the open work you follow — it
-  // does not, and the thread subscription is what answers. Optional so a caller
-  // that has no such signal keeps the old rule exactly.
+  // `false` with no detail loaded means the subscription failed, which Moatless
+  // answers for a thread the viewer cannot open. Optional so a caller that has
+  // no such signal keeps upstream's rule exactly.
   serverThreadAwaitingFirstAnswer?: boolean;
 }): ThreadRouteRenderState {
   if (input.draftThreadExists || (input.serverThreadExists && !input.serverThreadDeleted)) {
@@ -45,10 +47,18 @@ export function resolveThreadRouteRenderState(input: {
   if (!input.bootstrapComplete) {
     return "loading";
   }
-  // Fork: a thread nothing has answered about yet is not a thread that is gone.
-  return !input.serverThreadDeleted && input.serverThreadAwaitingFirstAnswer === true
-    ? "loading"
-    : "missing";
+  if (input.serverThreadExists || input.unlistedThreadDetail.status === "deleted") {
+    return "missing";
+  }
+  // Shell membership can lag a new thread; its detail decides.
+  const projection = Option.getOrNull(input.unlistedThreadDetail.data);
+  if (projection === null) {
+    // Fork: a subscription that failed with nothing loaded is the server's no.
+    return input.serverThreadAwaitingFirstAnswer === false ? "missing" : "loading";
+  }
+  // Fork: no `archivedAt` check. A closed thread is absent from a Moatless
+  // listing and still opens by URL; redirecting it would race the graft.
+  return projection.thread.deletedAt !== null ? "missing" : "ready";
 }
 
 export function buildThreadRouteParams(ref: ScopedThreadRef): {

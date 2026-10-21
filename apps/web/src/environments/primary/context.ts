@@ -1,8 +1,3 @@
-import {
-  attachEnvironmentDescriptor,
-  createKnownEnvironment,
-  type KnownEnvironment,
-} from "@t3tools/client-runtime/environment";
 import type { ExecutionEnvironmentDescriptor } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
 
@@ -12,30 +7,9 @@ import { PrimaryEnvironmentHttpClient } from "./httpClient";
 import { runPrimaryHttp } from "../../lib/runtime";
 // Fork: see applyPrimaryEnvironmentDescriptor.
 import { applyPrimaryEnvironmentDescriptor } from "../../fork/features";
-import { readPrimaryEnvironmentTarget } from "./target";
 
 let primaryEnvironmentDescriptor: ExecutionEnvironmentDescriptor | null = null;
 let primaryEnvironmentDescriptorPromise: Promise<ExecutionEnvironmentDescriptor> | null = null;
-
-function createPrimaryKnownEnvironment(input: {
-  readonly source: KnownEnvironment["source"];
-  readonly target: KnownEnvironment["target"];
-}): KnownEnvironment | null {
-  const descriptor = readPrimaryEnvironmentDescriptor();
-  if (!descriptor) {
-    return null;
-  }
-
-  return attachEnvironmentDescriptor(
-    createKnownEnvironment({
-      id: descriptor.environmentId,
-      label: descriptor.label,
-      source: input.source,
-      target: input.target,
-    }),
-    descriptor,
-  );
-}
 
 async function fetchPrimaryEnvironmentDescriptor(): Promise<ExecutionEnvironmentDescriptor> {
   return retryTransientBootstrap(async () => {
@@ -60,24 +34,12 @@ function readPrimaryEnvironmentDescriptor(): ExecutionEnvironmentDescriptor | nu
   return primaryEnvironmentDescriptor;
 }
 
-export function writePrimaryEnvironmentDescriptor(
+function writePrimaryEnvironmentDescriptor(
   descriptor: ExecutionEnvironmentDescriptor | null,
 ): void {
   primaryEnvironmentDescriptor = descriptor;
   // Fork: the descriptor decides which surfaces this client shows.
   applyPrimaryEnvironmentDescriptor(descriptor);
-}
-
-export function getPrimaryKnownEnvironment(): KnownEnvironment | null {
-  const primaryTarget = readPrimaryEnvironmentTarget();
-  if (!primaryTarget) {
-    return null;
-  }
-
-  return createPrimaryKnownEnvironment({
-    source: primaryTarget.source,
-    target: primaryTarget.target,
-  });
 }
 
 export function resolveInitialPrimaryEnvironmentDescriptor(): Promise<ExecutionEnvironmentDescriptor> {

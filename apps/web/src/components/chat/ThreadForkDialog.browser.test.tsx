@@ -4,38 +4,19 @@
  * vitest browser mode, so this replaces the deleted ThreadForkDialog.test.tsx
  * with the same coverage driven through real DOM.
  */
-import { act, type ComponentProps } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import type { ComponentProps } from "react";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { userEvent } from "vite-plus/test/browser";
 
+import { act, render } from "../../../test/render";
 import { ThreadForkDialog, type ThreadForkHarnessOption } from "./ThreadForkDialog";
 
-let root: Root;
-let container: HTMLDivElement;
-
-beforeEach(() => {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-});
-
-afterEach(async () => {
-  await act(async () => root.unmount());
-  container.remove();
-  vi.unstubAllGlobals();
-});
-
-async function renderDialog(props: Partial<ComponentProps<typeof ThreadForkDialog>> = {}) {
-  const onOpenChange = vi.fn();
-  const onSubmit = vi.fn();
-  await act(async () =>
-    root.render(
-      <ThreadForkDialog open onOpenChange={onOpenChange} onSubmit={onSubmit} {...props} />,
-    ),
-  );
-  return { onOpenChange, onSubmit };
+function dialogElement(
+  onOpenChange: () => void,
+  onSubmit: () => void,
+  props: Partial<ComponentProps<typeof ThreadForkDialog>> = {},
+) {
+  return <ThreadForkDialog open onOpenChange={onOpenChange} onSubmit={onSubmit} {...props} />;
 }
 
 // The dialog's own inert backdrop marker sits over its unstyled popup without
@@ -74,7 +55,8 @@ async function pickHarness(label: string) {
 
 describe("ThreadForkDialog", () => {
   it("submits sameSandbox off with no message when nothing was typed", async () => {
-    const { onSubmit } = await renderDialog();
+    const onSubmit = vi.fn();
+    await using _screen = await render(dialogElement(vi.fn(), onSubmit));
 
     await clickButton("Fork");
 
@@ -82,7 +64,8 @@ describe("ThreadForkDialog", () => {
   });
 
   it("carries sameSandbox on once the toggle is switched", async () => {
-    const { onSubmit } = await renderDialog();
+    const onSubmit = vi.fn();
+    await using _screen = await render(dialogElement(vi.fn(), onSubmit));
 
     await toggleSameSandbox();
     await clickButton("Fork");
@@ -91,9 +74,14 @@ describe("ThreadForkDialog", () => {
   });
 
   it("trims a typed message and omits it entirely when left blank", async () => {
-    const { onSubmit } = await renderDialog();
+    const onSubmit = vi.fn();
+    await using _screen = await render(dialogElement(vi.fn(), onSubmit));
 
-    const textarea = document.querySelector<HTMLTextAreaElement>("#thread-fork-message")!;
+    const textarea = await vi.waitFor(() => {
+      const match = document.querySelector<HTMLTextAreaElement>("#thread-fork-message");
+      if (!match) throw new Error("No message textarea");
+      return match;
+    });
     await userEvent.fill(textarea, "  keep going  ");
     await clickButton("Fork");
 
@@ -101,14 +89,19 @@ describe("ThreadForkDialog", () => {
   });
 
   it("sends the picked harness and hides the picker when there is none to pick", async () => {
-    await renderDialog();
+    const onOpenChange = vi.fn();
+    const onSubmit = vi.fn();
+    await using screen = await render(dialogElement(onOpenChange, onSubmit));
+    await vi.waitFor(() => {
+      if (!document.querySelector("#thread-fork-message")) throw new Error("Dialog not open");
+    });
     expect(document.querySelector('[role="combobox"]')).toBeNull();
 
     const modelSelection = { instanceId: "codex", model: "gpt-5" } as never;
     const harnessOptions: ThreadForkHarnessOption[] = [
       { key: "codex", label: "Codex", modelSelection },
     ];
-    const { onSubmit } = await renderDialog({ harnessOptions });
+    await screen.rerender(dialogElement(onOpenChange, onSubmit, { harnessOptions }));
 
     await pickHarness("Codex");
     await clickButton("Fork");
@@ -117,7 +110,9 @@ describe("ThreadForkDialog", () => {
   });
 
   it("cancels without submitting", async () => {
-    const { onOpenChange, onSubmit } = await renderDialog();
+    const onOpenChange = vi.fn();
+    const onSubmit = vi.fn();
+    await using _screen = await render(dialogElement(onOpenChange, onSubmit));
 
     await clickButton("Cancel");
 

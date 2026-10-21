@@ -117,7 +117,32 @@ A plain `cp` is only safe when no server has the source open, and must bring the
 - **Do not run repo-wide checks.** No `vp check`, no `vp run -r test`, no `vp run -r typecheck` unless asked. But know what does and does not cover you: every workflow inherited from upstream is disabled in GitHub, so CI does not run the full suite. What runs on a push to `main` is `Typecheck` (fork-only, `.github/workflows/typecheck.yml`) and `Build & push moatless-t3` — types for `apps/web` and the workspace packages it imports, the `@t3tools/contracts` tests, and a production build. **Nothing runs any other test suite anywhere but your machine**, so a behavior change is verified by the targeted `vp test run` you did or it is not verified at all.
 - Regenerate `apps/web/src/routeTree.gen.ts` with `node .agents/skills/fork-upstream-merge/scripts/regen-route-tree.mjs` after adding, deleting, or renaming anything under `apps/web/src/routes/`. `@tanstack/router-plugin` only exposes the generator as a Vite plugin, so without that script the file is reachable only by starting the dev server; a stale one fails typecheck with an opaque `not assignable to keyof FileRoutesByPath`.
 - Backend behavior changes ship with focused tests for that behavior.
-- The server is event-sourced and its async flows emit typed receipts. Wait on receipts and worker drains, never on sleeps or polling. A test that needs a timeout to pass is wrong.
+- The server is event-sourced and its async flows emit typed receipts. Wait on receipts and worker drains, never on sleeps or polling. A test that needs a timeout to pass is wrong. Concretely:
+  - `it.effect` runs on a `TestClock`; `Effect.sleep` only advances through `TestClock.adjust`. `it.live` is wall-clock and only for subprocess or network fixtures.
+  - No `yieldNow` or `sleep` polling loops. Await the `Deferred`, take from the `Queue`, or drain the worker.
+  - No per-test timeout argument or `retry`. The project timeout is the ceiling, and flaky tests are fixed, not retried.
+  - No `performance.now()` or `Date.now()` deltas. Assert on events and counts, not elapsed time.
+  - Browser tests assert through `expect.element` or `vi.waitFor`, never `requestAnimationFrame` or `transitionend`.
+  - `vi.mock` factories must not spread a real module that pulls in Shiki or the diff workers.
+  - `it.skip` and friends need a tracking issue on the line above: `// quarantine: #1234 <why>`.
+  - Lint enforces this: `t3code/no-test-timeout-or-unreasoned-skip`, `t3code/no-frame-waits-in-browser-tests`, `t3code/no-wall-clock-in-tests`, `t3code/no-real-time-wait-in-tests`, `t3code/no-polling-loop-in-tests`.
+- Web browser tests are `*.browser.test.tsx` or `*.browser.test.ts` and render with `await using screen = await render(...)` from `apps/web/test/render.tsx`. `t3code/require-disposable-render` errors on the old patterns.
+  - Acquire what the test drives after mounting (fake timers it advances, spies it sets up after mounting) after the render, so it disposes before the unmount. Anything the first render reads comes before it.
+  - A helper that renders and then waits or clicks puts the screen in an `AsyncDisposableStack` and `move()`s it out only on success, so a failed wait still unmounts.
+  - `rerender` needs a fresh element on every call.
+  - No lifecycle hooks and no module-level mutable state. Shared mock state that `vi.mock` factories read is reset by a `setup()` call at the top of the test.
+  - `router` is on by default. Pass `router: false` only with a one-line comment saying why.
+
+  ```tsx
+  it("saves on Enter", async () => {
+    const onSave = vi.fn();
+    using _now = vi.spyOn(Date, "now").mockReturnValue(0);
+    await using screen = await render(<TitleEditor onSave={onSave} />, { router: "/threads/1" });
+    await userEvent.type(screen.getByRole("textbox"), "Title{Enter}");
+    expect(onSave).toHaveBeenCalledWith("Title");
+  });
+  ```
+
 - Never drive a browser, simulator, or computer use without the developer asking for it. When they do ask for an integrated pass, use the `test-moatless-web` (web) or `test-t3-mobile` (mobile) skill, once, from the primary agent after integrating; `test-t3-app` covers only driving the Browser panel, since its pairing steps target the bundled server. Subagents do not launch their own dev servers. For an authorized mobile pass, a missing or outdated native client is a build step rather than a blocker: `node scripts/mobile-native-client.ts ensure <ios|android> <device-id>` on the simulator host before Metro.
 
 ## Pull requests
