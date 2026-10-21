@@ -68,6 +68,7 @@ export * from "./threadShellLookup.ts";
 // Fork: the listing rows a filter names, for threads no listing carries.
 export * from "./threadBrowse.ts";
 export * from "./scripts.ts";
+export * from "./previewCapture.ts";
 export * from "./resourceTelemetry.ts";
 export * from "./usage.ts";
 export * from "./scheduledTask.ts";

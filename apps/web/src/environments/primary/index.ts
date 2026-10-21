@@ -1,15 +1,12 @@
 export {
-  getPrimaryKnownEnvironment,
   resetPrimaryEnvironmentDescriptorForTests,
   resolveInitialPrimaryEnvironmentDescriptor,
-  writePrimaryEnvironmentDescriptor,
 } from "./context";
 
 export {
   createServerPairingCredential,
   consumeMoatlessAuthReturnTo,
   fetchMoatlessAuthMode,
-  isPrimaryEnvironmentPairingCredentialRejectedError,
   peekPairingTokenFromUrl,
   PrimaryEnvironmentPairingCredentialRejectedError,
   PrimaryEnvironmentRequestError,
@@ -33,9 +30,6 @@ export { usePrimarySessionState } from "./sessionState";
 
 export {
   DesktopEnvironmentBootstrapIncompleteError,
-  isDesktopEnvironmentBootstrapIncompleteError,
-  isPrimaryEnvironmentProtocolUnsupportedError,
-  isPrimaryEnvironmentUrlInvalidError,
   PrimaryEnvironmentProtocolUnsupportedError,
   PrimaryEnvironmentUrlInvalidError,
   readPrimaryEnvironmentTarget,

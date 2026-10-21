@@ -11,7 +11,6 @@ import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import { isProviderNativeSubagentThread, type ThreadId } from "@t3tools/contracts";
 import { BotIcon, GitForkIcon } from "lucide-react";
 
-import { getSidebarForkParentThreadId } from "~/components/Sidebar.logic";
 import { useThreadShell } from "~/state/entities";
 import type { SidebarThreadSummary } from "~/types";
 
@@ -20,6 +19,17 @@ export type ThreadParentKind = "fork" | "subtask";
 export interface ThreadParent {
   readonly kind: ThreadParentKind;
   readonly threadId: ThreadId;
+}
+
+function getSidebarForkParentThreadId(
+  thread: Pick<SidebarThreadSummary, "forkedFrom" | "lineage">,
+): ThreadId | null {
+  if (thread.lineage.relationshipToParent !== "fork") {
+    return null;
+  }
+  return thread.forkedFrom?.type === "run"
+    ? thread.forkedFrom.threadId
+    : thread.lineage.parentThreadId;
 }
 
 /** The thread a row was forked from or delegated by, or `null` for a root. */

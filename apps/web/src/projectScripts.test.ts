@@ -1,13 +1,6 @@
-import { MAX_SCRIPT_ID_LENGTH } from "@t3tools/contracts";
 import { shortcutLabelForCommand } from "./keybindings";
 import { describe, expect, it } from "vite-plus/test";
-import {
-  projectScriptCwd,
-  projectScriptRuntimeEnv,
-  projectScriptMenuLabel,
-  settleProjectScript,
-  setupProjectScript,
-} from "@t3tools/shared/projectScripts";
+import { settleProjectScript, setupProjectScript } from "@t3tools/shared/projectScripts";
 
 import {
   buildProjectScript,
@@ -15,7 +8,6 @@ import {
   nextProjectScriptId,
   portFromPreviewUrl,
   primaryProjectScript,
-  projectScriptIdFromCommand,
   releaseClaimedRoles,
 } from "./projectScripts";
 
@@ -73,32 +65,6 @@ describe("projectScripts helpers", () => {
     expect(portFromPreviewUrl("not a url")).toBeNull();
   });
 
-  it("only records async: false for setup scripts that should block the agent", () => {
-    const input = {
-      name: "Setup",
-      command: "pnpm i",
-      icon: "configure",
-      port: null,
-      runOnSettle: false,
-    } as const;
-    expect(
-      buildProjectScript("setup", { ...input, runOnWorktreeCreate: true, waitForSetup: true }),
-    ).toMatchObject({ runOnWorktreeCreate: true, async: false });
-    expect(
-      buildProjectScript("setup", { ...input, runOnWorktreeCreate: true, waitForSetup: false }),
-    ).not.toHaveProperty("async");
-    expect(
-      buildProjectScript("setup", { ...input, runOnWorktreeCreate: false, waitForSetup: true }),
-    ).not.toHaveProperty("async");
-  });
-
-  it("builds and parses script run commands", () => {
-    const command = commandForProjectScript("lint");
-    expect(command).toBe("script.lint.run");
-    expect(projectScriptIdFromCommand(command ?? "")).toBe("lint");
-    expect(projectScriptIdFromCommand("terminal.toggle")).toBeNull();
-  });
-
   it.each(["install-javascript-dependencies", "A", "a.b", "a b", "-a", "", "a".repeat(25)])(
     "omits the shortcut for legacy script ID %j without crashing script menus",
     (id) => {
@@ -111,11 +77,6 @@ describe("projectScripts helpers", () => {
       ]);
     },
   );
-
-  it("preserves the exact ID at the shortcut length limit", () => {
-    const id = "a".repeat(MAX_SCRIPT_ID_LENGTH);
-    expect(projectScriptIdFromCommand(commandForProjectScript(id) ?? "")).toBe(id);
-  });
 
   it("slugifies and dedupes project script ids", () => {
     expect(nextProjectScriptId("Run Tests", [])).toBe("run-tests");
@@ -155,21 +116,6 @@ describe("projectScripts helpers", () => {
     expect(primaryProjectScript(scripts.filter((script) => script.id === "clean"))).toBeNull();
   });
 
-  it("labels every lifecycle role a script runs in", () => {
-    const script = {
-      id: "both",
-      name: "Both",
-      command: "true",
-      icon: "play" as const,
-      runOnWorktreeCreate: true,
-    };
-    expect(projectScriptMenuLabel(script)).toBe("Both (setup)");
-    expect(projectScriptMenuLabel({ ...script, runOnSettle: true })).toBe(
-      "Both (setup, on settle)",
-    );
-    expect(projectScriptMenuLabel({ ...script, runOnWorktreeCreate: false })).toBe("Both");
-  });
-
   it("moves the setup and settle roles to the script that claims them", () => {
     const input = {
       name: "Next",
@@ -196,46 +142,5 @@ describe("projectScripts helpers", () => {
     expect(
       releaseClaimedRoles(holder, { ...input, runOnWorktreeCreate: false, runOnSettle: false }),
     ).toBe(holder);
-  });
-
-  it("builds default runtime env for scripts", () => {
-    const env = projectScriptRuntimeEnv({
-      project: { cwd: "/repo" },
-      worktreePath: "/repo/worktree-a",
-    });
-
-    expect(env).toMatchObject({
-      T3CODE_PROJECT_ROOT: "/repo",
-      T3CODE_WORKTREE_PATH: "/repo/worktree-a",
-    });
-  });
-
-  it("allows overriding runtime env values", () => {
-    const env = projectScriptRuntimeEnv({
-      project: { cwd: "/repo" },
-      extraEnv: {
-        T3CODE_PROJECT_ROOT: "/custom-root",
-        CUSTOM_FLAG: "1",
-      },
-    });
-
-    expect(env.T3CODE_PROJECT_ROOT).toBe("/custom-root");
-    expect(env.CUSTOM_FLAG).toBe("1");
-    expect(env.T3CODE_WORKTREE_PATH).toBeUndefined();
-  });
-
-  it("prefers the worktree path for script cwd resolution", () => {
-    expect(
-      projectScriptCwd({
-        project: { cwd: "/repo" },
-        worktreePath: "/repo/worktree-a",
-      }),
-    ).toBe("/repo/worktree-a");
-    expect(
-      projectScriptCwd({
-        project: { cwd: "/repo" },
-        worktreePath: null,
-      }),
-    ).toBe("/repo");
   });
 });

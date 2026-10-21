@@ -640,7 +640,19 @@ what a person loses, which is the part the derivation cannot tell you:
   update control — a tool version's detail row now offers the update the
   automatic maintenance pass would have made, carried as an `updateTool` input on
   `device.list` and a `supportsToolUpdate` boolean on `DeviceServiceState` — so
-  the flag holds back one more control and nothing else changes.
+  the flag holds back one more control and nothing else changes. The
+  2026-10-21 merge added EAS Simulator hosts (#21841–#21846): a third
+  `DeviceHostSummary` kind beside local and SSH, an `easDeviceHosts` setting,
+  and `device.easAccount`, which looks up the Expo account and its apps. That
+  method is the tenth union entry, and the EAS hosts section sits on the same
+  Integrations page the flag already drops.
+- **Ignored files for "Add project to another machine"** — `projects.listIgnoredFiles`
+  (#22180) lists the untracked, ignored files (`.env` and the like) the dialog
+  offers to copy to the new machine. The dialog asks only when the source
+  environment reports the `ignoredFileListing` capability, which Moatless does
+  not send, so it degrades to copying tracked files and nothing more needs a
+  gate. Holds open the one union entry. Closes when the backend dispatches the
+  method and reports the capability; drop the union entry then.
 - **Desktop and host lifecycle** — `server.updateServer`,
   `updateServerWithProgress`, `commitDesktopUpdate`, `getBackgroundPolicy`,
   `subscribeBackgroundPolicy`, `reportHostPowerState`, `cloud.installRelayClient`,
@@ -1959,6 +1971,17 @@ true` when its body is a provider-native workflow script, which the timeline
   an empty inactive thread auto-settles (#15783); and new worktrees fetch their
   base branch's own tracked remote (#21032). Each field is optional, so the
   client degrades to its older behaviour until the backend sends it.
+  The 2026-10-21 merge adds: `blockedOnThreadWait` marks a turn blocked only on
+  another thread, which the client shows as Waiting (#21499, #21500); a stopped
+  usage-limit thread no longer auto-resumes (`latestRunStopRequested`, #21114);
+  a wake run settles when the provider never opens the wake turn (#19196);
+  snooze survives a run's completion (#22202); queued shell updates coalesce
+  for a slow socket client (#14859); bare repositories group with same-remote
+  projects (#17340); `pullRequests.changeBreakdown` splits a pull request's
+  lines into code, tests, generated and docs (#22189, #22255), and the client
+  drops the split tooltip when the call fails, since the union already carries
+  `UnsupportedMethodError`; and `ProjectReadFile` takes
+  `allowMissing` and answers `exists` (#22180).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

@@ -28,6 +28,56 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-21 — merged upstream to e64766c56a
+
+- Upstream: `e64766c56a` from base `143ab1606d` (`367` commits). Branch point:
+  `main`; no open merge PR to stack on.
+- Landed: `2630` files from `git diff --stat HEAD^1 HEAD` against `2629` in the
+  upstream range; missing: `pair.ts`, `pair.test.ts` and
+  `useDiscoveredLocalServers.test.ts`, kept deleted, and `branding.test.ts` and
+  `addBrowserSurface.test.ts`, kept as fork files; extra: the four fork browser
+  tests ported to `render.tsx`, `fork/ThreadParentLine.tsx` and
+  `docs/fork/inventory.json`. Fork delta `812` files from
+  `git diff --stat HEAD^2 HEAD`.
+- Conflicts: 40 files, each by its verdict.
+  - Upstream's test prune (#22557): its deletions win, fork-only tests stay,
+    fork adaptations of deleted upstream tests go. Modify/delete accepted for
+    `ThreadDetailsPrRows`, `PreviewEmptyState`, `previewEmptyStateLogic`,
+    `projectScriptEditor.permissions` and `terminalSessionAvailability` tests.
+  - `AGENTS.md` (`decide`): fork bullet kept, upstream's test rules and
+    browser-test section appended.
+  - `threadRoutes.ts`, `ThreadRouteView.tsx`, `ChatView.tsx`: upstream's
+    `unlistedThreadDetail` (#19724) with the fork's failed-subscription case;
+    no `archivedAt` redirect, and `onOpenRelatedThread` toasts only on a
+    deleted shell. The `unlisted-thread-adoption` entry now owns both files.
+  - `BranchToolbar`, `GitActionsControl`, `ChatOverlayHosts`,
+    `FilePreviewPanel`, `projectFilesQueryState`, `usePreviewSession`,
+    `useThreadActions`: upstream's change with each fork delta re-stated.
+  - Upstream removed `getSidebarForkParentThreadId`; it now lives in
+    `fork/ThreadParentLine.tsx`. Four fork browser tests ported to the
+    `require-disposable-render` lint rule. New inventory entries
+    `branding-test` and duplicate-add exception
+    `preview-session-use-atom-value`.
+- Sweep: 19 hits (EAS device host, ConnectReachability, migration 066,
+  HostFreezeToast, ConnectionDiagnosis, relay endpointFailure, T3 Connect
+  troubleshooting doc), upstream-owned and taken as upstream's. No new workflow.
+- Unsupported methods: ADD 2 (`device.easAccount`, `projects.listIgnoredFiles`),
+  DROP 0, KEEP 2. Gaps: extended the
+  [undispatched methods](./gaps.md#methods-the-backend-does-not-dispatch) and
+  [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: `verify.mjs` (full, parallel), every check but `test` green.
+  Confirmed failing alone, machine failures seen before: `shared` `AgentScope`,
+  `t3` `OrchestratorReplayFixtures`, `provider-opencode`
+  `OpenCodeServerLedger`, and the `insteadOf` partial-clone tests in
+  `GitVcsDriver` and `RepositoryIdentityResolver`. New and environmental: `t3`
+  `ProviderInstanceRegistry` "signing back in" reads the sandbox's own
+  `ANTHROPIC_*`/`CLAUDE_CONFIG_DIR`, and passes with them unset. `web`: the
+  fork's `AppRoot.test.tsx` calls `AppRoot` outside a render and broke on
+  upstream's new `useEffect` (#20886); it now stubs `useEffect` and passes. The
+  four browser files that failed to import pass alone. Playwright 1.60 wants
+  chromium build 1223, which this sandbox lacks; browser tests ran against
+  1243 through a symlinked `PLAYWRIGHT_BROWSERS_PATH`.
+
 ### 2026-10-20 — merged upstream to 143ab1606d
 
 - Upstream: `143ab1606d` from base `ab6be13d43` (`376` commits). Branch point:

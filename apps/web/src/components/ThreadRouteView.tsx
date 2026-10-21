@@ -23,6 +23,7 @@ import {
 import { useSidebarPendingFileDropStore } from "../sidebarPendingFileDropStore";
 import { useEnvironmentThreadRefs, useThreadRefs, useQuietThreadShell } from "../state/entities";
 import { useEnvironmentShellStatus } from "../state/shell";
+import { useEnvironmentThread } from "../state/threads";
 import {
   buildThreadRouteParams,
   isThreadRouteSnapshotAuthoritative,
@@ -105,13 +106,25 @@ export function ThreadRouteView({ target }: { target: ThreadRouteTarget }) {
   // back out.
   useAutoFollowThread(linkedThreadRef);
   const serverThreadAwaitingFirstAnswer = useThreadAwaitingFirstAnswer(linkedThreadRef);
+  // Until the shell lists the thread, its own load (HTTP, then the socket)
+  // decides whether it exists. Read only then: once listed, ChatView keeps
+  // this stream open and its updates need not re-render the route.
+  const unlistedThreadRef =
+    target.kind === "server" && serverThreadShell === null && draftThread === null
+      ? target.threadRef
+      : null;
+  const unlistedThreadDetail = useEnvironmentThread(
+    unlistedThreadRef?.environmentId ?? null,
+    unlistedThreadRef?.threadId ?? null,
+  );
   const renderState = resolveThreadRouteRenderState({
     bootstrapComplete,
     serverThreadExists: serverThreadShell !== null,
     serverThreadDeleted: serverThreadShell?.deletedAt != null,
+    unlistedThreadDetail,
     draftThreadExists: draftThread !== null,
-    // Fork: without this the route leaves for `/` on the first frame of every
-    // thread the listing does not carry — before its subscription can answer.
+    // Fork: a thread the viewer cannot open fails its subscription rather than
+    // reporting `deleted`; without this the route would load forever.
     serverThreadAwaitingFirstAnswer,
   });
   const serverThreadStarted = threadHasStarted(serverThreadShell);
