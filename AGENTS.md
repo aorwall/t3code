@@ -80,13 +80,13 @@ That describes `apps/server`. It is also the vocabulary the wire is written in, 
 - `packages/contracts` — Effect/Schema contracts plus small derived helpers. No heavy runtime logic.
 - `packages/shared` — shared runtime utils, subpath exports, no barrel.
 - `packages/client-runtime` — client code shared by web and mobile.
-- `.repos/` — vendored read-only references. Prefer their patterns over invented ones. Never edit or import from them; sync with `vpr sync:repos` when bumping the matching dependency.
+- `.repos/` — vendored read-only references. Prefer their patterns over invented ones. Never edit or import from them; sync with `vpr sync:repos` when bumping the matching dependency. If it is missing (sparse checkout), read a file with `git show origin/main:.repos/<path>`.
 
 Complexity belongs at the adapter boundary: orchestration stays pure, UI stays dumb.
 
 ## Dev servers
 
-`vp i` installs. Worktrees get this from the t3.json setup script; if module resolution looks broken, it probably did not run. Ports derive from the worktree path and are stable across restarts, but read the real ones from the `[dev-runner]` line since occupied ports shift, and stop what you started by the PID you tracked — see rule 1.
+`vp i` installs. Worktrees get this from the t3.json setup script; if module resolution looks broken, it probably did not run. Setup runs in the background: while `.t3/setup-running` names a live PID, wait for it and do not run `vp i`. It ends with `.t3/setup-done` or `.t3/setup-failed` (with the error tail); with no marker at all, setup never ran here, so run `vp i` yourself. Ports derive from the worktree path and are stable across restarts, but read the real ones from the `[dev-runner]` line since occupied ports shift, and stop what you started by the PID you tracked — see rule 1. Need a second checkout? `git worktree add` it next to this worktree, not in `/tmp`, and remove it when done.
 
 **Against Moatless**, which is what fork work usually means: point the dev proxy at a running Moatless backend and start the web app alone.
 
@@ -95,29 +95,29 @@ Complexity belongs at the adapter boundary: orchestration stays pure, UI stays d
 - Log into Moatless in the same browser first. The session is a host-scoped cookie reused across local ports; there is no pairing step and no token to hand over.
 - Full setup, including the backend's Compose overlay: [docs/user/moatless-local-development.md](./docs/user/moatless-local-development.md).
 
-**Against the bundled server**, for work in `apps/server` or anything you need upstream's runtime to exercise: `vp run dev` starts server and web. In a worktree, state defaults to that worktree's gitignored `.t3`, which deliberately outranks an ambient `T3CODE_HOME` so you cannot land on shared state by accident; an explicit `--home-dir` still wins. Here the web app does require pairing — hand over the pairing URL, not the bare origin. `--share` publishes over the tailnet; do not open that URL yourself, send it to the user with the pairing code included. A browser holding the reusable dev cookie is the one exception and can use the bare origin: that comes from a fixed `T3CODE_DEV_AUTH_TOKEN` in the main checkout's gitignored `.env`, which the `t3.json` setup links into worktrees. Never commit or publish that token or a startup URL.
+**Against the bundled server**, for work in `apps/server` or anything you need upstream's runtime to exercise: `vp run dev` starts server and web. In a worktree, state defaults to that worktree's gitignored `.t3`, which deliberately outranks an ambient `T3CODE_HOME` so you cannot land on shared state by accident; an explicit `--home-dir` still wins. Here the web app does require pairing. Sharing over the tailnet is three steps: run `vp run dev --share` in the background, wait for the `pairingUrl:` line in its output, then give that full URL to an unpaired browser. Do not wire up `tailscale serve` by hand, open the URL yourself, or consume the user's pairing link. If a normal one-time token was consumed, mint a fresh one with `node apps/server/src/bin.ts pair`; it carries standard scopes, while the startup URL carries admin scopes needed for Connections settings. A browser holding the reusable dev cookie can use the bare origin: that comes from a fixed `T3CODE_DEV_AUTH_TOKEN` in the main checkout's gitignored `.env`, which the `t3.json` setup links into worktrees. Never commit or publish that token or a startup URL.
 
 ## Test data
 
-Only for the bundled server. An empty database is a bad test, so seed your worktree's `.t3/userdata` with a copy of real data from `~/.t3/userdata` or `~/.t3/dev` instead of pointing at live state. Snapshot with `VACUUM INTO`, which is safe while a server has the source open and yields one consistent file:
+Only for the bundled server. An empty database is a bad test. Seed your worktree's `.t3` with a copy of real data instead of pointing at live state:
 
-```bash
-mkdir -p .t3/userdata
-rm -f .t3/userdata/state.sqlite*  # VACUUM INTO refuses to overwrite
-bun -e "new (require('bun:sqlite').Database)(process.env.HOME + '/.t3/userdata/state.sqlite', { readonly: true }).run(\"VACUUM INTO '.t3/userdata/state.sqlite'\")"
-```
-
-A plain `cp` is only safe when no server has the source open, and must bring the `-wal` and `-shm` siblings along — a live file copy is a corrupt copy. Bring `secrets` and `settings.json` only if the flow under test needs them. Copy in, never symlink: data flows into your sandbox, never back out.
+- The first `vp run dev` in a worktree does this for you when its database is missing. `--no-seed` or `T3CODE_DEV_SEED=0` skips it.
+- Run `vp run migrate-dev-db` with your dev server stopped to refresh. It rebuilds `<worktree>/.t3/userdata/statev2.sqlite` from a read-only snapshot of `~/.t3/userdata/statev2.sqlite`, the developer's real data. It keeps recent projects and their stopped threads, and drops scheduled tasks, pending work, and auth sessions, so your dev server never runs the developer's agents. Raise `--projects` and `--threads-per-project` for more data.
+- Refresh `statev2.sqlite`, not `state.sqlite`. The server copies the V1 `state.sqlite` only when `statev2.sqlite` is missing.
+- Bring `secrets` and `settings.json` only if the flow under test needs them.
+- Copy in, never symlink. Data flows one way: into your sandbox, never back out.
 
 ## Verifying
 
-- Smallest proof that the change works: `vp test run <files>` for what you touched, targeted lint and typecheck for the scope you changed.
+- Smallest proof that the change works: `vp test run <files>` for what you touched (for big files, add `-t "<name>"`), targeted lint and typecheck for the scope you changed. `vp run check:changed` runs the fast checks for changed files in one pass.
+- Run `node -e` snippets from `apps/server` or the owning package. `effect` does not resolve from the repo root.
 - Test meaningful logic or observable behavior. Do not render components to static markup to assert props or attributes, or add tests that merely assert callback wiring or mirror the implementation.
-- **Typecheck with `tsc`, never `tsc-rs`.** Upstream's Rust port is an unofficial, vibe-coded early release whose results we do not trust; when an upstream merge reintroduces it in a `typecheck` script, switch the script back. See [development.md](./docs/operations/development.md).
+- **Typecheck with `tsc`, never `tsc-rs`.** Upstream's Rust port is an unofficial, vibe-coded early release whose results we do not trust; when an upstream merge reintroduces it in a `typecheck` script or a `run.tasks.typecheck` entry in a `vite.config.ts`, switch it back. See [development.md](./docs/operations/development.md).
 - **Do not run repo-wide checks.** No `vp check`, no `vp run -r test`, no `vp run -r typecheck` unless asked. But know what does and does not cover you: every workflow inherited from upstream is disabled in GitHub, so CI does not run the full suite. What runs on a push to `main` is `Typecheck` (fork-only, `.github/workflows/typecheck.yml`) and `Build & push moatless-t3` — types for `apps/web` and the workspace packages it imports, the `@t3tools/contracts` tests, and a production build. **Nothing runs any other test suite anywhere but your machine**, so a behavior change is verified by the targeted `vp test run` you did or it is not verified at all.
 - Regenerate `apps/web/src/routeTree.gen.ts` with `node .agents/skills/fork-upstream-merge/scripts/regen-route-tree.mjs` after adding, deleting, or renaming anything under `apps/web/src/routes/`. `@tanstack/router-plugin` only exposes the generator as a Vite plugin, so without that script the file is reachable only by starting the dev server; a stale one fails typecheck with an opaque `not assignable to keyof FileRoutesByPath`.
 - Backend behavior changes ship with focused tests for that behavior.
-- The server is event-sourced and its async flows emit typed receipts. Wait on receipts and worker drains, never on sleeps or polling. A test that needs a timeout to pass is wrong. Concretely:
+- Proof for a bug fix depends on the bug. Logic, data, state, and protocol bugs get a failing test first (the fewest that fail on `main` for that reason, in the module's existing test file), then the fix. Purely visual bugs (spacing, colour, alignment, a layout shift) get before/after captures as their proof and no test: do not add UI tests for nitpicks, and do not ask for one in review when a capture already shows it. A server-only fix with no visible surface ships the test plus a short runtime transcript.
+- The server is event-sourced, and side effects run after the command commits. In tests, drain the effect worker (`OrchestrationEffectWorkerV2.drain`) or await the specific persisted event or `Deferred` that marks the milestone. Never wait on sleeps or polling. A test that needs a timeout to pass is wrong. Concretely:
   - `it.effect` runs on a `TestClock`; `Effect.sleep` only advances through `TestClock.adjust`. `it.live` is wall-clock and only for subprocess or network fixtures.
   - No `yieldNow` or `sleep` polling loops. Await the `Deferred`, take from the `Queue`, or drain the worker.
   - No per-test timeout argument or `retry`. The project timeout is the ceiling, and flaky tests are fixed, not retried.

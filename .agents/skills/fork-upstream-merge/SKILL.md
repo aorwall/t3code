@@ -490,7 +490,7 @@ git merge upstream/main
    changed) — computed from the merge commit's own parents, nothing to have
    captured beforehand — diffs the two file lists so any gap already comes
    with which files are on which side, and prints `git diff --stat HEAD^2
-HEAD` (the whole fork delta, restated against upstream). A merge that
+   HEAD` (the whole fork delta, restated against upstream). A merge that
    touched far fewer files than upstream changed is the failure this step
    exists to catch: `ours` resolutions on live upstream paths produce a clean,
    green, quiet merge that threw upstream's work away. If the gap is not

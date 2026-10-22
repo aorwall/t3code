@@ -244,8 +244,12 @@ So a badge shows no relative time and no check tone, and reports the rest.
 Nothing in the client is gated on the two — both are optional — so this closes
 with a backend change alone.
 
-- **Closes when:** the GitHub refresh stores the pull request's own `updated_at`
-  and its checks rollup on the binding.
+Since the 2026-10-22 merge the snapshot also asks for `isDraft` (#22832), which
+upstream syncs when only the draft state changes; without it no badge reads
+Draft.
+
+- **Closes when:** the GitHub refresh stores the pull request's own `updated_at`,
+  its checks rollup and its draft flag on the binding.
 - **Then here:** nothing to delete.
 
 ### Methods the backend does not dispatch
@@ -1010,7 +1014,9 @@ order for the active thread list (upstream #9729), and
 `thread.user-input.dismiss`, which drops an async question without answering it
 (upstream #10431). Both are ordinary controls the client renders unconditionally
 — a sidebar drag and a Dismiss button — and both fail generically on a backend
-that does not implement them.
+that does not implement them. The 2026-10-22 merge added `queued-run.start`
+to `OrchestrationV2Command`: the "Send now" action on a held queued message in a
+stopped thread (#22790), rendered whenever `canSendNow` holds.
 
 This is the reason `checkpointFileRestore` is a build flag and not a typed
 refusal, and it will be the reason for the next one too. Moatless serves
@@ -1949,7 +1955,7 @@ One more arrived in the 2026-10-01 merge:
   subagent work carries the owner's `providerInstanceId` (#19751), and a slow
   but healthy Codex is no longer reported Unavailable (#15945).
   The 2026-10-19 merge adds: a conversation message carries `workflowScript:
-true` when its body is a provider-native workflow script, which the timeline
+  true` when its body is a provider-native workflow script, which the timeline
   now renders as phases and agents instead of the raw script (#20857); an ended
   pull request watch reports `endedWatch` so watching again does not repeat news
   the thread already got (#21155); the orchestrator MCP thread list and read
@@ -1982,6 +1988,16 @@ true` when its body is a provider-native workflow script, which the timeline
   drops the split tooltip when the call fails, since the union already carries
   `UnsupportedMethodError`; and `ProjectReadFile` takes
   `allowMissing` and answers `exists` (#22180).
+  The 2026-10-22 merge adds: a new turn stops an abandoned provider turn
+  before it starts (#23169); Stop on a delegate always clears it (#22653) and a
+  delegate finishes once its leftover work settles (#22709); runs record
+  duration and outcome metrics (#22094); idle compaction runs `onReturn` or
+  `beforeCacheExpires` per instance (`compactIdleThreads` is now an enum, #23037);
+  approval requests can carry `reason` and `fullAccessOverride` (#22546); a
+  rejected push reports `push_rejected_by_remote` or
+  `push_rejected_non_fast_forward` (#22904); and a project clone can report
+  `stalled` (#22780). Each field is optional, so the client shows its older
+  generic text until the backend sends it.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
@@ -2175,7 +2191,23 @@ asymmetry is a choice upstream made with the flag in hand, not an oversight.
 Capping `test` here would open a fresh delta on a hot upstream file to pay for
 one machine size. Raise it upstream, or keep it in the environment.
 
-### `T3CODE_ALLOWED_HOSTS` is an alias to retire
+### CI and the image build run Node 24, not `engines.node`
+
+Upstream pins `engines.node` to Node 26 (#23165). The fork's
+`.github/workflows/typecheck.yml` and `docker/Dockerfile` both pin 24.18.1
+instead. Node 26's Linux binary needs `libatomic.so.1`, which the
+`staging-runners-large` image does not carry, and Node 26 ships no corepack,
+which both use to install pnpm. So CI typechecks on a different Node from
+the one a developer following `engines.node` runs. Nothing the fork ships needs
+26: only upstream's single-executable build does.
+
+- **Closes when:** the runner image carries `libatomic1`, so
+  `node-version-file: package.json` starts Node 26, and pnpm is installed
+  without corepack.
+- **Then here:** restore `node-version-file: package.json` in `typecheck.yml`
+  and raise the Dockerfile's `NODE_VERSION` to match.
+
+
 
 `apps/web/vite.config.ts` reads the fork's `T3CODE_ALLOWED_HOSTS` beside
 upstream's `T3CODE_DEV_ALLOWED_HOSTS`. It stays until deployments inject

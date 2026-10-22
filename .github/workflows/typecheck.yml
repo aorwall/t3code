@@ -60,8 +60,10 @@ jobs:
 
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
-          # `engines.node` in the root package.json is the single source.
-          node-version-file: package.json
+          # Not `engines.node`: upstream pinned Node 26 there (#23165), whose
+          # binary needs `libatomic.so.1` this runner image lacks and which ships
+          # no corepack. Keep in step with NODE_VERSION in docker/Dockerfile.
+          node-version: "24.18.1"
 
       # pnpm's version comes from the `packageManager` field, not from a pin
       # here, so this cannot drift from what a developer's install resolves.

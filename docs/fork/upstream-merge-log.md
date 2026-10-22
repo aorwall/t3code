@@ -28,6 +28,50 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-22 — merged upstream to e07595714a
+
+- Upstream: `e07595714a` from base `e64766c56a` (`191` commits). Branch point:
+  `main`; no open merge PR to stack on.
+- Landed: `480` files from `git diff --stat HEAD^1 HEAD` against `482` in the
+  upstream range; missing: `cli/pair.ts` and `cli/pair.test.ts`, kept deleted
+  (upstream #22855 edited them, a modify/delete). Fork delta `825` files from
+  `git diff --stat HEAD^2 HEAD`.
+- Conflicts: 11 files, each by its verdict.
+  - Upstream split `ChatView`, `ChatComposer`, `MessagesTimeline`, `Sidebar`,
+    `SettingsPanels` and `ChatMarkdown` into new hooks and row components. Each
+    `converged` delta was re-stated where its code moved, and the inventory
+    re-pointed: access-mode picker to `ComposerFooterControls.tsx`, update-banner
+    gate also in `useSystemComposerBanners.tsx`, script runs to
+    `useChatTerminalActions.ts`, origin chip to `TimelineUserMessageRow.tsx`,
+    starting-sandbox row to `TimelineWorkGroupRows.tsx`, child-task badge,
+    owner name and touch menu to `sidebar/SidebarThreadRow.tsx`, archived-row
+    link to `ArchivedThreadsPanel.tsx`. The fork dialog's choices now travel
+    through upstream's `useTimelineRewind` `onForkFromRun` as an optional
+    `submission`, not a copy in `ChatView.tsx`.
+  - Upstream moved the web and desktop `typecheck` scripts into
+    `run.tasks.typecheck` in `vite.config.ts` (#22716). Took the move, kept
+    `tsc --noEmit`, and widened the `tsc-rs` tripwire to `*vite.config.ts`.
+    Stripped `tsc-rs` from upstream's lockfile before the re-derive.
+  - `AGENTS.md` (`decide`): fork's Moatless dev-server section kept; upstream's
+    setup markers, worktree, seeding, bug-fix proof and event-sourced test
+    rules taken; upstream's "use tsc-rs" line dropped.
+- Sweep: 1 hit, `settings/AuthorizedClientsSettings.tsx`. It is an extraction
+  from Connections and is reachable only through `/settings/connections`, which
+  `FEATURES.connections` hides. Taken as upstream's. No new workflow.
+- Unsupported methods: no new RPC methods; ADD 0, DROP 0. Gaps: extended
+  [a command cannot be refused](./gaps.md#a-command-cannot-be-refused)
+  (`queued-run.start`), the
+  [pull request snapshot](./gaps.md#a-pull-request-snapshot-carries-no-update-instant-and-no-checks-state)
+  (`isDraft`) and
+  [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: `verify.mjs` (full, parallel): every check but `test` green
+  after one fix (`TraitsPicker` lost its `prompt` props upstream).
+  Confirmed failing alone, all seen on 2026-10-21: `shared` `AgentScope`,
+  `t3` `RepositoryIdentityResolver` and `GitVcsDriver`, `provider-opencode`
+  `OpenCodeServerLedger`. `web` and `t3` `ServerBrowserPage` failed only for a
+  missing chromium build 1223; with `PLAYWRIGHT_BROWSERS_PATH` symlinking 1243,
+  `ServerBrowserPage` passes and `web` passes 381/381 files.
+
 ### 2026-10-21 — merged upstream to e64766c56a
 
 - Upstream: `e64766c56a` from base `143ab1606d` (`367` commits). Branch point:
@@ -874,7 +918,7 @@ bullet here that no one will read again.
 - Lint: #13371/#13397 made `shadcn(no-arbitrary-values)` an error, and 130 hits
   surfaced in fork code (mostly `settings/moatless/**`). Mapped them to the scale
   the way upstream mapped its own: `text-[13px]`→`text-sm` (`text-xs
-leading-normal` where it came with `leading-[1.45]`), `[11px]`/`[.7rem]`→`2xs`,
+  leading-normal` where it came with `leading-[1.45]`), `[11px]`/`[.7rem]`→`2xs`,
   `[10.5px]`/`[.65rem]`→`3xs`. Also dropped the unused `chat-markdown-mermaid`
   class. Type error: the fork's Mermaid `MarkdownCodeBlock` now passes
   upstream's required `isStreaming`.
@@ -1338,7 +1382,7 @@ leading-normal` where it came with `leading-[1.45]`), `[11px]`/`[.7rem]`→`2xs`
     `git fetch origin "+refs/heads/$b:refs/remotes/origin/$b"`, because
     `remote.origin.fetch` is only `+refs/heads/main:…` so the branch has no
     lease-eligible tracking ref. Read the remote SHA with `git ls-remote origin
-"refs/heads/$b"` and pass it explicitly as
+    "refs/heads/$b"` and pass it explicitly as
     `--force-with-lease="refs/heads/$b:$sha"` — read, never guessed.
 
 ### 2026-09-16 — merged upstream to 0bf2d6b01, upstream's new icon variant broke a fork-only page that borrows upstream's picker
@@ -1581,7 +1625,7 @@ leading-normal` where it came with `leading-[1.45]`), `[11px]`/`[.7rem]`→`2xs`
 - Conflicts: 9 files, each taken to its inventory verdict. `pnpm-lock.yaml` was
   reset to `upstream/main` and the fork edges re-derived by `vp i` — the
   remaining diff is the `@t3tools/moatless-api` workspace link, `mermaid
-^11.17.2` and the `packages/moatless-api` importer. `AGENTS.md`
+  ^11.17.2` and the `packages/moatless-api` importer. `AGENTS.md`
   (`decide — agent-instructions`): upstream's only change in range was the
   reusable dev credential, restated into the fork's own "Against the bundled
   server" paragraph rather than taken as a block. `Sidebar.tsx`,
@@ -1627,7 +1671,7 @@ leading-normal` where it came with `leading-[1.45]`), `[11px]`/`[.7rem]`→`2xs`
   `419`, mobile `319`, relay `30`. Two caveats, both standing:
   - `@t3tools/desktop` fails `browser-secret-native.test.mjs` on a missing
     `libsecret-1`. The file is untouched by this merge and `pkg-config --exists
-libsecret-1` fails in the sandbox — the machine, not the code. Already
+    libsecret-1` fails in the sandbox — the machine, not the code. Already
     recorded in gaps.md as _The desktop suite needs libsecret_.
   - `duplicate-adds.mjs` reports 2 false positives. `auth.ts` → `if (` is a line
     written by the `decide` resolution: it appears once in the merge and in
@@ -1733,7 +1777,7 @@ libsecret-1` fails in the sandbox — the machine, not the code. Already
   merge commit survived because it had already been pushed, which is the whole
   argument for step 8's ordering. The `origin/merge/upstream-2026-09-13`
   tracking ref did **not** survive the restore — `git fetch origin
-merge/upstream-2026-09-13` and reading `FETCH_HEAD` is how to confirm the
+  merge/upstream-2026-09-13` and reading `FETCH_HEAD` is how to confirm the
   branch is still on the remote after one of these.
 
 ### 2026-09-12 — merged upstream to e8160649, upstream made every server setting scopable and settings is now most of the fork delta
@@ -1998,11 +2042,11 @@ merge/upstream-2026-09-13` and reading `FETCH_HEAD` is how to confirm the
   `typecheck`. `test` is red on `@t3tools/desktop` alone, and it is the standing
   `libsecret-1` gap already in [gaps](./gaps.md): `scripts/browser-secret-native.test.mjs
   > bundled libsecret helper`, 100 files pass and 1 fails to compile. Not
-merge-introduced — `git diff --name-only HEAD^1 HEAD | grep browser-secret`is
-empty. Four packages did not finish under`vp run -r test` (`@t3tools/mobile`,
-`t3`, `@t3tools/web`, `t3code-relay`) and all four pass alone, so that is
-parallel load again, not the merge. Whole run took ~18 min with
-`NODE_OPTIONS=--max-old-space-size=12288`.
+  > merge-introduced — `git diff --name-only HEAD^1 HEAD | grep browser-secret`is
+  > empty. Four packages did not finish under`vp run -r test` (`@t3tools/mobile`,
+  > `t3`, `@t3tools/web`, `t3code-relay`) and all four pass alone, so that is
+  > parallel load again, not the merge. Whole run took ~18 min with
+  > `NODE_OPTIONS=--max-old-space-size=12288`.
 - `vp i` itself now OOMs under the default Node heap, not just the test suite —
   `Ineffective mark-compacts near heap limit`, surfacing as a bare exit 1.
   Re-run with `NODE_OPTIONS=--max-old-space-size=12288` and it installs.
@@ -2433,7 +2477,7 @@ parallel load again, not the merge. Whole run took ~18 min with
   every remaining "conflict candidate" — see below):
   - `apps/web/src/composerDraftStore.ts` — the fork's own pre-existing
     generic-file-attachment hack (`ComposerImageAttachment.type: "image" |
-"file"`, a widened discriminator) survived the merge untouched, sitting
+    "file"`, a widened discriminator) survived the merge untouched, sitting
     right beside upstream's new, real `ComposerFileAttachment` type added a few
     lines later. No conflict marker; git spliced both in cleanly. The result
     type-checked file-by-file but broke discriminated-union narrowing at every
@@ -2464,11 +2508,11 @@ parallel load again, not the merge. Whole run took ~18 min with
     `ProjectSettingsPanel.tsx`, `SettingsPanels.tsx`,
     `settingsSearch.test.ts`, `previewStateStore.ts`, `routes/__root.tsx`,
     `docs/README.md`, two `package.json`s, `packages/contracts/src/
-environment.ts`) found no further instances of this failure mode — every
+    environment.ts`) found no further instances of this failure mode — every
     fork hunk in those files sits in a region upstream's own changes never
     touched.
 - Sweep: one hit, false positive. `apps/mobile/src/features/cloud/
-cloud-drafts.ts` (new upstream file) is a pure mobile cloud/relay sign-out
+  cloud-drafts.ts` (new upstream file) is a pure mobile cloud/relay sign-out
   feature (`CloudDraftArchiveError`, `removeCloudEnvironments`), unrelated to
   any fork concern.
 - `packages/contracts/src/rpc.ts` [`contracts-rpc-auth`, converged] — took
@@ -2479,7 +2523,7 @@ cloud-drafts.ts` (new upstream file) is a pure mobile cloud/relay sign-out
   in place despite the script reporting it under DROP — this is the
   documented exception in gaps.md's "A script runs on the backend" entry:
   `apps/server` (T3's own bundled server, still checked in `apps/server/src/
-ws.ts`) has no sandbox to run a script in and answers `scriptsRun` with
+  ws.ts`) has no sandbox to run a script in and answers `scriptsRun` with
   `UnsupportedMethodError` unconditionally, so the union member is for that
   server, not Moatless. Added a comment on `WsScriptsRunRpc` pointing future
   merges at the gap entry so this isn't rediscovered from scratch.
@@ -2614,7 +2658,7 @@ ws.ts`) has no sandbox to run a script in and answers `scriptsRun` with
   diffs), `settings.browser.tsx` replacing `settings.integrations.tsx` (see
   below — same file count, different path), and `docs/fork/inventory.json`
   (fork-only bookkeeping). Fork delta `609` files from `git diff --stat
-HEAD^2 HEAD` (unchanged from the 2026-08-16 entry).
+  HEAD^2 HEAD` (unchanged from the 2026-08-16 entry).
 - Conflicts, thirteen files, all falling to the `decide-then-add-entry`
   fallback inside an owned concern (no cached `pathPolicy` verdict fired):
   - `RightPanelTabs.tsx` — upstream replaced its six hardcoded add-surface
@@ -2698,7 +2742,7 @@ HEAD^2 HEAD` (unchanged from the 2026-08-16 entry).
   `tsgo --noEmit`, clean. `test` reported four failures across two full runs,
   all confirmed to pass reliably in isolation and unrelated to any touched
   file: `session-logic.test.ts` (perf budget, 162ms vs 100ms), `openVsxThemes
-.test.ts` (15000ms timeout), `ProviderRegistry.test.ts`'s codex-binaryPath
+  .test.ts` (15000ms timeout), `ProviderRegistry.test.ts`'s codex-binaryPath
   re-probe test (not touched by any conflict resolution, auto-merged clean).
   Same load-pressure pattern as the 2026-08-16 entry's `effect-acp` /
   `oxlint-plugin-t3code` exits.
@@ -2779,7 +2823,7 @@ HEAD^2 HEAD` (unchanged from the 2026-08-16 entry).
   `verify.mjs` rather than by reading: a stray `getConfiguredPreviewUrls`
   import in `ChatView.tsx` (the fork removed the call site), a duplicate
   `archiveThread` destructuring in `Sidebar.tsx`, and duplicate `case
-"archive"` arms in `Sidebar.tsx` and `useThreadActionMenu.ts` — all four the
+  "archive"` arms in `Sidebar.tsx` and `useThreadActionMenu.ts` — all four the
   same convergence landing twice.
 - Sweep: seven concern hits, all false positives. `clerk/*` (four new files) is
   upstream's own Clerk work on a surface the fork has already decided out and

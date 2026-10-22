@@ -55,6 +55,7 @@ import {
 } from "./threadPullRequest.ts";
 import {
   ProviderApprovalDecision,
+  ProviderApprovalFullAccessOverride,
   ProviderApprovalOption,
   ProviderInteractionMode,
   ProviderRequestKind,
@@ -1457,6 +1458,8 @@ export const OrchestrationV2TurnItem = Schema.Union([
     requestId: RuntimeRequestId,
     requestKind: ProviderRequestKind,
     prompt: Schema.optional(Schema.String),
+    reason: Schema.optional(Schema.String),
+    fullAccessOverride: Schema.optional(ProviderApprovalFullAccessOverride),
     appName: Schema.optional(Schema.String),
     options: Schema.optional(Schema.Array(ProviderApprovalOption)),
   }),
@@ -2233,6 +2236,8 @@ export const OrchestrationV2TurnItemJson = Schema.Union([
     requestId: RuntimeRequestId,
     requestKind: ProviderRequestKind,
     prompt: Schema.optional(Schema.String),
+    reason: Schema.optional(Schema.String),
+    fullAccessOverride: Schema.optional(ProviderApprovalFullAccessOverride),
     appName: Schema.optional(Schema.String),
     options: Schema.optional(Schema.Array(ProviderApprovalOption)),
   }),
@@ -2928,6 +2933,12 @@ export const OrchestrationV2Command = Schema.Union([
     type: Schema.Literal("queue.resume"),
     commandId: CommandId,
     threadId: ThreadId,
+  }),
+  Schema.Struct({
+    type: Schema.Literal("queued-run.start"),
+    commandId: CommandId,
+    threadId: ThreadId,
+    runId: RunId,
   }),
   Schema.Struct({
     type: Schema.Literal("queued-run.reorder"),
