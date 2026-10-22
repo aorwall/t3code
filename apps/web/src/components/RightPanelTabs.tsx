@@ -104,7 +104,7 @@ import {
   type SurfaceGate,
 } from "./sandbox/sandboxSurfaces";
 
-interface RightPanelTabsProps {
+export interface RightPanelTabsProps {
   mode: PreviewPanelMode;
   maximized?: boolean;
   open?: boolean;

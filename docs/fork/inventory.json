@@ -91,6 +91,7 @@
         "tsc-rs",
         "--",
         "*package.json",
+        "*vite.config.ts",
         "pnpm-workspace.yaml",
         ":(exclude).repos"
       ],
@@ -485,7 +486,9 @@
         "apps/web/src/components/RightPanelTabs.tsx",
         "apps/web/src/rightPanelStore.ts",
         "apps/web/src/rightPanelStore.test.ts",
-        "apps/web/src/components/chat/RightPanelSurfaceContent.tsx"
+        "apps/web/src/components/chat/RightPanelSurfaceContent.tsx",
+        "apps/web/src/components/chat/ChatRightPanel.tsx",
+        "apps/web/src/components/chat/useRightPanelActions.ts"
       ],
       "verdict": "converged",
       "note": "Take upstream, then re-apply the fork's right-panel deltas: the 'sandbox' RightPanelKind and its store action, the Sandbox entry in the surface launcher and the tab-bar '+' menu, the sandboxControl indicator riding that entry, and the per-surface gating described in the Sandbox lifecycle controls and Sandbox right-panel surface inventory entries. Upstream restructures the launcher — it went from cards to compact rows in #11111 — so the delta is what must survive, not a hunk to replay: put the indicator back on whatever element opens the Sandbox surface, additively, without threading a prop or re-indenting upstream's JSX. rightPanelStore.test.ts holds the fork's own cases for the sandbox kind alongside upstream's; both sides add to it, so append rather than choosing a side. Upstream moved the panel body out of ChatView into chat/RightPanelSurfaceContent.tsx on 2026-10, so the `sandbox` case (SandboxPanel, rendered only with a thread ref) and the file surface's `onRetargetFile` pass-through now live there; ChatView passes `files.onRetargetFile`. Neither file has a `configuredPreviewUrls` prop in the fork, because the fork deleted getConfiguredPreviewUrls with the local-server discovery."
@@ -545,7 +548,7 @@
       "id": "web-package-json",
       "paths": ["apps/web/package.json"],
       "verdict": "converged",
-      "note": "apps/web/package.json carries the fork's only dependency line — the `@t3tools/moatless-api` workspace link — and the `tsc --noEmit` typecheck script the tsc-rs tripwire holds, so a merge that takes upstream's package.json wholesale breaks the app's imports. Take upstream's dependency changes and put both back. (Mermaid converged on 2026-10-19: upstream renders it in chat/MermaidDiagram.tsx and owns the dependency.)"
+      "note": "apps/web/package.json carries the fork's only dependency line — the `@t3tools/moatless-api` workspace link — so a merge that takes upstream's package.json wholesale breaks the app's imports. Take upstream's dependency changes and put it back. The typecheck task moved to `run.tasks.typecheck` in apps/web/vite.config.ts (and apps/desktop/vite.config.ts) upstream in #22716; the fork keeps it there with `tsc --noEmit`, held by the tsc-rs tripwire. (Mermaid converged on 2026-10-19: upstream renders it in chat/MermaidDiagram.tsx and owns the dependency.)"
     },
     {
       "id": "message-origin-fork-files",
@@ -561,7 +564,8 @@
       "id": "message-origin-upstream-files",
       "paths": [
         "packages/contracts/src/orchestrationV2.ts",
-        "apps/web/src/components/chat/MessagesTimeline.tsx"
+        "apps/web/src/components/chat/MessagesTimeline.tsx",
+        "apps/web/src/components/chat/TimelineUserMessageRow.tsx"
       ],
       "verdict": "converged",
       "delta": "Message Origin Delta",
@@ -576,7 +580,9 @@
         "apps/web/src/components/chat/MessagesTimeline.tsx",
         "apps/web/src/components/chat/MessagesTimeline.browser.test.tsx",
         "apps/web/src/components/chat/MessagesTimeline.logic.ts",
-        "apps/web/src/components/ChatView.tsx"
+        "apps/web/src/components/ChatView.tsx",
+        "apps/web/src/components/chat/useTimelineRewind.ts",
+        "apps/web/src/components/chat/TimelineAssistantRows.tsx"
       ],
       "verdict": "converged",
       "delta": "Thread Fork Delta",
@@ -586,10 +592,11 @@
       "id": "chat-composer-gates",
       "paths": [
         "apps/web/src/components/chat/ChatComposer.tsx",
-        "apps/web/src/components/chat/CompactComposerControlsMenu.tsx"
+        "apps/web/src/components/chat/CompactComposerControlsMenu.tsx",
+        "apps/web/src/components/chat/ComposerFooterControls.tsx"
       ],
       "verdict": "converged",
-      "note": "Take upstream, then re-state the two deltas `chat-surface-gates` describes: the runtime-mode picker lifted into a `runtimeModePicker` const gated on FEATURES.accessMode, and `phase === \"running\"` left out of collapsedComposerPrimaryActionDisabled. Upstream works in this file constantly and both deltas sit at stable anchors, so the conflict is usually the import block alone — keep both import lines. CompactComposerControlsMenu.tsx is the same Access control at the narrow width and carries the same gate: the label and its MenuRadioGroup wrapped in one FEATURES.accessMode conditional. The two move together — gating one leaves the picker reachable at the other width."
+      "note": "Take upstream, then re-state the two deltas `chat-surface-gates` describes: the runtime-mode picker lifted into a `runtimeModePicker` const gated on FEATURES.accessMode (in ComposerFooterControls.tsx since upstream extracted ComposerFooterModeControls there in 2026-10), and `phase === \"running\"` left out of collapsedComposerPrimaryActionDisabled. Upstream works in this file constantly and both deltas sit at stable anchors, so the conflict is usually the import block alone — keep both import lines. CompactComposerControlsMenu.tsx is the same Access control at the narrow width and carries the same gate: the label and its MenuRadioGroup wrapped in one FEATURES.accessMode conditional. The two move together — gating one leaves the picker reachable at the other width."
     },
     {
       "id": "thread-fork-fork-files",
@@ -637,7 +644,11 @@
     },
     {
       "id": "thread-owner-name-upstream-files",
-      "paths": ["packages/contracts/src/orchestrationV2.ts", "apps/web/src/components/Sidebar.tsx"],
+      "paths": [
+        "packages/contracts/src/orchestrationV2.ts",
+        "apps/web/src/components/Sidebar.tsx",
+        "apps/web/src/components/sidebar/SidebarThreadRow.tsx"
+      ],
       "verdict": "converged",
       "delta": "Thread Owner Name Delta",
       "note": "Take upstream, then apply Thread Owner Name Delta. Both paths carry the Thread Visibility and Thread Follow Deltas as well; all must survive. The field is on OrchestrationThreadShell only, beside `visibility`, and the row hunk is two elements inside `SidebarThreadRow`'s card meta line and its tooltip — additive, and outside upstream's aria-hidden icon cluster."
@@ -648,7 +659,8 @@
         "apps/web/src/components/ui/sidebar.tsx",
         "apps/web/src/components/Sidebar.tsx",
         "apps/web/src/components/LegacySidebar.tsx",
-        "apps/web/src/contextMenuFallback.ts"
+        "apps/web/src/contextMenuFallback.ts",
+        "apps/web/src/components/sidebar/SidebarThreadRow.tsx"
       ],
       "verdict": "converged",
       "delta": "Mobile Touch Delta",
@@ -1011,9 +1023,11 @@
         "apps/web/src/components/ThreadRouteView.tsx",
         "apps/web/src/components/ChatView.tsx",
         "apps/web/src/state/threads.ts",
-        "apps/web/src/components/settings/SettingsPanels.tsx"
+        "apps/web/src/components/settings/SettingsPanels.tsx",
+        "apps/web/src/components/chat/useThreadLifecycle.tsx",
+        "apps/web/src/components/settings/ArchivedThreadsPanel.tsx"
       ],
-      "mustSurvive": "A Moatless shell listing is the open work a viewer follows, not every thread there is, so closed threads, threads followed by someone else, and subtasks all open by URL while absent from it. Three deltas hold that together and each is small in an upstream file. threadRoutes.ts takes upstream's `unlistedThreadDetail` rule (#19724: an unlisted thread waits on its own detail) with two fork changes: an optional serverThreadAwaitingFirstAnswer, `false` with no detail loaded meaning the subscription failed, which is how Moatless refuses a thread the viewer cannot open — without it that route loads forever; and no `archivedAt` check on the detail, because a closed thread opens by URL and redirecting it races the graft. ChatView.tsx's `onOpenRelatedThread` likewise toasts \"no longer available\" only for a shell row with `deletedAt`, not for a missing row, so a subtask outside the listing still opens. The caller that supplies it is components/ThreadRouteView.tsx, upstream's own file since #12015, alongside `useAdoptedThread`; both read the server target's ref and pass null for a draft. state/threads.ts passes adoptedEnvironmentSnapshotAtom where upstream passes environmentSnapshotAtom, which is the whole graft hook. SettingsPanels.tsx makes an archived row's title a link, because unarchiving was the only way back into a thread you may already read. The store in fork/adoptedThreadShells.ts must keep deciding what is missing against the listing's snapshot rather than the grafted one."
+      "mustSurvive": "A Moatless shell listing is the open work a viewer follows, not every thread there is, so closed threads, threads followed by someone else, and subtasks all open by URL while absent from it. Three deltas hold that together and each is small in an upstream file. threadRoutes.ts takes upstream's `unlistedThreadDetail` rule (#19724: an unlisted thread waits on its own detail) with two fork changes: an optional serverThreadAwaitingFirstAnswer, `false` with no detail loaded meaning the subscription failed, which is how Moatless refuses a thread the viewer cannot open — without it that route loads forever; and no `archivedAt` check on the detail, because a closed thread opens by URL and redirecting it races the graft. `onOpenRelatedThread` (chat/useThreadLifecycle.tsx, extracted from ChatView.tsx in 2026-10) likewise toasts \"no longer available\" only for a shell row with `deletedAt`, not for a missing row, so a subtask outside the listing still opens. The caller that supplies it is components/ThreadRouteView.tsx, upstream's own file since #12015, alongside `useAdoptedThread`; both read the server target's ref and pass null for a draft. state/threads.ts passes adoptedEnvironmentSnapshotAtom where upstream passes environmentSnapshotAtom, which is the whole graft hook. settings/ArchivedThreadsPanel.tsx (extracted from SettingsPanels.tsx in 2026-10) makes an archived row's title a link, because unarchiving was the only way back into a thread you may already read. The store in fork/adoptedThreadShells.ts must keep deciding what is missing against the listing's snapshot rather than the grafted one."
     },
     {
       "id": "sidebar-thread-filter",
@@ -1070,7 +1084,10 @@
         "apps/web/src/components/ChatView.logic.ts",
         "apps/web/src/components/ChatView.logic.test.ts",
         "apps/web/src/components/ChatView.tsx",
-        "apps/web/src/components/chat/MessagesTimeline.tsx"
+        "apps/web/src/components/chat/MessagesTimeline.tsx",
+        "apps/web/src/components/chat/useChatTerminalActions.ts",
+        "apps/web/src/components/chat/TimelineWorkGroupRows.tsx",
+        "apps/web/src/components/chat/timelineRowContext.ts"
       ],
       "mustSurvive": "Moatless reports a starting sandbox as session status starting, which derivePhase maps to connecting, and a cold start holds that for minutes. Upstream's hasServerAcknowledgedLocalDispatch refuses to acknowledge anything while connecting, so the composer would stay on Sending until the sandbox is up. The fork acknowledges the dispatch once a new user message projects: Moatless has already put it in the Task inbox, so the composer frees up and further sends go to the inbox too. Once the composer frees up, isWorking is false while the phase is still connecting, so ChatView passes isStartingRun to MessagesTimeline, which keeps the working row up and labels it Starting sandbox… instead of showing nothing under the sent message. Drop this when upstream acknowledges a projected message during connecting."
     },
@@ -1088,7 +1105,9 @@
         "apps/web/src/components/sandbox/**",
         "apps/web/src/components/RightPanelTabs.tsx",
         "apps/web/src/components/ChatView.tsx",
-        "apps/web/src/components/chat/RightPanelSurfaceContent.tsx"
+        "apps/web/src/components/chat/RightPanelSurfaceContent.tsx",
+        "apps/web/src/components/chat/ChatRightPanel.tsx",
+        "apps/web/src/components/chat/useRightPanelActions.ts"
       ],
       "mustSurvive": "Keep the 'sandbox' RightPanelKind and everything behind it until upstream has a machine to describe. sandbox.detail is deliberately a second projection beside sandbox.status rather than more keys on it: every client holds the status subscription open for its indicator, and only the one client with the panel open should pay for the wider read. Every runtime-sourced key is absent rather than empty, and the panel drops the section instead of rendering a blank one; a docker-compose deployment publishes no containers and no events, so it shows Status, Image, Idle stop and Commands alone. The whole surface is gated on the sandboxDetail capability, and the contract file is fork-only so the schema stays out of a file every upstream merge touches. Restart is pod-granularity, the Status section's Restart button."
     },
@@ -1117,11 +1136,12 @@
         "apps/web/src/components/ChatView.tsx",
         "apps/web/src/components/RightPanelTabs.tsx",
         "apps/web/src/components/chat/ChatHeader.tsx",
-        "apps/web/src/components/chat/ChatComposer.tsx"
+        "apps/web/src/components/chat/ChatComposer.tsx",
+        "apps/web/src/components/chat/ComposerFooterControls.tsx"
       ],
       "guard": {
         "symbol": "FEATURES.accessMode",
-        "files": ["apps/web/src/components/chat/ChatComposer.tsx"]
+        "files": ["apps/web/src/components/chat/ComposerFooterControls.tsx"]
       },
       "mustSurvive": "Re-apply additive gates only. PanelLayoutControls.tsx left this entry when the fork took the terminal-drawer button back: the file is upstream's byte for byte again, so a merge has nothing to re-apply there. ChatComposer.tsx carries two deltas. The composer's runtime-mode picker — upstream's read-only/write access modes — is lifted into a `runtimeModePicker` const gated on FEATURES.accessMode, because Moatless runs the agent in its own sandbox and the mode the picker sets is not a mode the backend honours; the interaction-mode toggle beside it is untouched and still renders. The lift is the additive shape here: the picked JSX keeps upstream's indentation and the return renders `{runtimeModePicker}` in its place, so re-indenting that block to inline the condition is the thing not to do. Separately, `phase === \"running\"` is dropped from collapsedComposerPrimaryActionDisabled, the mobile collapsed composer's Send button: a message sent while the agent is running is a follow-up the thread accepts, and the expanded composer never disabled it, so the collapsed one greying out was the odd case rather than the rule. Re-adding that term is a regression, not a re-sync."
     },
@@ -1142,7 +1162,8 @@
         "apps/web/src/components/ui/sidebar.tsx",
         "apps/web/src/components/Sidebar.tsx",
         "apps/web/src/components/LegacySidebar.tsx",
-        "apps/web/src/contextMenuFallback.ts"
+        "apps/web/src/contextMenuFallback.ts",
+        "apps/web/src/components/sidebar/SidebarThreadRow.tsx"
       ],
       "mustSurvive": "The left sidebar is a drawer the finger drags in from the screen edge, and a long press on a thread row reaches Settle, Snooze, rename and archive. The three fork/ modules are ours; the four upstream files are converged — see Mobile Touch Delta. The drawer must not become a modal <dialog>: that makes document.body inert, and the menus it exists to open portal there."
     },
@@ -1153,7 +1174,8 @@
         "packages/contracts/src/orchestrationV2.ts",
         "apps/web/src/components/chat/MessagesTimeline.tsx",
         "apps/web/src/components/chat/messageOrigin.ts",
-        "apps/web/src/components/chat/messageOrigin.test.ts"
+        "apps/web/src/components/chat/messageOrigin.test.ts",
+        "apps/web/src/components/chat/TimelineUserMessageRow.tsx"
       ],
       "mustSurvive": "A message that reached the thread through an adapter, from another Task or from a Loop says so, and a message typed into the composer renders exactly as upstream renders it. A Loop's message has kind `scheduled`, labelled with the Loop's name under a repeat icon. The contract field is optional rather than nullable so the absent case stays byte-identical to upstream's payload."
     },
@@ -1170,7 +1192,9 @@
         "apps/web/src/components/chat/ThreadForkDialog.browser.test.tsx",
         "apps/web/src/components/ChatView.tsx",
         "apps/web/src/fork/threadFork.ts",
-        "apps/web/src/fork/threadFork.test.ts"
+        "apps/web/src/fork/threadFork.test.ts",
+        "apps/web/src/components/chat/useTimelineRewind.ts",
+        "apps/web/src/components/chat/TimelineAssistantRows.tsx"
       ],
       "mustSurvive": "Hovering an assistant message with a completed or interrupted turn shows a fork icon beside the copy button. While the thread's newest turn is still running, the icon stays visible on messages from an earlier, already-ended turn and hides only on messages from that running turn itself — cutting below the open turn is allowed, cutting at or into it is not, matching the backend's own gate. `parseMoatlessTurnNumber` (`apps/web/src/fork/threadFork.ts`) reads the turn number off the wire `TurnId` to compare; either turn number failing to parse hides the icon. Clicking it opens a dialog rather than forking immediately: a same-sandbox toggle (on by default — it is the only checkout that resumes this conversation, and the dialog says so when switched off) and an optional first message. There is no branch control — a fork always runs on its source's branch. Confirming mints a thread id client-side, dispatches `thread.fork` with that id, the source thread's id, the hovered message's turn number, and the dialog's fields, then navigates to the new thread the same way starting a thread from a proposed plan does — same wait-for-started-thread and cleanup-on-failure path. Moatless is the only backend that runs `thread.fork`; the bundled server refuses it rather than fabricate a session-less copy."
     },
@@ -1219,7 +1243,11 @@
     {
       "id": "thread-owner-name",
       "name": "A sidebar row names its owner when that is somebody else",
-      "paths": ["packages/contracts/src/orchestrationV2.ts", "apps/web/src/components/Sidebar.tsx"],
+      "paths": [
+        "packages/contracts/src/orchestrationV2.ts",
+        "apps/web/src/components/Sidebar.tsx",
+        "apps/web/src/components/sidebar/SidebarThreadRow.tsx"
+      ],
       "mustSurvive": "A Moatless sidebar lists work other people started — a public Task, a Task an admin can read, a Task followed by opening its link — so a row that is not yours says whose it is. `ownerName` on `OrchestrationThreadShell` carries the display name, and the card row shows it on the meta line directly left of the environment and provider glyphs, truncated, with the whole name on the owner line of the row tooltip. The server decides when to send it: the client is never told which user it is signed in as, so Moatless emits the name only when the Task's owner — the access rule's own `COALESCE(owner_user_id, created_by)` — is not the viewer, and null otherwise. Absence and null both mean \"yours, or a server that does not send it\", so no capability gates this: a row with no name renders exactly as it did before. The slim settled and snoozed rows are deliberately left without it; they carry no provider glyph either, and their point is a quiet tail."
     },
     {
@@ -1244,7 +1272,8 @@
         "apps/server/src/ws.ts",
         "apps/server/src/auth/RpcAuthorization.ts",
         "apps/web/src/components/ChatView.tsx",
-        "packages/contracts/src/orchestrationV2.ts"
+        "packages/contracts/src/orchestrationV2.ts",
+        "apps/web/src/components/chat/useChatTerminalActions.ts"
       ],
       "mustSurvive": "scripts.run asks the environment to run a project's script in its own sandbox, hosted in a named terminal, returning that terminal and the URL of any port it publishes. Gated on the workspaceScripts capability: absent, runProjectScript keeps upstream's client-driven terminal.open + terminal.write path byte-for-byte, so a T3 server behaves exactly as upstream. The rpc.ts union entry is the one documented exception to unsupported-methods.mjs's DROP advice — it is upstream's OWN server that refuses this method, not Moatless, so the derivation reports it backwards once the backend half publishes. Keep it while apps/server answers with UnsupportedMethodError; see 'A script runs on the backend' in gaps.md. A SandboxNotRunningError from scripts.run is answered rather than reported: startSandboxForScript starts the thread's sandbox, polls sandbox.status until ready, and re-runs once. Upstream has nothing to start, so a merge that loses this turns an idle-reaped sandbox back into a dead end. A script run from a draft has no thread to run in, so runProjectScript sends thread.create under the id the draft already holds before anything else, carrying the fork-only provision: true on ThreadCreateCommand in orchestration.ts. Moatless gives a thread created with no first message no sandbox until a turn is sent, and a script run is not a turn; without the flag the run reaches a thread that has nowhere to run, and every script pays startSandboxForScript's start-and-poll before it does anything. The draft route navigates to the created thread on its own, so the create is the whole delta. That create takes its modelSelection from the composer's send context, not from the draft thread, which carries the project default or the empty-model NO_PROVIDER_MODEL_SELECTION placeholder: the placeholder fails the contract's own TrimmedNonEmptyString before dispatch, and Moatless fixes a thread's agent at creation and refuses any later switch, so the create has to pin the agent the person's first message will ask for. Upstream's chat code-block Run button (#13060, `onRunShellCommand`) runs an ad-hoc command through runProjectScript under the synthetic id `chat-code-block`; scripts.run resolves only declared ids and the backend answers ScriptNotFound, so ChatView passes `onRunShellCommand` only when `!supportsWorkspaceScripts`. Drop that condition once scripts.run accepts an inline command.",
       "guard": {
@@ -1349,12 +1378,16 @@
       "paths": [
         "apps/web/src/components/ChatView.tsx",
         "apps/web/src/components/chat/useAutoBalanceUpdateBanner.tsx",
-        "apps/web/src/fork/features.ts"
+        "apps/web/src/fork/features.ts",
+        "apps/web/src/components/chat/useSystemComposerBanners.tsx"
       ],
-      "mustSurvive": "The composer never offers to run T3's self-update: the Moatless server does not implement server.updateServer, so the offer and its npx t3 command would point at a command that cannot run. Upstream reaches that offer by two routes and each carries one additive FEATURES.serverUpdateBanner gate in ChatView.tsx: the single-machine composer-banner condition, and the autoUpdateEnvironments memo that feeds useAutoBalanceUpdateBanner. Count the gates every merge — upstream added the second route in #10596, and a gate on one route alone still shows the offer on the other. Holds open the Desktop and host lifecycle gap. Drop the flag and both gates once the backend serves server.updateServer.",
+      "mustSurvive": "The composer never offers to run T3's self-update: the Moatless server does not implement server.updateServer, so the offer and its npx t3 command would point at a command that cannot run. Upstream reaches that offer by two routes and each carries one additive FEATURES.serverUpdateBanner gate: the single-machine composer-banner condition in chat/useSystemComposerBanners.tsx (extracted from ChatView.tsx in 2026-10), and the autoUpdateEnvironments memo in ChatView.tsx that feeds useAutoBalanceUpdateBanner. Count the gates every merge — upstream added the second route in #10596, and a gate on one route alone still shows the offer on the other. Holds open the Desktop and host lifecycle gap. Drop the flag and both gates once the backend serves server.updateServer.",
       "guard": {
         "symbol": "FEATURES.serverUpdateBanner",
-        "files": ["apps/web/src/components/ChatView.tsx"]
+        "files": [
+          "apps/web/src/components/ChatView.tsx",
+          "apps/web/src/components/chat/useSystemComposerBanners.tsx"
+        ]
       }
     },
     {
@@ -1400,12 +1433,13 @@
         "packages/client-runtime/src/state/threadShell.ts",
         "packages/contracts/src/orchestrationV2.ts",
         "apps/web/src/fork/ThreadParentLine.tsx",
-        "apps/web/src/fork/ThreadParentLine.test.ts"
+        "apps/web/src/fork/ThreadParentLine.test.ts",
+        "apps/web/src/components/sidebar/SidebarThreadRow.tsx"
       ],
       "mustSurvive": "Moatless child tasks are threads of their own, so the sidebar and thread navigation list a subagent thread unless isProviderNativeSubagentThread says it is the provider's: isSidebarSubagentThread and the navigationThreadShellsAtom filter both read it. A card row whose thread has lineage.parentThreadId shows SidebarParentLink, and one whose shell carries a non-zero childCount (fork-only optional field on OrchestrationV2ThreadShell) shows SidebarChildTasksBadge, which lists subtasks.list in a popover. Both mount after the owner name in SidebarThreadRow's card meta line; the slim row has neither. SidebarThreadTooltip shows ThreadParentLine after the owner name: \"Fork of {parent title}\" or \"Subtask of {parent title}\", or the bare noun while the parent has no shell.",
       "guard": {
         "symbol": "SidebarChildTasksBadge",
-        "files": ["apps/web/src/components/Sidebar.tsx"]
+        "files": ["apps/web/src/components/sidebar/SidebarThreadRow.tsx"]
       }
     },
     {
