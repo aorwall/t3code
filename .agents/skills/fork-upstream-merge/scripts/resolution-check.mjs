@@ -37,7 +37,9 @@
  * Like `duplicate-adds.mjs`, this runs mid-merge on purpose. Before the commit
  * exists a finding is still a plain edit.
  */
+import * as NodeChildProcess from "node:child_process";
 import * as NodeFS from "node:fs";
+import * as NodeOS from "node:os";
 import * as NodePath from "node:path";
 
 import {
@@ -185,13 +187,39 @@ function checkDeltaDrift(inventory, report, sides, paths) {
 }
 
 /**
+ * Whether upstream's change to `path` is already in the fork's copy: a
+ * three-way merge of it onto `ours` is clean and changes nothing. That is
+ * convergence, where upstream made an edit the fork had already made, rather
+ * than an upstream change the resolution dropped.
+ */
+function upstreamChangeAlreadyCarried(base, sides, path, ours) {
+  const baseBlob = blobLines(base, path);
+  const theirs = blobLines(sides.theirs, path);
+  if (baseBlob === null || theirs === null) return false;
+  const dir = NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "resolution-check-"));
+  try {
+    for (const [name, content] of Object.entries({ ours, base: baseBlob, theirs })) {
+      NodeFS.writeFileSync(NodePath.join(dir, name), content.join("\n"));
+    }
+    const result = NodeChildProcess.spawnSync(
+      "git",
+      ["merge-file", "-p", "--quiet", "ours", "base", "theirs"],
+      { cwd: dir, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+    );
+    return result.status === 0 && result.stdout === ours.join("\n");
+  } finally {
+    NodeFS.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/**
  * Landed as the fork's own pre-merge content, where upstream had moved on.
  *
  * The merged tree equalling `ours` on a path upstream changed means upstream's
  * change is simply not in. For `decide` that can be deliberate; everywhere else
  * the verdict says upstream's version is the base to start from.
  */
-function checkUpstreamDrift(inventory, report, sides, paths) {
+function checkUpstreamDrift(inventory, report, sides, paths, base) {
   const section = report.section("Upstream change, against what landed");
   let checked = 0;
   let found = 0;
@@ -204,6 +232,10 @@ function checkUpstreamDrift(inventory, report, sides, paths) {
     if (blobs === null) continue;
     checked += 1;
     if (!same(blobs.merged, blobs.ours)) continue;
+    if (upstreamChangeAlreadyCarried(base, sides, path, blobs.ours)) {
+      section.info(`${path}: upstream's change was already in the fork's copy [${match.entry.id}]`);
+      continue;
+    }
 
     const message =
       `${path} landed unchanged from the fork's pre-merge copy, ` +
@@ -365,7 +397,7 @@ export function runResolutionCheck(report, commit = null) {
 
   if (isUpstreamMerge(inventory, sides)) {
     checkDeltaDrift(inventory, report, sides, candidates);
-    checkUpstreamDrift(inventory, report, sides, candidates);
+    checkUpstreamDrift(inventory, report, sides, candidates, base);
   } else {
     report
       .section("Resolutions against both sides")

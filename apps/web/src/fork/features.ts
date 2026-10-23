@@ -324,6 +324,7 @@ export const FEATURE_BY_SETTINGS_SEARCH_ID: Readonly<Record<string, FeatureName>
   "continue-threads-after-server-update": "serverBehaviorSettings",
   "background-activity": "serverBehaviorSettings",
   "text-generation-model": "serverBehaviorSettings",
+  "thread-title-instructions": "serverBehaviorSettings",
   diagnostics: "diagnostics",
   "mobile-app": "connections",
 };

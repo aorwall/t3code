@@ -176,7 +176,7 @@ export function githubConnectOutcome(search: string): GithubConnectOutcome | nul
       return {
         tone: "error",
         message:
-          "Your session changed while GitHub was authorizing. Nothing was changed — try again.",
+          "Your session changed while GitHub was authorizing. Nothing was changed. Try again.",
       };
     case "empty_token":
       return { tone: "error", message: "GitHub returned no token. Nothing was changed." };

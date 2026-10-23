@@ -252,9 +252,7 @@ export default defineConfig(({ command, isPreview }) => {
   return {
     run: {
       tasks: {
-        // Plain `tsc` rather than upstream's Rust port, which the fork does not trust;
-        // a tripwire in docs/fork/inventory.json holds it out. A rewritten tsbuildinfo
-        // would keep the task out of the cache.
+        // tsc rewrites the tsbuildinfo it reads, which keeps a task out of the cache.
         typecheck: {
           command: "tsc --noEmit",
           cache: { input: [{ auto: true }, "!*.tsbuildinfo"] },

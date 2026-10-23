@@ -173,7 +173,7 @@ export function forgejoConnectOutcome(search: string): ForgejoConnectOutcome | n
       return {
         tone: "error",
         message:
-          "Your session changed while Forgejo was authorizing. Nothing was changed — try again.",
+          "Your session changed while Forgejo was authorizing. Nothing was changed. Try again.",
       };
     case "error":
       return { tone: "error", message: "Could not connect Forgejo. Try again." };

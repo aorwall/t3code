@@ -105,8 +105,8 @@ function ConnectionsSection() {
         ) : null
       ) : rows.length === 0 ? (
         <SectionEmpty>
-          No connections yet. A connection is an account on an integration — a Slack workspace, a
-          Linear org — that loops can subscribe to.
+          No connections yet. A connection is an account on an integration (a Slack workspace, a
+          Linear org) that loops can subscribe to.
         </SectionEmpty>
       ) : (
         rows.map((connection) => <ConnectionRow key={connection.id} connection={connection} />)
@@ -317,8 +317,8 @@ function AppsSection() {
         ) : null
       ) : rows.length === 0 ? (
         <SectionEmpty>
-          No adapter apps configured. An app holds the credentials — bot tokens, signing secrets —
-          an adapter authenticates with.
+          No adapter apps configured. An app holds the credentials (bot tokens, signing secrets) an
+          adapter authenticates with.
         </SectionEmpty>
       ) : (
         rows.map((app) => <AppRow key={`${app.adapterKind}:${app.appKey}`} app={app} />)
@@ -514,7 +514,7 @@ function CreateBotUserAction({ app }: { readonly app: GitHubAppOption }) {
         {create.error ? (
           <span className="text-destructive-foreground">{create.error.message}</span>
         ) : (
-          "No bot user — nothing can run as this app yet."
+          "No bot user, so nothing can run as this app yet."
         )}
       </span>
     </div>
@@ -650,7 +650,7 @@ function RegisterGithubAppDialog({
               id="register-github-app-installation"
               value={installationId}
               onChange={(event) => setInstallationId(event.currentTarget.value)}
-              placeholder="Optional — resolved per repository owner"
+              placeholder="Optional. Resolved per repository owner"
               inputMode="numeric"
             />
           </div>

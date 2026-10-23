@@ -28,6 +28,53 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-23 — merged upstream to 18e2742519
+
+- Upstream: `18e2742519` from base `e07595714a` (`45` commits). Branch point:
+  `main`; no open merge PR to stack on.
+- Landed: `323` files from `git diff --stat HEAD^1 HEAD` against `348` in the
+  upstream range. The gap is #23023's `tsc-rs --noEmit` to `tsc --noEmit`
+  script edit in 25 package manifests, which the fork already carried, plus
+  `AGENTS.md` and `package.json` kept as the fork's (`decide`). Fork delta `797` files
+  from `git diff --stat HEAD^2 HEAD`, down from `825`.
+- Conflicts: 10 files.
+  - #23023 made the catalog `typescript` `npm:@tsc-rs/typescript` and dropped
+    `@effect/tsgo` and the `effect-tsgo patch` prepare step, mostly in files
+    git merged silently. Restored TypeScript 7.0.2, `@effect/tsgo` and the
+    prepare step; dropped the `@tsc-rs/*` workspace lines. The re-derive install
+    pruned the `@tsc-rs` lockfile entries itself. New `typecheck-toolchain`
+    inventory entry covers `pnpm-workspace.yaml`, `development.md` and the
+    desktop `vite.config.ts`; the vite comments now read as upstream's minus
+    `(tsc-rs)`.
+  - `apps/server/src/ws.ts`: upstream split the RPC group in two to keep
+    handler requirements typed (#23813). That replaces the fork's
+    `toWsRpcLayer`/`WsRpcHandlers` workaround for the same TS2589, so took
+    upstream's; the sandbox handlers survive in the "other" group.
+  - `SettingsPanels.tsx`: upstream's `ThreadTitleInstructionsSettings` placed
+    inside the `FEATURES.serverBehaviorSettings` gate, and its search item
+    mapped to the same flag. `TimelineUserMessageRow.tsx`: origin chip kept
+    beside upstream's folded agent rows. `PreviewView.tsx`: upstream's copy
+    taken, fork's inspector reason kept. `AGENTS.md`: fork's kept; upstream's
+    tsc-rs, "never make a PR" and GitCafe lines dropped.
+  - #23799's `no-em-dash-copy` lint rule failed 16 lines of fork copy; rewritten.
+  - `resolution-check.mjs` now reports a path whose upstream change three-way
+    merges onto the fork's copy as a no-op as convergence, not a dropped change
+    (`packages/client-runtime/package.json` here).
+- Sweep: 2 hits, `apps/mobile/src/features/threads/ThreadScreenHost.tsx` and
+  the Clerk Expo patch rename. Mobile and Clerk are outside the web surface the
+  fork ships; taken as upstream's. No new workflow.
+- Unsupported methods: no new RPC methods; ADD 0, DROP 0, KEEP 2. Gaps:
+  extended [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server);
+  added [the `/tmp` sticky bit](./gaps.md#the-sandboxs-tmp-has-no-sticky-bit-so-the-codex-token-broker-refuses-it).
+- Verification: `verify.mjs` (full, parallel): every check but `test` green after
+  the em-dash fix. Confirmed failing alone, all seen before: `t3`
+  `RepositoryIdentityResolver` and `GitVcsDriver` (`insteadOf` partial-clone),
+  `ServerBrowserPage` (chromium build), `provider-opencode`
+  `OpenCodeServerLedger`. New and environmental: `t3` `CodexChatGptAuth` and
+  `CodexManagedRuntime`, which pass with a private `TMPDIR` (see the gap). With
+  `PLAYWRIGHT_BROWSERS_PATH` symlinking build 1243 and that `TMPDIR`, `web`
+  passes 381/381 files and `t3` fails only the two `insteadOf` files.
+
 ### 2026-10-22 — merged upstream to e07595714a
 
 - Upstream: `e07595714a` from base `e64766c56a` (`191` commits). Branch point:

@@ -109,7 +109,7 @@ export function LoopsPanel() {
           <SectionEmpty>
             {all.length === 0 ? (
               <>
-                No loops yet. A loop watches a source — a schedule or an integration event — and
+                No loops yet. A loop watches a source (a schedule or an integration event) and
                 starts a task when it fires.
               </>
             ) : matching.length === 0 ? (
