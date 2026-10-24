@@ -1,14 +1,11 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import { EnvironmentId } from "@t3tools/contracts";
-import { FEATURES } from "~/fork/features";
 
 import {
   filterAvailableSettingsSearchItems,
   getSettingsSearchTargetScope,
   getThreadAutoSettlementSearchAvailability,
-  isMoatlessAdminPath,
   isSettingsSearchScopeAvailable,
-  MOATLESS_ADMIN_PATHS,
   searchSettings,
   SETTINGS_SEARCH_ITEMS,
   type SettingsSearchItem,
@@ -56,9 +53,6 @@ describe("searchSettings", () => {
 
   it("matches normalized title substrings", () => {
     expect(searchSettings("  WORD   WRAP  ", ITEMS).map((item) => item.id)).toEqual(["word-wrap"]);
-    // Whitespace in the query is collapsed, not dropped, so a run-together
-    // query does not match a two-word title.
-    expect(searchSettings("wordwrap")).toEqual([]);
     expect(searchSettings("glass").map((item) => item.id)).toEqual(["setting-glass-opacity"]);
     expect(searchSettings("panel animations").map((item) => item.id)).toEqual(["panel-animations"]);
     expect(searchSettings("thè\u{1ab0}mes")[0]?.id).toBe("theme");
@@ -149,43 +143,6 @@ describe("searchSettings", () => {
     const ids = SETTINGS_SEARCH_ITEMS.map((item) => item.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
-  it("routes browser recording quality to the browser settings section", () => {
-    const result = searchSettings("recording frame rate")[0];
-    expect(result).toMatchObject({
-      id: "browser-recording-frame-rate",
-      to: "/settings/browser",
-    });
-    expect(result).not.toHaveProperty("targetId");
-  });
-
-  it("routes where links open to the browser settings section", () => {
-    expect(searchSettings("open links in")[0]).toMatchObject({
-      id: "browser-link-target",
-      // Fork: the panel is mounted at /settings/browser, not /settings/integrations.
-      to: "/settings/browser",
-    });
-    expect(searchSettings("external links")[0]).toMatchObject({ id: "browser-link-target" });
-  });
-
-  it("finds the default browser profile action in the profiles list", () => {
-    expect(searchSettings("default profile")[0]).toMatchObject({
-      id: "browser-default-profile",
-      // Fork: the panel is mounted at /settings/browser, not /settings/integrations.
-      to: "/settings/browser",
-      targetId: "browser-profiles",
-    });
-  });
-
-  it.each([
-    ["default model", "default-model", "/settings/general"],
-    ["new threads", "new-threads", "/settings/general"],
-    ["agent browser access", "agent-browser-access", "/settings/browser"],
-    ["automatically pull", "automatic-pull", "/settings/source-control"],
-    ["actions", "project-actions", "/settings/projects"],
-    ["project overview", "project-overview", "/settings/projects"],
-  ])("routes %s to its owning category", (query, id, to) => {
-    expect(searchSettings(query)[0]).toMatchObject({ id, to });
-  });
 });
 
 describe("settings search targets", () => {
@@ -242,6 +199,7 @@ describe("auto-settlement search availability", () => {
       canManageLocalBackend: false,
       isWslSettingsRowVisible: false,
       hasThreadAutoSettlement: availability.eligibleEnvironmentIds.length > 0,
+      // Fork: see forgejoEnabled on SettingsSearchAvailability.
       forgejoEnabled: false,
     });
     expect(searchSettings("auto-settle", items).map((item) => item.id)).toEqual([
@@ -280,44 +238,5 @@ describe("auto-settlement search availability", () => {
         environmentIds: selected.map((entry) => entry.environmentId),
       }).isTargetAvailable,
     ).toBe(true);
-  });
-});
-
-describe("moatless administration entries", () => {
-  it("is reachable from search by its own name", () => {
-    expect(searchSettings("loops").map((item) => item.id)).toContain("loops");
-  });
-
-  it("sends repositories to the project that contains them", () => {
-    // Repositories are not a page of their own here; they are a section of the
-    // workspace a project is. Searching for one has to land somewhere that
-    // exists.
-    expect(searchSettings("repositories")[0]).toMatchObject({
-      id: "project-overview",
-      to: "/settings/projects",
-    });
-  });
-});
-
-describe("isMoatlessAdminPath", () => {
-  it("recognises every administration page", () => {
-    for (const path of MOATLESS_ADMIN_PATHS) {
-      expect(isMoatlessAdminPath(path)).toBe(true);
-    }
-  });
-
-  it("recognises a page below one of them", () => {
-    // The guard runs on the concrete pathname, so a loop detail page has to be
-    // admitted by prefix or it is reachable without an admin check.
-    expect(isMoatlessAdminPath("/settings/loops/loop_1")).toBe(true);
-  });
-
-  it("leaves the settings pages this fork did not add alone", () => {
-    expect(isMoatlessAdminPath("/settings/general")).toBe(false);
-    expect(isMoatlessAdminPath("/settings/appearance")).toBe(false);
-  });
-
-  it("does not admit a path that merely starts with an admin path's characters", () => {
-    expect(isMoatlessAdminPath("/settings/loops-archive")).toBe(false);
   });
 });

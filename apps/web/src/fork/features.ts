@@ -8,7 +8,7 @@ import type { ExecutionEnvironmentDescriptor } from "@t3tools/contracts";
  * environment's descriptor names it in `capabilities.unsupportedSurfaces`. A T3
  * server sends no such list and gets upstream's whole UI; Moatless lists what
  * it cannot back. `moatlessApi` says the same origin also serves Moatless's own
- * REST API, which the login route and the administration pages need.
+ * REST API, which the login route and the credential pages need.
  *
  * A typed `UnsupportedMethodError` is the right answer to a *call*. It is the
  * wrong answer to a Terminal tab that should never have been on the screen, so
@@ -45,7 +45,10 @@ const SURFACES = {
    * does not serve. Working-tree and branch-range diffs are unaffected.
    */
   turnDiffs: true,
-  /** Adding and removing projects, and the source-control settings behind them. */
+  /**
+   * Adding, renaming and removing projects, and the source-control settings
+   * behind them. A Moatless Workspace is declared in git or with the moat CLI.
+   */
   projectManagement: true,
   /**
    * Searching workspace files by *content*. Path search, reading and listing
@@ -290,10 +293,7 @@ export const FEATURE_BY_SETTINGS_PATH: Readonly<Record<string, FeatureName>> = {
   "/settings/scheduled-tasks": "scheduledTasks",
 };
 
-/**
- * Settings sections served by the Moatless REST API alone. The administration
- * pages are gated by `readIsMoatlessAdmin`, which answers no without the API.
- */
+/** Settings sections served by the Moatless REST API alone. */
 const MOATLESS_API_SETTINGS_PATHS: ReadonlySet<string> = new Set(["/settings/version-control"]);
 
 /** Whether a settings path is reachable against this server. Unlisted paths are. */
@@ -318,6 +318,7 @@ export const FEATURE_BY_SETTINGS_SEARCH_ID: Readonly<Record<string, FeatureName>
   "start-from-origin": "worktreeSelection",
   "project-grouping": "projectGrouping",
   "add-project-starts-in": "projectManagement",
+  "project-overview": "projectManagement",
   "snooze-limited-threads": "serverBehaviorSettings",
   "auto-resume-limited-threads": "serverBehaviorSettings",
   "provider-update-checks": "serverBehaviorSettings",

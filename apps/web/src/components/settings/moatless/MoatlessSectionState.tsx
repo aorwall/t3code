@@ -7,12 +7,10 @@ import { ITEM_ROW_CLASSNAME } from "../itemRows";
 import { cn } from "~/lib/utils";
 
 /**
- * The three states every administration list has before it has rows, drawn once.
+ * The three states a Moatless REST section has before it has rows, drawn once.
  *
  * Each section owns its own state rather than the page owning one for all of
- * them. A Workspace detail page reads its workspace and the repository catalog
- * separately, and a page that blanks because the catalog is slow has hidden
- * the thing the person came for.
+ * them, so a slow read blanks only the section that made it.
  */
 
 export function SectionPending({ label }: { readonly label: string }) {

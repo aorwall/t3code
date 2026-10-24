@@ -1372,10 +1372,12 @@ processes belong in Sandbox diagnostics, not in a fake read-only terminal.
 | Process/trace diagnostics                                        | Separate client/gateway diagnostics from per-Task Sandbox diagnostics and admin backend health.                                    |
 | About/server update                                              | Show T3 UI, gateway, Moatless backend, and Sandbox image versions separately. Do not expose self-update when unsupported.          |
 
-Add Moatless settings/admin routes for profile/auth/password/API keys, provider
-credentials, Repositories, Workspaces, Secrets, Integrations/Adapter connections,
-Loops, Plugins/Skills/Activations, Teams, users, and feature flags. Gate admin routes
-from effective authorization.
+Settings carries only what a person configures for themselves: their agent
+credentials on the provider that uses them, and their Git-host access under
+Version control. Everything that configures the deployment — Repositories,
+Workspaces, Secrets, Integrations and Adapter connections, Loops, Plugins and
+Skills, Teams and users — is done with the `moat` CLI or declared in git, and
+T3 Code shows no page for it.
 
 ### Desktop-specific functionality
 

@@ -1,7 +1,6 @@
 import { meHandler } from "@t3tools/moatless-api/generated/auth/auth";
 import type { SessionResponse } from "@t3tools/moatless-api/generated/model";
 
-import { moatlessApiAvailable } from "../fork/features";
 import { moatlessQuery, useMoatlessQuery } from "./query.ts";
 
 /**
@@ -31,7 +30,7 @@ export function useMoatlessSession(): MoatlessSession {
   const { data, error, isPending } = useMoatlessQuery(sessionQuery);
   return {
     session: data,
-    // Absent while loading and after a failure. The administration nav appears
+    // Absent while loading and after a failure. An admin-only control appears
     // when the answer is known to be yes, never on the way to finding out —
     // an entry that materialises a second after the page settles reads as a
     // glitch, and one that vanishes reads as a permissions change.
@@ -39,12 +38,4 @@ export function useMoatlessSession(): MoatlessSession {
     isPending,
     error,
   };
-}
-
-/** The same answer outside React, for a router `beforeLoad`. */
-export async function readIsMoatlessAdmin(): Promise<boolean> {
-  if (!moatlessApiAvailable()) return false;
-  const response = await meHandler();
-  if (response.status !== 200) return false;
-  return response.data.user?.role === "admin";
 }

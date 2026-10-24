@@ -44,8 +44,6 @@ import {
   useScopedSettingSource,
   useUpdateScopedSettings,
 } from "./useScopedSettings";
-import { featureFlagsQuery } from "./moatless/queries";
-import { useMoatlessQuery } from "~/moatless/query";
 // Fork: gates the rows for choices the Moatless backend does not offer.
 import { FEATURES } from "~/fork/features";
 
@@ -100,15 +98,9 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
   const modelSource = useScopedSettingSource(["defaultModelSelection"]);
   const isProjectScope = scope.kind === "project" || scope.kind === "checkout";
   const unavailable = connectedEnvironments.length === 0;
-  // Fork: at a project scope on a Moatless backend the project is a Workspace,
-  // and the Workspace answers these five questions itself — the model and
-  // effort from its own defaults, and the other four not at all. The rows
-  // stay at an environment scope, where they are still the deployment default.
-  const workspaceOwnsProjectDefaults =
-    useMoatlessQuery(featureFlagsQuery).data?.workspace_settings === true && isProjectScope;
-  // Fork: and at every scope where the backend cannot save or honour the row.
-  const hideModelRow = workspaceOwnsProjectDefaults || !FEATURES.defaultModelSetting;
-  const hideWorktreeRows = workspaceOwnsProjectDefaults || !FEATURES.worktreeSelection;
+  // Fork: rows the backend cannot save or honour, at every scope.
+  const hideModelRow = !FEATURES.defaultModelSetting;
+  const hideWorktreeRows = !FEATURES.worktreeSelection;
 
   const effective = target
     ? resolveProjectSettings(target.settings, null, null, null).settings
@@ -285,13 +277,13 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
     >
       {category === "project" ? (
         <>
-          {/* Fork: hideModelRow and hideWorktreeRows widen workspaceOwnsProjectDefaults. */}
+          {/* Fork: see hideModelRow and hideWorktreeRows. */}
           {hideModelRow ? null : modelRow}
           {hideWorktreeRows ? null : workspaceRow}
         </>
       ) : category === "general" ? (
         <>
-          {/* Fork: hideModelRow widens workspaceOwnsProjectDefaults. */}
+          {/* Fork: see hideModelRow. */}
           {hideModelRow ? null : modelRow}
           {/* Fork: every Moatless task runs with full access; see FEATURES.accessMode. */}
           {FEATURES.accessMode ? (
@@ -357,7 +349,7 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
               }
             />
           ) : null}
-          {/* Fork: hideWorktreeRows widens workspaceOwnsProjectDefaults. */}
+          {/* Fork: see hideWorktreeRows. */}
           {hideWorktreeRows ? null : workspaceRow}
           {hideWorktreeRows ? null : (
             <SettingsRow
@@ -410,37 +402,35 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
         </>
       ) : (
         <>
-          {workspaceOwnsProjectDefaults ? null : (
-            <SettingsRow
-              serverScoped
-              settingKeys={["defaultAutoPull"]}
-              mixed={mixedAutoPull}
-              id="automatic-pull"
-              title="Automatically pull"
-              description={
-                isProjectScope
-                  ? "Keeps this project's default branch current when the checkout has no local changes or commits."
-                  : "Keeps the default branch current when the checkout has no local changes or commits. Projects can override it."
-              }
-              resetAction={
-                settings.defaultAutoPull ? (
-                  <SettingResetButton
-                    label="default automatic pull"
-                    tooltip="Reset automatic pull to off"
-                    onClick={() => updateSettings({ defaultAutoPull: false })}
-                  />
-                ) : null
-              }
-              control={
-                <Switch
-                  aria-label="Default automatic pull"
-                  mixed={mixedAutoPull}
-                  checked={mixedAutoPull ? false : settings.defaultAutoPull}
-                  onCheckedChange={(enabled) => updateSettings({ defaultAutoPull: enabled })}
+          <SettingsRow
+            serverScoped
+            settingKeys={["defaultAutoPull"]}
+            mixed={mixedAutoPull}
+            id="automatic-pull"
+            title="Automatically pull"
+            description={
+              isProjectScope
+                ? "Keeps this project's default branch current when the checkout has no local changes or commits."
+                : "Keeps the default branch current when the checkout has no local changes or commits. Projects can override it."
+            }
+            resetAction={
+              settings.defaultAutoPull ? (
+                <SettingResetButton
+                  label="default automatic pull"
+                  tooltip="Reset automatic pull to off"
+                  onClick={() => updateSettings({ defaultAutoPull: false })}
                 />
-              }
-            />
-          )}
+              ) : null
+            }
+            control={
+              <Switch
+                aria-label="Default automatic pull"
+                mixed={mixedAutoPull}
+                checked={mixedAutoPull ? false : settings.defaultAutoPull}
+                onCheckedChange={(enabled) => updateSettings({ defaultAutoPull: enabled })}
+              />
+            }
+          />
           <SettingsRow
             serverScoped
             settingKeys={["removeAgentCreditsOnMerge"]}

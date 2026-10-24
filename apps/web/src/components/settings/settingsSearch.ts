@@ -18,7 +18,6 @@ import {
 export type SettingsPath =
   // Fork: the git hosts the viewer's own tasks clone and push with. Named
   // "version-control" because upstream already owns "/settings/source-control".
-  // Personal, so it stays out of MoatlessAdminPath below.
   | "/settings/version-control"
   | "/settings/projects"
   | "/settings/general"
@@ -27,48 +26,12 @@ export type SettingsPath =
   | "/settings/keybindings"
   | "/settings/snap-shot"
   | "/settings/providers"
-  // Fork: named "browser", not "integrations" — the fork's own
-  // "/settings/integrations" is the Moatless connections/apps admin page
-  // (see MoatlessAdminPath below), so upstream's embedded-surfaces settings
-  // moved here to avoid colliding on the same route.
-  | "/settings/browser"
+  | "/settings/integrations"
   | "/settings/scheduled-tasks"
   | "/settings/source-control"
   | "/settings/storage"
   | "/settings/connections"
-  | "/settings/archived"
-  | MoatlessAdminPath;
-
-/**
- * Settings pages that administer the Moatless deployment rather than this
- * client. Fork-only, and split out so the nav and the route guard can name the
- * group without listing its members twice.
- */
-export type MoatlessAdminPath =
-  | "/settings/loops"
-  | "/settings/integrations"
-  | "/settings/skills"
-  | "/settings/secrets"
-  | "/settings/users";
-
-export const MOATLESS_ADMIN_PATHS = [
-  "/settings/loops",
-  "/settings/integrations",
-  "/settings/skills",
-  "/settings/secrets",
-  "/settings/users",
-] as const satisfies ReadonlyArray<MoatlessAdminPath>;
-
-const MOATLESS_ADMIN_PATH_SET: ReadonlySet<string> = new Set(MOATLESS_ADMIN_PATHS);
-
-/**
- * Whether a path administers the deployment, including its detail routes —
- * `/settings/loops/42` is as administrative as `/settings/loops`.
- */
-export function isMoatlessAdminPath(pathname: string): boolean {
-  if (MOATLESS_ADMIN_PATH_SET.has(pathname)) return true;
-  return MOATLESS_ADMIN_PATHS.some((path) => pathname.startsWith(`${path}/`));
-}
+  | "/settings/archived";
 
 export type SettingsSearchScope =
   | "environment"
@@ -138,17 +101,12 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   // credentials are the other half of the same question, so this sits directly
   // below Providers.
   "/settings/version-control": "Version control",
-  "/settings/browser": "Browser",
+  "/settings/integrations": "Integrations",
   "/settings/scheduled-tasks": "Scheduled Tasks",
   "/settings/source-control": "Source Control",
   "/settings/storage": "Storage",
   "/settings/connections": "Connections",
   "/settings/archived": "Archive",
-  "/settings/loops": "Loops",
-  "/settings/integrations": "Integrations",
-  "/settings/skills": "Skills",
-  "/settings/secrets": "Secrets",
-  "/settings/users": "Users",
 };
 
 export function keybindingSearchAnchorId<Command extends KeybindingCommand>(command: Command) {
@@ -244,9 +202,7 @@ export const SETTINGS_SEARCH_ITEMS = [
     id: "project-overview",
     title: "Project overview",
     to: "/settings/projects",
-    searchTerms: [
-      "name icon emoji image checkout remove delete workspace repositories actions scripts description model effort",
-    ],
+    searchTerms: ["name icon emoji image checkout remove delete"],
   },
   {
     id: "default-model",
@@ -751,104 +707,88 @@ export const SETTINGS_SEARCH_ITEMS = [
   {
     id: "agent-browser-access",
     title: "Agent browser access",
-    // Fork: routed to /settings/browser, not upstream's /settings/integrations.
-    // Upstream moved this row off /settings/projects and onto the embedded-surface
-    // panel on 2026-09-09, which the fork serves at /settings/browser.
-    to: "/settings/browser",
+    to: "/settings/integrations",
     scope: "project-defaults",
     searchTerms: ["allow disable enable open drive preview tools sessions project override"],
   },
   {
     id: "device-hosts",
     title: "Device hosts",
-    // Fork: routed to /settings/browser, not upstream\'s /settings/integrations.
-    to: "/settings/browser",
+    to: "/settings/integrations",
     searchTerms: ["ssh remote simulator emulator ios android mac mini identity key connection"],
   },
   {
     id: "agent-device-access",
     title: "Agent device access",
-    // Fork: routed to /settings/browser, not upstream\'s /settings/integrations.
-    to: "/settings/browser",
+    to: "/settings/integrations",
     targetId: "devices",
     searchTerms: ["allow simulator emulator ios android drive tools sessions"],
   },
   {
     id: "device-hub",
     title: "Device hub",
-    // Fork: routed to /settings/browser, not upstream\'s /settings/integrations.
-    to: "/settings/browser",
+    to: "/settings/integrations",
     targetId: "devices",
     searchTerms: ["simulator emulator ios android install start"],
   },
   {
     id: "device-platform-support",
     title: "Simulator support",
-    // Fork: routed to /settings/browser, not upstream\'s /settings/integrations.
-    to: "/settings/browser",
+    to: "/settings/integrations",
     targetId: "devices",
     searchTerms: ["xcode android studio sdk avd runtime"],
   },
   {
     id: "browser-profiles",
     title: "Browser profiles",
-    // Fork: routed to /settings/browser, not upstream's /settings/integrations.
-    to: "/settings/browser",
+    to: "/settings/integrations",
     targetId: "browser",
   },
   {
     id: "browser-default-profile",
     title: "Default browser profile",
-    // Fork: routed to /settings/browser, not upstream's /settings/integrations.
-    to: "/settings/browser",
+    to: "/settings/integrations",
     targetId: "browser-profiles",
   },
   {
     id: "browser-default-viewport",
     title: "Default browser viewport",
-    // Fork: routed to /settings/browser, not upstream's /settings/integrations.
-    to: "/settings/browser",
+    to: "/settings/integrations",
     searchTerms: ["preview size width height device desktop mobile rotate"],
   },
   {
     id: "browser-default-zoom",
     title: "Default browser zoom",
-    // Fork: routed to /settings/browser, not upstream's /settings/integrations.
-    to: "/settings/browser",
+    to: "/settings/integrations",
     searchTerms: ["preview page scale tabs percent"],
   },
   {
     id: "browser-default-appearance",
     title: "Default browser appearance",
-    // Fork: routed to /settings/browser, not upstream's /settings/integrations.
-    to: "/settings/browser",
+    to: "/settings/integrations",
     searchTerms: ["preview color scheme light dark system os"],
   },
   {
     id: "browser-recording-frame-rate",
     title: "Browser recording frame rate",
-    // Fork: routed to /settings/browser, not upstream's /settings/integrations.
-    to: "/settings/browser",
+    to: "/settings/integrations",
   },
   {
     id: "browser-recording-key-presses",
     title: "Show key presses in recordings",
-    // Fork: routed to /settings/browser, not upstream\'s /settings/integrations.
-    to: "/settings/browser",
+    to: "/settings/integrations",
     searchTerms: ["browser preview keyboard shortcuts keystrokes overlay capture"],
   },
   {
     id: "browser-recording-mouse-presses",
     title: "Show mouse presses in recordings",
-    // Fork: routed to /settings/browser, not upstream\'s /settings/integrations.
-    to: "/settings/browser",
+    to: "/settings/integrations",
     searchTerms: ["browser preview clicks buttons drag overlay capture"],
   },
   {
     id: "browser-link-target",
     title: "Open links in",
-    // Fork: routed to /settings/browser, not upstream's /settings/integrations.
-    to: "/settings/browser",
+    to: "/settings/integrations",
     searchTerms: ["links default browser in-app browser external open"],
   },
   {
@@ -866,8 +806,7 @@ export const SETTINGS_SEARCH_ITEMS = [
   {
     id: "browser-auto-show-floating-preview",
     title: "Auto-show floating preview",
-    // Fork: routed to /settings/browser, not upstream's /settings/integrations.
-    to: "/settings/browser",
+    to: "/settings/integrations",
     searchTerms: ["agent opens browser device simulator pop into view hide"],
   },
   {
@@ -1094,63 +1033,9 @@ export const SETTINGS_SEARCH_ITEMS = [
     to: "/settings/archived",
     searchTerms: ["restore reopen deleted history projects"],
   },
-  {
-    id: "loops",
-    title: "Loops",
-    to: "/settings/loops",
-  },
-  // Its own item for the same reason the Secrets sections below have theirs:
-  // the page carries two sections and "Loops" could only land on one. This one
-  // is what somebody searching for work to do is looking for, and it lands on
-  // the page whether or not anything is waiting there today.
-  {
-    id: "loops-awaiting-approval",
-    title: "Loops awaiting approval",
-    to: "/settings/loops",
-  },
-  {
-    id: "integrations-connections",
-    title: "Connections",
-    to: "/settings/integrations",
-  },
-  {
-    id: "integrations-apps",
-    title: "Apps",
-    to: "/settings/integrations",
-  },
-  {
-    id: "integrations-github",
-    title: "GitHub",
-    to: "/settings/integrations",
-  },
-  {
-    id: "skills",
-    title: "Skills",
-    to: "/settings/skills",
-  },
-  // One item per section rather than one for the page, the way the Integrations
-  // sections above are listed: the page carries two, and a single "Secrets"
-  // result could only land on one of them.
-  {
-    id: "secrets-global",
-    title: "Global secrets",
-    to: "/settings/secrets",
-  },
-  {
-    id: "secrets-personal",
-    title: "Your secrets",
-    to: "/settings/secrets",
-  },
-  {
-    id: "users",
-    title: "Users",
-    to: "/settings/users",
-  },
-  // Fork: the Account page's two sections and the Version control page's, which
-  // the panels anchor to by these ids. Last in the catalog rather than first so
-  // they lose index tie-breaks: "git" should still reach upstream's git
-  // settings, and anyone after these pages types "github", which matches
-  // nothing else.
+  // Fork: the Version control page and the provider credentials. Last in the
+  // catalog rather than first so they lose index tie-breaks: "git" should still
+  // reach upstream's git settings.
   {
     id: "version-control",
     title: "Version control",
@@ -1208,21 +1093,12 @@ const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScop
   "/settings/snap-shot": null,
   "/settings/keybindings": null,
   "/settings/providers": null,
-  // Fork: upstream's embedded-surface settings, served at /settings/browser
-  // because the fork's /settings/integrations is a Moatless admin page.
-  "/settings/browser": null,
+  "/settings/integrations": null,
   "/settings/source-control": "environment-defaults",
   "/settings/storage": "project-defaults",
   "/settings/connections": "connections",
   "/settings/scheduled-tasks": null,
   "/settings/archived": "project-defaults",
-  // Fork: the Moatless admin pages administer the deployment, not a selected
-  // environment or project, so none of them carries a scope.
-  "/settings/loops": null,
-  "/settings/integrations": null,
-  "/settings/skills": null,
-  "/settings/secrets": null,
-  "/settings/users": null,
 };
 
 export function getSettingsSearchTargetScope(targetId: string) {

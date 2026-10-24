@@ -118,8 +118,6 @@ import {
   SettingsSection,
 } from "./settingsLayout";
 import { FEATURES } from "../../fork/features";
-import { featureFlagsQuery } from "./moatless/queries";
-import { useMoatlessQuery } from "~/moatless/query";
 import { searchableSetting } from "./settingsSearch";
 import { useSettingsScope } from "./SettingsScopeContext";
 import { BrowserImportWizard, type WizardTarget } from "./BrowserImportWizard";
@@ -1082,11 +1080,6 @@ function AgentBrowserAccessSetting() {
   const settings = useScopedSettings();
   const updateSettings = useUpdateScopedSettings();
   const isProjectScope = scope.kind === "project" || scope.kind === "checkout";
-  // Fork: a Workspace has no per-project browser access, as with the rows
-  // `workspaceOwnsProjectDefaults` hides in ProjectDefaultsSettings.
-  const workspaceOwnsProjectDefaults =
-    useMoatlessQuery(featureFlagsQuery).data?.workspace_settings === true && isProjectScope;
-  if (workspaceOwnsProjectDefaults) return null;
 
   return (
     <SettingsRow

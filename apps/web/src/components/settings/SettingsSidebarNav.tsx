@@ -15,17 +15,12 @@ import {
   CalendarClockIcon,
   GitBranchIcon,
   HardDriveIcon,
-  KeyRoundIcon,
   PanelsTopLeftIcon,
   KeyboardIcon,
   Link2Icon,
   PaletteIcon,
-  PlugZapIcon,
-  RepeatIcon,
   SearchIcon,
   Settings2Icon,
-  SparklesIcon,
-  UsersIcon,
   XIcon,
 } from "lucide-react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
@@ -42,16 +37,11 @@ import {
   useSidebar,
   SidebarInput,
 } from "../ui/sidebar";
-// Fork: settingsPathEnabled/isMoatlessAdminPath gate settings pages and
-// split the nav into personal vs. admin-only sections (used further below).
+// Fork: gates the sections and search results this server cannot back.
 import { settingsPathEnabled } from "../../fork/features";
-import { useMoatlessQuery } from "../../moatless/query";
-import { useMoatlessSession } from "../../moatless/session";
 import { SidebarUtilityMenu } from "../sidebar/SidebarChrome";
-import { featureFlagsQuery } from "./moatless/queries";
 import { scrollToSettingsTarget } from "./settingsLayout";
 import {
-  isMoatlessAdminPath,
   searchSettings,
   isSettingsOverviewVisible,
   SETTINGS_SECTION_LABELS,
@@ -97,17 +87,12 @@ const SETTINGS_SECTION_ICONS: Readonly<
   // Fork: the Moatless git-host page. Shares GitBranchIcon with
   // "/settings/source-control", which FEATURE_BY_SETTINGS_PATH gates off here.
   "/settings/version-control": GitBranchIcon,
-  "/settings/browser": BlocksIcon,
+  "/settings/integrations": BlocksIcon,
   "/settings/scheduled-tasks": CalendarClockIcon,
   "/settings/source-control": GitBranchIcon,
   "/settings/storage": HardDriveIcon,
   "/settings/connections": Link2Icon,
   "/settings/archived": ArchiveIcon,
-  "/settings/loops": RepeatIcon,
-  "/settings/integrations": PlugZapIcon,
-  "/settings/skills": SparklesIcon,
-  "/settings/secrets": KeyRoundIcon,
-  "/settings/users": UsersIcon,
 };
 
 const SETTINGS_NAV_ITEMS: ReadonlyArray<{
@@ -122,12 +107,6 @@ const SETTINGS_NAV_ITEMS: ReadonlyArray<{
     icon: SETTINGS_SECTION_ICONS[to],
   }));
 
-// Fork: the Moatless backend distinguishes admin-only settings from personal
-// ones, which upstream has no concept of. Split here and render as two nav
-// groups further down.
-const PERSONAL_NAV_ITEMS = SETTINGS_NAV_ITEMS.filter((item) => !isMoatlessAdminPath(item.to));
-const ADMINISTRATION_NAV_ITEMS = SETTINGS_NAV_ITEMS.filter((item) => isMoatlessAdminPath(item.to));
-
 function SettingsSectionIcon({ to }: { to: SettingsPath }) {
   const Icon = SETTINGS_SECTION_ICONS[to];
   return <Icon className="size-3.5 h-5 shrink-0 text-sidebar-muted-foreground/60" />;
@@ -138,30 +117,20 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
   const currentHash = useLocation({ select: (location) => location.hash });
   const currentSearch = useLocation({ select: (location) => location.search });
   const scopeSearch = validateSettingsScopeSearch(currentSearch);
-  // Fork: upstream's Project-overview gate, applied to the personal group the
-  // fork splits the nav into. /settings/projects is not an administration path.
-  //
-  // With workspace settings on, that page is also where a Moatless Workspace is
-  // administered, and the gate would hide the only way in until a project is
-  // already in scope. It stays listed instead, and the page's own notice offers
-  // the project list.
-  const workspaceSettings = useMoatlessQuery(featureFlagsQuery).data?.workspace_settings === true;
-  const personalNavItems = PERSONAL_NAV_ITEMS.filter(
+  const navItems = SETTINGS_NAV_ITEMS.filter(
     (item) =>
-      item.to !== "/settings/projects" ||
-      workspaceSettings ||
-      isSettingsOverviewVisible(scopeSearch),
+      // Fork: see settingsPathEnabled.
+      settingsPathEnabled(item.to) &&
+      (item.to !== "/settings/projects" || isSettingsOverviewVisible(scopeSearch)),
   );
   const { isMobile, setOpenMobile, open, setOpen } = useSidebar();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [activeResultIndex, setActiveResultIndex] = useState(0);
   const searchableItems = useAvailableSettingsSearchItems(scopeSearch);
-  // Fork: search is a second way into a section, so it filters alongside the
-  // nav list — a result that jumps to a section the nav hides is the same hole.
-  const { isAdmin } = useMoatlessSession();
-  const results = searchSettings(query, searchableItems).filter(
-    (item) => settingsPathEnabled(item.to) && (isAdmin || !isMoatlessAdminPath(item.to)),
+  // Fork: a result for a section the nav hides lands on a redirect.
+  const results = searchSettings(query, searchableItems).filter((item) =>
+    settingsPathEnabled(item.to),
   );
   const isSearching = query.trim().length > 0;
   const hasResults = results.length > 0;
@@ -280,23 +249,6 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
     }
   };
 
-  // Fork: extracted so the personal and Administration groups below render
-  // identical rows; upstream inlines this in its single nav list.
-  const renderNavItem = (item: (typeof SETTINGS_NAV_ITEMS)[number]) => {
-    const Icon = item.icon;
-    const isGeneralDetailPage =
-      item.to === "/settings/general" && pathname === "/settings/open-source-licenses";
-    const isActive =
-      isGeneralDetailPage || pathname === item.to || pathname.startsWith(`${item.to}/`);
-    return (
-      <SidebarMenuItem key={item.to}>
-        <SidebarMenuButton isActive={isActive} onClick={() => handleSectionClick(item.to)}>
-          <Icon />
-          <span className="truncate">{item.label}</span>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-    );
-  };
   return (
     <>
       <SidebarContent className="overflow-x-hidden">
@@ -386,32 +338,30 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                 ))}
               </SidebarMenu>
             ) : (
-              // Fork: only personal settings render in the main list here;
-              // admin-only items get their own group below, gated on isAdmin.
               <SidebarMenu>
-                {personalNavItems.filter((item) => settingsPathEnabled(item.to)).map(renderNavItem)}
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isGeneralDetailPage =
+                    item.to === "/settings/general" &&
+                    pathname === "/settings/open-source-licenses";
+                  const isActive =
+                    isGeneralDetailPage ||
+                    pathname === item.to ||
+                    pathname.startsWith(`${item.to}/`);
+                  return (
+                    <SidebarMenuItem key={item.to}>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        onClick={() => handleSectionClick(item.to)}
+                      >
+                        <Icon />
+                        <span className="truncate">{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             )}
-            {/* Fork: admin-only settings (see isMoatlessAdminPath) are hidden
-                from non-admins entirely, not merely deprioritized. */}
-            {!isSearching && isAdmin ? (
-              <>
-                {/* Fork: upstream deleted `SidebarGroupLabel` as unused in #9917.
-                    The fork's admin group was its only caller, so the label is
-                    inlined here rather than re-added to upstream's ui/sidebar. */}
-                <div
-                  data-slot="sidebar-group-label"
-                  className="flex h-8 shrink-0 items-center rounded-lg px-2 font-medium text-sidebar-foreground text-xs group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0"
-                >
-                  Administration
-                </div>
-                <SidebarMenu>
-                  {ADMINISTRATION_NAV_ITEMS.filter((item) => settingsPathEnabled(item.to)).map(
-                    renderNavItem,
-                  )}
-                </SidebarMenu>
-              </>
-            ) : null}
           </div>
         </SidebarGroup>
       </SidebarContent>

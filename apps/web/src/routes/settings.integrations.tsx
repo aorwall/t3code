@@ -1,11 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { IntegrationsPanel } from "../components/settings/moatless/IntegrationsPanel";
-
-function SettingsIntegrationsRoute() {
-  return <IntegrationsPanel />;
-}
+import { IntegrationsSettingsPanel } from "../components/settings/IntegrationsSettings";
 
 export const Route = createFileRoute("/settings/integrations")({
-  component: SettingsIntegrationsRoute,
+  component: IntegrationsSettingsPanel,
 });

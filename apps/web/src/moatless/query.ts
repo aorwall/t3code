@@ -25,7 +25,7 @@ import { appAtomRegistry } from "../rpc/atomRegistry";
  * and it would type-check here — it takes any `Effect`. It also returns
  * `Effect.never` until the environment socket reports a connected generation
  * (`runtime.ts:516`), because everything it was built for is served over that
- * socket. Administration data is not: it is HTTP, on the same origin, with the
+ * socket. Moatless REST data is not: it is HTTP, on the same origin, with the
  * same cookie, and it has no reason to wait for a chat connection. Reusing that
  * helper would blank every settings page whenever the socket reconnects.
  *

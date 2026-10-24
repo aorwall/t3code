@@ -49,12 +49,8 @@ import { ProjectDefaultsSettings } from "./ProjectDefaultsSettings";
 import { projectGroupTitleNeedsUpdate } from "./ProjectSettingsPanel.logic";
 import { useSettingsProjectGroups } from "./useSettingsProjectGroups";
 import { settingsScopeEnvironmentLabels } from "./settingsScopeAxis";
-import {
-  ProjectWorkspaceDangerSection,
-  ProjectWorkspaceSettings,
-} from "./moatless/ProjectWorkspaceSettings";
-import { featureFlagsQuery } from "./moatless/queries";
-import { useMoatlessQuery } from "~/moatless/query";
+// Fork: gates the rows whose writes a Moatless Workspace refuses.
+import { FEATURES } from "../../fork/features";
 
 const ProjectIconPickerDialog = lazy(() =>
   import("./ProjectIconPickerDialog").then((module) => ({
@@ -184,11 +180,6 @@ function ProjectDetail({
     group.memberProjects.find(
       (member) => environmentById.get(member.environmentId)?.serverConfig != null,
     ) ?? group.memberProjects[0]!;
-  // Fork: where the backend is Moatless, a project is one of its Workspaces and
-  // the Workspace owns the name and the icon that `project.meta.update` refuses
-  // by name. Those rows are replaced by sections that write over the Workspace
-  // API rather than hidden.
-  const workspaceSettings = useMoatlessQuery(featureFlagsQuery).data?.workspace_settings === true;
   const threads = useThreadShells();
   const updateProject = useOrchestrationCommand(projectEnvironment.update, {
     reportFailure: false,
@@ -476,9 +467,9 @@ function ProjectDetail({
             Can't find a setting? Keep this project picked above and hop to any other settings page.
           </AlertDescription>
         </Alert>
-        {workspaceSettings ? (
-          <ProjectWorkspaceSettings workspaceId={representative.id} project={representative} />
-        ) : (
+        {/* Fork: a Moatless Workspace takes its name and icon from git or the
+            moat CLI, and the backend refuses `project.meta.update` for both. */}
+        {FEATURES.projectManagement ? (
           <SettingsSection id="project-overview" title="Project" hideTitle>
             {!canEditGroup ? (
               <p className="px-3 py-2 text-sm text-muted-foreground sm:px-4">
@@ -561,19 +552,12 @@ function ProjectDetail({
               }
             />
           </SettingsSection>
-        )}
-        {/* Fork: a Workspace owns both rows this section carries, so the whole
-            section would be an empty "New threads" header beside
-            ProjectWorkspaceSettings (inventory project-defaults-settings). */}
-        {workspaceSettings ? null : <ProjectDefaultsSettings category="project" />}
+        ) : null}
+        <ProjectDefaultsSettings category="project" />
         <ProjectActionsSettings />
         {hasMultipleCheckouts ? checkoutChoices : null}
-        {workspaceSettings ? (
-          <ProjectWorkspaceDangerSection
-            workspaceId={representative.id}
-            onDeleted={() => void navigate({ to: "/", replace: true })}
-          />
-        ) : (
+        {/* Fork: the backend refuses `project.delete`; see FEATURES.projectManagement. */}
+        {FEATURES.projectManagement ? (
           <SettingsSection title="Danger">
             <SettingsRow
               title={
@@ -607,7 +591,7 @@ function ProjectDetail({
               }
             />
           </SettingsSection>
-        )}
+        ) : null}
       </SettingsPageContainer>
 
       <ProjectFaviconPickerDialog

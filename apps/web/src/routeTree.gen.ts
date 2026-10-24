@@ -19,32 +19,23 @@ import { Route as ConnectRouteImport } from './routes/connect'
 import { Route as ChatRouteImport } from './routes/_chat'
 import { Route as ChatIndexRouteImport } from './routes/_chat.index'
 import { Route as SettingsVersionControlRouteImport } from './routes/settings.version-control'
-import { Route as SettingsUsersRouteImport } from './routes/settings.users'
 import { Route as SettingsStorageRouteImport } from './routes/settings.storage'
 import { Route as SettingsSourceControlRouteImport } from './routes/settings.source-control'
 import { Route as SettingsSnapShotRouteImport } from './routes/settings.snap-shot'
-import { Route as SettingsSkillsRouteImport } from './routes/settings.skills'
-import { Route as SettingsSecretsRouteImport } from './routes/settings.secrets'
 import { Route as SettingsScheduledTasksRouteImport } from './routes/settings.scheduled-tasks'
 import { Route as SettingsProvidersRouteImport } from './routes/settings.providers'
 import { Route as SettingsProjectsRouteImport } from './routes/settings.projects'
 import { Route as SettingsOpenSourceLicensesRouteImport } from './routes/settings.open-source-licenses'
-import { Route as SettingsLoopsRouteImport } from './routes/settings.loops'
 import { Route as SettingsKeybindingsRouteImport } from './routes/settings.keybindings'
 import { Route as SettingsIntegrationsRouteImport } from './routes/settings.integrations'
 import { Route as SettingsGeneralRouteImport } from './routes/settings.general'
 import { Route as SettingsDiagnosticsRouteImport } from './routes/settings.diagnostics'
 import { Route as SettingsConnectionsRouteImport } from './routes/settings.connections'
-import { Route as SettingsBrowserRouteImport } from './routes/settings.browser'
 import { Route as SettingsArchivedRouteImport } from './routes/settings.archived'
 import { Route as SettingsAppearanceRouteImport } from './routes/settings.appearance'
 import { Route as ProjectsProjectKeyRouteImport } from './routes/projects.$projectKey'
 import { Route as ChatPullRequestsRouteImport } from './routes/_chat.pull-requests'
 import { Route as ChatNewRouteImport } from './routes/_chat.new'
-import { Route as SettingsUsersLoginRouteImport } from './routes/settings.users_.$login'
-import { Route as SettingsSkillsPluginIdRouteImport } from './routes/settings.skills_.$pluginId'
-import { Route as SettingsLoopsLoopIdRouteImport } from './routes/settings.loops_.$loopId'
-import { Route as SettingsIntegrationsConnectionIdRouteImport } from './routes/settings.integrations_.$connectionId'
 import { Route as ChatTasksTaskIdRouteImport } from './routes/_chat.tasks.$taskId'
 import { Route as ChatDraftDraftIdRouteImport } from './routes/_chat.draft.$draftId'
 import { Route as ChatEnvironmentIdThreadIdRouteImport } from './routes/_chat.$environmentId.$threadId'
@@ -98,11 +89,6 @@ const SettingsVersionControlRoute = SettingsVersionControlRouteImport.update({
   path: '/version-control',
   getParentRoute: () => SettingsRoute,
 } as any)
-const SettingsUsersRoute = SettingsUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => SettingsRoute,
-} as any)
 const SettingsStorageRoute = SettingsStorageRouteImport.update({
   id: '/storage',
   path: '/storage',
@@ -116,16 +102,6 @@ const SettingsSourceControlRoute = SettingsSourceControlRouteImport.update({
 const SettingsSnapShotRoute = SettingsSnapShotRouteImport.update({
   id: '/snap-shot',
   path: '/snap-shot',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsSkillsRoute = SettingsSkillsRouteImport.update({
-  id: '/skills',
-  path: '/skills',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsSecretsRoute = SettingsSecretsRouteImport.update({
-  id: '/secrets',
-  path: '/secrets',
   getParentRoute: () => SettingsRoute,
 } as any)
 const SettingsScheduledTasksRoute = SettingsScheduledTasksRouteImport.update({
@@ -149,11 +125,6 @@ const SettingsOpenSourceLicensesRoute =
     path: '/open-source-licenses',
     getParentRoute: () => SettingsRoute,
   } as any)
-const SettingsLoopsRoute = SettingsLoopsRouteImport.update({
-  id: '/loops',
-  path: '/loops',
-  getParentRoute: () => SettingsRoute,
-} as any)
 const SettingsKeybindingsRoute = SettingsKeybindingsRouteImport.update({
   id: '/keybindings',
   path: '/keybindings',
@@ -177,11 +148,6 @@ const SettingsDiagnosticsRoute = SettingsDiagnosticsRouteImport.update({
 const SettingsConnectionsRoute = SettingsConnectionsRouteImport.update({
   id: '/connections',
   path: '/connections',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsBrowserRoute = SettingsBrowserRouteImport.update({
-  id: '/browser',
-  path: '/browser',
   getParentRoute: () => SettingsRoute,
 } as any)
 const SettingsArchivedRoute = SettingsArchivedRouteImport.update({
@@ -209,27 +175,6 @@ const ChatNewRoute = ChatNewRouteImport.update({
   path: '/new',
   getParentRoute: () => ChatRoute,
 } as any)
-const SettingsUsersLoginRoute = SettingsUsersLoginRouteImport.update({
-  id: '/users_/$login',
-  path: '/users/$login',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsSkillsPluginIdRoute = SettingsSkillsPluginIdRouteImport.update({
-  id: '/skills_/$pluginId',
-  path: '/skills/$pluginId',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsLoopsLoopIdRoute = SettingsLoopsLoopIdRouteImport.update({
-  id: '/loops_/$loopId',
-  path: '/loops/$loopId',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsIntegrationsConnectionIdRoute =
-  SettingsIntegrationsConnectionIdRouteImport.update({
-    id: '/integrations_/$connectionId',
-    path: '/integrations/$connectionId',
-    getParentRoute: () => SettingsRoute,
-  } as any)
 const ChatTasksTaskIdRoute = ChatTasksTaskIdRouteImport.update({
   id: '/tasks/$taskId',
   path: '/tasks/$taskId',
@@ -261,31 +206,22 @@ export interface FileRoutesByFullPath {
   '/projects/$projectKey': typeof ProjectsProjectKeyRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/archived': typeof SettingsArchivedRoute
-  '/settings/browser': typeof SettingsBrowserRoute
   '/settings/connections': typeof SettingsConnectionsRoute
   '/settings/diagnostics': typeof SettingsDiagnosticsRoute
   '/settings/general': typeof SettingsGeneralRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/keybindings': typeof SettingsKeybindingsRoute
-  '/settings/loops': typeof SettingsLoopsRoute
   '/settings/open-source-licenses': typeof SettingsOpenSourceLicensesRoute
   '/settings/projects': typeof SettingsProjectsRoute
   '/settings/providers': typeof SettingsProvidersRoute
   '/settings/scheduled-tasks': typeof SettingsScheduledTasksRoute
-  '/settings/secrets': typeof SettingsSecretsRoute
-  '/settings/skills': typeof SettingsSkillsRoute
   '/settings/snap-shot': typeof SettingsSnapShotRoute
   '/settings/source-control': typeof SettingsSourceControlRoute
   '/settings/storage': typeof SettingsStorageRoute
-  '/settings/users': typeof SettingsUsersRoute
   '/settings/version-control': typeof SettingsVersionControlRoute
   '/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
   '/draft/$draftId': typeof ChatDraftDraftIdRoute
   '/tasks/$taskId': typeof ChatTasksTaskIdRoute
-  '/settings/integrations/$connectionId': typeof SettingsIntegrationsConnectionIdRoute
-  '/settings/loops/$loopId': typeof SettingsLoopsLoopIdRoute
-  '/settings/skills/$pluginId': typeof SettingsSkillsPluginIdRoute
-  '/settings/users/$login': typeof SettingsUsersLoginRoute
 }
 export interface FileRoutesByTo {
   '/connect': typeof ConnectRoute
@@ -300,32 +236,23 @@ export interface FileRoutesByTo {
   '/projects/$projectKey': typeof ProjectsProjectKeyRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/archived': typeof SettingsArchivedRoute
-  '/settings/browser': typeof SettingsBrowserRoute
   '/settings/connections': typeof SettingsConnectionsRoute
   '/settings/diagnostics': typeof SettingsDiagnosticsRoute
   '/settings/general': typeof SettingsGeneralRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/keybindings': typeof SettingsKeybindingsRoute
-  '/settings/loops': typeof SettingsLoopsRoute
   '/settings/open-source-licenses': typeof SettingsOpenSourceLicensesRoute
   '/settings/projects': typeof SettingsProjectsRoute
   '/settings/providers': typeof SettingsProvidersRoute
   '/settings/scheduled-tasks': typeof SettingsScheduledTasksRoute
-  '/settings/secrets': typeof SettingsSecretsRoute
-  '/settings/skills': typeof SettingsSkillsRoute
   '/settings/snap-shot': typeof SettingsSnapShotRoute
   '/settings/source-control': typeof SettingsSourceControlRoute
   '/settings/storage': typeof SettingsStorageRoute
-  '/settings/users': typeof SettingsUsersRoute
   '/settings/version-control': typeof SettingsVersionControlRoute
   '/': typeof ChatIndexRoute
   '/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
   '/draft/$draftId': typeof ChatDraftDraftIdRoute
   '/tasks/$taskId': typeof ChatTasksTaskIdRoute
-  '/settings/integrations/$connectionId': typeof SettingsIntegrationsConnectionIdRoute
-  '/settings/loops/$loopId': typeof SettingsLoopsLoopIdRoute
-  '/settings/skills/$pluginId': typeof SettingsSkillsPluginIdRoute
-  '/settings/users/$login': typeof SettingsUsersLoginRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -342,32 +269,23 @@ export interface FileRoutesById {
   '/projects/$projectKey': typeof ProjectsProjectKeyRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/archived': typeof SettingsArchivedRoute
-  '/settings/browser': typeof SettingsBrowserRoute
   '/settings/connections': typeof SettingsConnectionsRoute
   '/settings/diagnostics': typeof SettingsDiagnosticsRoute
   '/settings/general': typeof SettingsGeneralRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/keybindings': typeof SettingsKeybindingsRoute
-  '/settings/loops': typeof SettingsLoopsRoute
   '/settings/open-source-licenses': typeof SettingsOpenSourceLicensesRoute
   '/settings/projects': typeof SettingsProjectsRoute
   '/settings/providers': typeof SettingsProvidersRoute
   '/settings/scheduled-tasks': typeof SettingsScheduledTasksRoute
-  '/settings/secrets': typeof SettingsSecretsRoute
-  '/settings/skills': typeof SettingsSkillsRoute
   '/settings/snap-shot': typeof SettingsSnapShotRoute
   '/settings/source-control': typeof SettingsSourceControlRoute
   '/settings/storage': typeof SettingsStorageRoute
-  '/settings/users': typeof SettingsUsersRoute
   '/settings/version-control': typeof SettingsVersionControlRoute
   '/_chat/': typeof ChatIndexRoute
   '/_chat/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
   '/_chat/draft/$draftId': typeof ChatDraftDraftIdRoute
   '/_chat/tasks/$taskId': typeof ChatTasksTaskIdRoute
-  '/settings/integrations_/$connectionId': typeof SettingsIntegrationsConnectionIdRoute
-  '/settings/loops_/$loopId': typeof SettingsLoopsLoopIdRoute
-  '/settings/skills_/$pluginId': typeof SettingsSkillsPluginIdRoute
-  '/settings/users_/$login': typeof SettingsUsersLoginRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -385,31 +303,22 @@ export interface FileRouteTypes {
     | '/projects/$projectKey'
     | '/settings/appearance'
     | '/settings/archived'
-    | '/settings/browser'
     | '/settings/connections'
     | '/settings/diagnostics'
     | '/settings/general'
     | '/settings/integrations'
     | '/settings/keybindings'
-    | '/settings/loops'
     | '/settings/open-source-licenses'
     | '/settings/projects'
     | '/settings/providers'
     | '/settings/scheduled-tasks'
-    | '/settings/secrets'
-    | '/settings/skills'
     | '/settings/snap-shot'
     | '/settings/source-control'
     | '/settings/storage'
-    | '/settings/users'
     | '/settings/version-control'
     | '/$environmentId/$threadId'
     | '/draft/$draftId'
     | '/tasks/$taskId'
-    | '/settings/integrations/$connectionId'
-    | '/settings/loops/$loopId'
-    | '/settings/skills/$pluginId'
-    | '/settings/users/$login'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/connect'
@@ -424,32 +333,23 @@ export interface FileRouteTypes {
     | '/projects/$projectKey'
     | '/settings/appearance'
     | '/settings/archived'
-    | '/settings/browser'
     | '/settings/connections'
     | '/settings/diagnostics'
     | '/settings/general'
     | '/settings/integrations'
     | '/settings/keybindings'
-    | '/settings/loops'
     | '/settings/open-source-licenses'
     | '/settings/projects'
     | '/settings/providers'
     | '/settings/scheduled-tasks'
-    | '/settings/secrets'
-    | '/settings/skills'
     | '/settings/snap-shot'
     | '/settings/source-control'
     | '/settings/storage'
-    | '/settings/users'
     | '/settings/version-control'
     | '/'
     | '/$environmentId/$threadId'
     | '/draft/$draftId'
     | '/tasks/$taskId'
-    | '/settings/integrations/$connectionId'
-    | '/settings/loops/$loopId'
-    | '/settings/skills/$pluginId'
-    | '/settings/users/$login'
   id:
     | '__root__'
     | '/_chat'
@@ -465,32 +365,23 @@ export interface FileRouteTypes {
     | '/projects/$projectKey'
     | '/settings/appearance'
     | '/settings/archived'
-    | '/settings/browser'
     | '/settings/connections'
     | '/settings/diagnostics'
     | '/settings/general'
     | '/settings/integrations'
     | '/settings/keybindings'
-    | '/settings/loops'
     | '/settings/open-source-licenses'
     | '/settings/projects'
     | '/settings/providers'
     | '/settings/scheduled-tasks'
-    | '/settings/secrets'
-    | '/settings/skills'
     | '/settings/snap-shot'
     | '/settings/source-control'
     | '/settings/storage'
-    | '/settings/users'
     | '/settings/version-control'
     | '/_chat/'
     | '/_chat/$environmentId/$threadId'
     | '/_chat/draft/$draftId'
     | '/_chat/tasks/$taskId'
-    | '/settings/integrations_/$connectionId'
-    | '/settings/loops_/$loopId'
-    | '/settings/skills_/$pluginId'
-    | '/settings/users_/$login'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -577,13 +468,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsVersionControlRouteImport
       parentRoute: typeof SettingsRoute
     }
-    '/settings/users': {
-      id: '/settings/users'
-      path: '/users'
-      fullPath: '/settings/users'
-      preLoaderRoute: typeof SettingsUsersRouteImport
-      parentRoute: typeof SettingsRoute
-    }
     '/settings/storage': {
       id: '/settings/storage'
       path: '/storage'
@@ -603,20 +487,6 @@ declare module '@tanstack/react-router' {
       path: '/snap-shot'
       fullPath: '/settings/snap-shot'
       preLoaderRoute: typeof SettingsSnapShotRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/skills': {
-      id: '/settings/skills'
-      path: '/skills'
-      fullPath: '/settings/skills'
-      preLoaderRoute: typeof SettingsSkillsRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/secrets': {
-      id: '/settings/secrets'
-      path: '/secrets'
-      fullPath: '/settings/secrets'
-      preLoaderRoute: typeof SettingsSecretsRouteImport
       parentRoute: typeof SettingsRoute
     }
     '/settings/scheduled-tasks': {
@@ -645,13 +515,6 @@ declare module '@tanstack/react-router' {
       path: '/open-source-licenses'
       fullPath: '/settings/open-source-licenses'
       preLoaderRoute: typeof SettingsOpenSourceLicensesRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/loops': {
-      id: '/settings/loops'
-      path: '/loops'
-      fullPath: '/settings/loops'
-      preLoaderRoute: typeof SettingsLoopsRouteImport
       parentRoute: typeof SettingsRoute
     }
     '/settings/keybindings': {
@@ -689,13 +552,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsConnectionsRouteImport
       parentRoute: typeof SettingsRoute
     }
-    '/settings/browser': {
-      id: '/settings/browser'
-      path: '/browser'
-      fullPath: '/settings/browser'
-      preLoaderRoute: typeof SettingsBrowserRouteImport
-      parentRoute: typeof SettingsRoute
-    }
     '/settings/archived': {
       id: '/settings/archived'
       path: '/archived'
@@ -730,34 +586,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/new'
       preLoaderRoute: typeof ChatNewRouteImport
       parentRoute: typeof ChatRoute
-    }
-    '/settings/users_/$login': {
-      id: '/settings/users_/$login'
-      path: '/users/$login'
-      fullPath: '/settings/users/$login'
-      preLoaderRoute: typeof SettingsUsersLoginRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/skills_/$pluginId': {
-      id: '/settings/skills_/$pluginId'
-      path: '/skills/$pluginId'
-      fullPath: '/settings/skills/$pluginId'
-      preLoaderRoute: typeof SettingsSkillsPluginIdRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/loops_/$loopId': {
-      id: '/settings/loops_/$loopId'
-      path: '/loops/$loopId'
-      fullPath: '/settings/loops/$loopId'
-      preLoaderRoute: typeof SettingsLoopsLoopIdRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/integrations_/$connectionId': {
-      id: '/settings/integrations_/$connectionId'
-      path: '/integrations/$connectionId'
-      fullPath: '/settings/integrations/$connectionId'
-      preLoaderRoute: typeof SettingsIntegrationsConnectionIdRouteImport
-      parentRoute: typeof SettingsRoute
     }
     '/_chat/tasks/$taskId': {
       id: '/_chat/tasks/$taskId'
@@ -806,55 +634,37 @@ const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)
 interface SettingsRouteChildren {
   SettingsAppearanceRoute: typeof SettingsAppearanceRoute
   SettingsArchivedRoute: typeof SettingsArchivedRoute
-  SettingsBrowserRoute: typeof SettingsBrowserRoute
   SettingsConnectionsRoute: typeof SettingsConnectionsRoute
   SettingsDiagnosticsRoute: typeof SettingsDiagnosticsRoute
   SettingsGeneralRoute: typeof SettingsGeneralRoute
   SettingsIntegrationsRoute: typeof SettingsIntegrationsRoute
   SettingsKeybindingsRoute: typeof SettingsKeybindingsRoute
-  SettingsLoopsRoute: typeof SettingsLoopsRoute
   SettingsOpenSourceLicensesRoute: typeof SettingsOpenSourceLicensesRoute
   SettingsProjectsRoute: typeof SettingsProjectsRoute
   SettingsProvidersRoute: typeof SettingsProvidersRoute
   SettingsScheduledTasksRoute: typeof SettingsScheduledTasksRoute
-  SettingsSecretsRoute: typeof SettingsSecretsRoute
-  SettingsSkillsRoute: typeof SettingsSkillsRoute
   SettingsSnapShotRoute: typeof SettingsSnapShotRoute
   SettingsSourceControlRoute: typeof SettingsSourceControlRoute
   SettingsStorageRoute: typeof SettingsStorageRoute
-  SettingsUsersRoute: typeof SettingsUsersRoute
   SettingsVersionControlRoute: typeof SettingsVersionControlRoute
-  SettingsIntegrationsConnectionIdRoute: typeof SettingsIntegrationsConnectionIdRoute
-  SettingsLoopsLoopIdRoute: typeof SettingsLoopsLoopIdRoute
-  SettingsSkillsPluginIdRoute: typeof SettingsSkillsPluginIdRoute
-  SettingsUsersLoginRoute: typeof SettingsUsersLoginRoute
 }
 
 const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsAppearanceRoute: SettingsAppearanceRoute,
   SettingsArchivedRoute: SettingsArchivedRoute,
-  SettingsBrowserRoute: SettingsBrowserRoute,
   SettingsConnectionsRoute: SettingsConnectionsRoute,
   SettingsDiagnosticsRoute: SettingsDiagnosticsRoute,
   SettingsGeneralRoute: SettingsGeneralRoute,
   SettingsIntegrationsRoute: SettingsIntegrationsRoute,
   SettingsKeybindingsRoute: SettingsKeybindingsRoute,
-  SettingsLoopsRoute: SettingsLoopsRoute,
   SettingsOpenSourceLicensesRoute: SettingsOpenSourceLicensesRoute,
   SettingsProjectsRoute: SettingsProjectsRoute,
   SettingsProvidersRoute: SettingsProvidersRoute,
   SettingsScheduledTasksRoute: SettingsScheduledTasksRoute,
-  SettingsSecretsRoute: SettingsSecretsRoute,
-  SettingsSkillsRoute: SettingsSkillsRoute,
   SettingsSnapShotRoute: SettingsSnapShotRoute,
   SettingsSourceControlRoute: SettingsSourceControlRoute,
   SettingsStorageRoute: SettingsStorageRoute,
-  SettingsUsersRoute: SettingsUsersRoute,
   SettingsVersionControlRoute: SettingsVersionControlRoute,
-  SettingsIntegrationsConnectionIdRoute: SettingsIntegrationsConnectionIdRoute,
-  SettingsLoopsLoopIdRoute: SettingsLoopsLoopIdRoute,
-  SettingsSkillsPluginIdRoute: SettingsSkillsPluginIdRoute,
-  SettingsUsersLoginRoute: SettingsUsersLoginRoute,
 }
 
 const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
