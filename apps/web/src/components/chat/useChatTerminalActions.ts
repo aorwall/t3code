@@ -332,7 +332,7 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
       if (!scriptModelSelection?.model) {
         setThreadError(
           activeThreadId,
-          `Pick a model before running "${script.name}" — the thread it runs in needs one.`,
+          `Pick a model before running "${script.name}". The thread it runs in needs one.`,
         );
         return;
       }

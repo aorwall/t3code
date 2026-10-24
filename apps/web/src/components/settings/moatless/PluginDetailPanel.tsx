@@ -424,7 +424,7 @@ function DangerSection({ plugin }: { readonly plugin: PluginResponse }) {
             <AlertDialogTitle>Remove {plugin.name}?</AlertDialogTitle>
             <AlertDialogDescription>
               Its skills will no longer be delivered to any agent, and every activation record for
-              it — the deployment default and everyone's overrides — is discarded.
+              it (the deployment default and everyone's overrides) is discarded.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

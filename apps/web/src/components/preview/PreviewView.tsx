@@ -1080,9 +1080,9 @@ export function PreviewView({
         pickDisabled={!tabId || isUnreachable || (framed && !frameAnnotationReady)}
         pickDisabledReason={
           isUnreachable
-            ? "Page didn't load — pick unavailable until the page renders"
+            ? "Page didn't load. Pick is unavailable until the page renders"
             : framed && !frameAnnotationReady
-              ? "Preview inspector unavailable — add @moatless/inspector/preview-annotation to the app"
+              ? "Preview inspector unavailable. Add @moatless/inspector/preview-annotation to the app"
               : undefined
         }
         leadingActions={

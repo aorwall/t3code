@@ -356,7 +356,7 @@ function SubmitError({
     <p className="text-sm text-destructive-foreground">
       {registeredId === null
         ? `Could not add the repository to this workspace. ${placeError.message}`
-        : `The repository was registered, but adding it to this workspace failed. ${placeError.message} It is registered either way — retry, or pick it under Registered.`}
+        : `The repository was registered, but adding it to this workspace failed. ${placeError.message} It is registered either way: retry, or pick it under Registered.`}
     </p>
   );
 }

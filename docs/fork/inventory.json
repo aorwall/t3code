@@ -867,7 +867,17 @@
       "id": "root-package-json",
       "paths": ["package.json"],
       "verdict": "decide",
-      "note": "Upstream owns the root manifest; take its changes, but keep `tsc-rs` out of devDependencies (the `tsc-rs` tripwire). Upstream bumps it as a one-line change that conflicts with the fork's removal. Strip its `tsc-rs`/`@tsc-rs/*` entries from upstream's `pnpm-lock.yaml` before the re-derive install too: they are younger than `minimumReleaseAge` and fail the lockfile policy check before resolution can prune them."
+      "note": "Upstream owns the root manifest; take its changes, but keep the fork's `tsc` toolchain (the `typecheck-toolchain` entry): no `tsc-rs` in devDependencies, and keep `@effect/tsgo` with the `effect-tsgo patch` prepare step, which upstream dropped in #23023. These auto-merge without a conflict, so check them after every merge. Strip upstream's `tsc-rs`/`@tsc-rs/*` entries from `pnpm-lock.yaml` before the re-derive install if the install fails `minimumReleaseAge` on them (on 2026-10-23 it pruned them itself)."
+    },
+    {
+      "id": "typecheck-toolchain",
+      "paths": [
+        "pnpm-workspace.yaml",
+        "docs/operations/development.md",
+        "apps/desktop/vite.config.ts"
+      ],
+      "verdict": "decide",
+      "note": "The fork typechecks with TypeScript 7's `tsc` plus the `effect-tsgo` patch, never `tsc-rs` (the `tsc-rs` tripwire). Since #23023 upstream's catalog `typescript` is `npm:@tsc-rs/typescript`, and it git-merges silently: keep the catalog at the fork's TypeScript 7 version and the `@effect/tsgo` entry, and drop the `@tsc-rs/typescript` `allowBuilds` and `@tsc-rs/*` `minimumReleaseAgeExclude` lines. Take everything else upstream changes in these files. Upstream's `.pnpmfile.cjs` vite-plus-core peer hook and `peerDependencyRules.allowAny: typescript` are harmless under TypeScript 7 and kept as upstream's."
     },
     {
       "id": "terminal-drawer-open-in-editor",

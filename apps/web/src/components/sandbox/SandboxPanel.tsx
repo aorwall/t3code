@@ -315,13 +315,13 @@ function ImageSection({
       <SandboxRow label="Desired state" value={desiredState} />
       <SandboxRow
         label="Running"
-        value={image.current === null ? "—" : shortImageRef(image.current)}
+        value={image.current === null ? "-" : shortImageRef(image.current)}
         full={image.current ?? undefined}
         tone={image.current === null ? "muted" : "default"}
       />
       <SandboxRow
         label="Latest"
-        value={image.latest === null ? "—" : shortImageRef(image.latest)}
+        value={image.latest === null ? "-" : shortImageRef(image.latest)}
         full={image.latest ?? undefined}
         tone={stale ? "warning" : image.latest === null ? "muted" : "default"}
       />

@@ -97,11 +97,11 @@ export function shortImageRef(ref: string): string {
 
 /** Null renders as an em dash, never as a zero; see the contract module doc. */
 export function formatCpu(millicores: number | null): string {
-  return millicores === null ? "—" : `${millicores}m`;
+  return millicores === null ? "-" : `${millicores}m`;
 }
 
 export function formatMemory(mb: number | null): string {
-  if (mb === null) return "—";
+  if (mb === null) return "-";
   return mb >= 1024 ? `${(mb / 1024).toFixed(1)} GiB` : `${Math.round(mb)} MiB`;
 }
 

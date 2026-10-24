@@ -133,8 +133,8 @@ describe("totalContainerResources", () => {
 
 describe("metric formatting", () => {
   it("renders a missing metric as a dash, never as a zero", () => {
-    expect(formatCpu(null)).toBe("—");
-    expect(formatMemory(null)).toBe("—");
+    expect(formatCpu(null)).toBe("-");
+    expect(formatMemory(null)).toBe("-");
   });
 
   it("keeps a real zero distinct from a missing one", () => {

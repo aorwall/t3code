@@ -84,7 +84,7 @@ export function ThreadForkDialog({
               <p className="mt-1 text-xs text-muted-foreground">
                 {sameSandbox
                   ? "Resumes this conversation in the parent's sandbox."
-                  : "Starts fresh in its own sandbox — it won't resume this conversation."}
+                  : "Starts fresh in its own sandbox. It won't resume this conversation."}
               </p>
             </div>
             <Switch

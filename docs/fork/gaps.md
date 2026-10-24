@@ -1998,6 +1998,19 @@ One more arrived in the 2026-10-01 merge:
   `push_rejected_non_fast_forward` (#22904); and a project clone can report
   `stalled` (#22780). Each field is optional, so the client shows its older
   generic text until the backend sends it.
+  The 2026-10-23 merge adds: `compactIdleThreads` is a boolean on the wire
+  again and the mode moved to `idleCompaction` (#23454), so a Moatless
+  settings payload that sends the mode should send it there; a
+  `threadTitleInstructions` server setting steers generated titles (#21882,
+  hidden with `FEATURES.serverBehaviorSettings`); a pull request watch records
+  `checksAwaitedSince` and wakes its thread when no check ever reports
+  (#23863); shell snapshots on large databases no longer scan every thread
+  (#23751); subagent transcript updates stay off the shell stream (#23783); a
+  Codex parent resumes once its native children finish (#23840); a Claude agent
+  stops when the server that started it dies (#23389); a clone retries over
+  HTTPS when the SSH key is refused (#23170); Forgejo merges follow the
+  repository's delete-branch setting (#23471); and assets carry a
+  `fileRevision` that does not change when the URL is re-signed.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
@@ -2174,6 +2187,22 @@ desktop app is kept in tree and is not a compliance target.
   code. Listed so the next merge does not chase it as a regression, and so a
   reader knows `@t3tools/desktop` is expected red until the image carries it.
 
+### The sandbox's `/tmp` has no sticky bit, so the Codex token broker refuses it
+
+`apps/server/src/provider/CodexChatGptAuth.test.ts` and
+`CodexManagedRuntime.test.ts` fail with `Untrusted IPC parent`. Upstream's
+`CodexManagedTokenBroker` (#21786) puts its socket under `os.tmpdir()` only
+when that directory is root-owned and sticky, or owned by the user and not
+group- or world-writable. The sandbox's `/tmp` is mode `2777`: world-writable
+with no sticky bit, so the broker correctly refuses it.
+
+- **Package:** `t3`
+- **Open while:** `node -e 'process.exit(require("fs").statSync(require("os").tmpdir()).mode & 0o1000 ? 0 : 1)'`
+- **Check:** run both files with `TMPDIR` pointing at a `0700` directory the
+  user owns. They pass (58 tests on 2026-10-23).
+- **Then here:** nothing to delete. The fix is a sticky `/tmp` in the sandbox
+  image.
+
 ### The full suite needs a raised heap
 
 `pnpm test` and `pnpm typecheck` OOM on an 8-core sandbox under `vp`'s default
@@ -2206,8 +2235,6 @@ the one a developer following `engines.node` runs. Nothing the fork ships needs
   without corepack.
 - **Then here:** restore `node-version-file: package.json` in `typecheck.yml`
   and raise the Dockerfile's `NODE_VERSION` to match.
-
-
 
 `apps/web/vite.config.ts` reads the fork's `T3CODE_ALLOWED_HOSTS` beside
 upstream's `T3CODE_DEV_ALLOWED_HOSTS`. It stays until deployments inject
