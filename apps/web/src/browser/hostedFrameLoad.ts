@@ -1,26 +1,8 @@
 /**
- * Fork-only. Which URL a framed preview is *loaded* with, as opposed to which
- * URL the tab is at.
- *
- * The two are usually the same, and the tab's URL is the one everything else
- * reads — the address bar, the tab title, the recently-seen list. But they get
- * there by two different routes, and only one of them is an instruction.
- *
- * When the host navigates — an address typed, a link opened from the editor, a
- * discovered server picked — the tab's URL changes *first* and the frame has to
- * follow. A cross-origin frame cannot be sent anywhere except by replacing the
- * element, so the element's key has to change, and the page loads from scratch.
- *
- * When the guest reports a route change over the inspector bridge, the frame is
- * already there: the page navigated itself and is telling the host where it
- * landed. The tab's URL changes *after* the fact. Replacing the element then
- * reloads the page the app just routed to — losing its state, its sockets and
- * every client-side transition after it — to arrive somewhere it already was.
- * From the outside that reads as "the preview reloads on every navigation".
- *
- * So the element's identity follows the last URL the host asked for, and a
- * guest report is allowed to move the tab without moving the frame. A reload
- * re-syncs the two, because reloading means "load what I am looking at now".
+ * Fork-only. Which URL a framed preview is *loaded* with, as opposed to the tab's URL.
+ * A host navigation changes the tab URL first and must replace the frame element. A guest-reported
+ * route change happens after the fact; replacing the element then reloads the page and loses state.
+ * So the element key follows the last host-requested URL; only a reload re-syncs the two.
  */
 
 export interface HostedFrameLoad {

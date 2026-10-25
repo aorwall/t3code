@@ -1,15 +1,7 @@
 /**
- * Gesture arithmetic for the fork's finger-draggable mobile sidebar.
- *
- * Split from the component so every decision the gesture makes — does this
- * touch belong to us, which axis did it lock to, where does the panel rest when
- * the finger lifts — is a pure function with a test, and the component is left
- * holding nothing but listeners and refs.
- *
- * All offsets are in px and expressed the way the panel is translated: `0` is
- * fully open, `-panelWidth` (left side) or `+panelWidth` (right side) is fully
- * closed. Keeping one signed number for both sides is what lets the component
- * apply `translate3d(offset, 0, 0)` without knowing which edge it hangs from.
+ * Pure gesture arithmetic for the fork's draggable mobile sidebar.
+ * Offsets are px as the panel is translated: `0` fully open, `-panelWidth` (left side) or
+ * `+panelWidth` (right side) fully closed, so one signed number serves both sides.
  */
 
 /** Distance (px) from the screen edge where an opening swipe must start. */
@@ -48,11 +40,8 @@ export function closedOffset(panelWidth: number, side: SidebarDragSide): number 
 
 /**
  * Whether a starting touch is ours, and the offset the drag starts from.
- *
- * Open: any touch may drag the panel back out, so the drag starts from rest.
- * Closed: only a touch that lands within `edgeSize` of the panel's own edge
- * counts — that is the swipe that should reveal the sidebar rather than begin
- * the browser's back-navigation.
+ * Open: any touch may drag, from rest. Closed: only a touch within `edgeSize` of the panel's
+ * edge counts, so the swipe reveals the sidebar instead of starting browser back-navigation.
  */
 export function resolveDragClaim(input: {
   readonly isOpen: boolean;

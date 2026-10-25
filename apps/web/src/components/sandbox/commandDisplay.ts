@@ -1,11 +1,7 @@
 /**
- * Fork-only: display helpers for the commands a thread's agent registered
- * through `moat cmd`.
- *
- * Elapsed is computed on the client from `startedAtUnixMs`, never sent by the
- * server — a server-side elapsed would change on every read and turn the status
- * push, which sends only what moved, into one that never falls quiet. Both the
- * pill badge and the composer banner read it from here so they agree.
+ * Fork-only: display helpers for the commands a thread's agent registered through `moat cmd`.
+ * Elapsed is computed on the client from `startedAtUnixMs`, never sent by the server: a server-side
+ * elapsed changes on every read and the status push (which sends only what moved) never falls quiet.
  */
 import type { CommandSummary } from "@t3tools/contracts";
 

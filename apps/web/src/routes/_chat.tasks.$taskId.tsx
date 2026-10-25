@@ -1,12 +1,8 @@
 /**
- * Fork-only. `/tasks/<task id>` is the URL Moatless prints for a task, so a
- * link pasted from Slack, a pull request or the Moatless UI lands here. It
- * forwards to the thread route under the connected deployment's environment.
- *
- * Sits under `_chat` so an unauthenticated visitor gets the login redirect and
- * the return-to that layout already owns, and so this static path outranks
- * `$environmentId/$threadId`, which would otherwise match `/tasks/<task id>`
- * with `tasks` read as an environment.
+ * Fork-only. `/tasks/<task id>` is the URL Moatless prints for a task; this forwards it to the
+ * thread route under the connected deployment's environment.
+ * Sits under `_chat` for the login redirect and return-to, and so this static path outranks
+ * `$environmentId/$threadId`, which would match with `tasks` read as an environment.
  */
 import { useAtomValue } from "@effect/atom-react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";

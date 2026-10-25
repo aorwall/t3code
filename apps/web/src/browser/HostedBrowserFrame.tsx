@@ -1,12 +1,9 @@
 "use client";
 
 /* eslint-disable react/iframe-missing-sandbox -- the frame is cross-origin; see below */
-// The rule objects to `allow-scripts` together with `allow-same-origin`, which
-// would be a hole if the frame were same-origin with this app: the page could
-// reach out and remove its own sandbox. It is not — a preview server is always
-// a different origin — so what the pair grants is the page access to its own
-// origin, which is what its session cookie needs and what any app needs in
-// order to work at all.
+// `allow-scripts` with `allow-same-origin` is safe here: a preview server is always a different
+// origin from this app, so the page cannot reach out and remove its own sandbox. The pair only
+// gives the page its own origin, which its session cookie needs.
 
 import { useShallow } from "zustand/react/shallow";
 import type { ScopedThreadRef } from "@t3tools/contracts";
@@ -31,13 +28,8 @@ import {
 } from "~/previewStateStore";
 
 /**
- * The page surface in a browser: one cross-origin <iframe>, positioned into the
- * rectangle the panel publishes.
- *
- * It mirrors {@link HostedBrowserWebview}'s placement and nothing else. A frame
- * reports no navigation, has no readable history, and cannot say whether what
- * it shows is the page or the host's error body — so this component drives the
- * page and never reads it.
+ * The page surface in a browser: one cross-origin <iframe> placed in the panel's rectangle.
+ * A frame reports no navigation, history or error state, so this drives the page and never reads it.
  */
 export function HostedBrowserFrame(props: {
   readonly threadRef: ScopedThreadRef;

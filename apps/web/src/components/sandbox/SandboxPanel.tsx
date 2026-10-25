@@ -1,26 +1,8 @@
 /**
- * Fork-only: the right panel's Sandbox surface — the machine every other
- * surface runs inside, and the controls that move it.
- *
- * The surface exists because the pill it replaces could only start and stop.
- * Everything a stuck sandbox actually needs — the image it is running, which
- * container is crash-looping and why, what the runtime last said about it, how
- * long before the reaper stops it — was reachable only from the Moatless web
- * UI, on a different host, behind a different login.
- *
- * Seven sections, in the order a person reads them when something is wrong:
- * what state the sandbox is in, what it is running, when it will stop by
- * itself, what its containers are doing, what the runtime said, what the agent
- * left running, and what is listening. Every section after the third is absent
- * rather than empty when the deployment publishes nothing for it; see the
- * `SandboxDetail` contract module.
- *
- * A wide panel splits those seven across two columns on that same seam: what
- * the sandbox is and how it is configured on the left, what is running inside
- * it on the right.
- *
- * This surface is deliberately reachable with the sandbox stopped
- * (`sandboxSurfaces.ts`): it is where a person starts one.
+ * Fork-only: the right panel's Sandbox surface - the machine every other surface runs inside, and
+ * the controls that move it. Sections run in the order read when something is wrong; every section
+ * after the third is absent, not empty, when the deployment publishes nothing (`SandboxDetail`).
+ * Reachable with the sandbox stopped (`sandboxSurfaces.ts`): it is where one is started.
  */
 import {
   isAtomCommandInterrupted,
@@ -136,13 +118,9 @@ export const ACTION_ORDER: ReadonlyArray<SandboxAction> = [
 ];
 
 /**
- * Two columns once the panel is wide enough for both to stay readable, which
- * is the maximized right panel and a wide sheet.
- *
- * The split is fixed rather than height-balanced: a section that hops columns
- * when a server log opens or a container appears is worse than an uneven
- * bottom edge. Sized against the panel, not the viewport, because the right
- * panel is resizable.
+ * Two columns once the panel is wide enough (maximized right panel, wide sheet).
+ * The split is fixed, not height-balanced, so sections do not hop columns as logs open. Sized
+ * against the panel, not the viewport, because the right panel is resizable.
  */
 const TWO_COLUMNS =
   "@[44rem]/sandbox-panel:grid @[44rem]/sandbox-panel:grid-cols-2 @[44rem]/sandbox-panel:items-start";

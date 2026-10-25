@@ -1,22 +1,8 @@
 /**
- * Fork-only: which right-panel surfaces stop working when the thread's sandbox
- * does, and what a card says when something has closed it.
- *
- * A shell in the workspace, its diff and a server running inside it are windows
- * onto a live machine, so a stopped sandbox leaves them nothing to show. Files
- * are not: the file tree, a file's contents and the name search are served
- * from the workspace snapshot S3 holds — all readable with the sandbox
- * stopped. Gating those hid a working surface behind a machine they
- * did not need. A snapshot the environment never stored (a Task from before the
- * mirror, or a tar-only fork) answers the file read as "sandbox not running",
- * so the surface shows that in its own panel rather than being closed outright.
- *
- * Pull requests are not either: the list is the thread's own
- * `pullRequests` and each row's summary comes from the backend's store, and a
- * single pull request's detail, diff and guide are read from the git host.
- *
- * A browser tab is the one surface whose answer depends on the page it holds
- * rather than on the kind alone — see [`previewTabNeedsSandbox`].
+ * Fork-only: which right-panel surfaces stop working when the thread's sandbox does, and what a
+ * card says when something has closed it. Shell, diff and in-sandbox servers need a live machine;
+ * files and pull requests are served by the environment. A snapshot never stored answers the file
+ * read "sandbox not running", shown in the panel. A browser tab: see [`previewTabNeedsSandbox`].
  */
 import type { PreviewSessionSnapshot } from "@t3tools/contracts";
 
@@ -24,16 +10,9 @@ import type { RightPanelKind, RightPanelSurface } from "~/rightPanelStore";
 
 /**
  * Surfaces the environment serves rather than the live workspace.
- *
- * `files`/`file` are here because the backend reads them from the S3 snapshot
- * when no sandbox is running, `pull-requests` because
- * `pullRequests.summary` reads the backend's own store, and `pull-request`
- * because its detail, diff and guide are read from the git host. A kind absent from here
- * needs the sandbox, which is the safe default: a new surface is a window onto
- * the live workspace until someone says otherwise.
- *
- * `sandbox` is the one surface that must stay open precisely when the sandbox
- * is down: it is where the person starts one.
+ * `files`/`file` come from the S3 snapshot, `pull-requests` from the backend's store, `pull-request`
+ * from the git host. A kind absent here needs the sandbox (the safe default). `sandbox` must stay
+ * open precisely when the sandbox is down: it is where one is started.
  */
 const SANDBOX_INDEPENDENT_KINDS: ReadonlySet<RightPanelKind> = new Set<RightPanelKind>([
   "files",
@@ -57,11 +36,8 @@ const ENVIRONMENT_PAGE_PREFIXES = ["/api/assets/", "/api/v1/artifacts/"] as cons
 
 /**
  * Whether the browser tab showing `url` needs the sandbox.
- *
- * A page on one of [`ENVIRONMENT_PAGE_PREFIXES`] renders with the sandbox
- * stopped: an HTML or PDF file `openFileInPreview` opened, or an Artifact a
- * chat link opened. Every other URL is a server inside the sandbox, or an
- * empty tab someone types one into.
+ * A page on one of [`ENVIRONMENT_PAGE_PREFIXES`] (opened file, Artifact) renders with the sandbox
+ * stopped. Every other URL is a server inside it, or an empty tab.
  */
 export function previewTabNeedsSandbox(
   url: string | null,
@@ -108,11 +84,9 @@ export interface SurfaceGate {
 
 /**
  * Whether a surface can be opened, and why not.
- *
- * A surface that is unavailable on its own terms keeps its own reason: with the
- * sandbox stopped, "Start the sandbox" on the Browser card would promise that
- * starting one puts a browser in a web build that has never had one. The
- * sandbox only speaks for surfaces it is the sole thing standing in the way of.
+ * A surface unavailable on its own terms keeps its own reason: "Start the sandbox" on the Browser
+ * card would promise a browser a web build never had. The sandbox only speaks for surfaces it is
+ * the sole blocker of.
  */
 export function resolveSurfaceGate(input: {
   readonly available: boolean;

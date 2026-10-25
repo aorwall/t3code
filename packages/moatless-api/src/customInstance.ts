@@ -1,24 +1,9 @@
 /**
- * The fetch mutator every generated Moatless call goes through. Fork-only:
- * upstream has no Moatless REST client (`moatless-rest-client` in the fork
- * inventory).
+ * The fetch mutator every generated Moatless call goes through. Fork-only.
  *
- * Same-origin and cookie-authenticated: the Moatless session cookie is already
- * present on this origin, because Traefik matches `PathPrefix('/api')` against
- * the T3 host as well as the app host, and the Vite dev proxy forwards the same
- * prefix. There is no bearer token to attach and no CORS preflight to survive.
- *
- * # Why this returns a failed response instead of throwing
- *
- * Orval's `fetch` client types every declared non-2xx as part of the return
- * union — `createWorkspaceResponseError` is `{ data: ErrorBody; status: 400 |
- * 403 }`, not a thrown value. A mutator that throws on `!response.ok` makes
- * every one of those branches unreachable and hides from the compiler that a
- * 403 is a thing the endpoint says. So this returns the envelope and narrows on
- * `status` at the call site instead.
- *
- * A transport failure — DNS, TLS, offline, aborted — still throws, because
- * there is no envelope to return and no status to narrow on.
+ * Same-origin and cookie-authenticated: no bearer token, no CORS preflight. It returns a failed
+ * response instead of throwing, so the compiler sees each declared non-2xx branch; narrow on
+ * `status` at the call site. A transport failure (DNS, TLS, abort) still throws.
  */
 
 /**
@@ -32,12 +17,8 @@ export interface MoatlessResponse<T = unknown> {
 }
 
 /**
- * A failure that is neither of the two below.
- *
- * Nothing in this package raises it: the two classes beside it cover every way
- * a generated call can fail. It exists so a caller's error channel can be a
- * tagged union rather than `Error`, and still have somewhere to put a value
- * that reached it from outside that contract.
+ * A failure that is neither of the two below. Nothing here raises it; it keeps a caller's
+ * error channel a tagged union that can still hold a value from outside this contract.
  */
 export class MoatlessUnexpectedError extends Error {
   readonly _tag = "MoatlessUnexpectedError";
@@ -97,14 +78,8 @@ export class MoatlessRequestError extends Error {
 /**
  * The message to put on a request error.
  *
- * `response.statusText` cannot carry this on its own: HTTP/2 dropped the reason
- * phrase, so browsers report it as an empty string against any HTTP/2
- * deployment. An error built from it alone reaches the UI as a blank toast —
- * the request failed and the screen says nothing about why. The server's own
- * words are preferred, in the four shapes this API returns.
- *
- * Ported from the Moatless repo's `packages/api-client/custom-instance.ts:28`,
- * where those four shapes were established.
+ * `response.statusText` is empty under HTTP/2, which would give a blank toast, so prefer
+ * the server's own words in the four shapes this API returns.
  */
 export function errorMessage(status: number, statusText: string, body: unknown): string {
   if (typeof body === "object" && body !== null) {
@@ -124,16 +99,9 @@ export function errorMessage(status: number, statusText: string, body: unknown):
 }
 
 /**
- * Where `/api` lives, and how the app tells this package about it.
- *
- * Empty by default, because the backend is reached on whatever origin served
- * the app — which is true for both the browser build and the dev proxy. A build
- * with no useful `window.location.origin` to inherit calls `configureMoatlessApi`
- * at startup.
- *
- * Configured through a function rather than read from `import.meta.env` here so
- * this package needs no bundler-specific ambient types; the app owns its own
- * environment, and this owns the request.
+ * Where `/api` lives. Empty by default: the backend is reached on the origin that served
+ * the app. Set via `configureMoatlessApi` rather than `import.meta.env`, so this package
+ * needs no bundler-specific types.
  */
 let baseUrl = "";
 
@@ -150,11 +118,8 @@ const CSRF_COOKIE = "moatless_csrf";
 /**
  * Echo the `moatless_csrf` cookie back as `X-CSRF-Token`.
  *
- * The Moatless session cookie is attached ambiently by the browser, so the
- * backend gates every unsafe method behind a double-submit token: an
- * `X-CSRF-Token` header that equals the non-`HttpOnly` `moatless_csrf` cookie.
- * `credentials: "include"` sends the cookie; without this header the backend
- * answers a PATCH/POST/PUT/DELETE with 403 `CSRF validation failed`.
+ * The backend gates unsafe methods behind this double-submit header; without it a
+ * PATCH/POST/PUT/DELETE gets 403 `CSRF validation failed`.
  */
 function withCsrfToken(init?: HeadersInit): Headers {
   const headers = new Headers(init);
@@ -211,13 +176,9 @@ export const customInstance = async <T>(
 export default customInstance;
 
 /**
- * Narrow a generated response union to its success branch, raising
- * `MoatlessRequestError` for anything else.
- *
- * The union is what makes a declared 403 visible to the compiler; this is for
- * the majority of call sites that have no branch-specific recovery and want the
- * body or a failure. A call site that does handle a status specifically should
- * switch on `status` and never reach this.
+ * Narrow a generated response union to its success branch, raising `MoatlessRequestError`
+ * otherwise. For call sites with no status-specific recovery; those that handle a status
+ * should switch on `status` instead.
  */
 export function ok<T>(response: MoatlessResponse<unknown>): T {
   if (response.status >= 200 && response.status < 300) {

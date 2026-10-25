@@ -14,13 +14,9 @@ import { Button } from "~/components/ui/button";
 export const FRAME_UNRENDERED_HINT_DELAY_MS = 12_000;
 
 /**
- * A guess, offered as one.
- *
- * Two things look identical from outside a cross-origin frame: a page that
- * refuses to be embedded, and the preview host's own 401 rendered in place of
- * one. Neither is detectable — `onload` fires for both and `onerror` fires for
- * neither — so this strip appears on time rather than on evidence, and its
- * wording must not claim to know which happened.
+ * A guess, offered as one. A page that refuses embedding and the preview host's own 401 look
+ * identical from outside a cross-origin frame (`onload` fires for both, `onerror` for neither),
+ * so this strip appears on time, and its wording must not claim to know which happened.
  */
 export function PreviewFrameUnrendered({
   onOpenInBrowser,

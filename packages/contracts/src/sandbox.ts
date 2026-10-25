@@ -29,10 +29,8 @@ export type SandboxStatusInput = typeof SandboxStatusInput.Type;
 /**
  * What the agent inside the environment reports it is doing.
  *
- * `unknown` is a real answer and not a gap: the sandbox is up but the agent
- * could not be reached, which is different from it being idle. A gap is the
- * key being absent — either the sandbox is not up, or the server predates
- * `capabilities.sandboxAgentStatus`.
+ * `unknown` means the sandbox is up but the agent is unreachable, which is not idle. A gap
+ * is the key being absent: sandbox not up, or no `capabilities.sandboxAgentStatus`.
  */
 export const SandboxAgentStatus = Schema.Literals(["running", "waiting", "idle", "unknown"]);
 export type SandboxAgentStatus = typeof SandboxAgentStatus.Type;
@@ -44,14 +42,9 @@ export type ManagedCommandState = typeof ManagedCommandState.Type;
 /**
  * A long-running command the agent handed to the sandbox with `moat cmd`.
  *
- * The agent reports `idle` while one of these runs — its turn ended and the
- * sandbox is carrying the work — so a client with `agentStatus` alone cannot
- * tell a finished thread from one that is mid-build. These are what let it.
- *
- * Every field here is an instant, never an elapsed duration: a client renders
- * "12m in" from `startedAtUnixMs` itself. A server that recomputed elapsed per
- * read would make the status change on every poll, and the push, which sends
- * only changes, would then never fall quiet.
+ * The agent reports `idle` while one runs, so `agentStatus` alone cannot tell finished from
+ * mid-build. Fields are instants, never elapsed durations: recomputing elapsed per read
+ * would change every poll and the push would never fall quiet.
  */
 export const CommandSummary = Schema.Struct({
   id: Schema.String,
@@ -97,13 +90,9 @@ export const SandboxStatusSubscribeInput = SandboxStatusInput;
 export type SandboxStatusSubscribeInput = typeof SandboxStatusSubscribeInput.Type;
 
 /**
- * The thread's sandbox is not running, so the request needed one and there
- * wasn't one.
+ * The thread's sandbox is not running, but the request needed one.
  *
- * Typed rather than a message because it is the rare failure a client can
- * answer on its own: the sandbox is startable, the person already said what
- * they wanted, and `sandbox.start` plus a wait is the whole remedy. Reporting
- * the sentence instead would make every caller re-derive that from prose.
+ * Typed because a client can remedy it alone: `sandbox.start` plus a wait.
  */
 export class SandboxNotRunningError extends Schema.TaggedError<SandboxNotRunningError>()(
   "SandboxNotRunningError",

@@ -303,11 +303,11 @@
       "retiredWhen": "Either loop stops using `continue`; the check then reports this entry stale."
     },
     {
-      "id": "preview-session-use-atom-value",
-      "path": "apps/web/src/components/preview/usePreviewSession.ts",
-      "line": "useAtomValue(",
-      "reason": "Two hooks each open a multi-line `useAtomValue(` call: the fork's `useOptionalPreviewSession` and upstream's `useDesktopHostedPreviewSessions`. Neither is a copy of the other.",
-      "retiredWhen": "Either hook stops calling `useAtomValue` across lines; the check then reports this entry stale."
+      "id": "chat-view-null-continuation",
+      "path": "apps/web/src/components/ChatView.tsx",
+      "line": "null)",
+      "reason": "Two formatter-wrapped `?? null)` continuations: the fork's `advertisedFileAttachmentBytes` read and upstream's `awaitingRequestId` prop. Neither is a copy of the other.",
+      "retiredWhen": "Either expression stops wrapping onto a bare `null)` line; the check then reports this entry stale."
     }
   ],
   "pathPolicy": [
@@ -796,7 +796,7 @@
       "id": "thread-adoption-graft",
       "paths": ["apps/web/src/state/threads.ts"],
       "verdict": "converged",
-      "note": "Take upstream, then re-apply the graft described in the Threads the shell listing does not carry entry: the fork passes adoptedEnvironmentSnapshotAtom where upstream passes environmentSnapshotAtom. Which call takes it is upstream's to move and has moved — #8309 gave createThreadEnvironmentAtoms a snapshot argument, and the graft went there from createEnvironmentThreadShellAtoms, which now reads threadEnvironment.snapshotAtom. So the delta is one substituted argument at whichever seam upstream currently feeds the snapshot through, and it must be the outermost one: everything layered above it — the optimistic lifecycle, cached turns, older-page loading — has to see the adopted thread too. Grafting lower leaves those reading the unadopted listing."
+      "note": "Take upstream, then re-apply the graft described in the Threads the shell listing does not carry entry: the fork wraps the snapshot family upstream passes to createThreadEnvironmentAtoms in createAdoptedEnvironmentSnapshotAtom (since the 2026-10-25 merge that is threadFamilies.snapshotAtom, upstream's subagent-family merge over the shell listing). Which call takes it is upstream's to move and has moved — #8309 gave createThreadEnvironmentAtoms a snapshot argument, and the graft went there from createEnvironmentThreadShellAtoms, which now reads threadEnvironment.snapshotAtom. So the delta is one substituted argument at whichever seam upstream currently feeds the snapshot through, and it must be the outermost one: everything layered above it — the optimistic lifecycle, cached turns, older-page loading — has to see the adopted thread too. Grafting lower leaves those reading the unadopted listing."
     },
     {
       "id": "project-settings-panel",

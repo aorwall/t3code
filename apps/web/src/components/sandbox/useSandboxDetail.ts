@@ -1,10 +1,7 @@
 /**
  * Fork-only: the sandbox panel's read.
- *
- * The same push-or-poll choice `useSandboxAvailability` makes for the status
- * indicator, at a tenth the rate. Both are needed because they answer different
- * questions and the backend serves them as two subscriptions; see the
- * `SandboxDetail` contract module.
+ * The same push-or-poll choice `useSandboxAvailability` makes, at a tenth the rate: the backend
+ * serves status and detail as two subscriptions; see the `SandboxDetail` contract module.
  */
 import type { SandboxDetailResult, ScopedThreadRef } from "@t3tools/contracts";
 import { useEffect } from "react";

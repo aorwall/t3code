@@ -1,13 +1,7 @@
 /**
- * Fork-only. The sidebar's filter over the thread list, beside the project scope.
- *
- * Owner and tag are an administrator's control, and they are gated on being one
- * only so that nobody is offered a filter whose every answer would be empty:
- * Moatless decides what a browse may return from the same read rules the rest of
- * the listing uses, and a non-administrator narrowing by owner would get the
- * public work of that person and nothing else. "Include closed" is nobody's
- * privilege — it is the viewer's own archive — so it is offered to everyone, and
- * so is "Hide subtasks", which only narrows rows the sidebar already holds.
+ * Fork-only. The sidebar's thread-list filter, beside the project scope.
+ * Owner and tag are admin-only: a non-admin's owner filter would return only that person's
+ * public work. "Include closed" and "Hide subtasks" are offered to everyone.
  */
 import { ListFilterIcon, XIcon } from "lucide-react";
 

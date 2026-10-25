@@ -1,11 +1,7 @@
 /**
- * Fork-only. A sidebar row's links to the rest of its task tree: a count of the
- * thread's child tasks that opens their list, and a link up to the thread's
- * parent. Moatless lists child tasks as rows of their own, so these are how a
- * row says which rows belong to it.
- *
- * Both sit inside a row whose pointerdown starts a drag and whose click opens
- * the thread, so each control stops both from reaching the row.
+ * Fork-only. A sidebar row's child-task count and link up to its parent thread.
+ * Both sit in a row whose pointerdown starts a drag and whose click opens the thread,
+ * so each control must stop both from reaching the row.
  */
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import type { EnvironmentId, ThreadId } from "@t3tools/contracts";

@@ -2,23 +2,10 @@
 /**
  * `vp install`, with the heap node will not give itself.
  *
- *   node .agents/skills/fork-upstream-merge/scripts/install.mjs
+ *   node .agents/skills/fork-upstream-merge/scripts/install.mjs [--frozen-lockfile]
  *
- * A merge installs before it can do anything else — a restart empties
- * `node_modules`, and `regen-route-tree.mjs`, `merge-stats.mjs` and every step
- * of `verify.mjs` need it back. On a capped sandbox that install is also the
- * first thing to run out of memory: pnpm's resolution pass over this workspace
- * exceeds node's default heap and dies with `Ineffective mark-compacts near
- * heap limit`, then exits 1 with nothing in the exit status or the last lines
- * of output that says the word memory. Two merges have paid for that diagnosis.
- *
- * `verify.mjs` has raised the heap for the test step since long before this;
- * the install that has to precede it did not, so this runs `vp install` under
- * the same derived ceiling (`heapMb` in `lib.mjs`, a share of the pod's cgroup
- * cap rather than a hardcoded number) and, when it fails, says which of the two
- * failures it was.
- *
- * Arguments pass through, so `install.mjs --frozen-lockfile` works.
+ * pnpm resolution exceeds node's default heap and dies with `Ineffective mark-compacts` and a
+ * bare exit 1. Runs under the cgroup-derived `heapMb` ceiling and names which failure it was.
  */
 import * as NodeChildProcess from "node:child_process";
 

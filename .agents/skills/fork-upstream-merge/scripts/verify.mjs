@@ -2,74 +2,10 @@
 /**
  * The whole verification pass, as one command.
  *
- *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs
- *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --fast
- *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only typecheck,test
- *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --only test --package @t3tools/web
- *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs --sequential
+ *   node .agents/skills/fork-upstream-merge/scripts/verify.mjs [--fast|--sequential|--only a,b]
  *
- * `--package` runs the test step for one package. The full pass outruns the
- * ten-minute limit an agent's shell call gets, which turns the last step of
- * every merge into a background job and a polling loop — and a poll that gets
- * interrupted loses the run. One package at a time fits, and the retry path
- * below already had to run them individually anyway.
- *
- * `--sequential` runs every test package one at a time instead of handing the
- * whole workspace to `vp run -r test`. It is slower on a machine that can take
- * the parallel run, and it is the one that finishes on a machine that cannot:
- * the parallel step's peak memory is what gets a loaded sandbox evicted, and an
- * eviction costs the entire pass because the run has no partial result to keep.
- * One package at a time bounds that peak and makes each phase short, so an
- * eviction costs one package. The 2026-09-15 merge lost two full passes to this
- * before finishing sequentially.
- *
- * It also prints a `PKG <name> PASS|FAIL` ledger line as each package lands, so
- * a log that gets truncated is still readable up to the cut — and so nobody has
- * to hand-roll the same loop in bash, where `node verify.mjs … | tail` silently
- * reports the exit code of `tail`.
- *
- * `--fast` drops the test step and keeps everything else. The full pass is about
- * thirteen minutes and the test step is most of it, so a merge with something to
- * fix pays that twice — once to find the problem, once to confirm the fix. The
- * checks `--fast` keeps are the ones that catch a broken merge: a duplicated
- * import shows up in `lint` in seconds, where the tests take minutes to report
- * the same thing. Iterate on `--fast`, then run the whole thing once before
- * writing anything down.
- *
- * Three things this does that `a && b && c && d` does not.
- *
- * It keeps going after a failure. Chained with `&&`, a formatting nit hides the
- * type errors behind it, so the merge learns about its problems one slow
- * round-trip at a time — and `pnpm test` is the slow one. Running everything and
- * reporting at the end turns four sequential discoveries into one.
- *
- * It raises the heap. The web suite needs more than node's default and the
- * failure mode is exit 137 from the OOM killer, which reads as a real test
- * failure and sends you looking for a bug that is not there. That is named
- * explicitly in the summary rather than left to be rediscovered.
- *
- * It retries a failing test package alone before reporting it. The packages
- * `pnpm test` runs share one machine's CPU and memory, and a merge on a loaded
- * sandbox reliably turns up a perf-budget miss or a timeout that has nothing to
- * do with the merge — the previous version of this script made a human re-run
- * each one by hand to tell a real regression from machine noise. A package that
- * fails in the full run and passes alone is reported as flaky, not fixed
- * silently: the run is still worth a second look if the same package keeps
- * turning up.
- *
- * A package that fails that retry too then has its failing file run on its own,
- * because dropping the other packages does not stop a package contending with
- * itself: `@t3tools/mobile` runs 165 files concurrently either way. On
- * 2026-09-13 a highlighting test failed the full run and the retry, passed in
- * 1.5s as a single file, and the whole package passed on a re-run — and the
- * label said "Confirmed failing alone, not machine noise", which is the one line
- * a reader trusts to tell a regression from sandbox noise. A file that fails on
- * its own is confirmed and keeps the step red; one that passes on its own is
- * reported as having failed the retry and passed as a single file, and does not.
- *
- * A confirmed failure that `docs/fork/gaps.md` already accounts for says so on
- * the failure line — `known gap: <heading>` — but only while the gap's own
- * `**Open while:**` command still fails. See `knownGaps` below.
+ * Keeps going after a failure and raises the heap (exit 137 is OOM, not a test). `--sequential`
+ * bounds peak memory. A package fails only if a single file fails by itself on retry.
  */
 import * as NodeChildProcess from "node:child_process";
 import * as NodeFS from "node:fs";
@@ -120,14 +56,9 @@ const STEPS = [
     what: "contract union entries against the Moatless dispatch arms",
   },
   {
-    // Catches a lockfile that landed as upstream's copy whole, with the fork's
-    // own dependency edges gone. Nothing else here sees that: `pnpm-lock.yaml`
-    // is `theirs`, which `resolution-check.mjs` exempts from its byte-identical
-    // rule, and lint, typecheck and test run against a working tree installed
-    // from a re-derived lockfile rather than the committed one.
-    //
-    // `--lockfile-only` resolves without writing; `--frozen-lockfile` makes a
-    // mismatch against the manifests an error.
+    // Catches a lockfile that landed as upstream's copy with the fork's dependency edges gone.
+    // Nothing else sees it: `pnpm-lock.yaml` is `theirs` and exempt from the byte-identical rule,
+    // and other steps run on a re-derived lockfile.
     name: "lockfile",
     argv: ["pnpm", "install", "--frozen-lockfile", "--ignore-scripts", "--lockfile-only"],
     what: "the committed lockfile against every workspace manifest",
@@ -136,20 +67,9 @@ const STEPS = [
   { name: "lint", argv: ["pnpm", "lint"], what: "lint rules" },
   { name: "typecheck", argv: ["pnpm", "typecheck"], what: "types across every workspace" },
   {
-    // The only step that runs a real bundler, and the only one that can see
-    // what a bundler sees. Upstream's `t3code:third-party-licenses` plugin runs
-    // in `generateBundle`, so it is unreachable from typecheck and test, and it
-    // hard-fails on any bundled package whose license it cannot resolve — every
-    // dependency edge the fork has and upstream does not is a candidate.
-    //
-    // The 2026-09-13 merge passed all eight checks here and broke
-    // `Build & push moatless-t3` on its first CI run, after the branch was
-    // pushed and the PR was open: the fork's `mermaid` edge bundles `khroma`,
-    // `fastdom` and `strictdom`, which upstream never bundles and its
-    // `third-party-licenses.config.json` therefore says nothing about.
-    //
-    // `apps/web` only. It is the fork's one shipped client, and the other apps
-    // add minutes to every pass for bundles no deployment pulls.
+    // The only step running a real bundler; upstream's `t3code:third-party-licenses` plugin runs in
+    // `generateBundle` and hard-fails on any bundled package with an unresolvable license, which
+    // every fork-only dependency edge risks. `apps/web` only: the other apps add minutes.
     name: "build",
     argv: ["vp", "run", "--filter", "@t3tools/web", "build"],
     what: "the production web bundle and its license derivation",
@@ -211,11 +131,10 @@ function runCapturing(command, args) {
 const LABEL_LINE = /^\[([^\]]+)#test\]\s?(.*)$/;
 
 /**
- * Which packages vitest's own summary says failed. Keyed off `Test Files  N
- * failed` rather than individual `FAIL` lines: it is the one line every
- * failing package prints exactly once, so it cannot double count a package
- * with several failing files or miss one whose failure has no `FAIL` line of
- * its own (an unhandled rejection during setup, for instance).
+ * Which packages vitest's own summary says failed.
+ *
+ * Keyed off `Test Files  N failed`, printed once per failing package, so it neither double counts
+ * nor misses a package with no `FAIL` line (setup rejection).
  */
 function failedPackagesFromOutput(output) {
   const failed = new Set();
@@ -268,11 +187,8 @@ function workspacePackages() {
 /**
  * Every package whose suite ran to the end, passing or failing.
  *
- * Keyed off vitest's own closing `Test Files` line, not off any labeled line:
- * `vp run -r test` kills the packages still running when one of them fails, so
- * a package can print two hundred passing files and never reach its summary.
- * Counting those as tested is a false green — on 2026-09-07 a desktop failure
- * cut the web suite short and four failing web tests went unreported.
+ * Keyed off vitest's closing `Test Files` line: `vp run -r test` kills packages still running
+ * after a failure, and counting those as tested is a false green.
  */
 const COMPLETION_LINE = /Test Files\s+\d|No test files found/;
 
@@ -288,10 +204,8 @@ function completedPackages(output) {
 /**
  * Runs one package's test task alone, away from the other packages' load.
  *
- * Returns the raw status and signal rather than a boolean: the summary tells an
- * OOM kill from a failing test by reading them, and the web suite is the one
- * that gets OOM-killed. `files` narrows the run to those test files, which is
- * what separates a package contending with itself from a real failure.
+ * Returns raw status and signal, since the summary tells an OOM kill from a failing test by them.
+ * `files` narrows the run to those test files.
  */
 function runPackageAlone(pkg, files = []) {
   return runCapturing("vp", ["run", "--filter", pkg, "test", ...files]);
@@ -300,12 +214,10 @@ function runPackageAlone(pkg, files = []) {
 const ANSI = /\[[0-9;]*m/g;
 
 /**
- * The test files vitest named as failing.
+ * The test files vitest named as failing, read off its `FAIL <path> > ...` lines.
  *
- * Read off its `FAIL <path> > <suite> > <name>` lines, which it prints once per
- * failing test and which carry the path this needs. A package whose failure has
- * no such line — a setup crash, an unhandled rejection — yields nothing, and the
- * caller reports that rather than guessing.
+ * A package with no such line (setup crash, unhandled rejection) yields nothing; the caller
+ * reports that rather than guessing.
  */
 const FAIL_FILE = /(?:^|\s)FAIL\s+(\S+\.(?:test|spec)\.[cm]?[jt]sx?)\b/;
 
@@ -319,19 +231,9 @@ function failedFilesFromOutput(output) {
 }
 
 /**
- * How far a package's failure survived being run on its own.
- *
- *   passed          — the package passes once the other packages are not running.
- *   confirmed       — a single failing file fails on its own. A finding.
- *   load-sensitive  — the package fails alone and each failing file passes as a
- *                     single file, so what it contends with is itself.
- *   unidentified    — failed twice, and which file failed could not be read out
- *                     of the output. Still a finding: something failed, and this
- *                     cannot say it was the machine.
- *
- * Only `confirmed` and `unidentified` keep the step red. The distinction is the
- * point of the whole path: a label that says a failure is real when it is load
- * noise sends someone hunting a regression that does not exist.
+ * How far a package's failure survived running alone: `passed`, `confirmed` (one file fails by
+ * itself), `load-sensitive` (fails alone, each file passes singly), `unidentified` (failing file
+ * unreadable). Only `confirmed` and `unidentified` keep the step red.
  */
 async function confirmPackageFailure(pkg) {
   const alone = await runPackageAlone(pkg);
@@ -367,16 +269,9 @@ const isFinding = (entry) => entry.verdict === "confirmed" || entry.verdict === 
 /**
  * Every test package, one at a time, with a ledger line as each one lands.
  *
- * A package that fails here is put through the same file-level confirmation the
- * retry path uses. Running a package away from the others does not make it alone
- * — its own files still run concurrently — so a `--sequential` failure is no more
- * confirmed than a retry failure is, and saying otherwise is the same false
- * label. Only a single file that fails by itself is a finding.
- *
- * The ledger line is the point of the mode as much as the memory ceiling is. It
- * is written before the next package starts, so a log cut off mid-run still says
- * which packages passed, which is exactly what an evicted run cannot otherwise
- * tell you.
+ * A failure gets the same file-level confirmation as the retry path: a package alone still runs
+ * its files concurrently. The ledger line is written before the next package starts, so a cut-off
+ * log still shows which passed.
  */
 async function runPackagesSequentially(packages) {
   const ledger = [];
@@ -402,16 +297,8 @@ async function runPackagesSequentially(packages) {
 /**
  * Draws a line under the parallel pass before anything is re-run.
  *
- * `vp run -r test` kills the packages still running when one of them fails, so
- * the parallel log can carry a real-looking `FAIL` for a package that was cut
- * off mid-file and passes on its own. On 2026-09-11 four packages were re-run
- * alone and all passed, while a truncated `apps/mobile` failure stayed in the
- * log above the retries with nothing marking it superseded — and it cost a
- * diagnosis pass on a test neither side of the merge touched.
- *
- * The summary line already says which verdict each package earned. This says it
- * where the misleading output is, for the reader scrolling rather than jumping
- * to the end.
+ * `vp run -r test` kills running packages on a failure, so the log can hold a `FAIL` for a package
+ * that was cut off and passes alone. This marks it superseded where the reader scrolls.
  */
 function supersededBanner(packages) {
   return (
@@ -459,11 +346,9 @@ async function runTestStep(step, onlyPackage, sequential) {
   const [command, ...args] = step.argv;
   const { status, signal, output } = await runCapturing(command, args);
 
-  // `vp run -r test` does not always finish every package that declares a test
-  // script, and it exits 0 when it skips one: a merge can pass this step with
-  // the fork's main surface never tested. The packages that finished printed a
-  // summary line, so the ones that did not are knowable. Run those rather than
-  // only naming them — a step that reports green is claiming they ran.
+  // `vp run -r test` exits 0 when it skips a package, so a merge can pass without the fork's main
+  // surface tested. Packages that finished printed a summary line; run the rest rather than only
+  // naming them.
   const skipped = [...workspacePackages().withTests].filter(
     (pkg) => !completedPackages(output).has(pkg),
   );
@@ -536,22 +421,9 @@ const GAPS_PATH = "docs/fork/gaps.md";
 /**
  * The package-scoped entries in the gaps register.
  *
- * `docs/fork/gaps.md` already lists the packages expected to be red — the
- * libsecret entry says it exists "so the next merge does not chase it as a
- * regression" — but nothing connected the register to the failure, so it only
- * worked on a reader who had already opened it. Two slots connect them:
- *
- *   **Package:**    the workspace package the entry is about.
- *   **Open while:** a command that exits nonzero while the gap is open.
- *
- * The predicate is what makes the marker safe to print. Matching a failing
- * package against heading prose would keep saying "known gap" long after the
- * gap closed, which excuses the next real regression in the same package. A
- * command that has to fail for the marker to appear stops on its own.
- *
- * Neither existing slot can host it. `**Check:**` means "what to run to see the
- * state" and its polarity varies between entries; `**Closes when:**` is prose
- * about backend state. So this is a third slot, and the two keep their meanings.
+ * Two slots in `docs/fork/gaps.md` connect an entry to a failure: `**Package:**` (the workspace
+ * package) and `**Open while:**` (a command that exits nonzero while the gap is open). The
+ * predicate keeps "known gap" from excusing a real regression after the gap closes.
  */
 function knownGaps() {
   let text;

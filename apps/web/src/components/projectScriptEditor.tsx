@@ -161,8 +161,7 @@ export function ProjectScriptEditorDialog({
   onClose: () => void;
 }) {
   const canEditActions = useEnvironmentScope(environmentId, editScope);
-  // Keyed by the request it belongs to: a new request starts from its own error,
-  // and a late save from the previous request can't overwrite it.
+  // Scope errors by request so late saves cannot overwrite a newer request's error.
   const [errorState, setErrorState] = useState<{
     readonly request: ProjectScriptEditorRequest;
     readonly message: string | null;
@@ -540,12 +539,9 @@ function ProjectScriptEditorForm({
                 onCheckedChange={(checked) => setWaitForSetup(Boolean(checked))}
               />
             </label>
-            {/* Fork: no "Open preview automatically" toggle — the Port field
-                above stands in for upstream's Preview URL, and
-                buildProjectScript derives autoOpenPreview from the port's
-                presence (inventory entry project-script-port-field). No
-                settle switch either: Moatless runs no script on settle, so
-                `runOnSettle` passes through unchanged. */}
+            {/* Fork: no "Open preview automatically" toggle - the Port field stands in for
+                upstream's Preview URL; `buildProjectScript` derives autoOpenPreview from the port.
+                No settle switch: Moatless runs no script on settle, so `runOnSettle` passes through. */}
             {validationError && <p className="text-sm text-destructive">{validationError}</p>}
           </fieldset>
         </form>

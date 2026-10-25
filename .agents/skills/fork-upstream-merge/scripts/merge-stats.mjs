@@ -1,25 +1,11 @@
 #!/usr/bin/env node
 /**
- * The numbers step 2 of the merge procedure asks for, computed once instead of
- * by hand.
+ * The numbers step 2 of the merge procedure asks for, computed once.
  *
  *   node .agents/skills/fork-upstream-merge/scripts/merge-stats.mjs
  *
- * Run it once the merge commit exists (conflicts resolved and committed) — it
- * reads everything from `HEAD`'s two parents, so there is nothing to capture
- * mid-merge. The three numbers the tracker entry template asks for come out
- * ready to paste: how much of upstream's range landed, how big the fork delta
- * is, and where the two might not match. A merge that only touched a fraction
- * of what upstream changed is usually an `ours` resolution that quietly threw
- * upstream's work away — the file-level gap listed here is what makes that
- * fast to confirm instead of re-deriving with a handful of separate `git diff`
- * calls.
- *
- * It also lists every file both sides touched since the merge-base, the same
- * set `preflight.mjs` forecasts before merging — restated here against what
- * actually landed, with each file's path-policy verdict, so the tracker's
- * conflict list does not have to be reconstructed from memory after the merge
- * markers are already gone.
+ * Run after the merge commit exists (reads `HEAD`'s parents). A small landed fraction of upstream
+ * usually means an `ours` resolution threw upstream's work away.
  */
 import { Report, bold, dim, git, lines, loadInventory, runMain, verdictFor } from "./lib.mjs";
 

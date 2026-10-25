@@ -1,11 +1,7 @@
 /**
- * Fork-only. A link to a Moatless Artifact in chat markdown, shown as a chip
- * with the title the agent published it under.
- *
- * A plain click opens the page in the right panel's browser whatever "Open
- * links in" says: an Artifact is something the agent made for this
- * conversation, so it belongs beside it. A modifier click, or a client with no
- * in-app browser, keeps the anchor's own new-tab behaviour.
+ * Fork-only. A chat-markdown link to a Moatless Artifact, shown as a chip with its title.
+ * A plain click opens it in the right panel's browser regardless of "Open links in";
+ * a modifier click, or a client with no in-app browser, keeps the anchor's new-tab behaviour.
  */
 import type { ScopedThreadRef } from "@t3tools/contracts";
 import {

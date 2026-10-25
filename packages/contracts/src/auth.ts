@@ -95,8 +95,7 @@ const authScopeResponseFields = {
   permissions: Schema.optionalKey(ForwardCompatibleArray(AuthEnvironmentScope)),
 };
 
-// Only clients talking to an old server use these parent checks. Servers never
-// expand stored grants, and an explicitly empty permissions array grants nothing.
+// Client-only fallback for old servers. Servers never expand grants; empty permissions grant nothing.
 const legacyParents: Partial<Record<AuthEnvironmentScope, AuthEnvironmentScope>> = {
   [AuthFilesystemReadScope]: AuthOrchestrationReadScope,
   [AuthDiagnosticsReadScope]: AuthOrchestrationReadScope,
@@ -146,9 +145,7 @@ export function sessionHasLegacyPermissions(session: SessionGrantInput): boolean
   );
 }
 
-// Access and relay management are included because terminal:operate and
-// orchestration:operate already reach that authority through a shell or a
-// full-access agent. Narrowing a grant means choosing explicit scopes.
+// Shell and full-access agent scopes already confer access and relay authority.
 export const AuthStandardClientScopes = [
   AuthOrchestrationReadScope,
   AuthOrchestrationOperateScope,
@@ -246,6 +243,17 @@ export const AuthWebSocketTicketResult = Schema.Struct({
 });
 export type AuthWebSocketTicketResult = typeof AuthWebSocketTicketResult.Type;
 
+/**
+ * Media routes share a ticket across requests; RPC uses a separate ticket.
+ * Use a path segment so the DPoP mint proof covers it; `htu` excludes query parameters,
+ * which could be stripped to change the ticket's use.
+ * Older clients mint at the bare path and receive tickets valid for either use.
+ */
+export const AuthWebSocketTicketUse = Schema.Literals(["rpc", "media"]);
+export type AuthWebSocketTicketUse = typeof AuthWebSocketTicketUse.Type;
+
+export const AuthWebSocketTicketParams = Schema.Struct({ use: AuthWebSocketTicketUse });
+
 export const AuthPairingCredentialResult = Schema.Struct({
   id: TrimmedNonEmptyString,
   credential: TrimmedNonEmptyString,
@@ -341,20 +349,9 @@ export class EnvironmentAuthorizationError extends Schema.TaggedError<Environmen
 /**
  * The environment does not implement this method.
  *
- * An environment that omits a surface has to be able to say so as a typed
- * failure: a `Die` never decodes into an `Error` the client can read a message
- * off, so it reaches the person as "unexpected server error" — the same thing a
- * genuine defect looks like. "I am not that kind of server" is not a defect, and
- * declaring this keeps `Die` meaning what it should.
- *
- * Declared only on the methods an environment in this fork's deployment does not
- * serve, not on every RPC. The list is a real statement about the surface rather
- * than a blanket allowance, so it stays reviewable: adding a method here says
- * nobody answers it, and removing one says somebody now does. `docs/fork` records
- * which methods those are and why.
- *
- * `method` is carried alongside the message so a caller can tell which of
- * several fanned-out calls came back absent without reading the message text.
+ * A typed failure, because a `Die` reaches the person as "unexpected server error", the same
+ * as a defect. Declare it only on methods this deployment does not serve; `docs/fork` lists them.
+ * `method` lets a caller tell which fanned-out call came back absent.
  */
 export class UnsupportedMethodError extends Schema.TaggedError<UnsupportedMethodError>()(
   "UnsupportedMethodError",
@@ -480,9 +477,7 @@ export class AuthMcpRegistrationError extends Schema.Error<AuthMcpRegistrationEr
   }
 }
 
-/**
- * Every field is checked by the server, so all are optional here.
- */
+/** Fields are optional here because the server validates them. */
 export const AuthMcpAuthorizationRequest = Schema.Struct({
   response_type: Schema.optionalKey(Schema.String),
   client_id: Schema.optionalKey(Schema.String),
@@ -494,20 +489,14 @@ export const AuthMcpAuthorizationRequest = Schema.Struct({
 });
 export type AuthMcpAuthorizationRequest = typeof AuthMcpAuthorizationRequest.Type;
 
-/**
- * The server has already validated the request; nothing here is trusted by the
- * client except for display.
- */
+/** Server-validated request details, trusted by the client only for display. */
 export const AuthMcpApprovalDetails = Schema.Struct({
   /** Self-declared by the client, so shown as such. */
   clientName: Schema.String,
   redirectHost: Schema.String,
   environmentHost: Schema.String,
   csrfToken: Schema.optionalKey(Schema.String),
-  /**
-   * What that session may approve in one click: only access whose scopes it
-   * holds. Anything else still needs a pairing code. Absent with `csrfToken`.
-   */
+  /** Only scopes held by this session qualify; others need a pairing code. Absent with `csrfToken`. */
   oneClickAccess: Schema.optionalKey(Schema.Array(AuthMcpClientAccess)),
 });
 export type AuthMcpApprovalDetails = typeof AuthMcpApprovalDetails.Type;

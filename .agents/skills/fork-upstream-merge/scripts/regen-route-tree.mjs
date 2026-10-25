@@ -4,33 +4,8 @@
  *
  *   node .agents/skills/fork-upstream-merge/scripts/regen-route-tree.mjs
  *
- * A route file conflict — adding, deleting, or renaming anything under
- * `apps/web/src/routes/` — leaves the generated route tree stale, and nothing
- * else in the merge procedure touches it. The obvious fix, starting `vp dev`
- * and killing it once the file changes, means a spin-up, a poll loop, and a
- * PID to track and kill correctly (see the "killing by pattern" rule in
- * AGENTS.md) for what is a one-shot file write.
- *
- * `@tanstack/router-plugin`'s Vite plugin calls exactly two functions to do
- * this: `getConfig` reads the router's config (empty here — `vite.config.ts`
- * calls `tanstackRouter()` with no options, so every default applies) and
- * `new Generator({ config, root }).run()` walks `apps/web/src/routes/` once
- * and writes the tree. Calling them directly here skips Vite, the dev server,
- * and the file watcher entirely.
- *
- * Both live in `@tanstack/router-generator`, which `apps/web` never imports
- * itself — `@tanstack/router-plugin` depends on it, and pnpm's isolated
- * `node_modules` nests it under the plugin's own directory rather than
- * hoisting it where a bare `import "@tanstack/router-generator"` would find
- * it. Resolving it from there, the same way Node would resolve it from inside
- * the plugin's own code, is what `resolveGeneratorFromRouterPlugin` below
- * does — no version-pinned `dist/...` path to go stale on an upgrade.
- *
- * Unlike its siblings in this directory, this script is NOT dependency-free:
- * `@tanstack/router-plugin` has to already be in `node_modules`, which means
- * `vp install` has to have run first. That is the normal state of a working
- * checkout, so it is not spelled out as a separate step — this script just
- * fails with a clear pointer to `vp install` if it is not.
+ * Needed after route files change. Resolves `@tanstack/router-generator` via the router plugin
+ * (pnpm does not hoist it), so `vp install` must have run first.
  */
 import * as NodeFS from "node:fs";
 import * as NodeModule from "node:module";

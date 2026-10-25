@@ -1,13 +1,7 @@
 /**
- * Fork-only. The agent credentials the viewer's own tasks run with, on the
- * provider they authenticate. What removes a credential sits beside the status
- * row that reports it, and the rows that establish one are there only while
- * there is none.
- *
- * Everything here belongs to the viewer, not to the deployment: a person who
- * administers nothing still sets their own Claude Code token and signs Codex in.
- * The git hosts are the other half of that answer and live at
- * `/settings/version-control`.
+ * Fork-only. The agent credentials the viewer's own tasks run with, on the provider they
+ * authenticate. Removal sits beside the status row; establishing rows show only while none exists.
+ * Everything here is the viewer's, not the deployment's. Git hosts live at `/settings/version-control`.
  */
 
 import type { ProviderDriverKind } from "@t3tools/contracts";

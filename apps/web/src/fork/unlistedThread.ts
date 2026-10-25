@@ -1,11 +1,7 @@
 /**
- * Fork-only. What the thread route does about a thread its shell listing never
- * carried: name it, decide whether it exists, and put it in the listing.
- *
- * Kept apart from `adoptedThreadShells.ts` on purpose: that module is read by
- * `state/threads.ts`, so anything importing `state/threads.ts` back into it
- * would close an import cycle around a module that builds atoms at load time.
- * Store there, hooks here.
+ * Fork-only. What the thread route does about a thread its shell listing never carried.
+ * Separate from `adoptedThreadShells.ts`: `state/threads.ts` reads that module, so importing
+ * it back would close an import cycle around a module that builds atoms at load time.
  */
 import { useAtomValue } from "@effect/atom-react";
 import type {
@@ -37,13 +33,9 @@ const NO_SNAPSHOT_ATOM = Atom.make<OrchestrationV2ShellSnapshot | null>(null).pi
 );
 
 /**
- * Hold this thread in the shell store while the caller is mounted, so it has a
- * title, a project and an archived stamp even though no listing named it.
- *
- * Held unconditionally rather than only when the listing lacks it: whether it
- * is missing is decided against the listing's own snapshot inside the store,
- * which is the one place that can decide it without the answer feeding back
- * into the question.
+ * Hold this thread in the shell store while the caller is mounted.
+ * Held unconditionally: whether it is missing is decided inside the store against the
+ * listing's own snapshot, so the answer cannot feed back into the question.
  */
 export function useAdoptedThread(
   environmentId: EnvironmentId | null,
@@ -58,20 +50,10 @@ export function useAdoptedThread(
 }
 
 /**
- * Whether the environment has yet said anything at all about this thread.
- *
- * This is the difference between "we have not asked yet" and "there is no such
- * thread", and only the second is a reason to leave the route. Both `empty` and
- * `synchronizing` carry no data and no answer: the client cannot know whether
- * the thread exists, and a client that guesses "no" navigates people off threads
- * that were about to load. `synchronizing` is the state a subscription enters
- * before it sends anything (`markSynchronizing` in client-runtime's
- * `state/threads.ts`), so reading `empty` alone answers "no" one tick after
- * mount, while the request is still in flight.
- *
- * An error settles it the other way. `orchestration.subscribeThread` fails for
- * a thread the viewer cannot open, so a failure with nothing loaded means the
- * server answered and the answer was no.
+ * Whether the environment has yet said anything about this thread.
+ * `empty` and `synchronizing` both carry no answer; guessing "no" navigates people off threads
+ * about to load. `synchronizing` precedes the first send, so `empty` alone answers "no" too early.
+ * An error with nothing loaded means the server answered no (`subscribeThread` failed).
  */
 export function threadAwaitsFirstAnswer(
   status: EnvironmentThreadStatus,
@@ -90,17 +72,8 @@ export function useThreadAwaitingFirstAnswer(ref: ScopedThreadRef | null): boole
 
 /**
  * Put a thread the listing does not carry into it, once, by following it.
- *
- * A Moatless listing is the open work the viewer follows, so a thread reached
- * by link is readable and absent from the sidebar at the same time. Opening one
- * is the request to work on it, and following is what makes the sidebar agree.
- *
- * Once per ref, and never again after an unfollow: the row menu's Unfollow acts
- * on the thread the viewer is looking at, and a hook that re-followed on the
- * next render would make that item do nothing. Decided against the *listing's*
- * snapshot rather than the grafted one, for the reason `missingThreadIds`
- * gives — the graft is what put this thread on screen, and reading it back
- * would answer "present" for every thread this hook exists for.
+ * Once per ref, never again after an unfollow, or the row menu's Unfollow would do nothing.
+ * Decide against the *listing's* snapshot, as `missingThreadIds` does, not the grafted one.
  */
 export function useAutoFollowThread(ref: ScopedThreadRef | null): void {
   const follow = useAtomCommand(threadEnvironment.follow, { reportFailure: false });

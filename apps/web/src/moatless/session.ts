@@ -5,16 +5,9 @@ import { moatlessQuery, useMoatlessQuery } from "./query.ts";
 
 /**
  * Who the viewer is to Moatless, and whether they administer it.
- *
- * # This decides what is shown, and nothing else
- *
- * Moatless enforces administration in its DAOs, through `ScopeContext.is_admin`
- * (`backend/src/loops/dao.rs:404`). Every gate built on this module is
- * cosmetic: hiding a control the server would refuse anyway, so that nobody is
- * offered work they cannot do. A stale `false` costs a person a menu entry; a
- * stale `true` costs them a 403 they can read. Neither is a security failure,
- * and nothing here should ever be described as one — a future reader who
- * mistakes this for the boundary will start trusting it.
+ * This decides what is shown, nothing else: Moatless enforces admin in its DAOs
+ * (`ScopeContext.is_admin`). Gates built on this hide controls the server would refuse anyway;
+ * a stale value costs a menu entry or a readable 403. Never describe it as a security boundary.
  */
 
 const sessionQuery = moatlessQuery<SessionResponse>("session", () => meHandler());

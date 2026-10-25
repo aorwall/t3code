@@ -2,40 +2,10 @@
 /**
  * Resolutions that silently reverted to one side.
  *
- *   node .agents/skills/fork-upstream-merge/scripts/resolution-check.mjs
- *   node .agents/skills/fork-upstream-merge/scripts/resolution-check.mjs c3a5e9b8e
+ *   node .agents/skills/fork-upstream-merge/scripts/resolution-check.mjs [merge-sha]
  *
- * The failure this exists for is a resolution that disappears without leaving a
- * marker. A sandbox restart reverts the uncommitted working tree: conflicted
- * files come back with their `<<<<<<<` markers and are obvious, while files
- * edited as collateral of resolving a conflict elsewhere revert in silence.
- *
- * Fork-only files have a detector for that already — the `guard` entries in the
- * inventory, which turn a lost `FEATURES` flag into a failing `features.test.ts`.
- * Nothing covered the upstream-owned half: no guard names those paths, and
- * `merge-stats.mjs` only counts files, so one lost file is noise. This reads the
- * content of each candidate path against both parents and reports where the
- * result contradicts the path's own verdict.
- *
- * So it says nothing about fork-only paths (`ours`), and cannot: with no
- * upstream side there is no third reference to compare against, and "identical
- * to the fork's copy" is that verdict's correct answer. Guards cover those.
- *
- * Two limits, both deliberate:
- *
- * It compares whole files. A path whose entry bundles several deltas can lose
- * one and keep another, and the file still differs from both parents, so
- * nothing fires. `inventory-check.mjs`'s `guard.symbol` checks are the finer
- * grain; this is the coarse net under them.
- *
- * The `// Fork:` marker census is reported, never enforced. A delta can be a
- * deletion — `apps/server/src/bin.ts` carries its whole delta as upstream's
- * `pairCommand` removed from a list, with no marker on either side of the merge
- * — so the census reads `0 → 0` whether that deletion survived or reverted. A
- * signal blind to half its own failure class does not get a vote.
- *
- * Like `duplicate-adds.mjs`, this runs mid-merge on purpose. Before the commit
- * exists a finding is still a plain edit.
+ * Compares upstream-owned paths against both parents; whole-file only, so a partly lost delta
+ * passes (`guard.symbol` is finer). Skips `ours` paths; the `// Fork:` census is never enforced.
  */
 import * as NodeChildProcess from "node:child_process";
 import * as NodeFS from "node:fs";
@@ -83,14 +53,8 @@ const same = (a, b) => a !== null && b !== null && a.join("\n") === b.join("\n")
 /**
  * The three blobs a rule needs, or `null` when the comparison cannot be made.
  *
- * A path missing on either parent is one side's addition or upstream's
- * deletion. Neither is this check's business — re-deletions are what
- * `tripwires.mjs` watches — and both would otherwise read as "identical to the
- * side that still has it".
- *
- * `ours == theirs` means this merge had nothing to decide here. Without that
- * guard every path whose delta converged in some earlier merge fires forever,
- * which is staleness, and `inventory-check.mjs` already owns it.
+ * Missing on either parent is an addition or deletion (`tripwires.mjs` owns it). `ours == theirs`
+ * means nothing to decide; without that guard converged paths fire forever (`inventory-check.mjs`).
  */
 function sidesOfPath(sides, path) {
   const ours = blobLines(sides.ours, path);
@@ -131,17 +95,8 @@ function candidatePaths(sides, base) {
 /**
  * Landed as plain upstream, where the verdict promised a fork delta on top.
  *
- * `converged` fails outright: taking upstream and re-applying the listed delta
- * is the entire content of that verdict, so plain upstream means the delta is
- * gone. The entry promised one, so its absence is a finding on its own.
- *
- * `decide` only warns, and only when the fork's own side carried a `// Fork:`
- * marker. That verdict is usually a glob over a directory upstream owns, most
- * of whose files the fork has never touched — `apps/web/src/browser/**` covers
- * six of them — and for those, landing on upstream is not a resolution at all,
- * it is Tuesday. Requiring a marker is what separates "a marked delta stopped
- * being there" from "this file never had one", at the cost of missing a
- * delete-shaped delta, which is a trade only warnings can afford.
+ * `converged` fails outright: plain upstream means the delta is gone. `decide` only warns, and
+ * only when the fork side had a `// Fork:` marker, since most files in a glob were never touched.
  */
 function checkDeltaDrift(inventory, report, sides, paths) {
   const section = report.section("Fork delta, against what landed");
@@ -259,37 +214,22 @@ function checkUpstreamDrift(inventory, report, sides, paths, base) {
 /**
  * `theirs-verbatim` paths that are not byte-identical to upstream.
  *
- * A standing invariant rather than a question about this merge, so it scans
- * every tracked path the verdict claims rather than the merge's own diff.
- *
- * Scoped to `theirs-verbatim` and never to plain `theirs`: `pnpm-lock.yaml` is
- * the fork's only `theirs` path and is meant to differ from upstream's lockfile
- * forever, so including it would make this step red on every merge — the same
- * standing failure `unsupported-methods.mjs` carries for `scripts.run`, which
- * is a thing to stop doing rather than to copy.
+ * A standing invariant, so it scans every tracked path of that verdict. Never plain `theirs`:
+ * `pnpm-lock.yaml` differs forever and would make this red on every merge.
  */
 /**
  * The upstream commit to hold a `theirs-verbatim` path against.
  *
- * `sides.theirs` is only upstream when the merge in progress is an upstream
- * merge. A fork branch merged into another fork branch has a `theirs` that is
- * not upstream at all, and every `theirs-verbatim` path then reads as drifted
- * against it. So: use `theirs` when it really is an upstream commit, and
- * otherwise the newest upstream commit the fork side already contains.
- *
- * Returns null when there is no upstream ref to compare against — a clone with
- * no upstream remote skips the rule rather than failing it.
+ * `sides.theirs` is upstream only in an upstream merge; otherwise use the newest upstream commit
+ * the fork side contains. Returns null with no upstream ref, skipping the rule.
  */
 function upstreamReference(inventory, sides) {
   const ref = inventory.upstream.ref;
   if (!git(["rev-parse", "--verify", "--quiet", ref], { allowFailure: true })) return null;
   if (isUpstreamMerge(inventory, sides)) return git(["rev-parse", sides.theirs]);
 
-  // Not an upstream merge, so neither parent is upstream. The right reference
-  // is the newest upstream commit the merge RESULT carries — taking it from
-  // `ours` alone would compare against whatever upstream the fork had before
-  // the branch being merged brought a newer one in, and report every file that
-  // newer upstream touched as drifted.
+  // Not an upstream merge: use the newest upstream commit the merge RESULT carries. From `ours`
+  // alone, files a newer upstream touched would be reported as drifted.
   if (sides.state === "committed") return mergeBase(sides.merged, ref);
   const fromOurs = mergeBase(sides.ours, ref);
   const fromTheirs = mergeBase(sides.theirs, ref);
@@ -299,14 +239,8 @@ function upstreamReference(inventory, sides) {
 /**
  * Whether the merge being checked is an upstream merge at all.
  *
- * Rules 1 and 2 read `theirs` as "upstream's side". That holds only when the
- * other parent is an upstream commit. Merging one fork branch into another —
- * a pull request landing on `main`, most obviously — makes `theirs` the fork's
- * own branch, and every `converged` path it touched then reads as "landed
- * byte-identical to upstream" because the merge took that branch whole. The
- * rules are not weaker there, they are meaningless, so they are skipped rather
- * than reported: a check that is red on every merged pull request is a check
- * nobody reads.
+ * Rules 1 and 2 read `theirs` as upstream. In a fork-branch merge they are meaningless, so they
+ * are skipped, not reported.
  */
 function isUpstreamMerge(inventory, sides) {
   const ref = inventory.upstream.ref;

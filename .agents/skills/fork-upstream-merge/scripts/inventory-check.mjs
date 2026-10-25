@@ -1,18 +1,9 @@
 #!/usr/bin/env node
 /**
- * Checks every path in docs/fork/inventory.json against upstream/main and the
- * working tree, and reports the entries that have gone stale.
+ * Reports docs/fork/inventory.json entries that have gone stale against upstream/main and the tree.
  *
- * This is the check that catches the expensive kind of merge surprise: a fork
- * delta whose anchor upstream has renamed, deleted, or started shipping itself.
- * Without it, a path upstream has deleted surfaces only as a modify/delete
- * conflict mid-merge, because git cannot see a content swap as a rename — a
- * file's content moved into a different name is a delete paired with a modify,
- * which no `-M` threshold detects. Reading the inventory's own paths back out
- * of upstream finds it in a second, before the merge starts.
- *
- * It also enforces the rule the path policy states in prose: an entry may be
- * `ours` only if the path does not exist in upstream/main.
+ * Catches a path upstream renamed, deleted or started shipping before the merge, since git sees
+ * a content swap as delete+modify. Also enforces: an entry may be `ours` only if upstream lacks it.
  *
  *   node .agents/skills/fork-upstream-merge/scripts/inventory-check.mjs
  */
@@ -116,13 +107,8 @@ const INVENTORY_PROSE = "docs/fork/upstream-merge-inventory.md";
 /**
  * Every delta an entry names has a section in the prose inventory.
  *
- * A `converged` verdict says "take upstream, then re-apply <delta>", and the
- * delta itself — what must survive and why — is written in
- * `upstream-merge-inventory.md`. When a delta is named in the JSON and has no
- * section there, resolving a conflict in the files it owns means working from
- * the `mustSurvive` line alone, which is a summary rather than the reasoning.
- * Two deltas were in that state for three merges before anyone noticed, because
- * nothing compares the two files.
+ * A `converged` verdict means "take upstream, re-apply <delta>"; without a section in
+ * `upstream-merge-inventory.md` only the `mustSurvive` summary is left to work from.
  */
 function checkDeltaSections(inventory, report) {
   const section = report.section("Named deltas vs the prose inventory");

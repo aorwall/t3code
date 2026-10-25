@@ -29,22 +29,9 @@ interface MobileSidebarDrawerProps extends React.ComponentProps<"div"> {
 }
 
 /**
- * The mobile sidebar as a drawer the finger can drag in from the screen edge
- * and back out to dismiss, rather than a sheet that only answers a tap on the
- * trigger. The panel tracks the finger 1:1 and snaps to the nearer end on
- * release; `open` still drives it, so the trigger, the row-click handlers and
- * the keyboard shortcut all keep working unchanged.
- *
- * # Why not a `<dialog>`
- *
- * The equivalent drawer in Moatless' own UI is a native modal `<dialog>`, which
- * buys a focus trap and a backdrop for free. It cannot be that here: a modal
- * dialog makes every node outside it inert, and this sidebar's own menus —
- * Base UI popups, and the imperative context menu in `contextMenuFallback` —
- * portal to `document.body`, which is outside. They would render behind the
- * drawer and ignore taps. Settling a thread from the sidebar on a phone is
- * precisely what this exists to enable, so the drawer is a plain fixed layer
- * and gives up the free focus trap. Escape and a backdrop tap still close it.
+ * Mobile sidebar as a drag-in/drag-out drawer; `open` still drives it.
+ * Not a modal `<dialog>`: that makes everything outside inert, and the sidebar's menus portal
+ * to `document.body`, so they would render behind it and ignore taps. Plain fixed layer instead.
  */
 export function MobileSidebarDrawer({
   open,

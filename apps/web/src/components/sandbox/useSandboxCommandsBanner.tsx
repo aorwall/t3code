@@ -1,15 +1,8 @@
 /**
- * Fork-only: the composer banner that reports the commands a thread's agent
- * handed to `moat cmd`.
- *
- * The sandbox status pill in the right panel already shows these, but the panel
- * is collapsed or absent exactly when someone is watching the conversation — so
- * a build running behind an ended turn leaves no trace in the thread itself.
- * This puts one line above the composer while any registered command runs.
- *
- * It reads the same sandbox-status atom the pill does (keyed by thread, so the
- * two share one subscription and one poll), and returns `null` when nothing is
- * running — which is the common case, so the banner stays out of the way.
+ * Fork-only: the composer banner reporting commands a thread's agent handed to `moat cmd`.
+ * The right panel is collapsed exactly when someone watches the conversation, so a build behind an
+ * ended turn needs a line above the composer. Reads the same sandbox-status atom as the pill (one
+ * subscription) and returns `null` when nothing runs.
  */
 import type { ScopedThreadRef } from "@t3tools/contracts";
 import { TerminalIcon } from "lucide-react";

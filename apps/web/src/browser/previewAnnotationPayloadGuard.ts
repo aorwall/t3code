@@ -1,12 +1,7 @@
 /**
- * Fork-only. Narrows what came back over `postMessage` to the annotation
- * payload the composer accepts.
- *
- * Upstream needs no equivalent: its picker is a preload it shipped itself,
- * reached over ipc, so what comes back is what it sent. This one arrives from a
- * page the fork does not control, on a channel any script on that page can post
- * to, and it ends up rendered in the composer and sent to an agent. So it is
- * checked field by field before it is believed.
+ * Fork-only. Narrows what came back over `postMessage` to the annotation payload the composer accepts.
+ * Upstream's picker is its own ipc preload; this one comes from a page the fork does not control,
+ * on a channel any script there can post to, and is rendered and sent to an agent. Check every field.
  */
 
 import type { PickedElementPayload, PreviewAnnotationPayload } from "@t3tools/contracts";

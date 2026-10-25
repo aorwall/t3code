@@ -1,18 +1,8 @@
 /**
- * Fork-only. The scripts one thread can run, its own declarations included.
- *
- * A Moatless thread may declare scripts of its own, stored beside that thread's
- * state rather than on its project: an agent that brings up a dev server
- * registers it as it goes, for that task alone. No project carries those, so
- * the project's script list cannot show them and the header's Run control would
- * offer a thread nothing the agent just made for it.
- *
- * So the control renders this list instead. The backend does the merging — it
- * is the side that knows which declaration shadows which — and the project's
- * list is the answer whenever the read has not come back, failed, or is not
- * served at all. That keeps the header identical to upstream's on an
- * environment without the `taskScripts` capability, and identical to its own
- * previous behaviour while the first read is in flight.
+ * Fork-only. The scripts one thread can run, including ones declared for that thread alone
+ * (stored with its state, not its project). The backend merges them and knows which shadows
+ * which; the project's list stays the answer when the read is pending, failed or unserved,
+ * keeping the header identical to upstream's without the `taskScripts` capability.
  */
 import type { EnvironmentId, ProjectScript, ThreadId, ThreadScript } from "@t3tools/contracts";
 

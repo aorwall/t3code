@@ -1,11 +1,6 @@
 /**
- * Fork-only. The sidebar hover card's line saying which thread a row came
- * from: "Fork of {title}" for a fork, "Subtask of {title}" for a Task another
- * Task's agent delegated to. The row's `SidebarParentLink` opens the parent
- * but does not say which kind of child the row is.
- *
- * The parent's title comes from its shell; a parent this client has no shell
- * for shows only "Fork" or "Subtask".
+ * Fork-only. The sidebar hover card's "Fork of {title}" / "Subtask of {title}" line.
+ * A parent with no shell on this client shows only "Fork" or "Subtask".
  */
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import { isProviderNativeSubagentThread, type ThreadId } from "@t3tools/contracts";

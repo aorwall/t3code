@@ -1,13 +1,7 @@
 /**
- * Fork-only. Reading the turn a fork cuts after off the wire `TurnId` the
- * hovered message already carries, instead of tracking it separately.
- *
- * Moatless encodes `TurnId` as `"{taskId}:{turnNumber}"`
- * (`crates/t3code/src/projection.rs`, `turn_id`). The contract types `TurnId`
- * as an opaque branded string, so this parse is Moatless-specific and lives
- * here rather than in a shared, upstream-owned module. A V2 `RunId` from
- * Moatless is expected to carry the same encoding; one that does not parses
- * to `null`, which keeps upstream behaviour.
+ * Fork-only. Reads the turn a fork cuts after off the hovered message's wire `TurnId`.
+ * Moatless encodes it as `"{taskId}:{turnNumber}"` (`crates/t3code/src/projection.rs`);
+ * anything else parses to `null`, which keeps upstream behaviour.
  */
 import type { RunId, TurnId } from "@t3tools/contracts";
 

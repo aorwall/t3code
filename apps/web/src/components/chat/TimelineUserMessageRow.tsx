@@ -30,6 +30,7 @@ import {
   EyeIcon,
   GlobeIcon,
   // Fork: icons for the message-origin chip.
+  GithubIcon,
   HashIcon,
   type LucideIcon,
   MessagesSquareIcon,
@@ -40,8 +41,6 @@ import {
   TicketIcon,
   Undo2Icon,
 } from "lucide-react";
-// Fork: message-origin chip for messages that arrived through an adapter or another Task.
-import { GitHubIcon } from "../Icons";
 import { resolveMessageOriginChip, type MessageOriginIconKey } from "./messageOrigin";
 import { Link as LinkIconNode } from "lucide";
 import { Button, InlineButton } from "../ui/button";
@@ -57,6 +56,7 @@ import {
   SNAP_SHOT_ATTACHMENT_FRAME_CLASS,
   SnapShotAttachmentDetails,
 } from "./SnapShotAttachmentDetails";
+import { GuestMessageName, guestBubbleClassName } from "./guestMessageStyle";
 import { MessageCopyButton } from "./MessageCopyButton";
 import { promptLinkFor } from "../promptLinks/copyPromptLink";
 import { PierreEntryIcon } from "./PierreEntryIcon";
@@ -318,7 +318,9 @@ function UserTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "message" 
       ? { environmentId: ctx.activeThreadEnvironmentId, threadId: senderThreadId }
       : null,
   );
-  const resolvedContext = resolveUserMessageContext(row.message);
+  const resolvedContext = resolveUserMessageContext(
+    userMessage.attribution === "guest" ? { ...row.message, text: userMessage.text } : row.message,
+  );
   const previewImages = userImages.filter((image) => image.name.startsWith("preview-annotation-"));
   const revertTurnCount = row.revertTurnCount;
   const chippedAttachmentIds = new Set(
@@ -448,13 +450,20 @@ function UserTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "message" 
           Sent by T3 Code
         </p>
       ) : null}
+      {/* The row's heading already names the guest for screen readers. */}
+      {userMessage.guestName !== undefined ? (
+        <div aria-hidden>
+          <GuestMessageName name={userMessage.guestName} />
+        </div>
+      ) : null}
       {row.message.inputIntent === "steer" ||
       row.message.inputIntent === "promoted_queued_to_steer" ? (
         <UserMessageIntentMarker intent={row.message.inputIntent} />
       ) : null}
       <div
         className={cn(
-          "relative min-w-0 max-w-[80%] rounded-2xl bg-message text-message-foreground",
+          "relative min-w-0 max-w-[80%] rounded-2xl text-message-foreground",
+          userMessage.attribution === "guest" ? guestBubbleClassName(false) : "bg-message",
           !folded && "p-3",
           folded && expanded && "w-full",
         )}
@@ -478,7 +487,9 @@ function UserTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "message" 
               folded && !ctx.findActive && "max-h-96 overflow-auto",
             )}
           >
-            <MessageAuthorHeading>You</MessageAuthorHeading>
+            <MessageAuthorHeading>
+              {userMessage.guestName === undefined ? "You" : `${userMessage.guestName} (guest)`}
+            </MessageAuthorHeading>
             {(regularImages.length > 0 || userVideos.length > 0) && (
               <div className="mb-2 grid max-w-[210px] grid-cols-2 gap-2">
                 {regularImages.map((image) => (
@@ -822,7 +833,7 @@ function MessageOriginIcon({ iconKey }: { iconKey: MessageOriginIconKey }) {
     case "slack":
       return <HashIcon className={className} />;
     case "github":
-      return <GitHubIcon className={className} />;
+      return <GithubIcon className={className} />;
     case "linear":
       return <TicketIcon className={className} />;
     case "telegram":

@@ -1,13 +1,8 @@
 /**
  * Fork-only. Atoms for the threads a thread spawned.
  *
- * A query rather than a subscription, and that is the whole design: a subtask's
- * status moves at the pace of a task starting, finishing or erroring, which is
- * minutes, not the sub-second pace of a container's probe flipping. So the
- * client re-asks on an interval while the panel is open instead of the backend
- * holding a poller per subscriber, and the panel closing ends the polling with
- * no lifecycle to manage on either side.
- *
+ * A query, not a subscription: subtask status moves in minutes, so the client re-asks on an
+ * interval while the panel is open and the backend holds no poller per subscriber.
  * @module state/subtasks
  */
 import { WS_METHODS } from "@t3tools/contracts";

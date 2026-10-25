@@ -1,12 +1,8 @@
 /**
- * Fork-only. A settings page drawn as a list of entries beside the selected
- * entry's editor.
- *
- * The markup is copied from `ProviderSettingsPanel`, which draws the same card
- * inline and exports none of it. Keep the two in step by eye: an upstream
- * restyle of that panel does not reach this file. See the convergence note in
- * `docs/fork/inventory.json` — drop this copy if upstream ever exports the
- * primitive.
+ * Fork-only. A settings page drawn as a list of entries beside the selected entry's editor.
+ * Markup copied from `ProviderSettingsPanel`, which exports none of it: an upstream restyle there
+ * does not reach this file. See the convergence note in `docs/fork/inventory.json`; drop this copy
+ * if upstream exports the primitive.
  */
 
 import type { ReactNode } from "react";
@@ -29,12 +25,9 @@ const cardClassName = "rounded-xl border border-border/60 bg-card/40 shadow-xs/5
 const cardHeightClassName = "lg:h-[min(44rem,calc(100dvh-11rem))] lg:min-h-[32rem]";
 
 /**
- * Renders `entries` as a list on the left and the selected entry's `detail` on
- * the right. Below the `lg` breakpoint the grid collapses and the list stacks
- * above the detail, so a phone shows both.
- *
- * Falls back to the first entry when `selectedId` names none of them, which is
- * what a stale deep link and a vanishing entry both look like here.
+ * Renders `entries` as a list beside the selected entry's `detail`; below `lg` the list stacks
+ * above it. Falls back to the first entry when `selectedId` names none (stale deep link, vanished
+ * entry).
  */
 export function SettingsMasterDetail<Id extends string>({
   entries,

@@ -1,28 +1,8 @@
 /**
- * Fork-only. Threads the client is holding that its shell listing does not
- * carry, adopted into the snapshot for as long as something is looking at them.
- *
- * Upstream's client learns a thread exists from the shell listing and nowhere
- * else, and that is exact upstream: the listing is every thread the server has.
- * A Moatless listing is not. It is the *open* work you *follow*, so a thread
- * reached by link, by a subtask row, or out of the archive arrives with a
- * transcript from the thread subscription and no listing row at all — no title,
- * no project, no archived stamp, because those are the listing's to give.
- *
- * The fix is a graft rather than a second store: `threads.getShell` returns the
- * row the listing would have carried, and it is spliced into the snapshot the
- * thread-shell atoms already read. Everything downstream — the shell index,
- * project grouping, the archived badge — then works on a thread that is not in
- * the listing without knowing that it isn't.
- *
- * Two consequences worth stating, because both are deliberate:
- *
- * - The sidebar filters on `archivedAt === null`, so an adopted *closed* thread
- *   stays out of it and an adopted *open* one appears while it is held. That is
- *   the right split, and it comes for free from where the graft sits.
- * - Adoption is refcounted and released, so the graft lives exactly as long as
- *   something is looking. A thread nobody is on returns to being absent, which
- *   is what it is.
+ * Fork-only. Held threads absent from the shell listing, grafted into the snapshot while watched.
+ * A Moatless listing is only the open work you follow, so a thread reached by link or archive
+ * has a transcript but no listing row. `threads.getShell` supplies it; adoption is refcounted.
+ * The sidebar's `archivedAt === null` filter still hides adopted closed threads.
  */
 import type {
   EnvironmentId,
@@ -35,7 +15,6 @@ import * as Option from "effect/Option";
 import { AsyncResult, Atom } from "effect/reactivity";
 
 import { appAtomRegistry } from "../rpc/atomRegistry";
-import { environmentSnapshotAtom } from "../state/shell";
 import { threadShellLookupEnvironment } from "../state/threadShellLookup";
 
 interface AdoptedThreadRefs {
@@ -91,11 +70,8 @@ export function adoptThread(ref: ScopedThreadRef): () => void {
 
 /**
  * Which held threads this snapshot is missing.
- *
- * Read off the *listing's* snapshot, never the grafted one, so a thread the
- * graft supplied does not read as present and stop being supplied. It is also
- * what keeps a listed thread from ever reaching the network: a row that is
- * already here is filtered out before its atom is touched.
+ * Read the *listing's* snapshot, never the grafted one, or an adopted thread would read as
+ * present and stop being supplied.
  */
 export function missingThreadIds(
   snapshot: OrchestrationV2ShellSnapshot,
@@ -119,37 +95,35 @@ export function graftThreadShells(
   return { ...snapshot, threads: [...snapshot.threads, ...adopted] };
 }
 
-const graftedSnapshotAtom = Atom.family((environmentId: EnvironmentId) =>
-  Atom.make((get): OrchestrationV2ShellSnapshot | null => {
-    const snapshot = get(environmentSnapshotAtom(environmentId));
-    // Before the listing has answered there is nothing to be missing from, and
-    // asking early would race the snapshot that was about to carry the thread.
-    if (snapshot === null) {
-      return null;
-    }
-    const missing = missingThreadIds(snapshot, environmentId, get(adoptedThreadRefsAtom).refs);
-    const adopted = missing
-      .map((threadId) =>
-        Option.getOrNull(
-          AsyncResult.value(
-            get(threadShellLookupEnvironment.get({ environmentId, input: { threadId } })),
-          ),
-        ),
-      )
-      .map((result) => result?.thread ?? null)
-      .filter((thread): thread is OrchestrationV2ThreadShell => thread !== null);
-    return graftThreadShells(snapshot, adopted);
-  }).pipe(Atom.withLabel(`fork-adopted-thread-shells:snapshot:${environmentId}`)),
-);
-
 /**
  * The listing snapshot every thread-shell atom reads, with adopted rows in it.
  *
- * Drop-in for `environmentSnapshotAtom`: same key, same type, and identical
- * whenever nothing is adopted.
+ * Drop-in for the `base` snapshot family it wraps: same key, same type, and
+ * identical whenever nothing is adopted.
  */
-export function adoptedEnvironmentSnapshotAtom(
-  environmentId: EnvironmentId,
-): Atom.Atom<OrchestrationV2ShellSnapshot | null> {
-  return graftedSnapshotAtom(environmentId);
+export function createAdoptedEnvironmentSnapshotAtom(
+  base: (environmentId: EnvironmentId) => Atom.Atom<OrchestrationV2ShellSnapshot | null>,
+): (environmentId: EnvironmentId) => Atom.Atom<OrchestrationV2ShellSnapshot | null> {
+  return Atom.family((environmentId: EnvironmentId) =>
+    Atom.make((get): OrchestrationV2ShellSnapshot | null => {
+      const snapshot = get(base(environmentId));
+      // Before the listing has answered there is nothing to be missing from, and
+      // asking early would race the snapshot that was about to carry the thread.
+      if (snapshot === null) {
+        return null;
+      }
+      const missing = missingThreadIds(snapshot, environmentId, get(adoptedThreadRefsAtom).refs);
+      const adopted = missing
+        .map((threadId) =>
+          Option.getOrNull(
+            AsyncResult.value(
+              get(threadShellLookupEnvironment.get({ environmentId, input: { threadId } })),
+            ),
+          ),
+        )
+        .map((result) => result?.thread ?? null)
+        .filter((thread): thread is OrchestrationV2ThreadShell => thread !== null);
+      return graftThreadShells(snapshot, adopted);
+    }).pipe(Atom.withLabel(`fork-adopted-thread-shells:snapshot:${environmentId}`)),
+  );
 }

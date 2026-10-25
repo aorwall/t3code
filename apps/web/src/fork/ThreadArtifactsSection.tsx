@@ -1,11 +1,7 @@
 /**
- * Fork-only. The Artifacts a thread's task has published — the HTML pages an
- * agent publishes with `moat artifact publish` — as a section of the thread
- * details panel, below the agents.
- *
- * A row opens the page in the right panel's browser, like the chat's artifact
- * chip (`MoatlessArtifactChip`); a modifier click, or a client with no in-app
- * browser, keeps the anchor's own new-tab behaviour.
+ * Fork-only. The Artifacts a thread's task published, as a thread details panel section.
+ * A row opens in the right panel's browser like `MoatlessArtifactChip`; a modifier click,
+ * or a client with no in-app browser, keeps the anchor's new-tab behaviour.
  */
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import { isAtomCommandInterrupted } from "@t3tools/client-runtime/state/runtime";

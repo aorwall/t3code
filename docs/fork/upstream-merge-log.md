@@ -28,6 +28,57 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-25 — merged upstream to b808f7fc6d
+
+- Upstream: `b808f7fc6d` from base `18e2742519` (`155` commits). Branch point:
+  `main`; no open merge PR to stack on.
+- Landed: `2583` files from `git diff --stat HEAD^1 HEAD` against `2584` in the
+  upstream range. The gap is the three `deletedUpstreamPaths` files upstream
+  edited (`cli/pair.ts`, its test, `useDiscoveredLocalServers.ts`), kept
+  deleted, less `adoptedThreadShells.ts` and `inventory.json`. Fork delta `754`
+  files from `git diff --stat HEAD^2 HEAD`, unchanged from the base.
+- Conflicts: 22 files.
+  - `state/threads.ts`: upstream now feeds `threadFamilies.snapshotAtom` to
+    `createThreadEnvironmentAtoms`. The graft became
+    `createAdoptedEnvironmentSnapshotAtom(base)` and wraps it;
+    `thread-adoption-graft` rewritten.
+  - `routes/__root.tsx`: upstream's `/guest` short-circuit taken above the
+    fork's chrome-less `/login` list. `useThreadLifecycle.tsx`: the fork's
+    "no shell row is not gone" kept over upstream's `shellOmitsChildren` check.
+  - `Sidebar.logic.ts`: upstream exported `isSidebarSubagentThread` and the
+    palette now calls it with threads that carry no `source`; the fork version
+    falls back to upstream's lineage check without one.
+  - Upstream's `GitHubIcon` left `Icons.tsx` (forge icons from definitions); the
+    message-origin chip uses lucide's `GithubIcon`.
+  - The rest kept both sides: compaction rows beside the Moatless run check,
+    `isStartingRun` beside upstream's compacting label, `isPublic` beside
+    `canShareWithGuest`, and fork lines under upstream's shortened comments
+    (vite configs, `server.ts`, `rpc.ts`, `AppRoot.tsx`, `AGENTS.md`).
+  - Upstream's `no-low-value-comments` now caps a comment at four lines
+    (#21514). 214 fork comment blocks were cut to fit. `AGENTS.md` restates
+    the cap.
+  - `duplicateAddExceptions`: replaced the stale `usePreviewSession.ts` entry
+    with a `ChatView.tsx` `null)` collision.
+- Sweep: 9 hits, the relay-preview infra, the `PullRequestRouting*` renames and
+  a connection runtime test. All upstream-owned outside the web surface the fork
+  ships; taken as upstream's. New workflows: `relay-preview.yml`,
+  `relay-preview-cleanup.yml`, `stale-needs-more-info.yml`. Disable them in
+  GitHub once this lands.
+- Unsupported methods: ADD 3 (`guestShare.create`,
+  `orchestration.getThreadFamily`, `getWorktreeThreadIds`), DROP 0, KEEP 2.
+  Gaps: added guest sharing and thread families under
+  [methods the backend does not dispatch](./gaps.md#methods-the-backend-does-not-dispatch);
+  extended [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: `verify.mjs` (full, parallel). Every check except `test` is
+  green.
+  - Confirmed failing alone, all seen on 2026-10-23: `t3` `RepositoryIdentityResolver`,
+    `GitVcsDriver` (`insteadOf`), `ServerBrowserPage`, `CodexChatGptAuth` and
+    `CodexManagedRuntime` (`/tmp` gap), and `provider-opencode` `OpenCodeServerLedger`.
+  - `web` failed on a missing chromium headless shell build 1223 and on the
+    palette subagent test. The test fixture is now a provider-native subagent.
+    Rerun with `PLAYWRIGHT_BROWSERS_PATH` pointing build 1223 at 1243 and a private
+    `TMPDIR`: 381/381 files pass.
+
 ### 2026-10-23 — merged upstream to 18e2742519
 
 - Upstream: `18e2742519` from base `e07595714a` (`45` commits). Branch point:
