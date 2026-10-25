@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "workspaces": [
+    {
+      "key": "default",
+      "name": "t3code",
+      "repos": [
+        { "url": "https://github.com/soaplabs/t3code.git", "primary": true },
+        { "url": "https://github.com/soaplabs/moatless.git" }
+      ],
+      "languageServers": ["typescript", "rust"],
+      "resources": {
+        "requests": { "cpu": "1", "memory": "6Gi" },
+        "limits": { "cpu": "4", "memory": "14Gi" },
+        "storage": "30Gi"
+      },
+      "scripts": [
+        {
+          "name": "demo",
+          "label": "Demo server",
+          "command": "node /opt/moatless/workspace/demo-server/server.js",
+          "icon": "globe",
+          "port": 4321,
+          "runOnStart": false
+        }
+      ]
+    }
+  ]
+}
