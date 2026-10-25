@@ -64,14 +64,13 @@ Moatless does populate it: the descriptor reports `connectionProbe`,
 `threadSettlement`, `threadSnooze`, `threadPullRequests` and
 `repositoryIdentity: false`, so a client
 can tell it apart from a server that refuses settlement or snooze. What it does
-not report is every boolean added since that handshake was written —
-`threadPinning` (upstream, 2026-08-06), `threadPinReorder` (upstream,
-2026-08-08), `threadTitleRegeneration`, `serverSelfUpdate`,
+not report is most of the booleans added since that handshake was written —
+`serverSelfUpdate`,
 `serverSelfUpdateProgress` and `agentActivityPublishing` (upstream,
 2026-08-16), `questionAttachments` (upstream, 2026-09-08),
 `projectSettingsOverrides` (upstream, 2026-09-09) and
 `requiredWorktreeBootstrap`, `storageCleanup` and `projectWorktreeCleanup`
-(upstream, 2026-09-18), `threadAutoSettleOptOut` (upstream, 2026-09-25) and
+(upstream, 2026-09-18) and
 `threadFind` / `threadFindProgressive` (upstream, 2026-10-09) and
 `threadAutoSettlementScope` and `settledWorktreeCleanup` (upstream,
 2026-10-15) and `threadStop` (upstream, 2026-10-20: `thread.stop` stops a
@@ -132,14 +131,6 @@ Moatless builds its own provider descriptors, so until it sets the flag the
 footer keeps the pre-reservation layout — cosmetic, and fixed by one boolean per
 provider that actually reports a context window.
 
-Two keys it reports are not in the contract at all — `userInputResponse` and
-`sandboxDiagnostics`, both fork-invented in `crates/t3code/src/lib.rs`. They are
-not in `packages/contracts/src/environment.ts`, so Effect Schema drops them on
-decode and no client reads them: the backend is answering a question the wire
-never asks. Either add them to `ExecutionEnvironmentCapabilities` (a fork delta
-on an upstream contract file) or stop sending them; today they are dead weight
-on the handshake.
-
 The `FEATURES` constant is a separate mechanism, not a stand-in for this record.
 The record mostly grows booleans for thread-lifecycle surfaces; the surfaces
 `FEATURES` gates — `turnDiffs`, `diagnostics`, `workspaceSearchContents` and the
@@ -159,10 +150,9 @@ matching flag_ played out twice over. Reach for a capability over a flag wheneve
 the answer varies by deployment; keep the flag when it cannot.
 
 - **Closes when:** the backend reports each new thread-lifecycle boolean it comes
-  to implement, and drops or contract-registers the two fork-invented keys. Check
-  by deriving the set rather than reading the list above:
+  to implement. Check by deriving the set rather than reading the list above:
   `git grep -oE '^  [a-zA-Z]+: Schema.optionalKey' packages/contracts/src/environment.ts`
-  against what `crates/t3code/src/lib.rs` actually sends.
+  against what `crates/t3code/src/rpc/config.rs` actually sends.
 - **Then here:** for a boolean that gates a `FEATURES` flag (pinning is the near
   one — see _Settlement rules Moatless owns_), delete the flag and its gates when
   the backend reports it true. `threadPullRequests` is the worked example: the
@@ -231,26 +221,6 @@ The 2026-10-15 merge added a fourth frame, `thread.pull-request-link-updated`
   feed, and emits the pull-request frames on it.
 - **Then here:** delete the `pullRequests` line from `mergeEnvironmentThread`,
   and the two `entities.test.ts` cases that assert the shell wins.
-
-### A pull request snapshot carries no update instant and no checks state
-
-`ThreadPullRequestSnapshot` asks when GitHub last changed a pull request
-(`updatedAt`) and how its checks stand (`checksState`). A Moatless binding
-records neither: its status blob holds the title, the state, the two branches,
-the review decision and the mergeability, plus the instant this deployment read
-them, which the snapshot reports as `syncedAt`.
-
-So a badge shows no relative time and no check tone, and reports the rest.
-Nothing in the client is gated on the two — both are optional — so this closes
-with a backend change alone.
-
-Since the 2026-10-22 merge the snapshot also asks for `isDraft` (#22832), which
-upstream syncs when only the draft state changes; without it no badge reads
-Draft.
-
-- **Closes when:** the GitHub refresh stores the pull request's own `updated_at`,
-  its checks rollup and its draft flag on the binding.
-- **Then here:** nothing to delete.
 
 ### Methods the backend does not dispatch
 
@@ -1123,10 +1093,10 @@ recorded rather than what it decides:
 The 2026-09-25 merge added a per-thread auto-settle switch (#11846): a
 `thread.auto-settle.set` command, a `thread.auto-settle-set` event carrying
 `autoSettleDisabledAt`, and a row-menu item gated on the `threadAutoSettleOptOut`
-capability. The capability stays absent, which hides the item, but it is now
-owed: since moatless #1232 the reaper settles idle threads, and a person has no
-way to keep one out of that sweep. The sweep also skips pinned follows but not
-snoozed ones.
+capability. Moatless reports the capability and stores the switch per viewer
+(moatless #1301), and its inactivity sweep skips an opted-out, pinned or
+snoozed follow, and one woken within the idle window. It emits no
+`thread.auto-settle-set` frame: the change reaches a client as a shell row.
 
 The 2026-10-07 merge added two more for the pull-request half:
 
@@ -2016,12 +1986,14 @@ One more arrived in the 2026-10-01 merge:
   T3-initiated compactions are quiet and marked with `idleCompaction`, and a
   fork's first `/compact` compacts its inherited history; a pull request watch
   wakes when the remaining checks finish, skipped Forgejo jobs no longer keep
-  it pending, and periodic discovery pauses with no foreground client; long
-  turns are paged on thread open and streaming text updates are coalesced;
+  it pending, and periodic discovery pauses with no foreground client;
+  streaming text updates are coalesced;
   ACP idle-agent errors fail the turn and SIGTERM-ignoring terminals are
   killed; and agent-browser and Chrome no longer outlive their agent. Thread
-  opens ranking (`opens`, `searchQuery`) and wire compaction (`compactIds`,
-  `dedupeBodies`) are optional fields the client tolerates when absent.
+  opens ranking is served (moatless #1302), and so are long-thread paging and
+  wire compaction (moatless #1303: `/bounded`, `/history`, and the socket's
+  `accept*` opt-ins, V2 only). The socket still re-sends the whole compacted
+  projection on every move, and `command_execution` output is sent whole.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
