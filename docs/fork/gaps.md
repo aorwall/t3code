@@ -692,9 +692,10 @@ what a person loses, which is the part the derivation cannot tell you:
   `canShareWithGuestAtom` sees the `createGuestShare` grant and
   `guestSharingEnabled === true` in server settings, which Moatless never
   sends, so the union entry is the only stand-in. The Settings > Beta "Guest
-  links" row is ungated and its save is refused like any server setting (see
-  _Editing server settings_). Closes when Moatless serves guest shares and that
-  setting; delete the union entry then.
+  links" row sits behind `FEATURES.serverBehaviorSettings`, because its save
+  is refused like any server setting (see _Editing server settings_). Closes
+  when Moatless serves guest shares and that setting; delete the union entry
+  and that gate then.
 - **Subagent thread families** — `orchestration.getThreadFamily` and
   `getWorktreeThreadIds`, new upstream in the 2026-10-25 merge. Upstream's
   shell can leave idle subagents out (`omitIdleSubagents`) and serve each tree
@@ -1081,9 +1082,12 @@ client-side `effectiveSettled` computation (inactivity age, `autoSettleAfterDays
 now renders `thread.settledOverride === "settled"` straight from the server. This
 closed the old _A pull request is not the thread's own_ gap outright — the client
 no longer settles on any PR, so the `prThreadSettling` flag and its two gates were
-deleted in the same merge. Moatless sets `settledOverride` only on explicit user
-settle/unsettle (and clears it on new activity); it never auto-settles, so a
-stranger's PR can no longer file a live thread under Settled.
+deleted in the same merge. Moatless sets `settledOverride` on explicit user
+settle/unsettle and clears it on new activity. Its one automatic rule is
+inactivity: the reaper settles an unpinned follow idle past
+`settle_after_hours` (moatless #1232, `crates/tasks/src/task/settle_dao.rs`).
+It reads no pull request, so a stranger's PR cannot file a live thread under
+Settled.
 
 One fork delta remains, in `Sidebar.tsx`'s partition: **a pinned thread never
 classifies as settled** — the pin check runs before the `settledOverride` check,
@@ -1119,9 +1123,10 @@ recorded rather than what it decides:
 The 2026-09-25 merge added a per-thread auto-settle switch (#11846): a
 `thread.auto-settle.set` command, a `thread.auto-settle-set` event carrying
 `autoSettleDisabledAt`, and a row-menu item gated on the `threadAutoSettleOptOut`
-capability. Moatless never auto-settles, so there is nothing to opt out of and
-the capability stays absent, which hides the item. It becomes owed the day the
-backend adds any automatic settlement rule — the opt-out must then be read by it.
+capability. The capability stays absent, which hides the item, but it is now
+owed: since moatless #1232 the reaper settles idle threads, and a person has no
+way to keep one out of that sweep. The sweep also skips pinned follows but not
+snoozed ones.
 
 The 2026-10-07 merge added two more for the pull-request half:
 

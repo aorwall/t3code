@@ -136,8 +136,9 @@ const SURFACES = {
   defaultModelSetting: true,
   /**
    * General page rows tuning what upstream's server does on its own (usage-limit snoozing,
-   * CLI update checks, restart resume, background policy, title model). The backend does none
-   * of it and refuses `server.updateSettings`, which every row saves through.
+   * CLI update checks, restart resume, background policy, title model) and the Beta page's
+   * Guest links. The backend does none of it and refuses `server.updateSettings`, which every
+   * row saves through.
    */
   serverBehaviorSettings: true,
 } satisfies Record<string, true>;
@@ -226,6 +227,7 @@ export const FEATURE_BY_SETTINGS_SEARCH_ID: Readonly<Record<string, FeatureName>
   "background-activity": "serverBehaviorSettings",
   "text-generation-model": "serverBehaviorSettings",
   "thread-title-instructions": "serverBehaviorSettings",
+  "guest-links": "serverBehaviorSettings",
   diagnostics: "diagnostics",
   "mobile-app": "connections",
 };

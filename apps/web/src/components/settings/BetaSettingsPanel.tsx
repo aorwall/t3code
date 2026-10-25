@@ -3,6 +3,8 @@ import { DEFAULT_UNIFIED_SETTINGS } from "@t3tools/contracts/settings";
 import { Link } from "@tanstack/react-router";
 
 import { hasCloudPublicConfig } from "~/cloud/publicConfig";
+// Fork: the guest links row is a server setting Moatless refuses to save.
+import { FEATURES } from "~/fork/features";
 import { useT3ConnectAuthPrompt } from "../clerk/useT3ConnectAuthPrompt";
 import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
@@ -49,8 +51,13 @@ export function BetaSettingsPanel() {
             />
           }
         />
-        {/* Clerk is only mounted when this build has T3 Connect. */}
-        {hasCloudPublicConfig() ? <GuestLinksRowWithSignIn /> : <GuestLinksRow />}
+        {/* Fork: Moatless serves no guest shares; see FEATURES.serverBehaviorSettings. */}
+        {!FEATURES.serverBehaviorSettings ? null : hasCloudPublicConfig() ? (
+          /* Clerk is only mounted when this build has T3 Connect. */
+          <GuestLinksRowWithSignIn />
+        ) : (
+          <GuestLinksRow />
+        )}
       </SettingsSection>
     </SettingsPageContainer>
   );
