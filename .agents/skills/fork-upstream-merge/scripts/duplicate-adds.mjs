@@ -2,33 +2,10 @@
 /**
  * Lines both sides added that the merge took twice.
  *
- *   node .agents/skills/fork-upstream-merge/scripts/duplicate-adds.mjs
- *   node .agents/skills/fork-upstream-merge/scripts/duplicate-adds.mjs 29ec3ec02
+ *   node .agents/skills/fork-upstream-merge/scripts/duplicate-adds.mjs [merge-sha]
  *
- * The failure this exists for is a clean merge that is wrong. When the fork and
- * upstream both append the same line to the same list at different offsets —
- * the same import, the same const, the same entry in a catalog — git resolves it
- * without a `<<<<<<<` marker and keeps both copies. Nothing in the merge reports
- * it. The cost of missing one is a full verify pass — minutes of typecheck and
- * tests — to learn about it as a parse error.
- *
- * The rule is narrow on purpose: a line that **names something** and appears
- * **exactly once on each side and twice in the merge**. The looser reading —
- * any line more frequent in the merge than in either parent — reports dozens of
- * hits, almost all of them `});` and `}`, and a check nobody can read is a
- * check nobody runs.
- * With the narrow rule the same merge gives 2 hits and both are the defect.
- *
- * It cannot catch a duplicate of a line that already appeared elsewhere in the
- * file; the trade is deliberate. This is a tripwire, not a proof.
- *
- * What a red result here means is "delete one copy", so the three shapes that
- * satisfy the rule without being that are kept out of the exit code. A copy
- * whose exact text is in neither parent was written by the resolution, not kept
- * twice. A bare call statement binds no name, so two of them are weak evidence
- * and are reported as a warning. A collision the rule cannot see past is
- * declared in `duplicateAddExceptions` in docs/fork/inventory.json and printed
- * under KNOWN EXCEPTIONS, the same escape hatch `unsupported-methods.mjs` uses.
+ * Flags a name-bearing line once on each side and twice in the merge; looser rules drown in `});`.
+ * Unseeable collisions go in `duplicateAddExceptions` (docs/fork/inventory.json).
  */
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
@@ -50,32 +27,15 @@ import {
 /**
  * Lines that could name something, by frequency, whitespace-normalized.
  *
- * Pure punctuation is skipped. A line of closing brackets carries no identity,
- * so two of them in a merged file are two unrelated blocks far more often than
- * one block kept twice — `))}` closing an upstream `.map()` in one place and a
- * fork `.map()` in another satisfies "once on each side, twice in the merge"
- * while being exactly correct. Every real duplicated add — an import, a const,
- * a catalog entry — names something, so requiring a word character costs
- * nothing and drops the whole false-positive class.
- *
- * A bare JSX attribute is skipped for the same reason one level up. `target="_blank"`
- * or `size="sm"` alone on a line names a prop, not a block: unrelated elements
- * carry the same prop by design, so a fork `<a>` in one component and an
- * upstream `<a>` in another satisfy the same "once on each side, twice in the
- * merge" test while both being correct — which is exactly what the 2026-09-09
- * merge hit. The duplicate this would otherwise catch, one element given the
- * same prop twice, is a duplicate-attribute error that lint and typecheck both
- * reject on their own, so nothing is lost by not reporting it here.
+ * Skips pure punctuation and bare JSX attributes (`size="sm"`): unrelated blocks share them by
+ * design and would pass "once each side, twice in the merge". A real duplicate attribute is
+ * already a lint/typecheck error.
  */
 const BARE_JSX_ATTRIBUTE = /^[A-Za-z_][\w:.-]*=(?:"[^"]*"|'[^']*'|\{[^{}]*\})$/;
 
 /**
- * Normalized line to the raw lines that produced it, in file order.
- *
- * The raw text is kept because the count is whitespace-normalized and the
- * indentation is what says where a copy came from: two occurrences of one key
- * in the merge can be two different raw lines, and only one of them need have
- * been in a parent.
+ * Normalized line to its raw lines, in file order. Raw text is kept because indentation shows
+ * where a copy came from.
  */
 function occurrences(content) {
   const tally = new Map();
@@ -95,12 +55,8 @@ const at = (tally, key) => tally.get(key) ?? [];
 /**
  * True when every copy in the merge is text a parent actually had.
  *
- * A copy that matches no parent line verbatim was authored by the resolution,
- * and a line the merge wrote once cannot be a line the merge kept twice. The
- * 2026-09-14 merge reported `if (` in apps/web/src/environments/primary/auth.ts
- * on exactly this shape: both parents held it at one indentation, the
- * resolution wrote a second `if (` at another, and trimming made the pair look
- * like one line taken twice.
+ * A copy matching no parent line verbatim was written by the resolution, not kept twice
+ * (`if (` at two indents in auth.ts looked like one line taken twice once trimmed).
  */
 function everyCopyCameFromAParent(merged, ours, theirs) {
   const parents = new Set([...ours, ...theirs]);
@@ -116,13 +72,8 @@ const ASSIGNS = /[^=!<>]=(?![=>])/;
 /**
  * True when the line's recurrence is ordinary rather than evidence.
  *
- * `expect(session.calls).toEqual([]);` names nothing and creates nothing, so
- * two tests asserting the same ordinary thing satisfy "once on each side, twice
- * in the merge" while both being correct — which is what the 2026-09-14 merge
- * hit in apps/web/src/authBootstrap.test.ts. Every duplicate this check exists
- * for is an import, a const or a catalog entry, all of which bind a name, so
- * demoting the bare-call class to a warning costs no coverage that matters and
- * keeps a red result meaning "delete one copy".
+ * Bare calls like `expect(x).toEqual([]);` bind no name, so a repeat is a warning, not red.
+ * Red must keep meaning "delete one copy": imports, consts and catalog entries bind names.
  */
 function isWeakEvidence(line) {
   if (!line.endsWith(";")) return false;
@@ -134,10 +85,8 @@ function isWeakEvidence(line) {
 /**
  * Generated files nobody resolves by hand.
  *
- * `pnpm-lock.yaml` is `theirs` by path policy and then rewritten by `vp i`, so a
- * repeated line in it is pnpm's output rather than a resolution. It repeats a
- * dependency line for every package that declares that dependency, which
- * satisfies "once on each side, twice in the merge" while being correct.
+ * `pnpm-lock.yaml` is rewritten by `vp i`, and repeats a dependency line per declaring
+ * package, so its repeats are output rather than resolution.
  */
 const GENERATED = new Set(["pnpm-lock.yaml"]);
 
@@ -208,14 +157,9 @@ export function runDuplicateAddsCheck(report, commit = null) {
     (unresolved.size > 0 ? `, ${unresolved.size} still unresolved and skipped` : "");
 
   /*
-   * A collision the rule cannot see past, declared rather than caveated every
-   * merge. `orchestration.test.ts` is the standing one: two distinct tests share
-   * a line of decode boilerplate at different indentation, both are wanted, and
-   * no edit is correct — so without this the check is permanently red and its
-   * findings stop being read, which is the failure it exists to prevent.
-   *
-   * These leave the exit code alone, the same way `unsupportedMethodExceptions`
-   * does in unsupported-methods.mjs.
+   * Collisions the rule cannot see past, declared in the inventory (e.g. `orchestration.test.ts`:
+   * two wanted tests share boilerplate), so the check is not permanently red.
+   * They leave the exit code alone, like `unsupportedMethodExceptions`.
    */
   const exceptions = loadInventory().duplicateAddExceptions ?? [];
   const waived = exceptions.filter((entry) =>

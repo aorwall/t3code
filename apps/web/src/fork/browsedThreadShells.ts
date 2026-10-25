@@ -1,15 +1,8 @@
 /**
- * Fork-only. The sidebar list once the browse filter has had its say.
- *
- * The rows a filter names are read here rather than grafted into the shell
- * snapshot the way `adoptedThreadShells.ts` grafts an opened thread. The graft
- * is for a thread the client is *holding*, and everything downstream must agree
- * that it exists; a browse is a view of the sidebar and nothing else. Grafting
- * it would repoint the command palette, the thread index and the first-run gate
- * at somebody else's work for as long as the filter is set.
- *
- * Opening a browsed row is then the ordinary unlisted-thread path: no listing
- * row, `threads.getShell` fetches one, and the route follows the thread.
+ * Fork-only. The sidebar list once the browse filter has been applied.
+ * Read here, not grafted into the shell snapshot like `adoptedThreadShells.ts`: a graft would
+ * repoint the command palette, thread index and first-run gate at others' work while filtered.
+ * Opening a browsed row is the ordinary unlisted-thread path.
  */
 import { useAtomValue } from "@effect/atom-react";
 import { presentThreadShell } from "@t3tools/client-runtime/state/models";

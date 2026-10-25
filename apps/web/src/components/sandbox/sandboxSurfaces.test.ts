@@ -1,12 +1,8 @@
 /**
  * Fork-only: the rule for which right-panel surfaces survive a stopped sandbox.
- *
- * The split frees the surfaces the environment serves, and gates the ones that
- * read the live machine. Files and pull requests are served:
- * the backend reads a file from the S3 snapshot, a pull request summary
- * from its own store, and a pull request's detail from the git host. A browser tab splits on the page it holds instead of on
- * its kind. Get either wrong and a working surface hides behind a
- * machine it never needed, or a dead one offers to open.
+ * Files and pull requests are served by the environment (S3 snapshot, backend store, git host); a
+ * browser tab splits on the page it holds, not its kind. Get either wrong and a working surface
+ * hides behind a machine it never needed, or a dead one offers to open.
  */
 import type { PreviewSessionSnapshot } from "@t3tools/contracts";
 import { describe, expect, it } from "vite-plus/test";

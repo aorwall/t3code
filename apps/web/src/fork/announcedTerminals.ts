@@ -1,18 +1,8 @@
 /**
  * Fork-only. Which terminal the environment raised for a thread, if any.
- *
- * Moatless starts terminal sessions nobody on this side asked for: `scripts.run`
- * and `moat tasks scripts run` open one on the Task's sandbox, and the whole
- * point of that session is to be watched. Upstream's drawer only ever opens
- * because someone clicked, so without this the session runs to completion
- * behind a closed drawer and the person waiting on it sees nothing.
- *
- * The backend marks exactly those starts with `announced` on the metadata
- * stream and marks nothing else, so this reads as an event rather than as a
- * rule about which terminals deserve a drawer. `announcedOpens` counts them
- * stream-wide: the count is what a caller watches, because two starts of one
- * terminal have to read as two events, and a caller that watched the id alone
- * would miss the second.
+ * `scripts.run` opens sessions nobody here asked for and upstream's drawer only opens on click,
+ * so the session would run behind a closed drawer. The backend marks them with `announced`.
+ * Watch `announcedOpens`, not the id: two starts of one terminal must read as two events.
  */
 import type { TerminalMetadataState } from "@t3tools/client-runtime/state/terminal";
 import type { EnvironmentId, ThreadId } from "@t3tools/contracts";

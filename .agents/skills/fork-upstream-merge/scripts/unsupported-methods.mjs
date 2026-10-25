@@ -1,25 +1,11 @@
 #!/usr/bin/env node
 /**
- * Derives which contract WebSocket methods should declare `UnsupportedMethodError`,
- * by reading both sides rather than remembering either.
+ * Derives which contract WebSocket methods should declare `UnsupportedMethodError`.
  *
- *   node .agents/skills/fork-upstream-merge/scripts/unsupported-methods.mjs
+ *   node .agents/skills/fork-upstream-merge/scripts/unsupported-methods.mjs [--offline]
  *
- * Contract side: every `Rpc.make(WS_METHODS.x, …)` / `Rpc.make(ORCHESTRATION_V2_WS_METHODS.x, …)`
- * in packages/contracts/src/rpc.ts, resolved through the method maps to wire strings.
- * Backend side: the method table in soaplabs/moatless (crates/t3code/src/rpc/dispatch/),
- * read over the API since a sandbox has no checkout. `.detached`, `.session` and
- * `.stream` registrations serve a tag; `.declared` registers one only to refuse it.
- * The older `"method.name" =>` match-arm form is still read.
- *
- * Both directions are findings. A method the backend has started serving keeps a
- * union entry that can never fire; a method it has stopped serving loses the typed
- * refusal the client renders.
- *
- * Dispatched is not the same as never refuses: an arm that can still reach
- * `unsupported_exit` keeps its union member, so those are reported separately
- * rather than as entries to drop. Pass --offline to skip the network read and
- * report only the contract side.
+ * Compares `Rpc.make(...)` in packages/contracts/src/rpc.ts with the backend method table
+ * (soaplabs/moatless crates/t3code/src/rpc/dispatch/, read over the API). Both directions count.
  */
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
@@ -40,19 +26,10 @@ import {
 const RPC_PATH = "packages/contracts/src/rpc.ts";
 const ORCHESTRATION_PATH = "packages/contracts/src/orchestrationV2.ts";
 /**
- * The dispatch keeps moving — inline in `lib.rs` until the backend split `rpc/`
- * into its own module on 2026-09-07, then again on 2026-09-13 when `dispatch.rs`
- * became a module stub over an `rpc/dispatch/` directory whose `routing.rs` holds
- * the arms and whose siblings hold the handler bodies. On 2026-10-14 the arms became
- * `MethodTable` registrations (moatless#1138), parsed by `REGISTRATION` below. A
- * read that finds the file
- * but no arms reports "0 dispatched methods", which reads as "the backend serves
- * nothing" and turns every union entry into a finding. Try each known location
- * and take the first that actually holds arms.
- *
- * An entry naming a directory is read as every `.rs` file in it, concatenated,
- * so the arms and the handlers they call stay in one source — `refusesInside`
- * only follows calls it can find there.
+ * The dispatch file keeps moving (`lib.rs`, `dispatch.rs`, `rpc/dispatch/`, `MethodTable`), and a
+ * read that finds the file but no arms reports "0 dispatched methods". Try each known location
+ * and take the first holding arms. A directory entry is read as all its `.rs` files, since
+ * `refusesInside` only follows calls it can find there.
  */
 const BACKEND_APIS = [
   "repos/soaplabs/moatless/contents/crates/t3code/src/rpc/dispatch",
@@ -196,15 +173,10 @@ function fetchBackend(api) {
 }
 
 /**
- * Why the dispatch read came back empty, in the words that decide what to do
- * next.
+ * Why the dispatch read came back empty.
  *
- * Every move of the dispatch file — inline in `lib.rs`, then `rpc/dispatch.rs`,
- * then `rpc/dispatch/routing.rs` — produced exactly the message an absent
- * credential produces, so each one cost a diagnosis pass against `gh` before
- * anyone thought to look at the crate. One more read separates them: if the
- * crate's own source directory lists, the credentials are fine and the arms
- * have moved again, and the fix is a path in `BACKEND_APIS` above.
+ * A moved dispatch file produces the same message as an absent credential. If the crate source
+ * directory lists, credentials are fine and the fix is a path in `BACKEND_APIS`.
  */
 function dispatchReadFailure() {
   const listing = ghRead(BACKEND_SRC, ".[] | .name");
@@ -251,14 +223,10 @@ function parseBackend() {
   for (const match of source.matchAll(REGISTRATION)) dispatched.add(match[1]);
 
   /**
-   * An arm that can still return `unsupported_exit` refuses conditionally, so
-   * its union member has to stay.
+   * An arm that can still return `unsupported_exit` refuses conditionally, so its union member stays.
    *
-   * Reading the arm alone stopped being enough when the backend split `rpc/` out
-   * on 2026-09-07: every arm is now a one-line call and the refusal sits in the
-   * handler below the match. So read the arm, then follow the functions it calls.
-   * Two levels, same file only. A false KEEP costs a report nobody acts on; a
-   * false DROP costs the typed refusal a client has to decode.
+   * Follows the arm's calls two levels, same file only. A false KEEP costs an ignored report;
+   * a false DROP costs the typed refusal a client must decode.
    */
   const conditional = new Set();
   for (const arm of source.matchAll(/"([a-zA-Z._]+)"\s*=>/g)) {
@@ -318,15 +286,9 @@ runMain(async () => {
   }
 
   /*
-   * A method whose derivation is known to read backwards, declared in the
-   * inventory rather than tolerated by habit. `scripts.run` is the standing
-   * one: it is upstream's own server that refuses it, not Moatless, so the
-   * comparison reports a union entry that can never fire while it is exactly
-   * the entry that has to stay.
-   *
-   * These leave the exit code alone. A check that is always red is a check
-   * whose findings nobody reads — which is the whole failure this script
-   * exists to prevent, applied to the script itself.
+   * Methods whose derivation is known to read backwards, declared in the inventory.
+   * `scripts.run` is refused by upstream's server, not Moatless, so its union entry never fires but
+   * must stay. They leave the exit code alone; an always-red check goes unread.
    */
   const exceptions = loadInventory().unsupportedMethodExceptions ?? [];
   const excepted = (bucket, direction) => {

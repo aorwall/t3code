@@ -40,11 +40,9 @@ export interface ThreadPreviewState {
   serverEpoch: string | null;
   serverRevision: number;
   /**
-   * Fork: the newest tab this client learned about by being told, rather than
-   * by opening it — another viewer's tab, or one the environment opened for a
-   * script started outside any client. Read by `ChatView` to bring the browser
-   * panel up for it; `announcedOpens` is what makes two opens of the same tab
-   * two events rather than one.
+   * Fork: the newest tab this client was told about rather than opened (another viewer, or a script
+   * outside any client). `ChatView` reads it to raise the browser panel; `announcedOpens` makes two
+   * opens of one tab two events.
    */
   announcedTabId: string | null;
   announcedOpens: number;
@@ -77,8 +75,7 @@ export const previewStateAtom = Atom.family((threadKey: string) =>
   ),
 );
 
-// Only the Electron browser host needs a cross-thread view. Keep that index
-// separate so thread-local readers never subscribe to unrelated previews.
+// Only Electron needs this cross-thread index; separate it to avoid unrelated preview subscriptions.
 interface ActivePreviewThreadIndex {
   readonly keys: ReadonlySet<string>;
 }
@@ -196,12 +193,9 @@ export function applyPreviewServerEvent(ref: ScopedThreadRef, event: PreviewEven
           const sessions = { ...current.sessions, [snapshot.tabId]: snapshot };
           const activeTabId = event.type === "opened" ? snapshot.tabId : current.activeTabId;
           const activeSnapshot = sessions[activeTabId ?? snapshot.tabId] ?? snapshot;
-          // Fork: every open worth surfacing, and no replay. `opened` is
-          // published by an open and by nothing else, so a script re-run
-          // announces its tab again even though this client already holds it.
-          // The revision test is what excludes a replay: the events atom holds
-          // its last value, so remounting re-applies it at a revision this
-          // state has already reached.
+          // Fork: surface every open, but no replay. `opened` is published only by an open, so a script
+          // re-run announces its tab again. The revision test excludes replays: the events atom holds its
+          // last value, so a remount re-applies it at a revision this state already reached.
           const announced = event.type === "opened" && event.revision > current.serverRevision;
           return {
             ...current,
@@ -290,10 +284,7 @@ export function applyPreviewServerSnapshot(
   });
 }
 
-/**
- * Commands such as resize can target background tabs. Their response is
- * authoritative for that tab, but it is not a request to focus the tab.
- */
+/** Updates background tabs without focusing them. */
 export function updatePreviewServerSnapshot(
   ref: ScopedThreadRef,
   snapshot: PreviewSessionSnapshot,
@@ -355,8 +346,6 @@ export function reconcilePreviewServerSessions(
       ),
     );
     const desktopOverlay = activeTabId ? (desktopByTabId[activeTabId] ?? null) : null;
-    // The list is refetched whenever a thread is opened. Keeping the state
-    // object when nothing moved spares every subscriber a re-render.
     if (
       sameServer &&
       current.listLoaded &&
@@ -488,10 +477,7 @@ export function setActivePreviewTab(ref: ScopedThreadRef, tabId: string): void {
   });
 }
 
-/**
- * Runs `action` once the thread's preview state has the tab, which a popup's
- * `opened` event may deliver after the stream that announced it.
- */
+/** Runs once the tab is known; popup opened events can arrive after their announcing stream. */
 export function whenPreviewTabKnown(
   ref: ScopedThreadRef,
   tabId: string,
@@ -528,15 +514,9 @@ export function rememberPreviewUrl(ref: ScopedThreadRef, url: string): void {
 // use a desktop <webview> or must fall back to a cross-origin <iframe>.
 /**
  * What kind of page surface this runtime can host.
- *
- * - `webview` — a Chromium <webview> the renderer can read, navigate and
- *   capture. Only the desktop app has one.
- * - `frame` — a cross-origin <iframe>. It shows the page and nothing more:
- *   no history, no title, no way to tell a blank page from a refused one.
- * - `none` — no DOM at all, which is server rendering.
- *
- * `previewBridge` is resolved at import time, so this is stable for the life
- * of the page and does not need to be a hook.
+ * - `webview`: a Chromium <webview> the renderer can read, navigate and capture (desktop only).
+ * - `frame`: a cross-origin <iframe>; shows the page, no history, title or blank-vs-refused signal.
+ * - `none`: server rendering. Stable for the page's life (`previewBridge` resolves at import).
  */
 export type PreviewRuntimeCapability = "webview" | "frame" | "none";
 
@@ -551,10 +531,7 @@ export function isPreviewSupportedInRuntime(): boolean {
   return previewRuntimeCapability() !== "none";
 }
 
-/**
- * The server closes their sessions too, but the desktop host keeps a page for
- * every session held here.
- */
+/** Releases desktop-host pages as well as local session state. */
 export function clearThreadPreviewState(ref: ScopedThreadRef): void {
   updateThreadPreviewState(ref, (current) =>
     Object.keys(current.sessions).length === 0 ? current : EMPTY_THREAD_PREVIEW_STATE,

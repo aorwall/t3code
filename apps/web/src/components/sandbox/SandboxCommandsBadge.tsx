@@ -1,18 +1,8 @@
 /**
- * Fork-only: a badge for the commands a thread's agent registered through
- * `moat cmd`.
- *
- * The agent reports `idle` the moment its turn ends, so a thread running a
- * 40-minute build behind an ended turn looks finished. This is the one place
- * that says otherwise: it counts the still-running commands and names them,
- * reading the `commands` the sandbox status now carries.
- *
- * Elapsed is computed here from `startedAtUnixMs`, never sent by the server —
- * a server-side elapsed would change on every read and turn the status push,
- * which sends only what moved, into one that never falls quiet. It refreshes
- * whenever the status does (a poll or a push), which is often enough for a
- * minute-scale build; there is no per-second timer, so nothing repaints
- * continuously.
+ * Fork-only: a badge for the commands a thread's agent registered through `moat cmd`.
+ * The agent reports `idle` when its turn ends, so a long build behind an ended turn looks done;
+ * this counts and names the still-running commands. Elapsed is computed here from `startedAtUnixMs`,
+ * refreshed with each status update; there is no per-second timer.
  */
 import type { CommandSummary } from "@t3tools/contracts";
 import { TerminalIcon } from "lucide-react";

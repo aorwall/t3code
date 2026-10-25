@@ -1,11 +1,7 @@
 /**
- * Fork-only: the one-click way to start a stopped sandbox from the disabled
- * surface state, so starting one no longer requires a detour through the
- * Sandbox panel.
- *
- * Renders nothing while the sandbox's status is still unknown or mid-transition
- * (`initializing`/`removing`) — `sandboxActionsFor` already excludes `start`
- * there, and offering it would race the transition already under way.
+ * Fork-only: the one-click way to start a stopped sandbox from the disabled surface state.
+ * Renders nothing while the status is unknown or mid-transition (`initializing`/`removing`):
+ * `sandboxActionsFor` excludes `start` there, and offering it would race the transition.
  */
 import {
   isAtomCommandInterrupted,

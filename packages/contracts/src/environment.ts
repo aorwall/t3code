@@ -8,6 +8,7 @@ import {
   ThreadId,
   TrimmedNonEmptyString,
 } from "./baseSchemas.ts";
+import { SourceControlProviderKind } from "./sourceControl.ts";
 
 export const ORCHESTRATION_PROTOCOL_VERSION = 2;
 export const ORCHESTRATION_PROTOCOL_VERSION_TEXT = "2";
@@ -44,10 +45,7 @@ export const ExecutionEnvironmentPlatform = Schema.Struct({
   machine: ForwardCompatibleOptional(EnvironmentMachineKind),
 });
 
-/**
- * Lives here (not settings.ts) so orchestration contracts can reference it
- * without an import cycle.
- */
+// Kept outside settings.ts to avoid an orchestration import cycle.
 export const ThreadEnvMode = Schema.Literals(["local", "worktree"]);
 export type ThreadEnvMode = typeof ThreadEnvMode.Type;
 
@@ -83,17 +81,14 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
   ),
   pullRequests: Schema.optionalKey(Schema.Boolean),
   pullRequestChecks: Schema.optionalKey(Schema.Boolean),
-  /** Absent on servers from before inline context shipped, which drop the records and forward
-      the links as literal text -- so a client must serialize context the legacy way for them. */
+  /** Absent on older servers; serialize context as legacy text for them. */
   inlineMessageContext: Schema.optionalKey(Schema.Boolean),
   requiredWorktreeBootstrap: Schema.optionalKey(Schema.Boolean),
   threadSettlement: Schema.optionalKey(Schema.Boolean),
   threadAutoSettlement: Schema.optionalKey(Schema.Boolean),
   storageCleanup: Schema.optionalKey(Schema.Boolean),
   storageCleanupRun: Schema.optionalKey(Schema.Boolean),
-  /** Server streams database size and reclaimable space for the Storage settings notice. */
   databaseStorage: Schema.optionalKey(Schema.Boolean),
-  /** Server checks OTLP endpoints for the telemetry export settings. */
   otlpEndpointCheck: Schema.optionalKey(Schema.Boolean),
   projectWorktreeCleanup: Schema.optionalKey(Schema.Boolean),
   settledWorktreeCleanup: Schema.optionalKey(Schema.Boolean),
@@ -101,18 +96,10 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
   threadAutoSettlementScope: Schema.optionalKey(Schema.Boolean),
   threadRestartContinuation: Schema.optionalKey(Schema.Boolean),
   projectSettingsOverrides: Schema.optionalKey(Schema.Boolean),
-  /**
-   * Older
-      servers decode the key away (unknown fields are stripped, not
-      rejected), so the per-project provider switch would silently do
-      nothing; clients hide it instead of sending a patch that goes nowhere.
-   */
+  /** Hide the switch when absent; older servers silently drop per-project provider patches. */
   projectProviderInstanceOverrides: Schema.optionalKey(Schema.Boolean),
   threadSnooze: Schema.optionalKey(Schema.Boolean),
-  /** Absent on servers from
-      before environment themes shipped, which never emit the events -- so a
-      client reconnecting to one must drop published themes rather than keep
-      showing a set nothing will ever update. */
+  /** Clear published themes when absent; older servers never send updates. */
   environmentThemes: Schema.optionalKey(Schema.Boolean),
   usageLimitSources: Schema.optionalKey(Schema.Boolean),
   usagePriceOverrides: Schema.optionalKey(Schema.Boolean),
@@ -151,11 +138,9 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
   /** Manual commands must update this install, not the host's default global prefix. */
   serverInstallation: ForwardCompatibleOptional(ServerInstallation),
   serverSelfUpdateProgress: Schema.optionalKey(Schema.Boolean),
-  /** Server understands scripts.run — it can run a project's scripts itself,
-      hosting each in a terminal and publishing a port when one is served.
-      Absent on servers that only *list* a project's scripts (every T3-hosted
-      one today), so clients show the scripts but not the control that runs
-      them, and never send scripts.run under version skew. */
+  /** Server understands scripts.run: it runs a project's scripts itself. Absent on servers
+      that only *list* scripts (every T3-hosted one today), so clients hide the run control
+      and never send scripts.run under version skew. */
   workspaceScripts: Schema.optionalKey(Schema.Boolean),
   /** Fork: server understands scripts.listForThread — a thread may declare
       scripts of its own, on top of its project's. Absent on servers where a
@@ -192,23 +177,16 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
       `/login` and none of the Moatless administration pages. */
   moatlessApi: Schema.optionalKey(Schema.Boolean),
   serverUpdateThreadContinuation: Schema.optionalKey(Schema.Boolean),
-  /**
-   * Clients skip seeding a Live Activity when
-      this is false — no update would ever repaint it. Absent on older
-      servers, which may still publish, so only an explicit false skips.
-   */
+  /** Only explicit false skips Live Activity seeding; older servers may still publish. */
   agentActivityPublishing: Schema.optionalKey(Schema.Boolean),
   projectCloneTracking: Schema.optionalKey(Schema.Boolean),
   /** Server answers projects.listIgnoredFiles. */
   ignoredFileListing: Schema.optionalKey(Schema.Boolean),
   environmentIcon: Schema.optionalKey(Schema.Boolean),
   desktopAppUpdate: Schema.optionalKey(Schema.Boolean),
-  /** Server answers orchestration.subscribeCommandOutput. Absent on older servers,
-      which never send command output, so clients must not subscribe. */
+  /** Subscribe to command output only when advertised; older servers never send it. */
   commandOutputStreaming: Schema.optionalKey(Schema.Boolean),
-  /** Server hosts preview tabs in its own headless Chromium (`runtime:
-      "server"`) and streams them over `/api/preview-stream`. Clients
-      without a local browser runtime open server tabs here. */
+  /** Hosts headless Chromium tabs streamed over /api/preview-stream for clients without a local runtime. */
   serverBrowser: Schema.optionalKey(Schema.Boolean),
 });
 export type ExecutionEnvironmentCapabilities = typeof ExecutionEnvironmentCapabilities.Type;
@@ -244,7 +222,7 @@ export const RepositoryIdentity = Schema.Struct({
   /** Work tree root, or the git dir for a bare repository. */
   rootPath: Schema.optionalKey(TrimmedNonEmptyString),
   displayName: Schema.optionalKey(TrimmedNonEmptyString),
-  provider: Schema.optionalKey(TrimmedNonEmptyString),
+  provider: Schema.optionalKey(SourceControlProviderKind),
   owner: Schema.optionalKey(TrimmedNonEmptyString),
   name: Schema.optionalKey(TrimmedNonEmptyString),
   origin: Schema.optionalKey(RepositoryOrigin),

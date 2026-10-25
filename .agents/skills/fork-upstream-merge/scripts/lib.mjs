@@ -44,16 +44,8 @@ export const cyan = paint("36");
 /**
  * The heap every node process this repo starts has to be given.
  *
- * Node sizes its default heap from the host's memory and never sees a cgroup
- * limit, so on a capped pod both directions are wrong by default: the default
- * is too small for the web test suite and for `pnpm`'s own resolution pass —
- * `vp i` dies with `Ineffective mark-compacts near heap limit` and a bare exit
- * 1 — while a hardcoded ceiling is a promise the kernel has not agreed to, and
- * one process claiming the whole cap gets the pod evicted rather than the
- * process OOM-killed. Take a share of the real cap instead.
- *
- * Every step that runs node goes through this, install included. Install used
- * to be the exception, and it is the one that runs first.
+ * Node ignores cgroup limits: the default heap is too small for the web tests and `vp i`, but a
+ * hardcoded ceiling lets one process evict the pod. Take a share of the real cap; install included.
  */
 const HEAP_FLOOR_MB = 4096;
 const HEAP_CEILING_MB = 12288;
@@ -132,10 +124,8 @@ export const lines = (output) => output.split("\n").filter((line) => line.length
 /**
  * The inventory, from the working tree or from a commit.
  *
- * `ref` matters when a script is pointed at a merge that is already in: the
- * policy that merge was resolved against is the one in its own tree, not
- * today's. Reading the working tree there reports entries written after the
- * fact as deltas the merge dropped.
+ * `ref` matters for a merge already in: its own tree's policy applies, and today's would
+ * report later entries as deltas the merge dropped.
  */
 export function loadInventory(ref = null) {
   const source =
@@ -190,14 +180,9 @@ export function loadInventory(ref = null) {
 }
 
 /**
- * Glob matching is done here rather than handed to git, because `git ls-tree`
- * treats its path arguments as leading-directory prefixes while `git ls-files`
- * applies full pathspec matching. Feeding the same pattern to both silently
- * answers two different questions — `.plans/**` matched nothing in a tree and
- * everything in the index — and this file exists to compare the two sides.
- *
- * Semantics are the conventional ones: `*` and `?` stay within a path segment,
- * `**` crosses separators.
+ * Glob matching is done here, not by git: `git ls-tree` treats paths as directory prefixes while
+ * `git ls-files` uses pathspecs, so one pattern answers two questions (`.plans/**`).
+ * `*` and `?` stay within a segment; `**` crosses separators.
  */
 export function globToRegExp(pattern) {
   let out = "";
@@ -273,11 +258,8 @@ export const remoteExists = (name) => lines(git(["remote"], { allowFailure: true
 /**
  * Fetch upstream, having first checked the remote is configured.
  *
- * A fresh clone has only `origin`, which is the normal state in a sandbox, so
- * this is the first thing a merge hits. Fetching blind gets `fatal: 'upstream'
- * does not appear to be a git repository` — which does not say that the remote
- * is simply missing, and does not say what URL to add, even though the answer
- * is sitting in inventory.json two lines away.
+ * A fresh clone has only `origin`; a blind fetch fails with a message that does not say the
+ * remote is missing. The URL to add is in inventory.json.
  */
 export function requireUpstreamRemote(inventory) {
   const { remote, url } = inventory.upstream;
@@ -311,18 +293,11 @@ export function mergeBase(a, b) {
 }
 
 /**
- * The files `git merge` will actually stop on, computed without touching the
- * working tree.
+ * The files `git merge` will actually stop on, computed without touching the working tree.
  *
- * "Files both sides changed" over-reports by about 5x, because git auto-merges
- * most of them. This
- * runs the real merge machinery into a temporary tree and reports what it could
- * not resolve, in about 100ms. The tree it writes is unreferenced and gets
- * collected; nothing is checked out and no merge is started.
- *
- * Returns `null` when git cannot do the merge at all (unrelated histories, or a
- * git older than 2.38, which has no `--write-tree`). Callers fall back to the
- * both-sides-changed set, which is a superset and so never hides a conflict.
+ * Runs `merge-tree` into an unreferenced temp tree; both-sides-changed over-reports about 5x.
+ * Returns `null` when git cannot (unrelated histories, git < 2.38); callers fall back to that
+ * superset, which never hides a conflict.
  */
 export function predictConflicts(ours, theirs) {
   const output = sh("git", ["merge-tree", "--write-tree", "--name-only", ours, theirs], {

@@ -1,41 +1,16 @@
 import type { ExecutionEnvironmentDescriptor } from "@t3tools/contracts";
 
 /**
- * Which product surfaces this client shows, decided by the server it serves.
- *
- * Fork-only, and the one place any of it is decided. One build serves both a
- * Moatless deployment and a T3 server, so a surface is shown unless the primary
- * environment's descriptor names it in `capabilities.unsupportedSurfaces`. A T3
- * server sends no such list and gets upstream's whole UI; Moatless lists what
- * it cannot back. `moatlessApi` says the same origin also serves Moatless's own
- * REST API, which the login route and the credential pages need.
- *
- * A typed `UnsupportedMethodError` is the right answer to a *call*. It is the
- * wrong answer to a Terminal tab that should never have been on the screen, so
- * a surface the server cannot back is still absent rather than refused.
- *
- * # Read synchronously, not through a hook
- *
- * The root route's `beforeLoad` resolves the primary descriptor before anything
- * renders, and it does not change for the life of the page. So `FEATURES.x`
- * stays one expression inside upstream code, with no props, hook or
- * subscription, which is what keeps merges cheap. Do not read it at module
- * scope: that runs before the descriptor arrives and sees every surface on.
- *
- * # Turning one on
- *
- * Drop the name from the backend's `unsupportedSurfaces` when the backend
- * serves it. Once no deployment in service lists it, remove the entry here and
- * every gate that named it, so the code reads the way upstream's does.
+ * Fork-only. Which product surfaces this client shows, decided by the server it serves.
+ * A surface is shown unless the primary descriptor lists it in `capabilities.unsupportedSurfaces`.
+ * Read `FEATURES.x` synchronously, never at module scope: it runs before the descriptor arrives
+ * and sees every surface on. Remove an entry and its gates once no deployment lists it.
  */
 
 /**
- * The surfaces a server can opt out of, and what each one covers. Only the
- * keys matter.
- *
- * A name is one thing a person can see, not one RPC method. Where the backend
- * simply never produces data — no approvals raised, no checkpoints recorded —
- * the surface is already empty and a flag would gate nothing.
+ * The surfaces a server can opt out of; only the keys matter.
+ * A name is one thing a person can see, not one RPC method. Where the backend never produces
+ * data, the surface is already empty and a flag would gate nothing.
  */
 const SURFACES = {
   /**
@@ -51,41 +26,24 @@ const SURFACES = {
    */
   projectManagement: true,
   /**
-   * Searching workspace files by *content*. Path search, reading and listing
-   * are served.
-   *
-   * Split from a single `workspaceSearch` flag once the backend grew path
-   * search: the Sandbox has a file-name search RPC and no content-search one,
-   * so the two halves stopped sharing a fate.
+   * Searching workspace files by *content*. The Sandbox has a file-name search RPC but no
+   * content-search one; path search, reading and listing are served.
    */
   workspaceSearchContents: true,
   /**
-   * Opening a workspace path in an external editor, through
-   * `shell.openInEditor`. An editor runs on the machine the workspace is on,
-   * and here that machine is a sandbox in a cluster — a call that succeeded
-   * would open a window nobody is sitting at.
-   *
-   * Five ways in: the chat header's Open in picker, the same picker in a file
-   * preview's header, a transcript path link's Open in action and its
-   * modifier-click, a path link clicked in terminal output, and the commit
-   * dialog's file rows, whose only click action this is. Revealing a path in a
-   * file manager rides the same method and goes with them. What stays is the
-   * file panel, where a transcript path link and a diff's file already open.
+   * Opening a workspace path in an external editor (`shell.openInEditor`). The workspace is a
+   * sandbox in a cluster, so a call that succeeded would open a window nobody sits at.
+   * Covers every picker, path-link Open in, terminal links and commit dialog rows.
+   * The file panel, where path links and diffs already open, stays.
    */
   openInEditor: true,
   /** Editing server-side settings: keybindings. */
   serverAdministration: true,
   /**
-   * Configuring a provider instance: adding and removing one, its display name
-   * and accent colour, its runtime flags, its environment variables, its custom
-   * models, the usage-limit sources and the health-check interval. All of it
-   * persists through `server.updateSettings`, which the backend does not
-   * dispatch, and `server.getSettings` answers `{}` — so every control would
-   * show a contract default as though it were the server's configuration.
-   *
-   * The provider list, its live status and its refresh are reads the backend
-   * serves, and the Models section's hidden, favourite and order controls are
-   * client settings, so the page is otherwise whole.
+   * Configuring a provider instance (add/remove, names, flags, env vars, models, limits,
+   * health interval). All persists via `server.updateSettings`, which the backend does not
+   * dispatch, and `server.getSettings` answers `{}`, so controls would show contract defaults
+   * as the server's config. The provider list, status and client-side model settings stay.
    */
   providerConfiguration: true,
   /**
@@ -105,12 +63,9 @@ const SURFACES = {
    */
   assistantStreaming: true,
   /**
-   * The composer's "Server update available" banner, raised on version skew
-   * between this web build and the connected server. It offers to run T3's
-   * server self-update — `npx t3@<version>` — which the Moatless backend, a
-   * separate Rust server, does not implement: skew against it is expected and
-   * the npx command does not apply. Gating it drops the idle offer along with
-   * the in-flight and failed update progress that offer drives.
+   * The composer's "Server update available" banner. It offers T3's `npx t3@<version>`
+   * self-update, which the Rust Moatless backend does not implement; skew against it is
+   * expected. Gating drops the idle offer and the update progress it drives.
    */
   serverUpdateBanner: true,
   /**
@@ -120,86 +75,44 @@ const SURFACES = {
    */
   projectGrouping: true,
   /**
-   * The composer's Access picker, which chooses how much an agent may do
-   * without asking. Every Moatless task runs in its own throwaway sandbox, so a
-   * thread is always `full-access` and there is no tier to pick between.
-   *
-   * Also the General page's Permissions row under New threads, which sets the
-   * same tier as the default for every new thread.
+   * The composer's Access picker and the General page's Permissions row. Every Moatless task
+   * runs in a throwaway sandbox, so a thread is always `full-access`: no tier to pick.
    */
   accessMode: true,
   /**
-   * The composer's Workspace picker, which runs a thread either in the
-   * project's own checkout or in a git worktree cut for it. Moatless has no
-   * worktree: a task runs in its own sandbox, its checkout is that sandbox's,
-   * and `worktreePath` is never set. So the picker's other entries — "New
-   * worktree" and the "Previous worktree" hop — name a place the backend
-   * cannot put a thread, and the branch selector behind them would offer to
-   * pick a base ref for a worktree nobody cuts.
-   *
-   * Off also swaps the thread details panel's workspace row for a sandbox row:
-   * the sandbox's state and a menu to start, stop, restart or redeploy it.
-   *
-   * The General page's Workspace, Submodules and Start from origin rows set
-   * the defaults behind the same picker: where a new thread starts, how a new
-   * worktree populates submodules, and which ref it is cut from.
+   * The composer's Workspace picker and the branch selector behind it. Moatless has no worktree
+   * (`worktreePath` is never set), so "New worktree" and "Previous worktree" name places the
+   * backend cannot put a thread. Off swaps the details panel's workspace row for a sandbox row,
+   * and gates the General page's Workspace, Submodules and Start from origin rows.
    */
   worktreeSelection: true,
   /**
-   * The browser's "Recently used" list: the URLs a thread's preview has
-   * opened, offered in an empty browser tab. The history is keyed by project
-   * and every thread of that project reads it, while a thread's own preview
-   * URL names the sandbox of the task that raised it (`https://task--5733.…`)
-   * — a script's published port, for instance. So one thread's entries point
-   * every other thread at a sandbox it does not own, and at a host that stops
-   * with that task.
-   *
-   * The store behind the list still records a visit and its title. This gates
-   * the surface, not the writes.
+   * The browser's "Recently used" list. History is keyed by project, but a preview URL names
+   * the sandbox of the task that raised it, so entries would point other threads at a host
+   * that stops with that task. Gates the surface, not the writes.
    */
   browserHistory: true,
   /**
-   * The SnapShots settings page, which configures T3's cross-platform window
-   * capture: a global shortcut grabs the foreground window and hands the image,
-   * and optionally the window's accessibility text, to the composer. Every
-   * control on it drives `window.desktopBridge`, which a browser tab does not
-   * have. Upstream renders the page with an "unavailable" notice instead of
-   * hiding it, so without this gate a hosted build lists a sidebar section and
-   * six searchable rows for a feature it can never run.
+   * The SnapShots settings page. Every control drives `window.desktopBridge`, which a browser
+   * tab lacks, and upstream shows an "unavailable" notice instead of hiding it, so a hosted
+   * build would list a section and six rows for a feature it can never run.
    */
   snapShots: true,
   /**
-   * The "Revert files too" choice in the rewind dialog, which sends
-   * `thread.checkpoint.revert`. Moatless rewinds the conversation and refuses
-   * that command: it records no per-turn worktree snapshot, so there is no
-   * state to put the files back to. "Revert and keep changes" is served and is
-   * the whole dialog without this.
+   * The "Revert files too" choice in the rewind dialog (`thread.checkpoint.revert`).
+   * Moatless records no per-turn worktree snapshot, so it refuses the command.
    */
   checkpointFileRestore: true,
   /**
-   * The right panel's Pull request surface: one pull request read from its
-   * host, with its summary, its files and its timeline. Moatless serves
-   * `pullRequests.detail`, the diff and the guided review for a pull request a
-   * task is bound to; `activity` and the review actions are not served and
-   * degrade inside the surface.
-   *
-   * What `capabilities.pullRequests` cannot decide is the launcher, which keeps
-   * an unavailable surface on screen with a one-line reason: upstream's reads
-   * "No pull request on this branch yet", a wait that never ends on a server
-   * that lists this surface as unsupported. This drops the row there.
+   * The right panel's Pull request surface. `activity` and the review actions are not served.
+   * Also drops the launcher row: upstream's "No pull request on this branch yet" wait would
+   * never end on a server that lists this surface as unsupported.
    */
   pullRequestSurface: true,
   /**
-   * The device hub: an iOS Simulator or Android Emulator a person and the agent
-   * share, offered as a right-panel surface and a Devices settings section.
-   * Every method behind it is refused — `device.configure`, `list`, `open`,
-   * `action` and the `subscribeDeviceState` stream — and the surface asks for
-   * none of them until someone opens it, so nothing renders the refusal first.
-   * Upstream's launcher offers Device on any thread; ungated, that row opens
-   * `DeviceSetup`, whose "Enable the device hub" step calls `device.configure`
-   * and shows the refusal. The settings section is the same dead end reached
-   * from the other side: it saves hosts through `server.updateSettings`, which
-   * the backend does not dispatch either.
+   * The device hub (simulator/emulator surface and Devices settings section). Every method
+   * behind it is refused, and ungated, the launcher's Device row opens `DeviceSetup`, whose
+   * `device.configure` step shows the refusal. Settings saves via `server.updateSettings`, also refused.
    */
   deviceHub: true,
   /**
@@ -216,21 +129,15 @@ const SURFACES = {
    */
   scheduledTasks: true,
   /**
-   * The General page's Model row under New threads: the environment's default
-   * model and effort. The client applies it to a new draft itself, so the
-   * backend only has to store `defaultModelSelection` — but its server config
-   * carries `settings: {}` and it refuses `server.updateSettings`, so the row
-   * shows the built-in default and every change fails to save. A Workspace's
-   * own default model is edited on its project page and is served.
+   * The General page's Model row under New threads. The backend refuses
+   * `server.updateSettings` and reports `settings: {}`, so the row would show the built-in
+   * default and every change would fail to save.
    */
   defaultModelSetting: true,
   /**
-   * General page rows that tune what upstream's server does on its own:
-   * snoozing and auto-resuming usage-limited threads, checking provider CLIs
-   * for updates, continuing threads after a restart, the background-activity
-   * policy, and the model that writes thread titles. The backend does none of
-   * it — its agents live in sandbox images and name their own threads — and
-   * every row saves through `server.updateSettings`, which it refuses.
+   * General page rows tuning what upstream's server does on its own (usage-limit snoozing,
+   * CLI update checks, restart resume, background policy, title model). The backend does none
+   * of it and refuses `server.updateSettings`, which every row saves through.
    */
   serverBehaviorSettings: true,
 } satisfies Record<string, true>;
@@ -273,16 +180,9 @@ export function signInPath(): "/login" | "/pair" {
 }
 
 /**
- * Settings sections that are the whole of one feature.
- *
- * Every control on these pages calls methods in one group, so the section has
- * nothing to show when the group is off and both ways in are refused: the
- * sidebar leaves it out, and `/settings`'s `beforeLoad` redirects a typed URL.
- *
- * A section is deliberately absent when its page mixes server-backed and
- * client-only state. **General** and **Appearance** persist through
- * `splitPatch` to `localStorage` and keep working, so the server-only
- * affordances inside them are gated one by one instead.
+ * Settings sections that are the whole of one feature: the sidebar omits them and
+ * `/settings`'s `beforeLoad` redirects a typed URL when the group is off.
+ * **General** and **Appearance** are absent: they mix client-only state, so gate inside them.
  */
 export const FEATURE_BY_SETTINGS_PATH: Readonly<Record<string, FeatureName>> = {
   "/settings/keybindings": "serverAdministration",
@@ -337,12 +237,9 @@ export function settingsSearchItemEnabled(id: string): boolean {
 }
 
 /**
- * Command palette actions that drive a gated surface, by their `value`.
- *
- * Keyed by value so the palette can filter its finished list in one place
- * instead of wrapping each `push` in a conditional. Every wrapped block would
- * be a re-indented block, and a re-indented block is what turns an upstream
- * edit nearby into a conflict.
+ * Command palette actions that drive a gated surface, by `value`.
+ * Keyed so the palette filters its finished list in one place; wrapping each `push` would
+ * re-indent upstream blocks and turn nearby upstream edits into conflicts.
  */
 export const FEATURE_BY_PALETTE_ACTION: Readonly<Record<string, FeatureName>> = {
   "action:add-project": "projectManagement",

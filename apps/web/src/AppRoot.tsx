@@ -12,12 +12,8 @@ import { QuitHoldOverlay } from "./components/QuitHoldOverlay";
 import { appAtomRegistry, AppAtomRegistryProvider } from "./rpc/atomRegistry";
 import type { AppRouter } from "./router";
 
-/**
- * The browser hosts intentionally sit outside the router so their pages survive
- * route transitions, but they must share the same atom registry as routed UI.
- * Exactly one of the two renders anything: the Electron host in the desktop
- * app, the web host everywhere else.
- */
+// Keep webviews outside the router but inside its atom registry so route changes preserve them.
+// Fork: exactly one host renders anything — Electron in the desktop app, web everywhere else.
 export function AppRoot({ router }: { readonly router: AppRouter }) {
   useEffect(
     () =>

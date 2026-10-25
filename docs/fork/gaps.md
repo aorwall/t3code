@@ -684,6 +684,27 @@ what a person loses, which is the part the derivation cannot tell you:
   `git grep -A6 'id: "snap-shot-' apps/web/src/components/settings/settingsSearch.ts`.
   Delete the flag and the path entry when it does.
 
+- **Sharing a thread with a guest** — `guestShare.create`, new upstream in
+  the 2026-10-25 merge (#24104), with the `thread.guest-share.*` and
+  `thread.guest-message.*` commands and the `/api/guest/*` HTTP routes behind
+  it. A guest link opens `/guest`, a chrome-less page that watches one thread
+  live and sends messages the owner approves. The menu item shows only when
+  `canShareWithGuestAtom` sees the `createGuestShare` grant and
+  `guestSharingEnabled === true` in server settings, which Moatless never
+  sends, so the union entry is the only stand-in. The Settings > Beta "Guest
+  links" row is ungated and its save is refused like any server setting (see
+  _Editing server settings_). Closes when Moatless serves guest shares and that
+  setting; delete the union entry then.
+- **Subagent thread families** — `orchestration.getThreadFamily` and
+  `getWorktreeThreadIds`, new upstream in the 2026-10-25 merge. Upstream's
+  shell can leave idle subagents out (`omitIdleSubagents`) and serve each tree
+  on demand. The client asks only when the server config says
+  `shellThreadFamilies: true`, which Moatless omits, so it keeps reading every
+  child from the shell. The fork's adopted-thread graft wraps upstream's family
+  merge (`createAdoptedEnvironmentSnapshotAtom` in `apps/web/src/state/threads.ts`).
+  Closes when Moatless serves both and advertises the capability; delete the two
+  union entries then.
+
 - **Check:** run `unsupported-methods.mjs` rather than reading this list. Where
   the two sides come from is _Deriving the unsupported set_ in the inventory.
 - **Then here:** drop the union entry in `packages/contracts/src/rpc.ts` and, if
@@ -1983,6 +2004,19 @@ One more arrived in the 2026-10-01 merge:
   HTTPS when the SSH key is refused (#23170); Forgejo merges follow the
   repository's delete-branch setting (#23471); and assets carry a
   `fileRevision` that does not change when the URL is re-signed.
+  The 2026-10-25 merge adds: an inactive thread with a persisted open pull
+  request link settles; Working holds only background work the agent waits on;
+  a deleted thread's worktree and subagents are cleaned up; Stop stops
+  subagents again; an agent-started interrupt no longer reads as "by user";
+  T3-initiated compactions are quiet and marked with `idleCompaction`, and a
+  fork's first `/compact` compacts its inherited history; a pull request watch
+  wakes when the remaining checks finish, skipped Forgejo jobs no longer keep
+  it pending, and periodic discovery pauses with no foreground client; long
+  turns are paged on thread open and streaming text updates are coalesced;
+  ACP idle-agent errors fail the turn and SIGTERM-ignoring terminals are
+  killed; and agent-browser and Chrome no longer outlive their agent. Thread
+  opens ranking (`opens`, `searchQuery`) and wire compaction (`compactIds`,
+  `dedupeBodies`) are optional fields the client tolerates when absent.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

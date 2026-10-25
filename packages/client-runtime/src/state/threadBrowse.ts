@@ -1,17 +1,8 @@
 /**
  * Fork-only. The atom for the listing rows a browse filter names.
  *
- * A query rather than a subscription, and a deliberately plain one: nothing
- * pushes a browsed row. The change feed re-reads by follow, so a thread the
- * viewer does not follow moves with nothing telling this client about it. A
- * subscription here would hold a poller per filter on the backend to deliver
- * what re-asking on an interval delivers, and the filter closing would need a
- * lifecycle on both sides where this needs none.
- *
- * The interval is the sidebar's own pace rather than a container probe's: what
- * moves on these rows is a turn starting or a thread being closed, which a
- * person watching somebody else's work reads as immediate at this distance.
- *
+ * A plain query on an interval: nothing pushes a browsed row, since the change feed re-reads
+ * by follow. The interval is the sidebar's pace, not a container probe's.
  * @module state/threadBrowse
  */
 import { WS_METHODS } from "@t3tools/contracts";

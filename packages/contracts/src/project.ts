@@ -42,11 +42,9 @@ export const ProjectScript = Schema.Struct({
   previewUrl: Schema.optional(TrimmedNonEmptyString),
   autoOpenPreview: Schema.optional(Schema.Boolean),
   /**
-   * Fork addition (Moatless). The port the script serves on. A hosted
-   * environment publishes it when the script runs and returns the real
-   * external URL, so this stands in for `previewUrl`, which a script running
-   * in a remote sandbox cannot know ahead of time. Absent for a console-only
-   * script.
+   * Fork addition (Moatless). The port the script serves on; a hosted environment
+   * publishes it on run and returns the real URL, since `previewUrl` cannot be known
+   * ahead of time in a remote sandbox. Absent for a console-only script.
    */
   port: Schema.optional(PortSchema),
 });
@@ -270,8 +268,7 @@ export type ProjectSearchEntriesResult = typeof ProjectSearchEntriesResult.Type;
 
 export const ProjectSearchContentsInput = Schema.Struct({
   cwd: TrimmedNonEmptyString,
-  // Whitespace is significant in content queries (" foo", regex trailing
-  // spaces), so the query is deliberately not trimmed on the wire.
+  // Preserve whitespace because it is significant in content queries.
   query: Schema.String.check(Schema.isNonEmpty(), Schema.isMaxLength(256)),
   limit: PositiveInt.check(Schema.isLessThanOrEqualTo(PROJECT_SEARCH_CONTENTS_MAX_LIMIT)),
   caseSensitive: Schema.Boolean,
@@ -443,8 +440,7 @@ export class ProjectListEntriesError extends Schema.TaggedError<ProjectListEntri
 
 export const ProjectReadFileInput = Schema.Struct({
   cwd: TrimmedNonEmptyString,
-  // Workspace-relative, or an absolute host path for a file outside the
-  // workspace. Only workspace-relative paths can be written back.
+  // Workspace-relative or absolute host path; only workspace-relative paths are writable.
   relativePath: TrimmedNonEmptyString.check(Schema.isMaxLength(PROJECT_READ_FILE_PATH_MAX_LENGTH)),
   // Optional files can be absent without failing the read.
   allowMissing: Schema.optional(Schema.Boolean),

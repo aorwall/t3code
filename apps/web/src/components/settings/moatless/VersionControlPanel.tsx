@@ -1,10 +1,7 @@
 /**
  * Fork-only. The git hosts the viewer's own tasks clone and push with.
- *
- * A list beside the selected host's settings rather than one section per host:
- * a deployment reaches more hosts over time, and stacking them all makes the
- * page longer without making any one of them easier to find. The agent
- * credentials — Claude Code and Codex — stay on the Account page.
+ * A list beside the selected host's settings, not a section per host, so the page stays findable as
+ * hosts grow. Claude Code and Codex credentials stay on the Account page.
  */
 
 import { GithubIcon, RefreshCwIcon, ServerIcon, Trash2Icon } from "lucide-react";
@@ -247,11 +244,8 @@ function GithubDetail() {
 
 /**
  * Forgejo access, one section per instance.
- *
- * Forgejo is self-hosted, so the deployment registers each host separately and
- * `GET /settings/forgejo/instances` is what names them. That list is the whole
- * page: a host it does not carry is a host this deployment does not run, so
- * there is nothing here to type a hostname into.
+ * `GET /settings/forgejo/instances` names the registered hosts and is the whole page: a host it
+ * does not carry is not run by this deployment, so there is no hostname input.
  */
 function ForgejoDetail() {
   const { data, error, isPending, refresh } = useMoatlessQuery(forgejoConnectionsQuery);

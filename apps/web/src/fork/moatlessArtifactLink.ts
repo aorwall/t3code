@@ -1,11 +1,7 @@
 /**
- * Fork-only. Recognises a link to a Moatless Artifact — the HTML page an agent
- * publishes with `moat artifact publish` — and looks up the title it was
- * published under.
- *
- * An Artifact is served from the backend's own origin, so only a URL on the
- * primary environment's origin counts: the same path on another host is some
- * other server's page and stays an ordinary link.
+ * Fork-only. Recognises a link to a Moatless Artifact (HTML published with
+ * `moat artifact publish`) and looks up its title. Only a URL on the primary environment's
+ * origin counts: the same path on another host is some other server's page.
  */
 import { resolvePrimaryEnvironmentHttpUrl } from "~/environments/primary/target";
 

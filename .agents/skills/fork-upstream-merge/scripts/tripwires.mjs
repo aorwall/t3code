@@ -1,15 +1,10 @@
 #!/usr/bin/env node
 /**
- * Deleted-surface tripwires, the deletion check, and the off-repository state
- * that a merge cannot see because it lives in GitHub rather than in the tree.
+ * Deleted-surface tripwires, the deletion check, and off-repository GitHub state.
  *
- * Run after a merge, before writing the tracker entry:
+ * Run after a merge, before the tracker entry:
  *   node .agents/skills/fork-upstream-merge/scripts/tripwires.mjs
- *
- * A `removed` surface must return no matches. A `decided-not-removed` surface
- * has known matches and reports its count, which is the number the tracker
- * entry quotes — the point is to hold it steady, not at zero, so a count that
- * moves is the finding.
+ * A `removed` surface must match nothing; a `decided-not-removed` one reports a count to hold steady.
  */
 import {
   Report,
@@ -43,14 +38,10 @@ function checkTripwires(inventory, report) {
 }
 
 /**
- * Taking upstream on a delete/modify conflict silently restores a file the fork
- * decided out, and nothing else in the merge notices.
+ * Taking upstream on a delete/modify conflict silently restores a file the fork decided out.
  *
- * Both halves are measured against the merge base rather than upstream's head.
- * `upstream/main` moves on between merges, so diffing the two trees reports
- * every file upstream has added since as a deletion by this fork — noise that
- * grows with every day the branch is open, and that buries the one line here
- * that matters. Between the base and HEAD there is only this fork's own work.
+ * Measured against the merge base, not `upstream/main`, which accrues unrelated "deletions"
+ * daily and buries the real line.
  */
 function checkDeletions(inventory, report, base) {
   const section = report.section("Upstream paths the fork deletes");

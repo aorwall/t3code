@@ -23,17 +23,11 @@ import { warmBundledDevPlugin } from "./vite/warmBundledDev";
 const repoEnv = loadRepoEnv();
 Object.assign(process.env, repoEnv);
 
-// `loadRepoEnv` lets the ambient environment win over the repo's env files,
-// which is right for every value it resolves. The proxy target is the one
-// exception a fork needs: hosted sandboxes inject T3CODE_PROXY_TARGET pointing
-// at their own bundled server, and a checkout has to be able to say "no, use
-// mine" without editing the deployment. This name is file-only and, being
-// explicitly an override, outranks the ambient value.
+// Fork: `loadRepoEnv` lets the ambient env win, but hosted sandboxes inject
+// T3CODE_PROXY_TARGET at their own server, so this file-only override outranks it.
 const repoFileEnv = loadRepoEnv({ baseEnv: {} });
 
-// Where this dev server proxies the backend, when it is not the bundled T3
-// server the runner starts. Pointing it at a Moatless environment is what makes
-// the fork's UI work against that backend; see docs/user/moatless-backend.md.
+// Fork: a proxy target naming a Moatless backend; see docs/user/moatless-backend.md.
 const proxyTargetOverride =
   process.env.T3CODE_DEV_PROXY_TARGET?.trim() ||
   repoFileEnv.T3CODE_PROXY_TARGET_OVERRIDE?.trim() ||
@@ -41,25 +35,17 @@ const proxyTargetOverride =
   process.env.MOATLESS_BASE_URL?.trim() ||
   undefined;
 
-// Single-origin dev is signalled positively, because it cannot be inferred from
-// the absence of VITE_HTTP_URL/VITE_WS_URL: the runner deletes those keys but
-// `loadRepoEnv` merges `.env`/`.env.local` *underneath* the process env, so a
-// developer with either URL in their `.env` gets it back here.
-// A configured proxy target implies it too: the whole point of naming one is
-// that the browser talks to this origin and lets the proxy forward everything,
-// so a baked-in VITE_HTTP_URL/VITE_WS_URL would route straight past it.
+// Signal single-origin dev explicitly; loadRepoEnv can restore deleted URL keys from .env.
+// Fork: a proxy target implies it, since a baked-in VITE_HTTP_URL would bypass the proxy.
 const isSingleOriginDev =
   process.env.T3CODE_SINGLE_ORIGIN_DEV === "1" || proxyTargetOverride !== undefined;
 
 const port = Number(process.env.PORT ?? 5733);
 const explicitHost = process.env.HOST?.trim();
 const host = explicitHost || "localhost";
-// A wildcard bind address says "listen on every interface"; it is not an
-// address a browser can dial. A container or sandbox sets HOST=0.0.0.0 so the
-// dev server is reachable from outside it, and pinning the HMR socket to that
-// value sends the page to ws://0.0.0.0 — which is refused, and is insecure
-// content besides when the page itself is served over HTTPS. Deriving the host
-// from the page origin is right in exactly those deployments.
+// A wildcard bind address is not an address a browser can dial. Containers set HOST=0.0.0.0, and
+// pinning the HMR socket to it sends the page to ws://0.0.0.0, which is refused (and insecure
+// content over HTTPS). Deriving the host from the page origin is right in those deployments.
 const WILDCARD_BIND_HOSTS = new Set(["0.0.0.0", "::", "[::]", "::0", "0000::0"]);
 const hmrHost =
   explicitHost && !WILDCARD_BIND_HOSTS.has(explicitHost.toLowerCase()) ? explicitHost : undefined;
@@ -122,12 +108,7 @@ const unitTestProject = {
   },
 } satisfies TestProjectInlineConfiguration;
 
-// Anything that renders React or touches the DOM is named *.browser.test.{ts,tsx} and runs
-// in headless Chromium through the same plugins as the app, so it exercises compiled code.
-// Vitest's fixed browser API port (63315) collides when two checkouts run
-// browser tests at once, and `server.strictPort` above is inherited, so the
-// second run fails instead of moving on. Hash the checkout path like
-// scripts/dev-runner.ts does, into 61000-64999 (above Linux's ephemeral range).
+// Hash checkout paths to ports 61000-64999; Vitest's fixed port collides under inherited strictPort.
 const browserTestApiPort = 61_000 + ((Hash.string(import.meta.dirname) >>> 0) % 4_000);
 
 const browserTestProject = {
@@ -168,8 +149,7 @@ function resolveDevProxyTarget(
     return `http://localhost:${port}/`;
   }
 
-  // dev:desktop still points the renderer straight at the backend, so fall
-  // back to deriving the target from the explicit websocket URL.
+  // dev:desktop connects directly to the backend; derive its target from the explicit WebSocket URL.
   if (!wsUrl) {
     return undefined;
   }
@@ -196,8 +176,7 @@ function resolveDevProxyTarget(
 const devProxyTarget =
   proxyTargetOverride ?? resolveDevProxyTarget(process.env.T3CODE_PORT, configuredWsUrl);
 
-// Brotli quality 5 keeps encode time in the hundreds of ms; the default
-// (quality 11) would trade the transfer stall for an equally long encode stall.
+// Brotli quality 5 encodes in hundreds of ms; default quality 11 would replace transfer stalls with encode stalls.
 function devCompressionPlugin(): Plugin {
   return {
     name: "t3code:dev-compression",
@@ -212,18 +191,9 @@ function devCompressionPlugin(): Plugin {
   };
 }
 
-// Vite rejects requests whose Host header isn't localhost, which blocks sharing
-// a dev server over Tailscale/LAN. Tailnet names are safe to allow wholesale:
-// the DNS is controlled by tailscale, so they can't be rebound by an attacker.
-// Anything else (ngrok, a LAN IP alias, a hosted sandbox's preview domain) goes
-// through the env vars. T3CODE_ALLOWED_HOSTS is the fork's alias, kept because
-// deployments inject it by that name; a leading dot allows a domain and every
-// subdomain under it, which is what generated per-sandbox hostnames need:
-//
-//   T3CODE_ALLOWED_HOSTS=.preview.example.com,dev.example.com
-//
-// Either var set to `true` disables the check entirely — convenient behind a
-// trusted proxy, but it drops the DNS-rebinding protection, so prefer a list.
+// Allow Tailnet hosts for sharing; Tailscale-controlled DNS prevents attacker rebinding.
+// Fork: T3CODE_ALLOWED_HOSTS is the name deployments inject; a leading dot allows a
+// domain and its subdomains (`.preview.example.com`), and `true` disables the check.
 const allowedHostsEnv = [
   process.env.T3CODE_DEV_ALLOWED_HOSTS ?? "",
   process.env.T3CODE_ALLOWED_HOSTS ?? "",
@@ -239,12 +209,9 @@ const allowedHosts: string[] | true = configuredAllowedHosts.some(
   : [".ts.net", ...configuredAllowedHosts];
 
 export default defineConfig(({ command, isPreview }) => {
-  // Some hosts (containers, CI images, sandboxed preview environments) export
-  // NODE_ENV=production process-wide. Vite derives `isProduction` from it even
-  // when serving, which makes @vitejs/plugin-react skip the React Refresh
-  // preamble while the transform still emits `$RefreshReg$` calls — the app
-  // then dies on load with "$RefreshReg$ is not defined". A dev server is
-  // development by definition, so pin it back.
+  // Hosts (containers, CI, sandboxes) may export NODE_ENV=production. Vite then derives
+  // `isProduction` even when serving, so plugin-react skips the Refresh preamble while the transform
+  // still emits `$RefreshReg$` and the app dies with "$RefreshReg$ is not defined". Pin it back.
   if (command === "serve" && !isPreview && process.env.NODE_ENV === "production") {
     process.env.NODE_ENV = "development";
   }
@@ -293,9 +260,7 @@ export default defineConfig(({ command, isPreview }) => {
     },
     define: {
       "import.meta.env.VITE_WS_URL": JSON.stringify(configuredWsUrl ?? ""),
-      // Pinned explicitly rather than left to Vite's automatic VITE_ exposure:
-      // under single-origin dev this must stay empty even when a `.env`
-      // supplies it, so the client falls back to window.location.origin.
+      // Override .env URLs with empty values in single-origin dev so clients use window.location.origin.
       "import.meta.env.VITE_HTTP_URL": JSON.stringify(configuredHttpUrl ?? ""),
       "import.meta.env.VITE_T3CODE_RELAY_URL": JSON.stringify(configuredRelayUrl),
       "import.meta.env.VITE_CLERK_PUBLISHABLE_KEY": JSON.stringify(configuredClerkPublishableKey),
@@ -331,18 +296,14 @@ export default defineConfig(({ command, isPreview }) => {
       port,
       strictPort: true,
       allowedHosts,
-      // Transform the whole module graph at server start instead of on the
-      // first request. Without this, a cold worktree discovers and transforms
-      // modules one import-level at a time while the browser waits — which
-      // over a tailnet origin turns into minutes of waterfall. Bundled dev
-      // ignores this; warmBundledDevPlugin covers it there.
+      // Warm the module graph before first request to avoid serial import transforms over tailnet.
+      // Bundled dev ignores this; warmBundledDevPlugin handles it there.
       warmup: {
         clientFiles: ["./src/main.tsx"],
       },
       ...(devProxyTarget
         ? {
-            // One entry per shared prefix; the server's dev catch-all 404s the
-            // same list, so the two sides cannot drift.
+            // Share prefixes with the backend catch-all so the proxy and 404 lists cannot drift.
             proxy: Object.fromEntries(
               DEV_PROXIED_PATH_PREFIXES.map((prefix) => [
                 prefix,
@@ -355,11 +316,7 @@ export default defineConfig(({ command, isPreview }) => {
             ),
           }
         : {}),
-      // Electron's BrowserWindow needs the HMR socket pinned to an explicit
-      // host to connect reliably; dev:desktop sets HOST for that. Everywhere
-      // else, leaving this unset lets the client derive it from the page
-      // origin, which is what makes HMR work over Tailscale/LAN instead of
-      // failing an attempt against the wrong machine's localhost first.
+      // Electron needs an explicit HMR host; elsewhere derive it from page origin for Tailscale/LAN.
       ...(hmrHost
         ? {
             hmr: {
@@ -370,8 +327,7 @@ export default defineConfig(({ command, isPreview }) => {
           }
         : {}),
     },
-    // @tailwindcss/vite only emits a CSS sourcemap when devSourcemap is on; without it
-    // rolldown flags the transform as SOURCEMAP_BROKEN on every sourcemapped build.
+    // Tailwind needs devSourcemap to avoid Rolldown SOURCEMAP_BROKEN on sourcemapped builds.
     css: {
       devSourcemap: buildSourcemap !== false,
     },

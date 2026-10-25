@@ -3,17 +3,9 @@ import * as React from "react";
 import { useStableCallback } from "../hooks/useStableCallback";
 
 /**
- * Reaching a row's context menu with a finger.
- *
- * The sidebar's per-thread actions — settle, un-settle, snooze, rename, delete
- * — live in exactly two places, and a touch device can reach neither: the
- * inline buttons appear on `:hover`, and the full menu opens on `contextmenu`.
- * A long press is the touch idiom for "the other button", so this turns one
- * into the same `contextmenu` call the mouse makes, leaving every menu item,
- * its wiring and its call sites untouched.
- *
- * `useTouchContextMenu` returns the props for a row, `onContextMenu` included,
- * so a call site swaps one attribute for one spread.
+ * Reaching a row's context menu with a long press, for touch devices that cannot hover or
+ * right-click. Turns it into the same `contextmenu` call the mouse makes.
+ * `useTouchContextMenu` returns row props including `onContextMenu`: one spread per call site.
  */
 
 /** How long a finger must rest before the press counts as a menu request. */
@@ -24,13 +16,8 @@ export const LONG_PRESS_MOVE_TOLERANCE = 10;
 
 /**
  * How long a fired long press keeps suppressing `contextmenu`.
- *
- * Chrome on Android raises its own `contextmenu` about 500 ms into a press —
- * after ours has already opened a menu. Left alone that second event both
- * opens a duplicate and, because the imperative fallback menu closes itself on
- * any `contextmenu` outside its own stack, closes the first one. Wide enough
- * to cover the gap, short enough that a deliberate right-click straight
- * afterwards still works.
+ * Chrome on Android raises its own `contextmenu` ~500 ms in; unsuppressed, it opens a duplicate
+ * and closes the first menu. Short enough that a deliberate right-click afterwards still works.
  */
 export const CONTEXT_MENU_SUPPRESSION_MS = 700;
 

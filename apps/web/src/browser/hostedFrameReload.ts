@@ -2,12 +2,9 @@ import { create } from "zustand";
 
 /**
  * Reload counters for framed browser tabs.
- *
- * A cross-origin <iframe> cannot be told to reload — there is no API for it and
- * reassigning `src` would push an entry onto the parent's history. The only way
- * is to replace the element, which React does when its key changes. The counter
- * lives here rather than in the panel because the frame is mounted at the app
- * root, so the two components share nothing else.
+ * A cross-origin <iframe> cannot be told to reload, and reassigning `src` pushes parent history,
+ * so the only way is replacing the element via its React key. The counter lives here because the
+ * frame is mounted at the app root and shares nothing else with the panel.
  */
 interface HostedFrameReloadState {
   readonly byTabId: Readonly<Record<string, number>>;
@@ -34,12 +31,9 @@ export function reloadHostedFrame(runtimeTabId: string): void {
 }
 
 /**
- * The identity of a framed page, as React sees it.
- *
- * Both inputs have to be in it. The URL, because navigating by reassigning
- * `src` would push an entry onto the parent's history; the counter, because
- * reloading the same URL has to replace the element and nothing about the URL
- * would have changed.
+ * The identity of a framed page, as React sees it. Both inputs are required: the URL, because
+ * reassigning `src` would push a parent history entry; the counter, because a reload of the same
+ * URL must still replace the element.
  */
 export function hostedFrameKey(url: string, reloadNonce: number): string {
   return `${url}#${reloadNonce}`;

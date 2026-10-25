@@ -15,13 +15,10 @@ function isBrowserPrimary(): boolean {
   );
 }
 
-// Fork: Moatless guards an unsafe cookie-authenticated request with a
-// double-submit CSRF token, so one that does not echo the `moatless_csrf`
-// cookie in `x-csrf-token` is 403ed by the auth middleware before any handler
-// sees it. The cookie is not HttpOnly precisely so this can read it. The
-// unsafe HTTP requests are the OTLP export in `observability/clientTracing.ts`
-// and the pull request diff, which goes through `lib/runtime.ts`'s client
-// (`withSameOriginMoatlessCsrfToken`); every other write rides the `/ws` socket.
+// Fork: Moatless guards unsafe cookie-authenticated requests with a double-submit CSRF token; one
+// not echoing the `moatless_csrf` cookie in `x-csrf-token` is 403ed before any handler. The cookie
+// is not HttpOnly so this can read it. Unsafe HTTP requests are the OTLP export
+// (`observability/clientTracing.ts`) and the PR diff via `lib/runtime.ts`; other writes use `/ws`.
 const MOATLESS_CSRF_COOKIE = "moatless_csrf";
 
 /** Read per request: a re-login mints a new token under the same cookie. */

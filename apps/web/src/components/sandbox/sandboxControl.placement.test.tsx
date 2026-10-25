@@ -1,15 +1,8 @@
 /**
  * Fork-only: where the right panel puts the sandbox status indicator.
- *
- * The indicator is a fork element inside an upstream component, and its home is
- * a placement rather than a symbol — nothing type-checks that it renders in the
- * panel body instead of the tab bar, where it used to sit and where upstream's
- * layout toggles now live. A merge that carries the fork's `sandboxControl`
- * hunk back into the tab bar row compiles and passes every other test, and the
- * terminal-drawer button quietly loses its corner again.
- *
- * The indicator rides the entry that opens the Sandbox surface, so these also
- * pin that the entry exists and that the disabled state offers the way to it.
+ * Its home is a placement, not a symbol: a merge that carries the fork's `sandboxControl` hunk back
+ * into the tab bar row compiles and passes every other test. These also pin that the entry opening
+ * the Sandbox surface exists and that the disabled state offers the way to it.
  */
 import type { PreviewSessionSnapshot } from "@t3tools/contracts";
 import { DEFAULT_RESOLVED_KEYBINDINGS } from "@t3tools/shared/keybindings";

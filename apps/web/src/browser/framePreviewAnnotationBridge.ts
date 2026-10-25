@@ -1,25 +1,10 @@
 "use client";
 
 /**
- * Fork-only. The host half of the preview-annotation conversation, for a page
- * shown in a hosted iframe.
- *
- * Upstream annotates a preview by loading a picker into an Electron `<webview>`
- * as a preload and talking to it over `ipcRenderer`. A browser has neither, and
- * a cross-origin frame cannot be injected into from outside — `postMessage` is
- * the only thing that crosses. So the guest carries its own runtime, shipped by
- * `@moatless/inspector`, and this module is what it talks to.
- *
- * The channel names and envelope are re-declared here rather than imported: the
- * package is a dependency of the *previewed app*, not of this one, and taking a
- * build dependency on it to name six strings would make every previewed project
- * a version negotiation. The protocol is fixed and its definition lives in
- * `@moatless/inspector/preview-annotation/protocol` — change it there first.
- *
- * Readiness is established from both directions, because the guest announcing
- * itself on load and the host asking for an announcement each lose a different
- * race: the host may mount after the page finished loading, and the page may
- * finish loading after the host mounted.
+ * Fork-only. Host half of the preview-annotation conversation for a page in a hosted iframe.
+ * Channel names and envelope are re-declared, not imported: `@moatless/inspector` is a dependency
+ * of the previewed app, not this one. The protocol lives in
+ * `@moatless/inspector/preview-annotation/protocol` - change it there first.
  */
 
 import type { DesktopPreviewAnnotationTheme, PreviewAnnotationPayload } from "@t3tools/contracts";
@@ -119,16 +104,9 @@ function notify(runtimeTabId: string): void {
 
 /**
  * Whether a message addressed to the preview's origin can reach the frame yet.
- *
- * A frame element that has just been created sits on the about:blank document
- * it inherited from this window, and stays there until its first load commits.
- * That document's origin is this app's, so anything addressed to the preview
- * origin is refused and logged — noisily, once per navigation. Nothing is
- * listening in about:blank anyway, and `load` re-announces the host.
- *
- * Reading `location.origin` is the test, because it succeeds only while the
- * frame is still same-origin with us; once it reaches the preview it throws,
- * and that is the case worth sending in.
+ * A fresh frame sits on an about:blank document with this app's origin, so a message addressed to
+ * the preview origin is refused and logged. Reading `location.origin` throws only once the frame
+ * has reached the preview, which is the case worth sending in; `load` re-announces the host.
  */
 function frameCanReceive(host: FrameAnnotationHost): boolean {
   if (host.targetOrigin === "*") return true;
@@ -349,12 +327,9 @@ export function registerFramePreviewAnnotationHost(input: {
   const previous = hosts.get(input.runtimeTabId);
   if (previous) finishPendingPick(previous, null);
 
-  // Registering over the same window is a re-render, not a new page. The guest
-  // announces itself once per document, so anything relearned here would have
-  // to wait on the ping round-trip below — and until it lands, the annotate
-  // button reads as unavailable and a pick resolves to null. A different window
-  // means a different frame element, hence a different document, so there is
-  // nothing to carry.
+  // Registering over the same window is a re-render, not a new page. The guest announces itself once
+  // per document, so state dropped here stays unknown until the ping lands (annotate reads as
+  // unavailable, a pick resolves to null). A different window is a new document: nothing to carry.
   const before = previous ?? retired.get(input.runtimeTabId);
   const carried = before?.frameWindow === input.frameWindow ? before : null;
   retired.delete(input.runtimeTabId);

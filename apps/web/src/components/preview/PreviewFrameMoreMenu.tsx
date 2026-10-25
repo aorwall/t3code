@@ -8,19 +8,9 @@ import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip";
 
 /**
  * Fork-only. The three-dot menu for a preview shown in a hosted iframe.
- *
- * A sibling of upstream's {@link PreviewMoreMenu} rather than a branch inside
- * it. Almost everything that menu offers — DevTools, the separate always-on-top
- * window, emulated zoom and colour scheme, clearing storage — is a call on the
- * Electron preview bridge, and a browser has no bridge to call. Teaching
- * upstream's component to render without one meant loosening two of its props
- * to optional and wrapping four of its blocks in guards, which re-indents most
- * of the file and turns every later upstream edit to that menu into a conflict.
- *
- * What survives the trip to a frame is what a frame can actually do: reload the
- * page, and switch between filling the panel and a fixed viewport. Two items do
- * not justify that cost, so they live here and `PreviewView` picks the menu that
- * matches its surface.
+ * A sibling of upstream's {@link PreviewMoreMenu}, not a branch in it: most of that menu calls the
+ * Electron preview bridge, and guarding it for a bridgeless browser would re-indent the file and
+ * turn every later upstream edit into a conflict. Only reload and viewport switching survive here.
  */
 export function PreviewFrameMoreMenu({
   hardReloadDisabled,

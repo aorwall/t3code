@@ -287,14 +287,15 @@ export function WorkingTimelineRow({ row }: { row: Extract<TimelineRow, { kind: 
   // Fork: `isStartingRun` labels the row while the run's sandbox starts.
   const { isCompacting, isPreparingWorktree, isStartingRun, backgroundWorktreeSetup } =
     use(TimelineRowActivityCtx);
-  const shimmer = isPreparingWorktree || isCompacting || isStartingRun;
+  const compacting = row.compacting ?? (isCompacting ? "Compacting…" : undefined);
+  const shimmer = isPreparingWorktree || compacting !== undefined || isStartingRun;
   const label = isPreparingWorktree ? (
     "Setting up worktree…"
   ) : isStartingRun ? (
     // Fork: see `isStartingRun`.
     "Starting sandbox…"
-  ) : isCompacting ? (
-    <CompactingLabel />
+  ) : compacting !== undefined ? (
+    <CompactingLabel label={compacting} />
   ) : row.createdAt ? (
     <>
       Working for <WorkingTimer createdAt={row.createdAt} />
@@ -354,11 +355,11 @@ function BackgroundWorktreeSetupChip({ snapshot }: { snapshot: WorktreeSetupSnap
   );
 }
 
-function CompactingLabel() {
+function CompactingLabel({ label }: { label: string }) {
   return (
     <span className="inline-flex items-center gap-1.5">
       <Minimize2Icon aria-hidden="true" className="size-3" />
-      Compacting…
+      {label}
     </span>
   );
 }

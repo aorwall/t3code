@@ -1,11 +1,8 @@
 /**
  * The seam between two products that share a schema and no test process.
  *
- * A hand-written JSON literal inside a Rust test asserts what its author
- * believed this schema said. These fixtures are the responses the Moatless
- * backend actually produces, checked in here and decoded by the schemas
- * themselves — so when its projection changes, the fixture changes with it in
- * the same commit and this is what fails if the two drift.
+ * These fixtures are responses the Moatless backend really produces, decoded by the schemas
+ * themselves, so a projection change must update the fixture in the same commit.
  */
 import * as DateTime from "effect/DateTime";
 import * as Schema from "effect/Schema";
@@ -62,10 +59,8 @@ describe("Moatless subtasks.list", () => {
 });
 
 /**
- * The fixture is a real archived Moatless task, and it is deliberately one the
- * shell listing does not carry: that is the whole reason the method exists.
- * Decoding it as `OrchestrationV2ThreadShell` is the assertion — the row a client
- * gets by id has to be the row it would have got from the listing, or the same
+ * The fixture is a real archived task that the shell listing does not carry. Decoding it as
+ * `OrchestrationV2ThreadShell` asserts the by-id row matches the listing's, or the same
  * thread renders two ways depending on how it was reached.
  */
 describe("Moatless threads.getShell", () => {

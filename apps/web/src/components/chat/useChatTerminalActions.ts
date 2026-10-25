@@ -225,18 +225,9 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
     setTerminalFocusRequestId((value) => value + 1);
   };
   /**
-   * Fork: bring the thread's sandbox up so a script can run in it, and resolve
-   * once it is ready to be asked again. Upstream runs scripts on the machine
-   * the server is already on, so it has nothing to start.
-   *
-   * A sandbox is idle-reaped after its TTL, so the common way to meet this is
-   * simply to come back to a thread and press run. Starting it is the whole
-   * remedy and the person already said what they want, so do it rather than
-   * report a lifecycle state at them. `sandbox.start` only records the intent —
-   * readiness arrives later — hence the poll.
-   *
-   * Returns false when the sandbox did not get there; the caller has already
-   * been told why and should stop.
+   * Fork: bring the thread's sandbox up so a script can run, resolving once it is ready to be asked
+   * again. `sandbox.start` only records intent and readiness arrives later, hence the poll.
+   * Returns false when it did not get there; the caller has already been told why and should stop.
    */
   const awaitSandboxReady = async (threadId: ThreadId): Promise<boolean> => {
     const startResult = await startSandbox({
@@ -315,12 +306,9 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
     // created with no first message gets one only when a turn is sent, and no
     // turn is coming. The draft route navigates to the thread on its own.
     if (isLocalDraftThread) {
-      // Fork: a draft thread carries the project's default selection, or the
-      // no-provider placeholder when there is no default, and neither is the
-      // model the person picked in the composer. Resolve it the way the send
-      // path does: the host fixes a thread's agent at creation and refuses a
-      // later switch, so the create has to pin the agent the first message
-      // will ask for, and the placeholder's empty model is rejected outright.
+      // Fork: a draft carries the project's default selection or the no-provider placeholder, not the
+      // composer's pick. Resolve it as the send path does: the host fixes a thread's agent at creation
+      // and refuses a later switch, and the placeholder's empty model is rejected outright.
       const sendCtx = composerRef.current?.getSendContext();
       const scriptModelSelection = sendCtx?.providerAvailable
         ? createModelSelection(
@@ -396,11 +384,8 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
     if (!activeThreadRef) {
       return;
     }
-    // Host-driven path: a hosted environment runs the script in its sandbox,
-    // hosts it in a named terminal, and (when the script serves a port)
-    // publishes it and returns its URL. We only register the returned terminal
-    // and open the preview — the environment already opened the PTY, so we must
-    // not open one ourselves.
+    // Host-driven path: the hosted environment already opened the PTY, hosts it in a named terminal and
+    // publishes the port. Only register the returned terminal and open the preview; never open one here.
     if (supportsWorkspaceScripts) {
       const runInput = { threadId: activeThreadId, scriptId: script.id };
       let runResult = await runScript({ environmentId, input: runInput });
@@ -430,11 +415,9 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
         return;
       }
       const { terminalId, url, previewTabId } = runResult.value;
-      // Register the environment's terminal *before* opening the panel.
-      // Opening it first finds the thread with no terminal yet and
-      // synthesizes the default `term-1`, so the panel attaches to a session
-      // the environment never opened — a TerminalSessionLookupError in the
-      // user's face while the real script terminal is still starting.
+      // Register the environment's terminal *before* opening the panel. Opening first finds no terminal
+      // and synthesizes `term-1`, so the panel attaches to a session the environment never opened
+      // (TerminalSessionLookupError while the real script terminal is still starting).
       storeNewTerminal(activeThreadRef, terminalId);
       storeSetActiveTerminal(activeThreadRef, terminalId);
       setTerminalOpen(true);

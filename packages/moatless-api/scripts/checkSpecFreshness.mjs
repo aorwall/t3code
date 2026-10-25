@@ -1,26 +1,10 @@
 #!/usr/bin/env node
 /**
- * Fails when the checked-in Moatless API description no longer matches the
- * backend's own.
+ * Fails when the checked-in Moatless API description no longer matches the backend's own.
  *
- * The description is a contract held across two git repositories, which is the
- * one interface in this package that can go stale without anything failing at
- * build time. The first symptom otherwise is a decode error on an
- * administration page nobody opened during review, on a deployment nobody was
- * watching. This is the same guard the Moatless repo runs through
- * `task generate`, pointed the other way.
- *
- * Two ways to get the backend's description, in order of preference:
- *
- *   1. `--url <origin>` — read `/api-docs/openapi.json` from a running
- *      deployment. What CI uses against the environment it is about to deploy.
- *   2. `--moatless-repo <path>` — read `openapi-specs.json` from a sibling
- *      checkout. What a developer with both repos open uses. Defaults to
- *      `../moatless` relative to this repo, which is the workspace layout.
- *
- * Exits 0 when they match, 1 with a summary of the differing paths when they
- * do not. The summary lists paths rather than a full JSON diff, because a
- * 476 KB diff is not something a person reads out of a CI log.
+ * Sources: `--url <origin>` reads `/api-docs/openapi.json` from a deployment; `--moatless-repo
+ * <path>` reads `openapi-specs.json` from a checkout (default `../moatless`).
+ * Exits 0 on match, 1 with the differing paths otherwise.
  */
 
 import * as NodeFSP from "node:fs/promises";

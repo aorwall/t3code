@@ -16,21 +16,10 @@ import { moatlessApiAvailable } from "../fork/features";
 import { appAtomRegistry } from "../rpc/atomRegistry";
 
 /**
- * Reads and writes against the Moatless REST API, cached the way the rest of
- * this app caches.
- *
- * # Why this exists rather than `createEnvironmentQueryAtomFamily`
- *
- * `packages/client-runtime/src/state/runtime.ts:480` is the app's query helper
- * and it would type-check here — it takes any `Effect`. It also returns
- * `Effect.never` until the environment socket reports a connected generation
- * (`runtime.ts:516`), because everything it was built for is served over that
- * socket. Moatless REST data is not: it is HTTP, on the same origin, with the
- * same cookie, and it has no reason to wait for a chat connection. Reusing that
- * helper would blank every settings page whenever the socket reconnects.
- *
- * So this borrows the part that is about caching — `Atom.swr`, `setIdleTTL`,
- * registry-driven refresh — and none of the part that is about the socket.
+ * Reads and writes against the Moatless REST API, cached the way the rest of this app caches.
+ * Not `createEnvironmentQueryAtomFamily`: it returns `Effect.never` until the environment socket
+ * connects, and Moatless REST is plain same-origin HTTP, so reusing it would blank every settings
+ * page on socket reconnect. This borrows only the caching (`Atom.swr`, `setIdleTTL`).
  */
 
 /** How long a cached read is served before a background revalidation. */
@@ -40,12 +29,9 @@ const DEFAULT_STALE_TIME_MS = 30_000;
 const DEFAULT_IDLE_TTL_MS = 5 * 60_000;
 
 /**
- * A read, identified by a key.
- *
- * The key is the cache identity and the invalidation handle in one. It is a
- * path-like string — `workspaces`, `workspaces/{id}`, `plugins/{id}/skills` —
- * so that `invalidate("workspaces")` reaches a list and every detail under it
- * without anyone maintaining a second table of what depends on what.
+ * A read, identified by a key that is both cache identity and invalidation handle.
+ * Path-like (`workspaces`, `workspaces/{id}`) so `invalidate("workspaces")` reaches a list and
+ * every detail under it without a second dependency table.
  */
 export interface MoatlessQuery<A> {
   readonly key: string;
@@ -101,12 +87,9 @@ export function moatlessQuery<A>(
 }
 
 /**
- * Drop every cached read whose key starts with `prefix`, so the next observer
- * refetches.
- *
- * Prefix rather than exact match: a write to one repository placement changes
- * the workspace that holds it and the list that summarises it, and a caller
- * that has to enumerate those is a caller that will miss one.
+ * Drop every cached read whose key starts with `prefix`, so the next observer refetches.
+ * Prefix, not exact match: one write changes the workspace that holds it and the list that
+ * summarises it, and a caller enumerating those will miss one.
  */
 export function invalidate(prefix: string): void {
   for (const key of executors.keys()) {

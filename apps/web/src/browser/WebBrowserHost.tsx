@@ -8,12 +8,8 @@ import { HostedBrowserFrame } from "./HostedBrowserFrame";
 import { previewRuntimeTabId } from "./previewRuntimeTabId";
 
 /**
- * The browser counterpart of {@link ElectronBrowserHost}. Exactly one of the
- * two ever renders anything.
- *
- * It is mounted at the app root for the same reason that one is: a frame drawn
- * inside the panel would reload its page every time the panel collapses or the
- * route changes.
+ * The browser counterpart of {@link ElectronBrowserHost}; exactly one of the two renders.
+ * Mounted at the app root so a frame does not reload when the panel collapses or the route changes.
  */
 export function WebBrowserHost() {
   const previewByThreadKey = useActivePreviewSessions();

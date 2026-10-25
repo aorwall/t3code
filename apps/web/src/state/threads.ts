@@ -8,23 +8,28 @@ import {
   EMPTY_ENVIRONMENT_THREAD_STATE,
   type EnvironmentThreadState,
   createThreadEnvironmentAtoms,
+  createThreadFamilyAtoms,
 } from "@t3tools/client-runtime/state/threads";
 import type { EnvironmentId, OrchestrationV2ThreadShell, ThreadId } from "@t3tools/contracts";
 import * as Option from "effect/Option";
 import { AsyncResult, Atom } from "effect/reactivity";
+import { useEffect } from "react";
 
 import { environmentCatalog } from "../connection/catalog";
 import { connectionAtomRuntime } from "../connection/runtime";
+import { appAtomRegistry } from "../rpc/atomRegistry";
+import { environmentShell } from "./shell";
 // Fork: a Moatless listing is the open work you follow, not every thread there
 // is, so the snapshot these atoms read is the listing's plus any thread the
 // client is holding that the listing left out.
-import { adoptedEnvironmentSnapshotAtom } from "../fork/adoptedThreadShells";
+import { createAdoptedEnvironmentSnapshotAtom } from "../fork/adoptedThreadShells";
 
+const threadFamilies = createThreadFamilyAtoms(connectionAtomRuntime, environmentShell.stateAtom);
 export const threadEnvironment = createThreadEnvironmentAtoms(
   connectionAtomRuntime,
-  // Fork: see the import above. The graft is the base snapshot upstream's
-  // optimistic lifecycle layers over, so an adopted thread gets both.
-  adoptedEnvironmentSnapshotAtom,
+  // Fork: see the import above. The graft wraps upstream's family merge, the
+  // base snapshot the optimistic lifecycle layers over, so adopted threads get both.
+  createAdoptedEnvironmentSnapshotAtom(threadFamilies.snapshotAtom),
 );
 const environmentThreads = createEnvironmentThreadStateAtoms(connectionAtomRuntime);
 export const environmentThreadDetails = createEnvironmentThreadDetailAtoms(
@@ -34,6 +39,17 @@ export const environmentThreadShells = createEnvironmentThreadShellAtoms({
   catalogValueAtom: environmentCatalog.catalogValueAtom,
   snapshotAtom: threadEnvironment.snapshotAtom,
 });
+
+/** Keeps the subagent tree under `rootThreadId` in the thread list while the caller shows it. */
+export function useThreadFamily(
+  environmentId: EnvironmentId | null,
+  rootThreadId: ThreadId | null,
+): void {
+  useEffect(() => {
+    if (environmentId === null || rootThreadId === null) return;
+    return threadFamilies.mount(appAtomRegistry, environmentId, rootThreadId);
+  }, [environmentId, rootThreadId]);
+}
 
 const EMPTY_THREAD_STATE_ATOM = Atom.make(AsyncResult.success(EMPTY_ENVIRONMENT_THREAD_STATE)).pipe(
   Atom.withLabel("web-environment-thread:empty"),
@@ -70,11 +86,7 @@ function isDetailDone<E>(result: AsyncResult.AsyncResult<EnvironmentThreadState,
   );
 }
 
-/**
- * The shell and detail streams are independent, so the shell can report a stop
- * before the detail loads or catches up. A stopped thread stays mounted until
- * its own detail is live and shows the stop too.
- */
+/** Keeps stopped threads mounted until their independent detail stream is live and also reports stopped. */
 export function createRunningThreadKeepAliveAtom<E>(input: {
   readonly environmentIdsAtom: Atom.Atom<ReadonlyArray<EnvironmentId>>;
   readonly threadsAtom: (
@@ -105,8 +117,7 @@ export function createRunningThreadKeepAliveAtom<E>(input: {
       for (const threadId of previous?.get(environmentId) ?? []) {
         if (threadIds.has(threadId)) continue;
         const stateAtom = input.stateAtom(environmentId, threadId);
-        // `once`, not `get`: a dependency on a stopped thread would hold its
-        // stream open until some other change rebuilds this atom.
+        // A get dependency would hold stopped streams open until another change rebuilds this atom.
         if (isDetailDone(get.once(stateAtom))) continue;
         threadIds.add(threadId);
         get.subscribe(stateAtom, (state) => {

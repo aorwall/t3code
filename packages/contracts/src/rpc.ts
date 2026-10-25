@@ -162,6 +162,11 @@ import {
   ProviderUploadFeedbackResult,
 } from "./provider.ts";
 import { ProviderInstanceId, ProviderInstanceMutation } from "./providerInstance.ts";
+import {
+  GuestShareCreateError,
+  GuestShareCreateInput,
+  GuestShareCreateResult,
+} from "./guestShare.ts";
 import { PullRequestReviewGuideResult } from "./pullRequestReviewGuide.ts";
 import {
   PullRequestActionInput,
@@ -181,6 +186,8 @@ import {
   PullRequestListResult,
   PullRequestListStatsInput,
   PullRequestListStatsResult,
+  PullRequestFilterOptions,
+  PullRequestFilterOptionsInput,
   PullRequestOperationError,
   PullRequestReactionInput,
   PullRequestRef,
@@ -590,6 +597,7 @@ export const WS_METHODS = {
   scheduledTasksRunNow: "scheduledTasks.runNow",
   scheduledTasksRotateWebhookToken: "scheduledTasks.rotateWebhookToken",
   secretsAnswerRequest: "secrets.answerRequest",
+  guestShareCreate: "guestShare.create",
   scheduledTasksListWebhookDeliveries: "scheduledTasks.listWebhookDeliveries",
   scheduledTasksGetWebhookDelivery: "scheduledTasks.getWebhookDelivery",
 
@@ -598,6 +606,7 @@ export const WS_METHODS = {
 
   pullRequestsList: "pullRequests.list",
   pullRequestsListStats: "pullRequests.listStats",
+  pullRequestsFilterOptions: "pullRequests.filterOptions",
   pullRequestsSummary: "pullRequests.summary",
   pullRequestsRouting: "pullRequests.routing",
   pullRequestsRoutingIdentity: "pullRequests.routingIdentity",
@@ -690,8 +699,7 @@ const WsServerRefreshProvidersRpc = Rpc.make(WS_METHODS.serverRefreshProviders, 
     instanceId: Schema.optional(ProviderInstanceId),
     cwd: Schema.optional(TrimmedNonEmptyString),
     fresh: Schema.optional(Schema.Boolean),
-    /** Explicit user request: bypass T3-owned caches and rediscover models.
-     * Background status refreshes must not open agent sessions. */
+    /** Bypass model caches; explicit rediscovery may open sessions, background refreshes must not. */
     refreshModels: Schema.optional(Schema.Boolean),
   }),
   success: ServerProviderUpdatedPayload,
@@ -1115,14 +1123,16 @@ const WsPullRequestsListRpc = Rpc.make(WS_METHODS.pullRequestsList, {
   error: PullRequestRpcError,
 });
 
-/**
- * The line counts for rows already on the page. Its own call because on GitHub the pair costs
- * 40-60% of the listing read that answers everything else on the row, so the rows arrive first
- * and their stats a moment later.
- */
+// GitHub line counts cost 40-60% of the listing read; fetch separately so rows arrive first.
 const WsPullRequestsListStatsRpc = Rpc.make(WS_METHODS.pullRequestsListStats, {
   payload: PullRequestListStatsInput,
   success: PullRequestListStatsResult,
+  error: PullRequestRpcError,
+});
+
+const WsPullRequestsFilterOptionsRpc = Rpc.make(WS_METHODS.pullRequestsFilterOptions, {
+  payload: PullRequestFilterOptionsInput,
+  success: PullRequestFilterOptions,
   error: PullRequestRpcError,
 });
 
@@ -1290,11 +1300,7 @@ const WsPullRequestsSubscribeRefreshesRpc = Rpc.make(WS_METHODS.pullRequestsSubs
   stream: true,
 });
 
-/**
- * Read on its own rather than as part of the detail: the people who may be asked are only wanted
- * once somebody opens the menu, and reading them with every change request would spend a request
- * per host on a list nobody looked at.
- */
+// Fetch reviewer candidates only when the menu opens to avoid unused host requests.
 const WsPullRequestsReviewerCandidatesRpc = Rpc.make(WS_METHODS.pullRequestsReviewerCandidates, {
   payload: PullRequestRef,
   success: PullRequestReviewerCandidateList,
@@ -1340,8 +1346,7 @@ const WsSourceControlCloneRepositoryRpc = Rpc.make(WS_METHODS.sourceControlClone
   ]),
 });
 
-// Clone-backed project creation. `start` returns once the project exists and
-// the clone is running; progress arrives on the subscription.
+// Returns when the project exists and cloning starts; progress uses the subscription.
 //
 // Fork: Moatless creates projects from its own admin surfaces and dispatches no
 // projectClone.* method, so all four declare UnsupportedMethodError. See gaps.md.
@@ -1652,9 +1657,7 @@ const WsVcsListRefsRpc = Rpc.make(WS_METHODS.vcsListRefs, {
 });
 
 const WsVcsCreateWorktreeRpc = Rpc.make(WS_METHODS.vcsCreateWorktree, {
-  // Clients cannot choose the folder: new worktrees go in the server's managed
-  // worktrees folder. `path` stays a required null because older servers
-  // require the key.
+  // Worktrees use the managed folder; required null path preserves compatibility with older servers.
   payload: Schema.Struct({ ...VcsCreateWorktreeInput.fields, path: Schema.Null }),
   success: VcsCreateWorktreeResult,
   error: Schema.Union([GitCommandError, EnvironmentAuthorizationError, UnsupportedMethodError]),
@@ -1815,16 +1818,9 @@ const WsSubscribePreviewEventsRpc = Rpc.make(WS_METHODS.subscribePreviewEvents, 
 });
 
 /**
- * Fork: the child threads of a thread — tasks it created, and forks of it.
- *
- * Declared with `UnsupportedMethodError` because it is a Moatless concept:
- * `apps/server` has no task tree and answers with it, and the client has to
- * decode that rather than see an unexpected server error. A thread that simply
- * has no children answers with an empty list, which is not the same thing.
- *
- * Fork: `unsupported-methods.mjs` reports this method under DROP, because it
- * reads Moatless's own dispatch and not `apps/server`'s. The union member stays
- * regardless — see "A subtask is a Moatless concept" in docs/fork/gaps.md.
+ * Fork: the child threads of a thread (tasks it created, and forks of it).
+ * `UnsupportedMethodError` because `apps/server` has no task tree; no children is an empty list.
+ * Fork: reported under DROP by `unsupported-methods.mjs`; the union member stays (docs/fork/gaps.md).
  */
 export const WsSubtasksListRpc = Rpc.make(WS_METHODS.subtasksList, {
   payload: SubtasksListInput,
@@ -1833,20 +1829,9 @@ export const WsSubtasksListRpc = Rpc.make(WS_METHODS.subtasksList, {
 });
 
 /**
- * Fork: one thread's listing row, asked for by id.
- *
- * Upstream needs no such method because its shell listing is every thread there
- * is. A Moatless sidebar is the open work a person follows, so a thread reached
- * by link, task tree or archive arrives with a transcript and no row — see
- * `threadShellLookup.ts`.
- *
- * A thread that is missing or out of reach is `null` in the success payload,
- * not an error: the caller is already showing the thread, and failing the read
- * would take a rendered transcript off the screen over a missing title.
- *
- * Fork: `unsupported-methods.mjs` reports this method under DROP, because it
- * reads Moatless's own dispatch and not `apps/server`'s. The union member stays
- * regardless — see "A thread outside the listing" in docs/fork/gaps.md.
+ * Fork: one thread's listing row, asked for by id (`threadShellLookup.ts`). A missing or
+ * unreadable thread is `null`, not an error: failing would unrender a shown transcript.
+ * Fork: reported under DROP by `unsupported-methods.mjs`; the union member stays (docs/fork/gaps.md).
  */
 export const WsThreadsGetShellRpc = Rpc.make(WS_METHODS.threadsGetShell, {
   payload: ThreadShellGetInput,
@@ -1855,20 +1840,10 @@ export const WsThreadsGetShellRpc = Rpc.make(WS_METHODS.threadsGetShell, {
 });
 
 /**
- * Fork: the listing rows a filter names.
- *
- * Upstream needs no such method because its shell listing already carries every
- * thread, so filtering is something its client does over rows it holds. A
- * Moatless listing is one person's follows, so the threads a filter is for were
- * never sent — see `threadBrowse.ts`.
- *
- * An environment that does not declare the `threadBrowse` capability answers
- * with `UnsupportedMethodError`, and a client reading the descriptor offers no
- * filter there at all.
- *
- * Fork: `unsupported-methods.mjs` reports this method under DROP, because it
- * reads Moatless's own dispatch and not `apps/server`'s. The union member stays
- * regardless — see "Listing somebody else's threads" in docs/fork/gaps.md.
+ * Fork: the listing rows a filter names. A Moatless listing is one person's follows, so the
+ * threads a filter is for were never sent (`threadBrowse.ts`). Without the `threadBrowse`
+ * capability it answers `UnsupportedMethodError`.
+ * Fork: reported under DROP by `unsupported-methods.mjs`; the union member stays (docs/fork/gaps.md).
  */
 export const WsThreadsBrowseRpc = Rpc.make(WS_METHODS.threadsBrowse, {
   payload: ThreadBrowseInput,
@@ -1877,17 +1852,10 @@ export const WsThreadsBrowseRpc = Rpc.make(WS_METHODS.threadsBrowse, {
 });
 
 /**
- * Runs a project's script in the environment. Declared with
- * `UnsupportedMethodError` because an environment without the `workspaceScripts`
- * capability — every T3-hosted one today — answers with it, and the client must
- * decode that rather than see an unexpected server error.
- *
- * Fork: `unsupported-methods.mjs` reports this method under DROP once Moatless
- * dispatches it, because it reads Moatless's own dispatch, not `apps/server`'s.
- * `apps/server` (T3's bundled server) has no sandbox to run a script in and
- * still answers `scriptsRun` with `UnsupportedMethodError` unconditionally (see
- * `apps/server/src/ws.ts`), so the union member stays regardless of what the
- * script says — see "A script runs on the backend" in docs/fork/gaps.md.
+ * Runs a project's script in the environment. Declared with `UnsupportedMethodError` because
+ * environments without `workspaceScripts` (every T3-hosted one) answer with it.
+ * Fork: reported under DROP by `unsupported-methods.mjs`, but `apps/server` still answers
+ * `scriptsRun` with it unconditionally, so the union member stays (docs/fork/gaps.md).
  */
 export const WsScriptsRunRpc = Rpc.make(WS_METHODS.scriptsRun, {
   payload: ScriptsRunInput,
@@ -1904,16 +1872,9 @@ export const WsScriptsRunRpc = Rpc.make(WS_METHODS.scriptsRun, {
 /**
  * Fork: the scripts one thread can run, its own declarations included.
  *
- * Declared with `UnsupportedMethodError` because a thread that declares scripts
- * for itself is a Moatless concept: `apps/server` answers with it, and every
- * environment without the `taskScripts` capability does too, so a client that
- * asks under version skew has something to decode. A client that receives that
- * error shows the project's own script list, which every environment serves.
- *
- * Fork: `unsupported-methods.mjs` reports this method under DROP once Moatless
- * dispatches it, because it reads Moatless's own dispatch, not `apps/server`'s.
- * The union member stays regardless — see "A script runs on the backend" in
- * docs/fork/gaps.md.
+ * Declared with `UnsupportedMethodError`: `apps/server` and environments without `taskScripts`
+ * answer with it, and the client then shows the project's scripts.
+ * Fork: reported under DROP by `unsupported-methods.mjs`; the union member stays (docs/fork/gaps.md).
  */
 export const WsScriptsListForThreadRpc = Rpc.make(WS_METHODS.scriptsListForThread, {
   payload: ScriptsListForThreadInput,
@@ -1928,13 +1889,8 @@ export const WsSandboxStatusRpc = Rpc.make(WS_METHODS.sandboxStatus, {
 });
 
 /**
- * Fork: pushes the thread's sandbox status whenever it changes, seeded with the
- * current one so a subscriber never renders empty while it waits.
- *
- * Lifecycle has no event behind it — a sandbox reaches ready because a pod did
- * — so the environment polls once per subscriber instead of every client
- * polling for itself. An idle subscription is silent: no message means nothing
- * moved, not that nothing is known.
+ * Fork: pushes the thread's sandbox status on change, seeded with the current one.
+ * The environment polls once per subscriber; silence means nothing moved, not nothing known.
  */
 export const WsSandboxSubscribeStatusRpc = Rpc.make(WS_METHODS.sandboxSubscribeStatus, {
   payload: SandboxStatusSubscribeInput,
@@ -1958,13 +1914,9 @@ export const WsSandboxStopRpc = Rpc.make(WS_METHODS.sandboxStop, {
 /**
  * Fork: the sandbox panel's read. See the `SandboxDetail` module doc.
  *
- * Declared with `UnsupportedMethodError` because Moatless dispatches
- * `sandbox.subscribeDetail` and not this one-shot sibling. The panel prefers the
- * push and only polls this as the fallback for a server without it, so the
- * refusal is reachable exactly when a deployment reports
- * `capabilities.sandboxDetail` while serving only the stream — and a client that
- * could not decode it would report a stopped panel as an unexpected server
- * error.
+ * Declared with `UnsupportedMethodError` because Moatless dispatches only
+ * `sandbox.subscribeDetail`; a client that cannot decode the refusal would report a stopped
+ * panel as an unexpected server error.
  */
 export const WsSandboxDetailRpc = Rpc.make(WS_METHODS.sandboxDetail, {
   payload: SandboxDetailInput,
@@ -1973,12 +1925,8 @@ export const WsSandboxDetailRpc = Rpc.make(WS_METHODS.sandboxDetail, {
 });
 
 /**
- * Fork: the same read, pushed while the panel is open.
- *
- * A tenth the rate of `sandbox.subscribeDetail`'s sibling on the indicator: the
- * containers and events behind it move on the scale of a pod restart, not of a
- * status poll. Silence means nothing moved, as it does on every subscription
- * here.
+ * Fork: the same read, pushed while the panel is open. Slower than the status indicator's
+ * subscription (a tenth the rate), since containers and events move on pod-restart scale.
  */
 export const WsSandboxSubscribeDetailRpc = Rpc.make(WS_METHODS.sandboxSubscribeDetail, {
   payload: SandboxDetailSubscribeInput,
@@ -2167,6 +2115,31 @@ const WsOrchestrationV2GetArchivedShellSnapshotRpc = Rpc.make(
   },
 );
 
+const WsOrchestrationV2GetThreadFamilyRpc = Rpc.make(ORCHESTRATION_V2_WS_METHODS.getThreadFamily, {
+  payload: OrchestrationV2RpcSchemas.getThreadFamily.input,
+  success: OrchestrationV2RpcSchemas.getThreadFamily.output,
+  // Fork: Moatless sends no `shellThreadFamilies`, so it dispatches neither family read. See gaps.md.
+  error: Schema.Union([
+    OrchestrationV2GetShellSnapshotError,
+    EnvironmentAuthorizationError,
+    UnsupportedMethodError,
+  ]),
+});
+
+const WsOrchestrationV2GetWorktreeThreadIdsRpc = Rpc.make(
+  ORCHESTRATION_V2_WS_METHODS.getWorktreeThreadIds,
+  {
+    payload: OrchestrationV2RpcSchemas.getWorktreeThreadIds.input,
+    success: OrchestrationV2RpcSchemas.getWorktreeThreadIds.output,
+    // Fork: see getThreadFamily above.
+    error: Schema.Union([
+      OrchestrationV2GetShellSnapshotError,
+      EnvironmentAuthorizationError,
+      UnsupportedMethodError,
+    ]),
+  },
+);
+
 const WsOrchestrationV2GetThreadProjectionRpc = Rpc.make(
   ORCHESTRATION_V2_WS_METHODS.getThreadProjection,
   {
@@ -2266,18 +2239,10 @@ const WsSubscribeTerminalMetadataRpc = Rpc.make(WS_METHODS.subscribeTerminalMeta
 
 export const WsSubscribeServerConfigRpc = Rpc.make(WS_METHODS.subscribeServerConfig, {
   payload: Schema.Struct({
-    /**
-     * Already-shipped clients decode the stream against the old event union and
-     * would die on an unknown member, so the server emits the theme stream only
-     * to subscribers that ask for it.
-     */
+    /** Opt-in protects older clients that reject unknown theme event types. */
     environmentThemes: Schema.optional(Schema.Boolean),
     usageLimitSources: Schema.optional(Schema.Boolean),
-    /**
-     * Whether this client answers `/usage-limits` itself. The server injects
-     * that command into provider catalogs only for such clients; an older
-     * client would send it to the provider as an ordinary prompt.
-     */
+    /** Advertise client handling before the server offers /usage-limits, or older clients send it as a prompt. */
     usageLimitsCommand: Schema.optional(Schema.Boolean),
   }),
   success: ServerConfigStreamEvent,
@@ -2342,6 +2307,17 @@ const WsScheduledTasksRotateWebhookTokenRpc = Rpc.make(
   },
 );
 
+const WsGuestShareCreateRpc = Rpc.make(WS_METHODS.guestShareCreate, {
+  payload: GuestShareCreateInput,
+  success: GuestShareCreateResult,
+  // Fork: Moatless has no guest sharing and dispatches no guestShare.* method. See gaps.md.
+  error: Schema.Union([
+    GuestShareCreateError,
+    EnvironmentAuthorizationError,
+    UnsupportedMethodError,
+  ]),
+});
+
 const WsSecretsAnswerRequestRpc = Rpc.make(WS_METHODS.secretsAnswerRequest, {
   payload: SecretRequestAnswerInput,
   error: Schema.Union([SecretRequestError, EnvironmentAuthorizationError, UnsupportedMethodError]),
@@ -2400,6 +2376,7 @@ export class RpcScopeAuthorization extends RpcMiddleware.Service<RpcScopeAuthori
 ) {}
 
 export const WsRpcGroup = RpcGroup.make(
+  WsGuestShareCreateRpc,
   WsServerProbeRpc,
   WsServerGetConfigRpc,
   WsServerRefreshProvidersRpc,
@@ -2468,6 +2445,7 @@ export const WsRpcGroup = RpcGroup.make(
   WsCloudInstallRelayClientRpc,
   WsPullRequestsListRpc,
   WsPullRequestsListStatsRpc,
+  WsPullRequestsFilterOptionsRpc,
   WsPullRequestsSummaryRpc,
   WsPullRequestsRoutingRpc,
   WsPullRequestsRoutingIdentityRpc,
@@ -2615,6 +2593,8 @@ export const WsRpcGroup = RpcGroup.make(
   WsOrchestrationV2SearchThreadRpc,
   WsOrchestrationV2SearchThreadStreamRpc,
   WsOrchestrationV2GetArchivedShellSnapshotRpc,
+  WsOrchestrationV2GetThreadFamilyRpc,
+  WsOrchestrationV2GetWorktreeThreadIdsRpc,
   WsOrchestrationV2GetThreadProjectionRpc,
   WsOrchestrationV2LaunchThreadRpc,
   WsOrchestrationV2SubscribeArchivedShellRpc,

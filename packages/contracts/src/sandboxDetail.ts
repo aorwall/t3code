@@ -1,25 +1,9 @@
 /**
- * Sandbox detail — everything the sandbox panel shows beside the lifecycle
- * state.
+ * Sandbox detail: everything the sandbox panel shows beside the lifecycle state. Fork-only.
  *
- * Fork-only. Upstream has no sandbox to describe: a thread runs on the machine
- * the server runs on. A Moatless thread runs in a pod that can be restarted,
- * redeployed, reaped for idleness, or found holding a container that will not
- * start, and this is the read that says which.
- *
- * Deliberately separate from `SandboxStatusResult` in `sandbox.ts` rather than
- * more keys on it. That result backs an always-open subscription every client
- * holds for its status indicator, and this one is read at a tenth the rate by
- * the one panel that is open. Widening the indicator's shape would make every
- * client pay for a panel it is not showing.
- *
- * **Every runtime-sourced section is absent rather than empty.** A
- * docker-compose deployment serves no containers and no events, and a
- * Kubernetes one without metrics-server serves no per-container metrics. The
- * panel hides a section it was sent nothing for, instead of rendering zeroes
- * that read as measurements.
- *
- * @module SandboxDetail
+ * Separate from `SandboxStatusResult`, which backs an always-open subscription every client holds.
+ * Every runtime-sourced section is absent, not empty, when unserved; the panel hides it
+ * instead of rendering zeroes that read as measurements. @module SandboxDetail
  */
 import { Schema } from "effect";
 import { ThreadId } from "./baseSchemas.ts";
@@ -86,13 +70,10 @@ export const SandboxContainerInfo = Schema.Struct({
 export type SandboxContainerInfo = typeof SandboxContainerInfo.Type;
 
 /**
- * One thing the runtime did to the sandbox: a scheduling failure, an image
- * pull, a crash-loop back-off.
+ * One thing the runtime did to the sandbox: a scheduling failure, an image pull, a back-off.
  *
- * `severity` is the runtime's own word and is not narrowed to literals here.
- * Kubernetes writes `Normal` and `Warning` today; a value neither of those must
- * not fail the decode and blank the whole panel, so the client treats anything
- * that is not a warning as neutral.
+ * `severity` is not narrowed to literals: an unknown value must not fail the decode and
+ * blank the panel, so the client treats anything but a warning as neutral.
  */
 export const SandboxRuntimeEventInfo = Schema.Struct({
   reason: Schema.String,

@@ -1,14 +1,7 @@
 /**
- * Go to definition from the file viewer: Cmd- or Ctrl-click a symbol and the
- * file that declares it opens at the declaration.
- *
- * Fork-only. The answer comes from `projects.goToDefinition`, which a Moatless
- * sandbox serves from a language server it starts for the Workspace's
- * `languageServers`. Upstream's server refuses the method, so against it the
- * click shows a toast and nothing else changes.
- *
- * Pierre renders each line as a `[data-line="N"]` element holding only that
- * line's code, inside an open shadow root; `composedPath()` reaches into it.
+ * Fork-only. Cmd/Ctrl-click go-to-definition in the file viewer, via `projects.goToDefinition`
+ * (served from a sandbox language server; upstream refuses it, so the click only toasts).
+ * Pierre renders each line as `[data-line="N"]` in an open shadow root; use `composedPath()`.
  */
 import { createEnvironmentRpcQueryAtomFamily } from "@t3tools/client-runtime/state/runtime";
 import { WS_METHODS, type EnvironmentId, type ScopedThreadRef } from "@t3tools/contracts";

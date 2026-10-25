@@ -1,11 +1,7 @@
 /**
- * Fork-only. Turns a Moatless task link — `/tasks/<task id>`, the URL Moatless
- * itself prints for a task — into this client's thread route.
- *
- * The link cannot name an environment: the `moatless-<digest>` id is derived
- * from the backend's database identity and only reaches the client when the
- * connection reports it, so the environment has to be resolved here at open
- * time rather than baked into the link.
+ * Fork-only. Turns a Moatless `/tasks/<task id>` link into this client's thread route.
+ * The link cannot name an environment (its id is only known once the connection reports it),
+ * so resolve it at open time rather than baking it into the link.
  */
 import type { EnvironmentId, ThreadId } from "@t3tools/contracts";
 

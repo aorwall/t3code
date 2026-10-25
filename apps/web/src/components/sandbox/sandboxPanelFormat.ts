@@ -1,10 +1,7 @@
 /**
- * Fork-only: the sandbox panel's pure presentation rules.
- *
- * Separated from the panel so the decisions that are easy to get wrong — which
- * control a lifecycle state may offer, which of a container's four reason
- * fields explains it, what a missing metric renders as — are testable without a
- * render.
+ * Fork-only: the sandbox panel's pure presentation rules, separated from the panel so the easy-to-
+ * get-wrong decisions (offered controls, which reason field explains a container, missing-metric
+ * rendering) are testable without a render.
  */
 import type {
   SandboxContainerInfo,
@@ -18,12 +15,8 @@ export type SandboxAction = "start" | "stop" | "restart" | "redeploy" | "cleanup
 
 /**
  * Which transitions make sense from a lifecycle state.
- *
- * `restart` replaces the pod and `redeploy` rebuilds the deployment, so both
- * need one to exist: neither is offered before the sandbox has ever been
- * created. `cleanup` deletes the workspace archives as well, so it stays
- * available for a sandbox that is stopped — that is the state someone reaches
- * before deciding they are finished with the thread.
+ * `restart` and `redeploy` need an existing pod/deployment, so neither is offered before first
+ * creation. `cleanup` deletes workspace archives and stays available for a stopped sandbox.
  */
 export function sandboxActionsFor(status: SandboxRuntimeStatus | null): ReadonlySet<SandboxAction> {
   switch (status) {
@@ -126,12 +119,9 @@ export function totalContainerResources(containers: ReadonlyArray<SandboxContain
 }
 
 /**
- * Why a container is not running, from whichever of the runtime's four reason
- * fields applies.
- *
- * A crash-looping container is `waiting` now and says nothing about the crash,
- * so the previous run's reason is what explains it — which is why the `last`
- * pair is read before giving up.
+ * Why a container is not running, from whichever of the runtime's four reason fields applies.
+ * A crash-looping container is `waiting` and says nothing about the crash, so the previous run's
+ * `last` pair is read before giving up.
  */
 export function containerReason(container: SandboxContainerInfo): string | null {
   if (container.state === "running") return null;

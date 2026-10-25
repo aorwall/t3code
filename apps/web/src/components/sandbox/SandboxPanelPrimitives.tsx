@@ -1,15 +1,8 @@
 /**
  * Fork-only: the sandbox panel's layout vocabulary.
- *
- * These are the settings-page diagnostics blocks (`DiagnosticsSettings`,
- * `ResourceTelemetryDiagnostics`) narrowed to a right-panel column: a section
- * header, a labelled value, and a table. They are copied rather than imported
- * because those files are upstream's and export none of this — exporting from
- * them would put a fork edit in a file every upstream merge touches, to reuse
- * markup that is four elements long.
- *
- * The rhythm follows `AgentsPanel`: uppercase micro-headers, tight rows, and
- * one scroll container around the whole body.
+ * Copied from the settings-page diagnostics blocks (`DiagnosticsSettings`,
+ * `ResourceTelemetryDiagnostics`), not imported: those files are upstream's, and exporting from
+ * them would put a fork edit in a file every merge touches. Rhythm follows `AgentsPanel`.
  */
 import type { ReactNode } from "react";
 

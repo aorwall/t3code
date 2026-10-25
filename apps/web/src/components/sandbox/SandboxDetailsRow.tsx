@@ -1,10 +1,7 @@
 /**
- * Fork-only: the thread details panel's sandbox row, which stands where
- * upstream shows the thread's workspace kind (`FEATURES.worktreeSelection`).
- *
- * One line saying what the sandbox is doing, and a menu of the lifecycle
- * actions its state allows. Cleanup stays in the Sandbox panel: it deletes the
- * workspace, and a popover row is too easy a place to reach it from.
+ * Fork-only: the thread details panel's sandbox row, standing where upstream shows the workspace
+ * kind (`FEATURES.worktreeSelection`). One status line plus the lifecycle actions the state allows.
+ * Cleanup stays in the Sandbox panel: it deletes the workspace.
  */
 import type { ScopedThreadRef } from "@t3tools/contracts";
 import { LoaderCircleIcon } from "lucide-react";

@@ -1,10 +1,7 @@
 /**
- * Fork-only. What the Version control page says about the viewer's Forgejo
- * instances.
- *
- * Apart from `accountRows` because Forgejo is self-hosted: there is no single
- * account to read, so every rule here takes one instance's status, which the
- * deployment's own list of registered instances supplies.
+ * Fork-only. What the Version control page says about the viewer's Forgejo instances.
+ * Apart from `accountRows` because Forgejo is self-hosted: every rule takes one instance's status,
+ * supplied by the deployment's list of registered instances.
  */
 
 import type { ForgejoProviderTokenStatusResponse } from "@t3tools/moatless-api/generated/model";
@@ -19,16 +16,10 @@ const AUTH_METHOD_FORGEJO_OAUTH = "forgejo_oauth";
 export const FORGEJO_HOST_PARAM = "forgejoHost";
 
 /**
- * The host part of a value that may carry a whole URL, so it names the same
- * instance the backend does. Empty when the value names no host.
- *
- * Drops a scheme, a path, a query, a fragment and a trailing dot, which is what
- * the backend's own `normalize_host` drops. A host this disagrees with is a
- * host the page cannot match against the list it was given.
- *
- * The port is kept: `git.example.com:3000` is a different instance from
- * `git.example.com`, and the backend keys every credential on the whole
- * authority.
+ * The host part of a value that may carry a whole URL; empty when it names no host.
+ * Drops scheme, path, query, fragment and trailing dot, as the backend's `normalize_host` does;
+ * a host this disagrees with cannot be matched against the instance list. The port is kept:
+ * `git.example.com:3000` is a different instance, and credentials key on the whole authority.
  */
 export function forgejoHost(value: string): string {
   const withoutScheme = value.trim().replace(/^[a-z][a-z0-9+.-]*:\/\//i, "");
@@ -88,13 +79,10 @@ export function canConnectForgejoOauth(status: ForgejoProviderTokenStatusRespons
 }
 
 /**
- * The label for the authorize button, or `null` when this instance has no
- * OAuth2 application to authorize against.
- *
- * Offered beside a personal access token rather than instead of one, on the
- * same terms as [`accountRows.githubConnectLabel`]: authorizing while a token
- * is set stashes the credential, and `hasPatOverride` then offers the switch
- * back to it.
+ * The label for the authorize button, or `null` when the instance has no OAuth2 application.
+ * Offered beside a personal access token, on the same terms as
+ * [`accountRows.githubConnectLabel`]: authorizing stashes the credential and `hasPatOverride`
+ * offers the switch back.
  */
 export function forgejoConnectLabel(
   status: ForgejoProviderTokenStatusResponse | null,

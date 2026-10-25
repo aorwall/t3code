@@ -1,17 +1,7 @@
 /**
  * Fork-only. What the sidebar list is narrowed to, beyond the project scope.
- *
- * A Moatless listing is the open work the viewer follows, so narrowing it is
- * two different operations wearing one control. Owner and tag reach *outside*
- * the listing — they are `threads.browse`, a read of what the viewer may see
- * rather than what they follow, and the rows come back in place of the listing
- * rather than filtered out of it. "Include closed" stays inside it: closed work
- * the viewer follows is already served by `orchestration.getArchivedShellSnapshot`,
- * and it is appended. "Hide subtasks" is neither: it only drops rows the sidebar
- * already holds, so it never reaches the server.
- *
- * Its own store rather than a field in `uiStateStore`: that one is upstream's,
- * and this whole surface disappears with the fork.
+ * Owner and tag use `threads.browse` and replace the listing; "Include closed" appends to it;
+ * "Hide subtasks" only drops held rows. Own store: `uiStateStore` is upstream's.
  */
 import type { ThreadBrowseInput } from "@t3tools/contracts";
 import { create } from "zustand";
@@ -93,12 +83,9 @@ export function isSidebarSubtaskThread(thread: {
 }
 
 /**
- * The rows a sidebar shows: a browse in place of the listing, or the listing
- * with the closed half of it appended.
- *
- * `archived` is empty unless "include closed" is on, so it needs no flag of its
- * own. It is deduplicated against `listed` because the adoption graft can put a
- * closed thread in the listing — the one the viewer is reading right now.
+ * The rows a sidebar shows: a browse in place of the listing, or the listing plus closed rows.
+ * Deduplicate `archived` against `listed`: the adoption graft can put the thread being read
+ * into the listing as a closed one.
  */
 export function composeSidebarThreadList<
   T extends { readonly environmentId: string; readonly id: string },

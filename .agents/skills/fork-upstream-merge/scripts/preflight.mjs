@@ -4,14 +4,8 @@
  *
  *   node .agents/skills/fork-upstream-merge/scripts/preflight.mjs
  *
- * Fetches upstream (un-shallowing first if the sandbox clone is shallow, which
- * otherwise reports an empty merge-base and silently turns the whole upstream
- * range into "new"), then reports the range, the stale inventory entries, and
- * the conflicts this merge is going to produce — each already carrying the path
- * policy verdict that resolves it.
- *
- * The forecast is the point. Conflict resolution is most of a merge's cost, and
- * it is far cheaper planned than discovered one `<<<<<<<` at a time.
+ * Fetches upstream (un-shallowing first, or merge-base is empty), then reports the range, stale
+ * inventory entries, and forecast conflicts with their path-policy verdicts.
  */
 import {
   Report,
@@ -65,15 +59,10 @@ function groupByVerdict(inventory, paths) {
 }
 
 /**
- * The plan for the merge, in two parts: the files git will actually stop on, and
- * the ones it will resolve on its own.
+ * The plan for the merge: files git will stop on, and files it resolves itself.
  *
- * Every file both sides touched over-reports the work by about 5x, because git
- * auto-merges most of them. `merge-tree` runs the real merge into a temporary
- * tree and says which files it could not resolve, so the first list is the
- * actual conflict set and the second is the "read these anyway" set. Both
- * matter, and confusing one for the other makes the forecast something to
- * skim.
+ * All-files-touched over-reports about 5x; `merge-tree` gives the real conflict set, the second
+ * list is the "read these anyway" set. Do not conflate them.
  */
 function forecast(base, ref) {
   const upstreamChanged = new Set(lines(git(["diff", "--name-only", base, ref])));
@@ -209,13 +198,10 @@ function reportNewFiles(inventory, report, base, ref) {
 }
 
 /**
- * The forecast as data, grouped the way the work divides.
+ * The forecast as data, grouped by concern.
  *
- * Conflicts are keyed by concern rather than listed by path because a concern
- * is the unit that can be resolved independently. One concern regularly spans
- * several files whose edits depend on each other — a removed re-export in one
- * breaks another — so splitting by file splits a single decision across two
- * people who cannot see each other.
+ * A concern is the unit resolvable independently; one can span files whose edits depend on each
+ * other (a removed re-export breaks another), so splitting by file splits one decision.
  */
 function forecastJson(inventory, base, ref, upstreamHead, count) {
   const { overlap, conflicts } = forecast(base, ref);

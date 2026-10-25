@@ -1,11 +1,7 @@
 /**
- * The registry's two lookup maps key off strings that live in upstream code —
- * a settings route path and a palette action's `value`. Nothing type-checks
- * that pairing, and both lookups treat an unknown key as *enabled*, so a
- * rename upstream turns a gate off silently rather than breaking a build.
- *
- * These tests are that missing check: they read the keys back out of the
- * upstream sources rather than restating them.
+ * The registry's lookup maps key off upstream strings (a settings route path, a palette `value`).
+ * Unknown keys count as *enabled*, so an upstream rename silently turns a gate off.
+ * These tests read the keys back out of the upstream sources rather than restating them.
  */
 import { describe, expect, it } from "vite-plus/test";
 
@@ -171,22 +167,10 @@ describe("the palette action map", () => {
 });
 
 /**
- * Some gates are read inline rather than through a lookup map, and sit on lines
- * upstream owns and edits. A merge that takes upstream's side of one drops the
- * gate with no type error and no failing assertion anywhere else — threads
- * quietly settle on a stranger's merged PR again. Same missing check as the maps
- * above, in the same idiom.
- *
- * Which symbol has to survive in which file is not restated here: it is read
- * from the `guard` entries in `docs/fork/inventory.json`, so the merge tooling
- * and this test cannot drift apart, and adding a guard needs no change here.
- *
- * The sources are reached through `import.meta.glob` rather than a static
- * `?raw` import per file, because upstream renames these files. A hard-coded
- * specifier turns that rename into an unresolved import — the whole suite fails
- * to build, at a module path, saying nothing about the gate. Going through the
- * glob makes the same rename fail as a named assertion below, which is the
- * finding: the inventory entry needs re-pointing at the file's new home.
+ * Some gates are read inline on lines upstream edits; a merge taking upstream's side drops
+ * the gate with no type error or failing test. Which symbol must survive in which file is read
+ * from the `guard` entries in `docs/fork/inventory.json`.
+ * Sources load via `import.meta.glob` so an upstream rename fails as a named assertion.
  */
 const WEB_SOURCE_PREFIX = "apps/web/src/";
 const FORK_SOURCE_PREFIX = "apps/web/src/fork/";

@@ -1,10 +1,7 @@
 /**
  * Fork-only: what the thread's sandbox is doing, in one line.
- *
- * An indicator, not a control. It renders inside the launcher card and the "+"
- * menu entry that open the sandbox surface, both of which are buttons, so it
- * holds no button of its own: every sandbox action lives in the surface it
- * points at.
+ * An indicator, not a control: it renders inside buttons (launcher card, "+" menu entry), so it
+ * holds no button of its own.
  */
 import type { SandboxStatusResult } from "@t3tools/contracts";
 import { AlertTriangleIcon, LoaderCircleIcon } from "lucide-react";

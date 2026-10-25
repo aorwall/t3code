@@ -1,17 +1,8 @@
 /**
  * Fork-only. The atom for one thread's listing row, asked for by id.
  *
- * A plain query with no refresh interval, because this is not a second source
- * of truth for a thread — it is how the client learns the row for a thread the
- * listing never carried. Once it has one, the shell subscription is what keeps
- * it current for as long as the thread is in the listing at all, and a thread
- * that is not in the listing has nothing pushing changes to re-read.
- *
- * The stale time is long for the same reason: what this returns is a title, a
- * project and an archived stamp, none of which move while someone reads the
- * thread underneath them.
- *
- * @module state/threadShellLookup
+ * A plain query with a long stale time: it only fetches rows the listing never carried, and
+ * the shell subscription keeps any row in the listing current. @module state/threadShellLookup
  */
 import { WS_METHODS } from "@t3tools/contracts";
 import type { Atom } from "effect/reactivity";

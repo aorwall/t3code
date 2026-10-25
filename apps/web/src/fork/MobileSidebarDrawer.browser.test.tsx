@@ -1,10 +1,6 @@
 /**
- * Fork-only. Upstream removed react-test-renderer and the
- * apps/web/src/test/{reactElementTree,reactHookHarness} helpers in favor of
- * vitest browser mode, so this replaces the deleted MobileSidebarDrawer.test.tsx
- * with the same coverage driven through real DOM. The row-gesture suite also
- * trades the original's fake window/document listener maps for real
- * PointerEvent/TouchEvent dispatch, now that a real Chromium is available.
+ * Fork-only. Replaces the deleted MobileSidebarDrawer.test.tsx (upstream dropped
+ * react-test-renderer) with the same coverage on real DOM and real Pointer/TouchEvents.
  */
 import { type CSSProperties } from "react";
 import { describe, expect, it, vi } from "vite-plus/test";

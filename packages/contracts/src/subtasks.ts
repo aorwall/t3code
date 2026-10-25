@@ -1,20 +1,8 @@
 /**
- * Subtasks — the threads a thread spawned.
+ * Subtasks: the threads a thread spawned. Fork-only.
  *
- * Fork-only. Upstream has one kind of child: a subagent, folded out of a
- * thread's own activities, living and dying inside that conversation. A
- * Moatless backend has a second — a task another task created, or a fork of
- * one — and it is a thread in its own right: its own transcript, its own
- * sandbox, its own status, its own route.
- *
- * That difference is why this is a separate method rather than more members on
- * the orchestration thread stream. A subagent has no `threadId` to open and a
- * subtask has no activity to fold, so a shape that carried both would be a
- * union whose halves share almost nothing, and every reader would branch on the
- * discriminant anyway. The agents panel renders the two as two sections.
- *
- * Reads only. Nothing here creates, retitles, or closes a subtask.
- *
+ * Unlike a subagent (folded from activities, no `threadId`), a subtask is a thread with its
+ * own transcript, sandbox and route, so it is a separate method, not a union member. Reads only.
  * @module Subtasks
  */
 import { Schema } from "effect";
@@ -31,12 +19,9 @@ export const SubtaskRelation = Schema.Literals(["createdBy", "forkedFrom"]);
 export type SubtaskRelation = typeof SubtaskRelation.Type;
 
 /**
- * A subtask's state, deliberately spelled in the agents panel's own status
- * vocabulary so a subtask row and a subagent row read the same.
- *
- * `idle` is the settled-but-resumable state a finished-for-now thread sits in;
- * `completed` means the thread was closed. A backend maps its own lifecycle
- * onto these — it does not send its native status.
+ * A subtask's state, spelled in the agents panel's status vocabulary so subtask and
+ * subagent rows read the same. `idle` is settled-but-resumable; `completed` means closed.
+ * A backend maps its lifecycle onto these and never sends its native status.
  */
 export const SubtaskStatus = Schema.Literals([
   "pending",
@@ -51,13 +36,8 @@ export type SubtaskStatus = typeof SubtaskStatus.Type;
 /**
  * One child thread.
  *
- * `threadId` is the whole point of the row: it is a real thread, and the client
- * opens it on the same route as any other. Everything else is what the row
- * shows before you click it.
- *
- * `awaitingInput` is separate from `status` rather than a status of its own,
- * because a child parked on a question is still running — the status says what
- * the run is doing and this says who it is waiting for.
+ * `threadId` is a real thread, opened on the usual route. `awaitingInput` is separate from
+ * `status` because a child parked on a question is still running.
  */
 export const Subtask = Schema.Struct({
   threadId: ThreadId,
@@ -83,13 +63,10 @@ export const SubtasksListInput = Schema.Struct({
 export type SubtasksListInput = typeof SubtasksListInput.Type;
 
 /**
- * Every child thread of the named thread that this viewer may read, in spawn
- * order.
+ * Every child thread of the named thread that this viewer may read, in spawn order.
  *
- * Spawn order, not recency: the panel updates rows in place and must not
- * re-sort itself when a child starts working or finishes. A child the viewer
- * cannot read is absent rather than redacted, and a thread with no children
- * answers with an empty list rather than an error.
+ * Spawn order, not recency: the panel updates in place and must not re-sort. An unreadable
+ * child is absent, not redacted; no children is an empty list, not an error.
  */
 export const SubtasksListResult = Schema.Struct({
   subtasks: Schema.Array(Subtask),

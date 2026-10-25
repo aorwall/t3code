@@ -1,12 +1,7 @@
 /**
- * Fork-only. What the settings say about each credential the viewer holds: the
- * git hosts on the Version control page, Claude Code and Codex in the Setup
- * section of the provider that uses them.
- *
- * Every rule that decides a label, an affordance or a URL lives here rather than
- * in the panel, because each one is a claim about the backend's model — which
- * `auth_method` means what, when a PAT is an override rather than the only
- * credential — and those are worth pinning in a test.
+ * Fork-only. What the settings say about each credential the viewer holds (git hosts, Claude Code,
+ * Codex). Every label, affordance or URL rule lives here, not in the panel, because each is a claim
+ * about the backend's model (`auth_method`, PAT override) worth pinning in a test.
  */
 
 import type {
@@ -101,14 +96,10 @@ export function canConnectGithubApp(status: GitHubProviderTokenStatusResponse | 
 }
 
 /**
- * The label for the app-authorization button, or `null` when this viewer has no
- * app flow worth offering.
- *
- * Offered beside a personal access token rather than instead of one. A token
- * overrides the app credential; it does not replace the option of having one.
- * Authorizing while a token is set stashes the app credential, and
- * `hasPatOverride` then offers the switch to it — so without this the only way
- * to reach the app is deleting the token first and trusting it comes back.
+ * The label for the app-authorization button, or `null` when no app flow is worth offering.
+ * Offered beside a personal access token, not instead of one: a token overrides the app credential,
+ * and `hasPatOverride` offers the switch back. Without this the app is reachable only by deleting
+ * the token first.
  */
 export function githubConnectLabel(
   status: GitHubProviderTokenStatusResponse | null,
@@ -188,13 +179,9 @@ export function githubConnectOutcome(search: string): GithubConnectOutcome | nul
 }
 
 /**
- * The same URL with everything a connect flow added stripped, so a reload does
- * not re-announce it.
- *
- * Every provider's parameters go at once, and each section reads the ones it
- * needs while rendering — before any of these effects run. A section that
- * stripped only its own would leave another's behind in the return URL it
- * builds, and that one would announce itself on the next connect.
+ * The same URL with everything a connect flow added stripped, so a reload does not re-announce it.
+ * Every provider's parameters go at once: sections read theirs while rendering, before effects run,
+ * and one stripping only its own would leave another's in the return URL it builds.
  */
 export function withoutConnectOutcome(url: string): string {
   const parsed = new URL(url);
