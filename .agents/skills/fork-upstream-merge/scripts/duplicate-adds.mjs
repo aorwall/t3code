@@ -200,9 +200,10 @@ export function runDuplicateAddsCheck(report, commit = null) {
   }
 
   if (waived.length > 0) {
-    section.warn("KNOWN EXCEPTIONS — declared in inventory.json, not counted", [
-      ...waived.flatMap((entry) => [`${entry.path}: ${entry.line}`, `    ${entry.reason}`]),
-    ]);
+    section.warn(
+      "KNOWN EXCEPTIONS — declared in inventory.json, not counted",
+      waived.flatMap((entry) => [`${entry.path}: ${entry.line}`, `    ${entry.reason}`]),
+    );
   }
 
   // An exception nobody can trip is an exception nobody will retire — but only

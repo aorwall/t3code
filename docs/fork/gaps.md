@@ -675,6 +675,15 @@ what a person loses, which is the part the derivation cannot tell you:
   merge (`createAdoptedEnvironmentSnapshotAtom` in `apps/web/src/state/threads.ts`).
   Closes when Moatless serves both and advertises the capability; delete the two
   union entries then.
+- **Older settled threads paged out of the shell** — `orchestration.getOlderSettledThreads`,
+  new upstream in the 2026-10-26 merge (#24723). A cold connect can send
+  `omitOlderSettled` and receive per-project `olderSettled` counts in place of
+  the older settled rows, then page them on demand; thread search takes
+  `olderSettledBefore` for the same rows. The client asks only when the server
+  config says `shellOlderSettled: true` alongside `shellThreadFamilies`, which
+  Moatless omits, so it keeps reading the full shell. Costs nothing visible; it
+  is the 93% shell-size saving upstream measured. Closes when Moatless serves
+  the method and advertises the capability; delete the union entry then.
 
 - **Check:** run `unsupported-methods.mjs` rather than reading this list. Where
   the two sides come from is _Deriving the unsupported set_ in the inventory.
@@ -1994,6 +2003,18 @@ One more arrived in the 2026-10-01 merge:
   wire compaction (moatless #1303: `/bounded`, `/history`, and the socket's
   `accept*` opt-ins, V2 only). The socket still re-sends the whole compacted
   projection on every move, and `command_execution` output is sent whole.
+  The 2026-10-26 merge adds: a parent is notified when a delegated background
+  run finishes, and agents are told to end the turn while delegates run;
+  background compactions no longer flip a thread to Working; ended roots stop
+  their provider turns; a thread settles right after a shell merge of an
+  unlinked pull request, and links agents create from the shell are picked up;
+  forked threads take titles from inherited history; superseded turn-item
+  snapshots are compacted and committed events publish before writer
+  cancellation; worktree setup survives a shell startup prompt; PDFs reach
+  Claude as documents; `vcs.status` `localOnly`, asset `disposition:
+  "attachment"`, `request_secret` file delivery and on-demand provider
+  workspace snapshots (`workspaceSnapshotsOnDemand`) are optional fields the
+  client tolerates when absent.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

@@ -7,13 +7,13 @@ import { describe, expect, it } from "vite-plus/test";
 
 import inventoryRaw from "../../../../docs/fork/inventory.json?raw";
 import commandPaletteSource from "../components/CommandPalette.tsx?raw";
-import connectionsRouteSource from "../routes/settings.connections.tsx?raw";
-import diagnosticsRouteSource from "../routes/settings.diagnostics.tsx?raw";
-import keybindingsRouteSource from "../routes/settings.keybindings.tsx?raw";
-import providersRouteSource from "../routes/settings.providers.tsx?raw";
-import scheduledTasksRouteSource from "../routes/settings.scheduled-tasks.tsx?raw";
-import snapShotRouteSource from "../routes/settings.snap-shot.tsx?raw";
-import sourceControlRouteSource from "../routes/settings.source-control.tsx?raw";
+import connectionsRouteSource from "../routes/_chat.settings.connections.tsx?raw";
+import diagnosticsRouteSource from "../routes/_chat.settings.diagnostics.tsx?raw";
+import keybindingsRouteSource from "../routes/_chat.settings.keybindings.tsx?raw";
+import providersRouteSource from "../routes/_chat.settings.providers.tsx?raw";
+import scheduledTasksRouteSource from "../routes/_chat.settings.scheduled-tasks.tsx?raw";
+import snapShotRouteSource from "../routes/_chat.settings.snap-shot.tsx?raw";
+import sourceControlRouteSource from "../routes/_chat.settings.source-control.tsx?raw";
 import type { ExecutionEnvironmentDescriptor } from "@t3tools/contracts";
 import { afterEach } from "vite-plus/test";
 
@@ -98,7 +98,8 @@ const ROUTE_SOURCES: Readonly<Record<string, string>> = {
 describe("the settings path map", () => {
   it("names only paths that have a route", () => {
     for (const path of Object.keys(FEATURE_BY_SETTINGS_PATH)) {
-      expect(ROUTE_SOURCES[path]).toContain(`createFileRoute("${path}")`);
+      // The route id carries the `_chat` layout; the URL path does not.
+      expect(ROUTE_SOURCES[path]).toContain(`createFileRoute("/_chat${path}")`);
     }
   });
 

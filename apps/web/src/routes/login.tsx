@@ -35,6 +35,7 @@ function LoginRouteView() {
   const [isLoadingMode, setIsLoadingMode] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: reads the sign-in mode from the Moatless API on mount.
   useEffect(() => {
     let cancelled = false;
     fetchMoatlessAuthMode().then(

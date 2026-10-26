@@ -100,6 +100,7 @@ export function useTouchContextMenu(
     }
   };
 
+  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: clears the long-press timer on unmount.
   React.useEffect(() => cancel, [cancel]);
 
   const onPointerDown: React.PointerEventHandler<HTMLElement> = (event) => {
