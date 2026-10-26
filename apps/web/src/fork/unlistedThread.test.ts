@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { threadAwaitsFirstAnswer } from "./unlistedThread";
+import { autoFollowDecision, threadAwaitsFirstAnswer } from "./unlistedThread";
 
 describe("threadAwaitsFirstAnswer", () => {
   it("waits while the subscription has neither data nor an answer", () => {
@@ -16,5 +16,21 @@ describe("threadAwaitsFirstAnswer", () => {
     expect(threadAwaitsFirstAnswer("deleted", null)).toBe(false);
     expect(threadAwaitsFirstAnswer("cached", null)).toBe(false);
     expect(threadAwaitsFirstAnswer("live", null)).toBe(false);
+  });
+});
+
+describe("autoFollowDecision", () => {
+  // regression: unfollowing the open thread dropped it from the listing, and
+  // the route took that for an unlisted thread and followed it straight back.
+  it("settles a thread that was already listed without following it", () => {
+    expect(autoFollowDecision({ listed: true, archived: false })).toBe("decided");
+  });
+
+  it("follows an open thread the listing does not carry", () => {
+    expect(autoFollowDecision({ listed: false, archived: false })).toBe("follow");
+  });
+
+  it("leaves an archived unlisted thread undecided", () => {
+    expect(autoFollowDecision({ listed: false, archived: true })).toBe("undecided");
   });
 });

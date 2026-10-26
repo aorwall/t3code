@@ -72,6 +72,22 @@ export function useThreadAwaitingFirstAnswer(ref: ScopedThreadRef | null): boole
 }
 
 /**
+ * What the route does about following a thread once the listing has answered.
+ * `decided` ends the question for this ref, including when the thread was already listed: deciding
+ * only on a follow would follow again the moment an Unfollow drops it from the listing.
+ */
+export function autoFollowDecision(input: {
+  listed: boolean;
+  archived: boolean;
+}): "follow" | "decided" | "undecided" {
+  if (input.listed) return "decided";
+  // The sidebar filters on `archivedAt === null`, so following a closed
+  // thread would write a follow with no row to unfollow it from.
+  if (input.archived) return "undecided";
+  return "follow";
+}
+
+/**
  * Put a thread the listing does not carry into it, once, by following it.
  * Once per ref, never again after an unfollow, or the row menu's Unfollow would do nothing.
  * Decide against the *listing's* snapshot, as `missingThreadIds` does, not the grafted one.
@@ -81,7 +97,7 @@ export function useAutoFollowThread(ref: ScopedThreadRef | null): void {
   const snapshotAtom = ref === null ? NO_SNAPSHOT_ATOM : environmentSnapshotAtom(ref.environmentId);
   const snapshot = useAtomValue(snapshotAtom);
   const shell = useThreadShell(ref);
-  const attempted = useRef<string | null>(null);
+  const decided = useRef<string | null>(null);
 
   // oxlint-disable-next-line t3code/react-effect-budget -- Fork: follows an unlisted thread on the backend once the snapshot answers.
   useEffect(() => {
@@ -89,13 +105,16 @@ export function useAutoFollowThread(ref: ScopedThreadRef | null): void {
     // would follow a thread the snapshot was about to carry anyway.
     if (ref === null || snapshot === null || shell === null) return;
     const key = threadKey(ref);
-    if (attempted.current === key) return;
+    if (decided.current === key) return;
     if (!readEnvironmentSupportsFollow(ref.environmentId)) return;
-    if (snapshot.threads.some((thread) => thread.id === ref.threadId)) return;
-    // The sidebar filters on `archivedAt === null`, so following a closed
-    // thread would write a follow with no row to unfollow it from.
-    if (shell.archivedAt != null) return;
-    attempted.current = key;
-    void follow({ environmentId: ref.environmentId, input: { threadId: ref.threadId } });
+    const decision = autoFollowDecision({
+      listed: snapshot.threads.some((thread) => thread.id === ref.threadId),
+      archived: shell.archivedAt != null,
+    });
+    if (decision === "undecided") return;
+    decided.current = key;
+    if (decision === "follow") {
+      void follow({ environmentId: ref.environmentId, input: { threadId: ref.threadId } });
+    }
   }, [follow, ref, shell, snapshot]);
 }
