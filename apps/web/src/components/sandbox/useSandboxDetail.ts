@@ -55,6 +55,7 @@ export function useSandboxDetail(requestedThreadRef: ScopedThreadRef | null): Sa
   } = pushed ? live : polled;
   const isPending = supported && queryIsPending && data === null;
 
+  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: polls the backend when no pushed stream serves the thread.
   useEffect(() => {
     if (threadRef === null || !supported || pushed) return;
     refresh();

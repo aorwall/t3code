@@ -143,7 +143,7 @@ Only for the bundled server. An empty database is a bad test. Seed your worktree
   });
   ```
 
-- Never drive a browser, simulator, or computer use without the developer asking for it. When they do ask for an integrated pass, use the `test-moatless-web` (web) or `test-t3-mobile` (mobile) skill, once, from the primary agent after integrating; `test-t3-app` covers only driving the Browser panel, since its pairing steps target the bundled server. Subagents do not launch their own dev servers. For an authorized mobile pass, a missing or outdated native client is a build step rather than a blocker: `node scripts/mobile-native-client.ts ensure <ios|android> <device-id>` on the simulator host before Metro.
+- Never drive a browser, simulator, or computer use without the developer asking for it. When they do ask for an integrated pass, use the `test-moatless-web` (web) or `test-t3-mobile` (mobile) skill, once, from the primary agent after integrating; `test-t3-app` covers only driving the Browser panel, since its pairing steps target the bundled server. Subagents do not launch their own dev servers. For an authorized mobile pass, a missing or outdated native client is an install step rather than a blocker: `vp run mobile:install <ios|android> [device-id]` on the device host before Metro installs the cached dev client for this checkout's native fingerprint, and builds only when no machine has built it yet — prefer it over `expo run:*`, `xcodebuild`, or `gradlew`.
 
 ## Pull requests
 
@@ -159,6 +159,10 @@ Only for the bundled server. An empty database is a bad test. Seed your worktree
 Ambitious ideas, simple systems, software that feels obvious. Do not preserve complexity just because it already exists, and do not introduce machinery because it looks architecturally impressive. Understand the real constraint, then fight for the smallest model that makes the correct behavior unsurprising. Measure twice, cut once — and yagni.
 
 Complexity belongs at the adapter boundary: orchestration stays pure and the UI stays dumb. Prefer inferred types to annotations, and treat `any` as the enemy. Default to no comment. Write one only for a constraint, an external quirk, or an invariant the code cannot show, in one line where you can and four at most. Comments do not restate names or signatures, narrate steps, record history, or explain the fix you just made — the PR carries that — and `t3code/no-low-value-comments` fails lint on the length cap and the mechanical cases.
+
+Server features are services and transports stay thin: a `ws.ts` RPC handler, HTTP route, or MCP tool decodes input, calls one service method, and maps errors — see [Effect services](docs/internals/effect-services.md).
+
+React effects are for synchronizing with something outside React. Derive in render and act in handlers instead of syncing state. `t3code/react-effect-budget` holds each file to its count in `scripts/effect-budget.json`; a new effect states its reason with `// oxlint-disable-next-line t3code/react-effect-budget -- <why>`.
 
 Client mutations use `createEnvironmentRpcCommand`. Add a protected method to `CLIENT_GUARDED_RPC_SCOPES` in contracts, and use the command's `permissionAtom` for UI availability. Grants are checked at execution against the destination environment, and the server remains authoritative. Keep raw RPC clients inside `rpc/`, and extend the permission behavior tests when you add a protected method.
 

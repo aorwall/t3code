@@ -66,6 +66,7 @@ export function useRetryFailedSandboxStream(
   query: Pick<EnvironmentQueryView<unknown>, "error" | "isPending" | "refresh">,
 ): void {
   const { error, isPending, refresh } = query;
+  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: a retry timer for a failed stream.
   useEffect(() => {
     if (!enabled || error === null || isPending) return;
     const timer = setTimeout(refresh, FAILED_STREAM_RETRY_MS);
@@ -112,6 +113,7 @@ export function useSandboxAvailability(
   const sandboxStatus = data?.sandboxStatus ?? null;
   const isPending = queryIsPending && sandboxStatus === null;
 
+  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: polls the backend when no pushed stream serves the thread.
   useEffect(() => {
     if (threadRef === null || pushed) return;
     refresh();

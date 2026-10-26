@@ -28,6 +28,70 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-26 — merged upstream to 7510e5e43c
+
+- Upstream: `7510e5e43c` from base `b808f7fc6d` (`201` commits). Branch point:
+  `main`; no open merge PR to stack on.
+- Landed: `1230` files from `git diff HEAD^1 HEAD` against `1215` in the
+  upstream range. Every upstream file landed; the 15 extra are fork files this
+  merge edited (effect-budget reasons, the moved version-control route,
+  `inventory.json`, `duplicate-adds.mjs`). Fork delta `758` files from
+  `git diff HEAD^2 HEAD`, up one from `757` (the route rename).
+- Stale before merging: upstream moved every `routes/settings.*` under the
+  `_chat` layout (settings is a modal now). `settings-surface-gates`,
+  `settings-gates` and `moatless-version-control-page` re-pointed at
+  `_chat.settings*.tsx`; the fork's `settings.version-control.tsx` moved to
+  `_chat.settings.version-control.tsx` (route id `/_chat/settings/version-control`).
+- Conflicts: 14 files.
+  - `_chat.settings.tsx`: the auth redirect now lives only in `_chat.tsx`
+    (which already carries the fork's `/login` redirect), so the settings
+    route keeps just the `settingsPathEnabled` redirect.
+  - `ProviderInstanceCard.tsx`: upstream's redesign adds a separate Status row.
+    Without `providerConfiguration` that row is suppressed and the display-name
+    row stays the Status row with `ProviderAuthAction`, as before.
+  - `projectScriptEditor.tsx`: upstream now mounts one form per request and
+    seeds state from it; the fork's `port` state follows that shape in place
+    of `previewUrl`/`autoOpenPreview`.
+  - `useChatTerminalActions.ts`: upstream dropped `setTerminalFocusRequestId`;
+    the host-run script path focuses with `focusTerminal`. New `decide` entry
+    `chat-terminal-actions`; `terminal.ts` gets `terminal-metadata-scan`.
+  - `FilePreviewPanel.tsx`: both sides kept; upstream's own `binary_file`
+    download sits below the fork's `WorkspaceBinaryFile` branch. Convergence
+    entry `workspace-binary-download` added.
+  - The rest kept both sides: Sidebar filter beside `inboxReturnsVersion`,
+    `serverBehaviorSettings` gate around upstream's new usage-limit copy,
+    `ProviderUpdatesAction` gate, the `SettingsSidebarNav` filter, both test
+    mocks, and `AGENTS.md` in the fork's shape with upstream's new facts
+    (`vp run mobile:install`, services-not-transports, effect budget).
+  - `routeTree.gen.ts` regenerated; `pnpm-lock.yaml` re-derived.
+  - `duplicateAddExceptions`: stale `ChatView.tsx` `null)` entry replaced with
+    the `MessagesTimeline.browser.test.tsx` `original()` collision.
+- Upstream's new `t3code/react-effect-budget` lint counted 19 fork effects
+  (fork-only files plus one each in `Sidebar.tsx` and `FilePreviewPanel.tsx`).
+  Each got a justified `oxlint-disable-next-line` rather than an
+  `effect-budget.json` edit, which would be a delta in an upstream file.
+- Mobile `ThreadTerminalRouteScreen.tsx` read the metadata atom as an array;
+  it now reads `TerminalMetadataState.terminals`. `fork/features.test.ts`
+  imports the `_chat.settings.*` sources and expects `/_chat`-prefixed route ids.
+- Sweep: 28 hits, the `infra/task-cache` remote cache, cloud account service
+  and mobile audio/permission files. All upstream-owned outside the web
+  surface; taken as upstream's. No new workflows.
+- Unsupported methods: ADD 1 (`orchestration.getOlderSettledThreads`), DROP 0,
+  KEEP 2. Gap added under
+  [methods the backend does not dispatch](./gaps.md#methods-the-backend-does-not-dispatch);
+  extended [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: `verify.mjs` (full, parallel). Every check except `test` is
+  green; `tripwires` and `unsupported-methods` needed a rerun after the Moatless
+  proxy and api.github.com were briefly unreachable.
+  - Confirmed failing alone, all seen on 2026-10-25: `t3` `RepositoryIdentityResolver`,
+    `GitVcsDriver`, `ServerBrowserPage`, `CodexChatGptAuth` and
+    `CodexManagedRuntime` (`/tmp` gap), and `provider-opencode` `OpenCodeServerLedger`.
+  - `web` again needed `PLAYWRIGHT_BROWSERS_PATH` pointing build 1223 at 1243 and
+    a private `TMPDIR`. It found the `features.test.ts` route paths (fixed).
+    After the fix 404/405 files pass. The remaining file is
+    `AttachmentFilePreview.browser.test.tsx`: upstream's new Word-render tests
+    time out at 15s in the package run and pass as a single file.
+
 ### 2026-10-25 — merged upstream to b808f7fc6d
 
 - Upstream: `b808f7fc6d` from base `18e2742519` (`155` commits). Branch point:

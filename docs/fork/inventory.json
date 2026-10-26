@@ -303,11 +303,11 @@
       "retiredWhen": "Either loop stops using `continue`; the check then reports this entry stale."
     },
     {
-      "id": "chat-view-null-continuation",
-      "path": "apps/web/src/components/ChatView.tsx",
-      "line": "null)",
-      "reason": "Two formatter-wrapped `?? null)` continuations: the fork's `advertisedFileAttachmentBytes` read and upstream's `awaitingRequestId` prop. Neither is a copy of the other.",
-      "retiredWhen": "Either expression stops wrapping onto a bare `null)` line; the check then reports this entry stale."
+      "id": "messages-timeline-mock-original",
+      "path": "apps/web/src/components/chat/MessagesTimeline.browser.test.tsx",
+      "line": "const actual = await original();",
+      "reason": "Two `vi.mock` factories that each read the real module: the fork's `fork/features` mock enabling `turnDiffs`, and upstream's `assetUrls` mock for the audio asset. Neither is a copy of the other.",
+      "retiredWhen": "Either mock stops reading `original()`; the check then reports this entry stale."
     }
   ],
   "pathPolicy": [
@@ -460,6 +460,18 @@
       "verdict": "ours",
       "note": "PreviewFrameMoreMenu.tsx is a deliberate sibling of upstream's PreviewMoreMenu.tsx, not a fork of it — keep upstream's file at zero delta. addBrowserSurface.test.ts was upstream's until #22557 pruned it; the fork keeps it for its test that a chosen server's `url` opens rather than an empty tab.",
       "verified": "2026-08-06"
+    },
+    {
+      "id": "chat-terminal-actions",
+      "paths": ["apps/web/src/components/chat/useChatTerminalActions.ts"],
+      "verdict": "decide",
+      "note": "Upstream owns this hook and reworks terminal focus and launch in it. Take upstream, then re-state the host-run script path (host-run-scripts) and the sandbox start before a script runs (send-while-sandbox-starts): on `supportsWorkspaceScripts` the environment runs the script, this client registers the returned terminal, focuses it through upstream's current focus call, and opens the preview tab. The 2026-10-26 merge moved that focus from `setTerminalFocusRequestId` to `focusTerminal`."
+    },
+    {
+      "id": "terminal-metadata-scan",
+      "paths": ["packages/client-runtime/src/state/terminal.ts"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply the metadata scan seeded with `EMPTY_TERMINAL_METADATA_STATE` rather than an empty listing, so the scan carries the environment's announcements beside it (announced-terminal-drawer)."
     },
     {
       "id": "upstream-preview",
@@ -699,7 +711,7 @@
     {
       "id": "settings-surface-gates",
       "paths": [
-        "apps/web/src/routes/settings.tsx",
+        "apps/web/src/routes/_chat.settings.tsx",
         "apps/web/src/components/settings/SettingsPanels.tsx",
         "apps/web/src/components/settings/SettingsSidebarNav.tsx",
         "apps/web/src/components/settings/IntegrationsSettings.tsx"
@@ -1540,7 +1552,7 @@
       "id": "settings-gates",
       "name": "Settings gates",
       "paths": [
-        "apps/web/src/routes/settings.tsx",
+        "apps/web/src/routes/_chat.settings.tsx",
         "apps/web/src/components/settings/SettingsSidebarNav.tsx",
         "apps/web/src/components/settings/SettingsPanels.tsx",
         "apps/web/src/components/settings/ProviderSettingsPanel.tsx",
@@ -1586,7 +1598,7 @@
       "id": "moatless-version-control-page",
       "name": "Moatless version control page",
       "paths": [
-        "apps/web/src/routes/settings.version-control.tsx",
+        "apps/web/src/routes/_chat.settings.version-control.tsx",
         "apps/web/src/components/settings/useAvailableSettingsSearchItems.ts"
       ],
       "mustSurvive": "Everyone — not only an administrator — configures their own GitHub and Forgejo credentials at /settings/version-control. Named version-control because upstream already owns /settings/source-control. The panel and its logic live under components/settings/moatless/** (moatless-settings-panels' glob), and the page is personal: it carries no admin check, because every viewer needs it. settingsSearch.ts carries the SettingsPath entry, the SETTINGS_SECTION_LABELS label (in the personal group) and the version-control, version-control-github and version-control-forgejo SETTINGS_SEARCH_ITEMS; SettingsSidebarNav.tsx carries the icon, shared with the gated-off /settings/source-control. The page draws one card holding every host, so both host items carry targetId version-control — the panel's only anchor. GitHub's app flow is offered only when the status reports appConnectAvailable, and the PAT form is always offered beside it — a deployment with no GitHub App configured has no other way in. Forgejo is the same shape one level down: it is self-hosted, so the entry lists what GET /api/v1/settings/forgejo/instances reports, draws one section per instance under its host, and names that host in every call. There is no field for typing a host, and adding one back would offer to connect an instance this deployment does not run. It is listed only where the backend's feature-flags read reports forgejo_enabled — the flag gates nothing on the backend, so it is this client that must not offer to connect an instance a deployment does not run. version-control-forgejo carries forgejoEnabledOnly for the same reason, which is why settingsSearch.ts's SettingsSearchItem and SettingsSearchAvailability each carry a fork field and useAvailableSettingsSearchItems.ts reads featureFlagsQuery. The connect callback carries no host, so the entry puts one in the return URL as forgejoHost and reads it back — accountRows.ts's withoutConnectOutcome strips every provider's parameters at once because each entry builds its return URL from the same live URL, and it leaves the route's own entry parameter alone so an OAuth round trip returns to the host the viewer was configuring rather than to GitHub. SettingsMasterDetail.tsx copies the master/detail card out of ProviderSettingsPanel.tsx, which exports none of it; see the settings-master-detail convergence entry."
@@ -1678,6 +1690,12 @@
       "name": "Settings master/detail card",
       "watchFor": "An export of the list-beside-editor card from ProviderSettingsPanel.tsx or settingsLayout.tsx — today providerCardClassName, providerCardHeightClassName and the lg:grid-cols-[17rem_minmax(0,1fr)] grid are private to that panel, and components/settings/moatless/SettingsMasterDetail.tsx is a copy of them.",
       "action": "Drop the copy and point VersionControlPanel.tsx at upstream's primitive. Until then an upstream restyle of ProviderSettingsPanel does not reach the Version control page, so re-copy the classes by eye."
+    },
+    {
+      "id": "workspace-binary-download",
+      "name": "Binary workspace file download",
+      "watchFor": "Upstream's FilePreviewPanel.tsx now answers a `binary_file` read failure itself (2026-10-26 merge): an AttachmentFilePreview over a `media-file` asset with `disposition: \"attachment\"`. The fork's WorkspaceBinaryFile branch sits above it and still wins, because it mints a `workspace-file` asset Moatless serves.",
+      "action": "Once Moatless serves `media-file` assets with `disposition: \"attachment\"`, delete the WorkspaceBinaryFile branch, fork/WorkspaceBinaryFile.tsx and `binaryPath` in projectFilesQueryState.ts, and drop that delta from file-preview-panel."
     }
   ]
 }

@@ -7,6 +7,7 @@ import {
   createEnvironmentThreadStateAtoms,
   EMPTY_ENVIRONMENT_THREAD_STATE,
   type EnvironmentThreadState,
+  createOlderSettledThreadAtoms,
   createThreadEnvironmentAtoms,
   createThreadFamilyAtoms,
 } from "@t3tools/client-runtime/state/threads";
@@ -24,7 +25,14 @@ import { environmentShell } from "./shell";
 // client is holding that the listing left out.
 import { createAdoptedEnvironmentSnapshotAtom } from "../fork/adoptedThreadShells";
 
-const threadFamilies = createThreadFamilyAtoms(connectionAtomRuntime, environmentShell.stateAtom);
+export const threadFamilies = createThreadFamilyAtoms(
+  connectionAtomRuntime,
+  environmentShell.stateAtom,
+);
+export const olderSettledThreads = createOlderSettledThreadAtoms(
+  connectionAtomRuntime,
+  environmentShell.stateAtom,
+);
 export const threadEnvironment = createThreadEnvironmentAtoms(
   connectionAtomRuntime,
   // Fork: see the import above. The graft wraps upstream's family merge, the
