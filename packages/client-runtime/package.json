@@ -263,6 +263,10 @@
       "types": "./src/state/subtasks.ts",
       "default": "./src/state/subtasks.ts"
     },
+    "./state/artifacts": {
+      "types": "./src/state/artifacts.ts",
+      "default": "./src/state/artifacts.ts"
+    },
     "./state/thread-shell-lookup": {
       "types": "./src/state/threadShellLookup.ts",
       "default": "./src/state/threadShellLookup.ts"

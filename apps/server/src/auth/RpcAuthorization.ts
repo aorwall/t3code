@@ -203,6 +203,8 @@ export const RPC_REQUIRED_SCOPES = {
   [WS_METHODS.subscribeDiscoveredLocalServers]: AuthOrchestrationReadScope,
   // Fork: the threads a thread spawned, a read like any other thread read.
   [WS_METHODS.subtasksList]: AuthOrchestrationReadScope,
+  // Fork: changes who may open a thread's Artifact, a write on the thread.
+  [WS_METHODS.artifactsSetVisibility]: AuthOrchestrationOperateScope,
   // Fork: one thread's listing row, the same read the listing itself is.
   [WS_METHODS.threadsGetShell]: AuthOrchestrationReadScope,
   // Fork: the listing rows a filter names, the same read the listing itself is.

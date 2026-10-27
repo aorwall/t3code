@@ -8,6 +8,7 @@ import * as DateTime from "effect/DateTime";
 import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vite-plus/test";
 
+import artifactsSetVisibility from "../fixtures/moatless/artifacts-set-visibility.json" with { type: "json" };
 import previewList from "../fixtures/moatless/preview-list.json" with { type: "json" };
 import previewListEmpty from "../fixtures/moatless/preview-list-empty.json" with { type: "json" };
 import subtasksList from "../fixtures/moatless/subtasks-list.json" with { type: "json" };
@@ -15,6 +16,7 @@ import subtasksListEmpty from "../fixtures/moatless/subtasks-list-empty.json" wi
 import threadProjectionV2 from "../fixtures/moatless/thread-projection-v2.json" with { type: "json" };
 import threadsGetShell from "../fixtures/moatless/threads-get-shell.json" with { type: "json" };
 import threadsGetShellAbsent from "../fixtures/moatless/threads-get-shell-absent.json" with { type: "json" };
+import { ArtifactSetVisibilityResult } from "./artifacts.ts";
 import { OrchestrationV2ThreadProjection } from "./orchestrationV2.ts";
 import { PreviewListResult } from "./preview.ts";
 import { SubtasksListResult } from "./subtasks.ts";
@@ -27,6 +29,15 @@ const decodeThreadShell = Schema.decodeUnknownSync(Schema.toCodecJson(ThreadShel
 const decodeThreadProjection = Schema.decodeUnknownSync(
   Schema.toCodecJson(OrchestrationV2ThreadProjection),
 );
+
+describe("Moatless artifacts.setVisibility", () => {
+  it("decodes the visibility the Artifact now has", () => {
+    expect(Schema.decodeUnknownSync(ArtifactSetVisibilityResult)(artifactsSetVisibility)).toEqual({
+      artifactId: "art-1",
+      visibility: "private",
+    });
+  });
+});
 
 describe("Moatless subtasks.list", () => {
   it("decodes both parent edges, in spawn order, with the nullable fields written as null", () => {

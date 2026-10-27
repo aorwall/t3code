@@ -65,6 +65,8 @@ export * from "./sandboxDetail.ts";
 export * from "./projectDefinition.ts";
 // Fork: the threads a thread spawned; upstream has no task tree.
 export * from "./subtasks.ts";
+// Fork: published Artifacts.
+export * from "./artifacts.ts";
 // Fork: one thread's listing row by id, for threads no listing carries.
 export * from "./threadShellLookup.ts";
 // Fork: the listing rows a filter names, for threads no listing carries.

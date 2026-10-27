@@ -228,6 +228,7 @@ const RPC_AGGREGATES = {
   [WS_METHODS.sandboxSubscribeStatus]: "sandbox",
   [WS_METHODS.sandboxSubscribeDetail]: "sandbox",
   [WS_METHODS.subtasksList]: "subtasks",
+  [WS_METHODS.artifactsSetVisibility]: "artifacts",
   [WS_METHODS.threadsGetShell]: "orchestration",
   [WS_METHODS.threadsBrowse]: "orchestration",
   [WS_METHODS.scriptsRun]: "scripts",

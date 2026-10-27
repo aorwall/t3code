@@ -174,6 +174,14 @@
       "see": "inventory `hosted-env-contract`, and 'A subtask is a Moatless concept' in gaps.md"
     },
     {
+      "id": "artifacts-set-visibility-upstream-refusal",
+      "method": "artifacts.setVisibility",
+      "direction": "DROP",
+      "reason": "An Artifact is a page a Moatless task publishes and upstream has none, so `apps/server` answers the method with `UnsupportedMethodError` unconditionally while Moatless dispatches it. The derivation reads backwards for the same reason `scripts.run` does.",
+      "retiredWhen": "Upstream grows published pages, or the method leaves the contract — at which point delete this entry and let the DROP stand.",
+      "see": "inventory `thread-artifacts-section`"
+    },
+    {
       "id": "projects-go-to-definition-upstream-refusal",
       "method": "projects.goToDefinition",
       "direction": "DROP",
@@ -867,7 +875,7 @@
       "id": "client-runtime-exports",
       "paths": ["packages/client-runtime/package.json"],
       "verdict": "converged",
-      "note": "Take upstream, then re-add the fork's subpath exports. They are entries in the `exports` map for fork-only modules under `src/state/` — sandbox, scripts, subtasks, thread-shell-lookup and thread-browse — and the package resolves a deep import only through this map, so a lost entry is a resolve failure in apps/web at build time rather than a silent drop. Upstream adds its own entries to the same map constantly, which is why both sides change the file; keep upstream's whole and append. The modules themselves are inventory sandbox-state-surfaces and the Moatless task-tree entries."
+      "note": "Take upstream, then re-add the fork's subpath exports. They are entries in the `exports` map for fork-only modules under `src/state/` — sandbox, scripts, subtasks, artifacts, thread-shell-lookup and thread-browse — and the package resolves a deep import only through this map, so a lost entry is a resolve failure in apps/web at build time rather than a silent drop. Upstream adds its own entries to the same map constantly, which is why both sides change the file; keep upstream's whole and append. The modules themselves are inventory sandbox-state-surfaces and the Moatless task-tree entries."
     },
     {
       "id": "root-package-json",
@@ -970,12 +978,13 @@
         "packages/contracts/src/index.ts",
         "packages/contracts/src/preview.ts",
         "packages/contracts/src/subtasks.ts",
+        "packages/contracts/src/artifacts.ts",
         "packages/contracts/src/projectDefinition.ts",
         "packages/contracts/src/threadShellLookup.ts",
         "packages/contracts/src/threadBrowse.ts",
         "packages/contracts/fixtures/moatless/**"
       ],
-      "mustSurvive": "Keep fork methods: sandbox status, sandbox status subscription, sandbox start, sandbox stop, subtasks.list and projects.goToDefinition. sandbox.subscribeStatus is gated on the sandboxStatusPush capability: absent, the client polls sandbox.status instead, so both paths have to keep working. subtasks.ts, projectDefinition.ts, threadShellLookup.ts and threadBrowse.ts are fork-only, and subtasks.list, projects.goToDefinition, threads.getShell and threads.browse each keep their UnsupportedMethodError union entry for as long as apps/server refuses the method, whatever unsupported-methods.mjs reports. threads.getShell and threads.browse both return the listing's own OrchestrationThreadShell and must keep doing so: a thread fetched by id, or reached through a browse, has to be indistinguishable from the same thread delivered by the listing. Every field of ThreadBrowseInput is optional and the backend refuses a browse that names neither an ownerUserId nor a tag, so the schema cannot express 'list everything'."
+      "mustSurvive": "Keep fork methods: sandbox status, sandbox status subscription, sandbox start, sandbox stop, subtasks.list and projects.goToDefinition. sandbox.subscribeStatus is gated on the sandboxStatusPush capability: absent, the client polls sandbox.status instead, so both paths have to keep working. subtasks.ts, artifacts.ts, projectDefinition.ts, threadShellLookup.ts and threadBrowse.ts are fork-only, and subtasks.list, artifacts.setVisibility, projects.goToDefinition, threads.getShell and threads.browse each keep their UnsupportedMethodError union entry for as long as apps/server refuses the method, whatever unsupported-methods.mjs reports. threads.getShell and threads.browse both return the listing's own OrchestrationThreadShell and must keep doing so: a thread fetched by id, or reached through a browse, has to be indistinguishable from the same thread delivered by the listing. Every field of ThreadBrowseInput is optional and the backend refuses a browse that names neither an ownerUserId nor a tag, so the schema cannot express 'list everything'."
     },
     {
       "id": "sandbox-subtask-state-client-runtime",
@@ -983,6 +992,7 @@
       "paths": [
         "packages/client-runtime/src/state/sandbox.ts",
         "packages/client-runtime/src/state/subtasks.ts",
+        "packages/client-runtime/src/state/artifacts.ts",
         "packages/client-runtime/src/state/threadShellLookup.ts",
         "packages/client-runtime/src/state/threadBrowse.ts",
         "packages/client-runtime/src/rpc/client.ts",
@@ -1007,9 +1017,10 @@
       "name": "Artifacts section in thread details",
       "paths": [
         "apps/web/src/fork/ThreadArtifactsSection.tsx",
+        "apps/web/src/state/artifacts.ts",
         "apps/web/src/components/chat/ThreadDetailsPanel.tsx"
       ],
-      "mustSurvive": "Against Moatless, the thread details panel lists the task's published Artifacts below the Lineage (agents) section, read from GET /api/v1/tasks/<thread id>/artifacts through moatless/query.ts and refetched when the thread's latest run changes status. A row opens the latest version (/api/v1/artifacts/<id> on the primary origin) in the right panel's browser, and a modifier click opens a new tab. The section renders nothing on a server without the Moatless API or for a thread with no Artifacts. The ThreadDetailsPanel.tsx delta is one import and one element after ThreadRelationshipsPanel."
+      "mustSurvive": "Against Moatless, the thread details panel lists the task's published Artifacts below the Lineage (agents) section, read from GET /api/v1/tasks/<thread id>/artifacts through moatless/query.ts and refetched when the thread's latest run changes status. A row opens the latest version (/api/v1/artifacts/<id> on the primary origin) in the right panel's browser, and a modifier click opens a new tab. Beside it a Globe or Lock icon shows the list's `visibility` on every viewport, and its menu sets it with `artifacts.setVisibility` over the socket, then refetches the list; the menu is disabled without the orchestration operate scope, and Moatless refuses a viewer who cannot change the task with an EnvironmentAuthorizationError the menu shows. The section renders nothing on a server without the Moatless API or for a thread with no Artifacts. The ThreadDetailsPanel.tsx delta is one import and one element after ThreadRelationshipsPanel."
     },
     {
       "id": "subtasks-agents-panel",

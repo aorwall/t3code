@@ -1,34 +1,53 @@
 /**
  * Fork-only. The Artifacts a thread's task published, as a thread details panel section.
  * A row opens in the right panel's browser like `MoatlessArtifactChip`; a modifier click,
- * or a client with no in-app browser, keeps the anchor's new-tab behaviour.
+ * or a client with no in-app browser, keeps the anchor's new-tab behaviour. Beside it, a
+ * menu shows and sets who may open the Artifact.
  */
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
-import { isAtomCommandInterrupted } from "@t3tools/client-runtime/state/runtime";
 import {
+  isAtomCommandInterrupted,
+  squashAtomCommandFailure,
+} from "@t3tools/client-runtime/state/runtime";
+import {
+  type ArtifactVisibility,
+  AuthOrchestrationOperateScope,
   AuthPreviewOperateScope,
   type EnvironmentId,
   type ScopedThreadRef,
   type ThreadId,
 } from "@t3tools/contracts";
 import { customInstance, type MoatlessResponse } from "@t3tools/moatless-api/customInstance";
-import { FileTextIcon } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { FileTextIcon, GlobeIcon, LoaderCircleIcon, LockIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import { recordVisitForThread } from "~/browserHistoryStore";
 import { openUrlInPreview } from "~/browser/openFileInPreview";
+import { ThreadDetailsControl } from "~/components/chat/ThreadDetailsControl";
 import { ThreadDetailsSection } from "~/components/chat/ThreadDetailsSection";
 import {
   THREAD_DETAILS_PANEL_ICON_CLASS,
   THREAD_DETAILS_PANEL_LABEL_CLASS,
-  THREAD_DETAILS_PANEL_ROW_CLASS,
+  THREAD_DETAILS_PANEL_SPLIT_GROUP_CLASS,
+  THREAD_DETAILS_PANEL_SPLIT_PRIMARY_CLASS,
+  THREAD_DETAILS_PANEL_SPLIT_SEPARATOR_CLASS,
 } from "~/components/chat/threadDetailsPanelStyles";
+import {
+  Menu,
+  MenuGroup,
+  MenuGroupLabel,
+  MenuPopup,
+  MenuRadioGroup,
+  MenuRadioItem,
+  MenuTrigger,
+} from "~/components/ui/menu";
 import { resolvePrimaryEnvironmentHttpUrl } from "~/environments/primary/target";
 import { readLocalApi } from "~/localApi";
 import { cn } from "~/lib/utils";
 import { moatlessQuery, useMoatlessQuery } from "~/moatless/query";
 import { isPreviewSupportedInRuntime } from "~/previewStateStore";
 import { useThreadShell } from "~/state/entities";
+import { artifactsEnvironment } from "~/state/artifacts";
 import { previewEnvironment } from "~/state/preview";
 import { useEnvironmentScope } from "~/state/session";
 import { useAtomCommand } from "~/state/use-atom-command";
@@ -41,6 +60,7 @@ export interface TaskArtifact {
   readonly artifactId: string;
   readonly title: string;
   readonly updatedAt: string;
+  readonly visibility: ArtifactVisibility;
 }
 
 interface ListArtifactsResponse {
@@ -105,7 +125,7 @@ function ArtifactsList(props: {
       <ul className="m-0 list-none p-0">
         {artifacts.map((artifact) => (
           <li key={artifact.artifactId}>
-            <ArtifactRow artifact={artifact} threadRef={threadRef} />
+            <ArtifactRow artifact={artifact} threadRef={threadRef} onChanged={refresh} />
           </li>
         ))}
       </ul>
@@ -133,6 +153,7 @@ function useRefreshWhenRunSettles(threadRef: ScopedThreadRef, refresh: () => voi
 function ArtifactRow(props: {
   readonly artifact: TaskArtifact;
   readonly threadRef: ScopedThreadRef;
+  readonly onChanged: () => void;
 }) {
   const { artifact, threadRef } = props;
   const href = artifactLatestHref(artifact.artifactId);
@@ -142,44 +163,146 @@ function ArtifactRow(props: {
   const updated = formatRelativeTimeLabel(artifact.updatedAt);
 
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`Open artifact ${artifact.title}`}
-      className={cn("flex items-center", THREAD_DETAILS_PANEL_ROW_CLASS)}
-      onClick={(event) => {
-        if (
-          !canOpenInPreview ||
-          event.button !== 0 ||
-          event.metaKey ||
-          event.ctrlKey ||
-          event.shiftKey ||
-          event.altKey
-        ) {
-          return;
-        }
-        event.preventDefault();
-        void openUrlInPreview({ threadRef, url: href, openPreview }).then((result) => {
-          if (result._tag === "Success") {
-            recordVisitForThread(threadRef, href);
+    <div className={THREAD_DETAILS_PANEL_SPLIT_GROUP_CLASS}>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`Open artifact ${artifact.title}`}
+        className={cn("flex items-center", THREAD_DETAILS_PANEL_SPLIT_PRIMARY_CLASS)}
+        onClick={(event) => {
+          if (
+            !canOpenInPreview ||
+            event.button !== 0 ||
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey
+          ) {
             return;
           }
-          if (isAtomCommandInterrupted(result)) return;
-          // The panel could not take it; the page is still worth showing.
-          void readLocalApi()?.shell.openExternal(href);
-        });
-      }}
-    >
-      <FileTextIcon aria-hidden className={THREAD_DETAILS_PANEL_ICON_CLASS} />
-      <span className={cn("min-w-0 flex-1 truncate", THREAD_DETAILS_PANEL_LABEL_CLASS)}>
-        {artifact.title}
-      </span>
-      {updated === "" ? null : (
-        <span className="shrink-0 text-2xs font-normal tabular-nums text-muted-foreground">
-          {updated}
+          event.preventDefault();
+          void openUrlInPreview({ threadRef, url: href, openPreview }).then((result) => {
+            if (result._tag === "Success") {
+              recordVisitForThread(threadRef, href);
+              return;
+            }
+            if (isAtomCommandInterrupted(result)) return;
+            // The panel could not take it; the page is still worth showing.
+            void readLocalApi()?.shell.openExternal(href);
+          });
+        }}
+      >
+        <FileTextIcon aria-hidden className={THREAD_DETAILS_PANEL_ICON_CLASS} />
+        <span className={cn("min-w-0 flex-1 truncate", THREAD_DETAILS_PANEL_LABEL_CLASS)}>
+          {artifact.title}
         </span>
-      )}
-    </a>
+        {updated === "" ? null : (
+          <span className="shrink-0 text-2xs font-normal tabular-nums text-muted-foreground">
+            {updated}
+          </span>
+        )}
+      </a>
+      <span aria-hidden="true" className={THREAD_DETAILS_PANEL_SPLIT_SEPARATOR_CLASS} />
+      <VisibilityMenu artifact={artifact} threadRef={threadRef} onChanged={props.onChanged} />
+    </div>
+  );
+}
+
+const VISIBILITY_CHOICES: ReadonlyArray<{
+  readonly value: ArtifactVisibility;
+  readonly label: string;
+  readonly description: string;
+}> = [
+  { value: "public", label: "Public", description: "Anyone signed in to Moatless" },
+  { value: "private", label: "Private", description: "Only people who can see this thread" },
+];
+
+/**
+ * The Artifact's visibility, as an icon that is always shown so a phone sees it too, and a
+ * menu that sets it. A viewer without the operate scope sees the icon only.
+ */
+function VisibilityMenu(props: {
+  readonly artifact: TaskArtifact;
+  readonly threadRef: ScopedThreadRef;
+  readonly onChanged: () => void;
+}) {
+  const { artifact, threadRef, onChanged } = props;
+  const canOperate = useEnvironmentScope(threadRef.environmentId, AuthOrchestrationOperateScope);
+  const setVisibility = useAtomCommand(artifactsEnvironment.setVisibility, {
+    reportFailure: false,
+  });
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const current = VISIBILITY_CHOICES.find((choice) => choice.value === artifact.visibility);
+  const Icon = artifact.visibility === "public" ? GlobeIcon : LockIcon;
+
+  const choose = async (visibility: ArtifactVisibility) => {
+    if (visibility === artifact.visibility) return;
+    setError(null);
+    setPending(true);
+    const result = await setVisibility({
+      environmentId: threadRef.environmentId,
+      input: { artifactId: artifact.artifactId, visibility },
+    });
+    setPending(false);
+    if (result._tag === "Success") {
+      onChanged();
+      return;
+    }
+    if (isAtomCommandInterrupted(result)) return;
+    const failure = squashAtomCommandFailure(result);
+    setError(
+      failure instanceof Error && failure.message.trim().length > 0
+        ? failure.message
+        : "Could not change who can open this artifact.",
+    );
+  };
+
+  return (
+    <Menu>
+      <MenuTrigger
+        render={
+          <ThreadDetailsControl
+            type="button"
+            variant="ghost"
+            size="sm"
+            part="secondary"
+            disabled={!canOperate || pending}
+            aria-label={`${current?.label ?? "Unknown"} artifact. Change who can open ${artifact.title}`}
+            data-artifact-visibility={artifact.visibility}
+          />
+        }
+      >
+        {pending ? (
+          <LoaderCircleIcon aria-hidden className="size-3.5 animate-spin" />
+        ) : (
+          <Icon aria-hidden className={cn("size-3.5", error !== null && "text-destructive")} />
+        )}
+      </MenuTrigger>
+      <MenuPopup align="end" side="bottom" sideOffset={6} className="min-w-56">
+        <MenuGroup>
+          <MenuGroupLabel>Who can open it</MenuGroupLabel>
+          <MenuRadioGroup
+            value={artifact.visibility}
+            onValueChange={(value) => void choose(value as ArtifactVisibility)}
+          >
+            {VISIBILITY_CHOICES.map((choice) => (
+              <MenuRadioItem key={choice.value} value={choice.value} closeOnClick>
+                <span className="flex flex-col">
+                  <span>{choice.label}</span>
+                  <span className="text-xs text-muted-foreground">{choice.description}</span>
+                </span>
+              </MenuRadioItem>
+            ))}
+          </MenuRadioGroup>
+        </MenuGroup>
+        {error === null ? null : (
+          <p role="alert" className="max-w-56 px-2 py-1.5 text-xs text-destructive">
+            {error}
+          </p>
+        )}
+      </MenuPopup>
+    </Menu>
   );
 }

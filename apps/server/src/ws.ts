@@ -3152,6 +3152,14 @@ export const layerWsRpc = (
               message: "This environment does not have subtasks.",
             }),
           ),
+        // Fork: Artifacts are pages a Moatless task publishes; this server has none.
+        [WS_METHODS.artifactsSetVisibility]: (_input) =>
+          Effect.fail(
+            new UnsupportedMethodError({
+              method: WS_METHODS.artifactsSetVisibility,
+              message: "This environment does not have artifacts.",
+            }),
+          ),
         // Fork: this server's shell listing is every thread it has, so a thread
         // outside it is a thread that does not exist. Refusing says that, where
         // answering `null` would claim the listing has a complement and that

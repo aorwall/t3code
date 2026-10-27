@@ -365,6 +365,8 @@ import {
 } from "./projectDefinition.ts";
 // Fork: the threads a thread spawned, a fork-only surface.
 import { SubtasksListInput, SubtasksListResult } from "./subtasks.ts";
+// Fork: who may open a published Artifact, a fork-only surface.
+import { ArtifactSetVisibilityInput, ArtifactSetVisibilityResult } from "./artifacts.ts";
 // Fork: the listing rows a filter names, a fork-only surface.
 import { ThreadBrowseInput, ThreadBrowseResult } from "./threadBrowse.ts";
 // Fork: one thread's listing row by id, a fork-only surface.
@@ -509,6 +511,9 @@ export const WS_METHODS = {
 
   // Fork: the threads a thread spawned; upstream has no task tree.
   subtasksList: "subtasks.list",
+
+  // Fork: who may open an Artifact a thread published; upstream has no Artifacts.
+  artifactsSetVisibility: "artifacts.setVisibility",
 
   // Fork: one thread's listing row, for a thread no listing carried.
   threadsGetShell: "threads.getShell",
@@ -1837,6 +1842,17 @@ export const WsSubtasksListRpc = Rpc.make(WS_METHODS.subtasksList, {
 });
 
 /**
+ * Fork: set who may open an Artifact the thread's agent published. Only someone who can
+ * change the thread may; a refusal is `EnvironmentAuthorizationError`, saying why.
+ * `UnsupportedMethodError` because `apps/server` has no Artifacts.
+ */
+export const WsArtifactsSetVisibilityRpc = Rpc.make(WS_METHODS.artifactsSetVisibility, {
+  payload: ArtifactSetVisibilityInput,
+  success: ArtifactSetVisibilityResult,
+  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
+});
+
+/**
  * Fork: one thread's listing row, asked for by id (`threadShellLookup.ts`). A missing or
  * unreadable thread is `null`, not an error: failing would unrender a shown transcript.
  * Fork: reported under DROP by `unsupported-methods.mjs`; the union member stays (docs/fork/gaps.md).
@@ -2572,6 +2588,8 @@ export const WsRpcGroup = RpcGroup.make(
   WsSubscribePreviewEventsRpc,
   // Fork: the threads a thread spawned.
   WsSubtasksListRpc,
+  // Fork: who may open a published Artifact.
+  WsArtifactsSetVisibilityRpc,
   // Fork: one thread's listing row, for a thread no listing carried.
   WsThreadsGetShellRpc,
   // Fork: the listing rows a filter names.
