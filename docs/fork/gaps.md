@@ -604,9 +604,10 @@ what a person loses, which is the part the derivation cannot tell you:
   `onboardingCompleted` is false, and `addDeviceSurface` opens `DeviceSetup`;
   its "Enable the device hub" step calls `device.configure`, which resolves to
   the refusal the dialog then shows. `FEATURES.deviceHub` closes both ways in:
-  the two `deviceAvailable` props drop the launcher row, and
-  `IntegrationsSettingsPanel` drops the Devices section, whose hosts save
-  through `server.updateSettings` the backend does not dispatch either. Holds
+  the two `deviceAvailable` props drop the launcher row, and the
+  `/settings/devices` entry in `FEATURE_BY_SETTINGS_PATH` hides the Devices
+  page upstream split out of Integrations on 2026-10-27 (#25651), whose hosts
+  save through `server.updateSettings` the backend does not dispatch either. Holds
   open the nine union entries and that flag. Closes when the backend runs a
   simulator host for a task, which is a real question and not a stub — the hub
   needs Xcode or the Android SDK on the host it drives, and its stream is a
@@ -619,7 +620,7 @@ what a person loses, which is the part the derivation cannot tell you:
   `DeviceHostSummary` kind beside local and SSH, an `easDeviceHosts` setting,
   and `device.easAccount`, which looks up the Expo account and its apps. That
   method is the tenth union entry, and the EAS hosts section sits on the same
-  Integrations page the flag already drops.
+  Devices page the flag already drops.
 - **Ignored files for "Add project to another machine"** — `projects.listIgnoredFiles`
   (#22180) lists the untracked, ignored files (`.env` and the like) the dialog
   offers to copy to the new machine. The dialog asks only when the source
@@ -2015,6 +2016,13 @@ One more arrived in the 2026-10-01 merge:
   "attachment"`, `request_secret` file delivery and on-demand provider
   workspace snapshots (`workspaceSnapshotsOnDemand`) are optional fields the
   client tolerates when absent.
+  The 2026-10-27 merge adds: a `/goal` set, clear, pause or resume stops the
+  running turn, clears while working and is not echoed as a user message
+  (#25426, `orchestration-v2/Orchestrator.ts`, `CommandPolicy.ts`, the Claude
+  and Codex V2 adapters); a thread whose worktree was deleted recreates its
+  checkout on the next message (#18359, `ProviderTurnStartService.ts`); a
+  resumed Claude turn retries an MCP registration that stalled (#25372); and
+  new-model badges expire after seven days (#25609, `ModelManifest.ts`).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

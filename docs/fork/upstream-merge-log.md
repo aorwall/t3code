@@ -28,6 +28,75 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-27 — merged upstream to f6a9315d19
+
+- Upstream: `f6a9315d19` from base `7510e5e43c` (`135` commits). Branch point:
+  `main`; no open merge PR to stack on.
+- Landed: `906` files from `git diff HEAD^1 HEAD` against `901` in the
+  upstream range. Every upstream file landed; the 5 extra are fork files this
+  merge edited (`AppRoot.test.tsx`, `useSandboxCommandsBanner.tsx`,
+  `fork/features.ts`, `gaps.md`, `inventory.json`). Fork delta `758` files from
+  `git diff HEAD^2 HEAD`, unchanged.
+- Stale before merging: none. `pnpm-lock.yaml` auto-merged into a broken file
+  (`ERR_PNPM_LOCKFILE_MISSING_DEPENDENCY` for `vite-plus`); re-derived from
+  upstream's copy with `install.mjs`.
+- Conflicts: 20 files.
+  - Settings (#25651, settings grouped by concern): `BetaSettingsPanel.tsx`
+    deleted upstream; its guest-links gate moved to `LabsSettingsPanel.tsx`.
+    Submodules and Start from origin moved with their `worktreeSelection` gate
+    into `WorktreesSettings.tsx`. The device hub's Devices section became its
+    own `/settings/devices` page, gated in `FEATURE_BY_SETTINGS_PATH`, so
+    `IntegrationsSettings.tsx` is upstream's again. `SettingsSidebarNav` filters
+    each of upstream's nav groups. `settings-surface-gates`, `settings-gates`,
+    `device-hub-gate` and `project-defaults-settings` updated. Upstream's new
+    rows (Worktrees directory, branch naming, cleanup) are left ungated, as
+    their General-page predecessors were.
+  - `Sidebar.tsx`: upstream moved the shell read and `routeRowThreadKey` out of
+    `useSidebarThreads` into `Sidebar`; the fork's `useSidebarThreadList`
+    filter and unfiltered-shell route resolution moved with them, and the
+    filter flags are passed into the hook.
+  - `ChatView.tsx`: upstream moved background-work banners to the timeline
+    (#25401) and dropped `ComposerBannerStackItem.priority`. The sandbox-commands
+    banner stays above the composer, without `priority`. Upstream's
+    `getConfiguredPreviewUrls` import is dropped again (the fork deletes
+    local-server discovery).
+  - Preview: `PreviewChromeRow` takes upstream's `urlInputRef` and keeps the
+    fork's optional `onBack`/`onForward`; `PreviewView` drops `resize` and
+    `subscribeBrowserViewportChange` along with upstream and keeps `framed`;
+    `ThreadPreviewMiniPlayer` re-states `hasPreviewSurface` on upstream's
+    extracted `useBrowserMiniPlayerSource`.
+  - `FilePreviewPanel.tsx`: upstream's `useAtomMount(revisionedQuery(…))`
+    replaces `useWorkspaceMutationRefresh`; `browserFrameRevision` kept.
+  - `terminalSessions.ts`: upstream's atom family taken; the fork's
+    `metadata.terminals` read re-applied inside it.
+  - `AppRoot.tsx`: upstream removed `<BrowserProfileReporter />`;
+    `WebBrowserHost` kept, `AppRoot.test.tsx` updated to four children.
+  - `__root.tsx`: upstream removed `BrowserChromeThemeSync`; `/login` stays in
+    the chrome-less list. `ThreadRouteView.tsx`: upstream's draft-promotion
+    rewrite with the fork's `unlistedThread` hooks. `AGENTS.md`: kept the
+    fork's PR section. `routeTree.gen.ts` regenerated.
+  - Duplicate-add exception `messages-timeline-mock-original` reported stale and
+    removed.
+- Sweep: `HostFreezeToastCoordinator.ts` and
+  `useEnvironmentDisconnectDelay.browser.test.tsx` are upstream connection
+  plumbing, not owned surfaces; taken as upstream's. No new workflows.
+- Unsupported methods: ADD 0, DROP 0, KEEP 2. No new RPC methods in the range.
+  Backend fixes added under
+  [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: `verify.mjs` (full, parallel). Every check except `test` green.
+  - Confirmed failing alone, same as 2026-10-26: `t3` `RepositoryIdentityResolver`,
+    `GitVcsDriver`, `ServerBrowserPage`, `CodexChatGptAuth`,
+    `CodexManagedRuntime` (`/tmp` gap) and `provider-opencode`
+    `OpenCodeServerLedger`.
+  - `web` found `features.test.ts`'s route map missing `/settings/devices`
+    (fixed). Browser tests again needed `PLAYWRIGHT_BROWSERS_PATH` pointing
+    build 1223 at 1243 and a private `TMPDIR`. With them, 442/443 files pass;
+    the remaining one was the fork's `ProviderSettingsPanel.environment` test
+    asserting Providers → Advanced is hidden, which upstream's idle-compaction
+    row now legitimately fills (fixed: it asserts the health interval stays
+    hidden). Re-run whole after the fix: 442/443, the one red file
+    `lib/runtime.test.ts` (15s timeout, contention) passes alone 4/4.
+
 ### 2026-10-26 — merged upstream to 7510e5e43c
 
 - Upstream: `7510e5e43c` from base `b808f7fc6d` (`201` commits). Branch point:

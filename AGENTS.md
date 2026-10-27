@@ -101,7 +101,7 @@ Complexity belongs at the adapter boundary: orchestration stays pure, UI stays d
 
 Only for the bundled server. An empty database is a bad test. Seed your worktree's `.t3` with a copy of real data instead of pointing at live state:
 
-- The first `vp run dev` in a worktree does this for you when its database is missing. `--no-seed` or `T3CODE_DEV_SEED=0` skips it.
+- The first `vp run dev` in a worktree does this for you when its database is missing and the source is at most 500 MiB. Larger sources warn and dev starts with an empty database. `--no-seed` or `T3CODE_DEV_SEED=0` skips seeding. Manual migration still accepts larger sources and may use substantial disk space before pruning.
 - Run `vp run migrate-dev-db` with your dev server stopped to refresh. It rebuilds `<worktree>/.t3/userdata/statev2.sqlite` from a read-only snapshot of `~/.t3/userdata/statev2.sqlite`, the developer's real data. It keeps recent projects and their stopped threads, and drops scheduled tasks, pending work, and auth sessions, so your dev server never runs the developer's agents. Raise `--projects` and `--threads-per-project` for more data.
 - Refresh `statev2.sqlite`, not `state.sqlite`. The server copies the V1 `state.sqlite` only when `statev2.sqlite` is missing.
 - Bring `secrets` and `settings.json` only if the flow under test needs them.
@@ -144,6 +144,10 @@ Only for the bundled server. An empty database is a bad test. Seed your worktree
   ```
 
 - Never drive a browser, simulator, or computer use without the developer asking for it. When they do ask for an integrated pass, use the `test-moatless-web` (web) or `test-t3-mobile` (mobile) skill, once, from the primary agent after integrating; `test-t3-app` covers only driving the Browser panel, since its pairing steps target the bundled server. Subagents do not launch their own dev servers. For an authorized mobile pass, a missing or outdated native client is an install step rather than a blocker: `vp run mobile:install <ios|android> [device-id]` on the device host before Metro installs the cached dev client for this checkout's native fingerprint, and builds only when no machine has built it yet — prefer it over `expo run:*`, `xcodebuild`, or `gradlew`.
+
+## Evals
+
+`evals/` checks how real models behave with T3 Code's model-facing text: agent instructions, MCP tool descriptions and schemas, and generated titles. Before you change that text, read [evals/README.md](evals/README.md) and run the evals it names. When you fix a model behavior bug, add a case that fails before the fix.
 
 ## Pull requests
 

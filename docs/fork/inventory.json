@@ -309,13 +309,6 @@
       "line": "continue;",
       "reason": "Two `continue` statements in separate loops: the fork's Workspace branch in `writeTargets` skips the settings write, and upstream's keybinding loop skips an unchanged script. Neither is a copy of the other.",
       "retiredWhen": "Either loop stops using `continue`; the check then reports this entry stale."
-    },
-    {
-      "id": "messages-timeline-mock-original",
-      "path": "apps/web/src/components/chat/MessagesTimeline.browser.test.tsx",
-      "line": "const actual = await original();",
-      "reason": "Two `vi.mock` factories that each read the real module: the fork's `fork/features` mock enabling `turnDiffs`, and upstream's `assetUrls` mock for the audio asset. Neither is a copy of the other.",
-      "retiredWhen": "Either mock stops reading `original()`; the check then reports this entry stale."
     }
   ],
   "pathPolicy": [
@@ -722,10 +715,11 @@
         "apps/web/src/routes/_chat.settings.tsx",
         "apps/web/src/components/settings/SettingsPanels.tsx",
         "apps/web/src/components/settings/SettingsSidebarNav.tsx",
-        "apps/web/src/components/settings/IntegrationsSettings.tsx"
+        "apps/web/src/components/settings/LabsSettingsPanel.tsx",
+        "apps/web/src/components/settings/WorktreesSettings.tsx"
       ],
       "verdict": "converged",
-      "note": "Take upstream, then re-state the FEATURES gates it wrote around. These are upstream's own files and it restructures them constantly, so the gates are written to survive that: each wraps a whole row or nav item additively and never re-indents the block beside it. SettingsSidebarNav carries only a settingsPathEnabled conjunct on upstream's nav filter and the same filter on the search results. When upstream replaces a gated control outright, the gate moves onto the replacement: the 2026-09-14 merge swapped enableLegacyTokenStreaming for the responseStreamingMode select and FEATURES.assistantStreaming moved with it. A gate silently dropped here un-hides a surface the backend cannot serve, and nothing else catches that."
+      "note": "Take upstream, then re-state the FEATURES gates it wrote around. These are upstream's own files and it restructures them constantly, so the gates are written to survive that: each wraps a whole row or nav item additively and never re-indents the block beside it. SettingsSidebarNav carries only a settingsPathEnabled conjunct on upstream's nav filter and the same filter on the search results. When upstream replaces a gated control outright, the gate moves onto the replacement: the 2026-09-14 merge swapped enableLegacyTokenStreaming for the responseStreamingMode select and FEATURES.assistantStreaming moved with it; the 2026-10-27 merge took upstream's settings-by-concern split (#25651), which moved the Beta page's guest links row into LabsSettingsPanel, the submodules and start-from-origin rows into WorktreesSettings, and the device hub onto its own /settings/devices page, gated by path in FEATURE_BY_SETTINGS_PATH so IntegrationsSettings is upstream's again. SettingsSidebarNav filters each of upstream's SETTINGS_NAV_GROUPS per render and drops a group left empty. A gate silently dropped here un-hides a surface the backend cannot serve, and nothing else catches that."
     },
     {
       "id": "settings-search-filters",
@@ -828,7 +822,7 @@
       "id": "project-defaults-settings",
       "paths": ["apps/web/src/components/settings/ProjectDefaultsSettings.tsx"],
       "verdict": "converged",
-      "note": "Take upstream, then re-apply the settings-gates rows: hideModelRow (FEATURES.defaultModelSetting) and hideWorktreeRows (FEATURES.worktreeSelection) around the Model, Workspace, Worktree submodules and Start from origin rows, the accessMode gate around Permissions, and the early return when every New threads row is hidden. Wrap whole `<SettingsRow>` elements, never a re-indent of the rows beside them. Apply the same test to every row upstream adds: a row whose write Moatless refuses or whose behaviour it cannot honour gets the flag that names its surface."
+      "note": "Take upstream, then re-apply the settings-gates rows: hideModelRow (FEATURES.defaultModelSetting) and hideWorktreeRows (FEATURES.worktreeSelection) around the Model and Workspace rows, the accessMode gate around Permissions, and the early return when every New threads row is hidden. Upstream moved the Worktree submodules and Start from origin rows into WorktreesSettings.tsx on 2026-10-27, and their worktreeSelection gates moved with them. Wrap whole `<SettingsRow>` elements, never a re-indent of the rows beside them. Apply the same test to every row upstream adds: a row whose write Moatless refuses or whose behaviour it cannot honour gets the flag that names its surface."
     },
     {
       "id": "project-actions-list",
@@ -1519,18 +1513,11 @@
     {
       "id": "device-hub-gate",
       "name": "Device hub gates",
-      "paths": [
-        "apps/web/src/components/ChatView.tsx",
-        "apps/web/src/components/settings/IntegrationsSettings.tsx",
-        "apps/web/src/fork/features.ts"
-      ],
-      "mustSurvive": "Neither way into the device hub is offered. Every method behind it is refused — device.configure, list, testHost, open, close, shutdown, detail, action and the subscribeDeviceState stream — and nothing upstream gates it on a capability: ChatView passes deviceAvailable={activeThreadRef !== null}, so the launcher offers Device on every thread, and the row opens DeviceSetup rather than a broken panel, whose \"Enable the device hub\" step then shows the refusal. FEATURES.deviceHub closes both ways in: the two deviceAvailable props in ChatView.tsx — count them every merge — and the DeviceIntegrationSettings ternary in IntegrationsSettingsPanel, whose hosts save through server.updateSettings the backend does not dispatch either. settingsSearch.ts is deliberately left upstream: its four device rows (device-hosts, agent-device-access, device-hub, device-platform-support) still match, and a result for one lands on the Integrations page without its Devices section. Drop the flag and both gates together once Moatless runs a simulator host for a task.",
+      "paths": ["apps/web/src/components/ChatView.tsx", "apps/web/src/fork/features.ts"],
+      "mustSurvive": "Neither way into the device hub is offered. Every method behind it is refused — device.configure, list, testHost, open, close, shutdown, detail, action and the subscribeDeviceState stream — and nothing upstream gates it on a capability: ChatView passes deviceAvailable={activeThreadRef !== null}, so the launcher offers Device on every thread, and the row opens DeviceSetup rather than a broken panel, whose \"Enable the device hub\" step then shows the refusal. FEATURES.deviceHub closes both ways in: the two deviceAvailable props in ChatView.tsx — count them every merge — and the `/settings/devices` entry in FEATURE_BY_SETTINGS_PATH, which hides upstream's Devices page (its hosts save through server.updateSettings, which the backend does not dispatch either), its nav item and its search results, and redirects the URL. Drop the flag and both gates together once Moatless runs a simulator host for a task.",
       "guard": {
         "symbol": "FEATURES.deviceHub",
-        "files": [
-          "apps/web/src/components/ChatView.tsx",
-          "apps/web/src/components/settings/IntegrationsSettings.tsx"
-        ]
+        "files": ["apps/web/src/components/ChatView.tsx"]
       }
     },
     {
@@ -1568,14 +1555,15 @@
         "apps/web/src/components/settings/SettingsPanels.tsx",
         "apps/web/src/components/settings/ProviderSettingsPanel.tsx",
         "apps/web/src/components/settings/ProjectDefaultsSettings.tsx",
-        "apps/web/src/components/settings/BetaSettingsPanel.tsx",
+        "apps/web/src/components/settings/LabsSettingsPanel.tsx",
+        "apps/web/src/components/settings/WorktreesSettings.tsx",
         "apps/web/src/components/settings/settingsSearch.ts"
       ],
       "guard": {
         "symbol": "settingsSearchItemEnabled",
         "files": ["apps/web/src/components/settings/settingsSearch.ts"]
       },
-      "mustSurvive": "Re-apply route guard and nav/search filtering. General, Appearance, and Providers stay visible except the server-backed add-provider-instance affordance, which lives in ProviderSettingsPanel.tsx since upstream extracted it on 2026-08-08. Every settings page whose controls drive `window.desktopBridge` is listed in FEATURE_BY_SETTINGS_PATH: upstream renders such a page with an \"unavailable\" notice rather than hiding it, and a hosted build must not list the section at all. `/settings/snap-shot` joined that list when upstream added window capture in #8103. General hides every row Moatless cannot save or honour, each behind the FEATURES flag that names its surface: Permissions (accessMode); Workspace, Submodules and Start from origin (worktreeSelection), with the Projects & threads section dropped once its last row goes; Model (defaultModelSetting); the usage-limit, provider-update, restart-continuation and background-activity rows and the Text generation section (serverBehaviorSettings); the Beta page's Guest links row (serverBehaviorSettings), since Moatless serves no guest shares and refuses the setting; and View diagnostics (diagnostics). ProjectDefaultsSettings.tsx returns null when every New threads row is hidden, so neither General nor the project page draws an empty card. A gate inside a page leaves the row's search item behind, so FEATURE_BY_SETTINGS_SEARCH_ID names each gated row's id and filterAvailableSettingsSearchItems drops it through settingsSearchItemEnabled; a row gated later needs its id added there too."
+      "mustSurvive": "Re-apply route guard and nav/search filtering. General, Appearance, and Providers stay visible except the server-backed add-provider-instance affordance, which lives in ProviderSettingsPanel.tsx since upstream extracted it on 2026-08-08. Every settings page whose controls drive `window.desktopBridge` is listed in FEATURE_BY_SETTINGS_PATH: upstream renders such a page with an \"unavailable\" notice rather than hiding it, and a hosted build must not list the section at all. `/settings/snap-shot` joined that list when upstream added window capture in #8103. General hides every row Moatless cannot save or honour, each behind the FEATURES flag that names its surface: Permissions (accessMode); Workspace (worktreeSelection), with the Projects & threads section dropped once its last row goes, and the Worktrees page's Submodules and Start from origin rows behind the same flag; Model (defaultModelSetting); the usage-limit, provider-update, restart-continuation and background-activity rows and the Text generation section (serverBehaviorSettings); the Labs page's Beta section, whose only row is Guest links (serverBehaviorSettings), since Moatless serves no guest shares and refuses the setting; and View diagnostics (diagnostics). ProjectDefaultsSettings.tsx returns null when every New threads row is hidden, so neither General nor the project page draws an empty card. A gate inside a page leaves the row's search item behind, so FEATURE_BY_SETTINGS_SEARCH_ID names each gated row's id and filterAvailableSettingsSearchItems drops it through settingsSearchItemEnabled; a row gated later needs its id added there too."
     },
     {
       "id": "moatless-rest-client",
