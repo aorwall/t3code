@@ -2,7 +2,6 @@ import { Children, isValidElement, type ReactElement, type ReactNode } from "rea
 import { RouterProvider } from "@tanstack/react-router";
 import { describe, expect, it, vi } from "vite-plus/test";
 
-import { BrowserProfileReporter } from "./browser/BrowserProfileReporter";
 import { ElectronBrowserHost } from "./browser/ElectronBrowserHost";
 import { WebBrowserHost } from "./browser/WebBrowserHost";
 import { QuitHoldOverlay } from "./components/QuitHoldOverlay";
@@ -25,11 +24,10 @@ describe("AppRoot", () => {
     const children = Children.toArray(
       (root as ReactElement<{ readonly children: ReactNode }>).props.children,
     );
-    expect(children).toHaveLength(5);
+    expect(children).toHaveLength(4);
     expect(isValidElement(children[0]) && children[0].type).toBe(RouterProvider);
     expect(isValidElement(children[1]) && children[1].type).toBe(ElectronBrowserHost);
     expect(isValidElement(children[2]) && children[2].type).toBe(WebBrowserHost);
-    expect(isValidElement(children[3]) && children[3].type).toBe(BrowserProfileReporter);
-    expect(isValidElement(children[4]) && children[4].type).toBe(QuitHoldOverlay);
+    expect(isValidElement(children[3]) && children[3].type).toBe(QuitHoldOverlay);
   });
 });

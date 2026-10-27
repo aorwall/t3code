@@ -192,6 +192,7 @@ export const FEATURE_BY_SETTINGS_PATH: Readonly<Record<string, FeatureName>> = {
   "/settings/connections": "connections",
   "/settings/diagnostics": "diagnostics",
   "/settings/scheduled-tasks": "scheduledTasks",
+  "/settings/devices": "deviceHub",
 };
 
 /** Settings sections served by the Moatless REST API alone. */

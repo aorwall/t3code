@@ -256,15 +256,15 @@ describe("EnvironmentProviderSettings routing", () => {
     expect(state.updateSettings).not.toHaveBeenCalled();
   });
 
-  // Fork: Advanced holds only the health-check interval, which persists through
-  // server.updateSettings, so FEATURES.providerConfiguration hides it whether or
-  // not search targets it.
-  it("hides Advanced even when search targets the provider health interval", async () => {
+  // Fork: the health-check interval persists through server.updateSettings, so
+  // FEATURES.providerConfiguration hides it whether or not search targets it.
+  // Advanced itself stays: it also holds upstream's idle-compaction row.
+  it("hides the provider health interval even when search targets it", async () => {
     await setup();
     state.searchTargetId = "provider-health-check-interval";
     await setProviders([provider()]);
     await using _screen = await render(panel());
-    await expect.element(page.getByText("Advanced", { exact: true })).not.toBeInTheDocument();
+    await expect.element(page.getByText("Advanced", { exact: true })).toBeInTheDocument();
     expect(document.querySelector("#provider-health-check-interval")).toBeNull();
   });
 

@@ -11,8 +11,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
   type ReactNode,
-  useEffect,
-  useRef,
+  type RefObject,
   useState,
 } from "react";
 
@@ -28,7 +27,8 @@ interface Props {
   canGoForward: boolean;
   refreshDisabled: boolean;
   inputDisabled?: boolean | undefined;
-  focusUrlNonce?: number | undefined;
+  /** Owned by the caller so its shortcut handler can focus the address bar directly. */
+  urlInputRef: RefObject<HTMLInputElement | null>;
   /** Omit where the surface keeps no history to walk; the button is then absent. */
   onBack?: (() => void) | undefined;
   onForward?: (() => void) | undefined;
@@ -58,7 +58,7 @@ export function PreviewChromeRow({
   canGoForward,
   refreshDisabled,
   inputDisabled,
-  focusUrlNonce,
+  urlInputRef: inputRef,
   onBack,
   onForward,
   onRefresh,
@@ -77,16 +77,8 @@ export function PreviewChromeRow({
   trailingActions,
   leadingActions,
 }: Props) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
   const [draft, setDraft] = useState(url);
   const [inputFocused, setInputFocused] = useState(false);
-
-  useEffect(() => {
-    if (focusUrlNonce == null) return;
-    const node = inputRef.current;
-    if (!node) return;
-    node.focus();
-  }, [focusUrlNonce]);
 
   const submit = (event?: FormEvent | KeyboardEvent) => {
     event?.preventDefault();

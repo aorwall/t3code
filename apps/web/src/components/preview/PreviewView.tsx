@@ -1,4 +1,4 @@
-import { scopeThreadRef, scopedThreadKey } from "@t3tools/client-runtime/environment";
+import { scopedThreadKey } from "@t3tools/client-runtime/environment";
 import { settlePromise } from "@t3tools/client-runtime/state/runtime";
 import { previewStreamDownloadUrl } from "@t3tools/client-runtime/preview/server-browser-stream";
 import {
@@ -10,7 +10,6 @@ import {
   DEFAULT_BROWSER_PROFILE_ID,
   FILL_PREVIEW_VIEWPORT,
   type PreviewAnnotationPayload,
-  type PreviewViewportSetting,
   type ScopedThreadRef,
   DEFAULT_PREVIEW_ZOOM_FACTOR,
   PREVIEW_ZOOM_LEVELS,
@@ -28,7 +27,6 @@ import {
   BROWSER_HISTORY_MAX_ENTRIES_PER_PROJECT,
   recordVisitForThread,
   removeUrlForThread,
-  setTitleForThreadUrl,
   useThreadRecentHistory,
 } from "~/browserHistoryStore";
 import { type ComposerImageAttachment, useComposerDraftStore } from "~/composerDraftStore";
@@ -69,10 +67,7 @@ import { PreviewEmptyState } from "./PreviewEmptyState";
 import { PreviewMoreMenu, type PreviewMoreMenuActions } from "./PreviewMoreMenu";
 // Fork: the framed surface's own three-dot menu.
 import { PreviewFrameMoreMenu } from "./PreviewFrameMoreMenu";
-import {
-  commitBrowserViewportChange,
-  subscribeBrowserViewportChange,
-} from "~/browser/browserViewportActions";
+import { commitBrowserViewportChange } from "~/browser/browserViewportActions";
 import { browserResponsiveViewportForToggle, useBrowserDefaults } from "~/browser/browserDefaults";
 import {
   cancelFramePreviewAnnotationPick,
@@ -165,7 +160,7 @@ export function PreviewView({
   visible,
   onSendAnnotation,
 }: Props) {
-  const [focusUrlNonce, setFocusUrlNonce] = useState<number | undefined>(undefined);
+  const urlInputRef = useRef<HTMLInputElement | null>(null);
   const [pickActive, setPickActive] = useState(false);
   const canSendAnnotation =
     useEnvironmentScope(threadRef.environmentId, AuthOrchestrationOperateScope) &&
@@ -184,16 +179,12 @@ export function PreviewView({
   const addPreviewAnnotation = useComposerDraftStore((store) => store.addPreviewAnnotation);
   const addImage = useComposerDraftStore((store) => store.addImage);
   const environmentHttpBaseUrl = useEnvironmentHttpBaseUrl(threadRef.environmentId);
-  const environmentHostname = environmentHttpBaseUrl
-    ? new URL(environmentHttpBaseUrl).hostname
-    : null;
   const open = useAtomCommand(previewEnvironment.open);
   const navigate = useAtomCommand(previewEnvironment.navigate, "preview navigate");
   const closePreview = useAtomCommand(previewEnvironment.close, "preview close");
   const environmentLabel = useEnvironment(threadRef.environmentId)?.label ?? "the environment";
   const primaryEnvironmentId = usePrimaryEnvironmentId();
   const serverBrowser = useEnvironmentSupportsServerBrowser(threadRef.environmentId);
-  const resize = useAtomCommand(previewEnvironment.resize, "preview viewport resize");
   // A frame is driven, never read: it cannot report where it went, so the
   // server's record of the tab is the only account of it there is.
   const framed = previewRuntimeCapability() === "frame";
@@ -228,10 +219,10 @@ export function PreviewView({
   const serverOwnsRendering = snapshot?.runtime === "server";
   const serverSurfaceRef = useRef<ServerBrowserHandle | null>(null);
   const [serverAspectRatioLocked, setServerAspectRatioLocked] = useState(false);
-  const serverBodyRef = useRef<HTMLDivElement | null>(null);
   const [serverToolbarWidth, setServerToolbarWidth] = useState(0);
   const serverToolbarShown =
     snapshot?.runtime === "server" && (snapshot.viewport ?? FILL_PREVIEW_VIEWPORT)._tag !== "fill";
+  const serverBodyRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const element = serverBodyRef.current;
     if (!element || !serverToolbarShown) return;
@@ -271,20 +262,6 @@ export function PreviewView({
   );
   const frameHintElapsed = useFrameUnrenderedHint(framed ? url : "");
   const showFrameUnrenderedHint = framed && frameHintElapsed && !showEmptyState;
-
-  const navUrl = navStatus._tag === "Success" ? navStatus.url : null;
-  const navTitle = navStatus._tag === "Success" ? navStatus.title : null;
-  const latestHistoryUrl = recentHistoryEntries[0]?.url;
-  const { environmentId: threadEnvironmentId, threadId } = threadRef;
-  useEffect(() => {
-    if (!navUrl || !navTitle || !latestHistoryUrl) return;
-    setTitleForThreadUrl(
-      scopeThreadRef(threadEnvironmentId, threadId),
-      navUrl,
-      navTitle,
-      environmentHostname,
-    );
-  }, [environmentHostname, latestHistoryUrl, navTitle, navUrl, threadEnvironmentId, threadId]);
 
   const navigateToResolvedUrl = async (resolvedUrl: string) => {
     if (isServerTab && serverSurfaceRef.current) {
@@ -401,37 +378,16 @@ export function PreviewView({
     else if (previewBridge && runtimeTabId) void previewBridge.resetZoom(runtimeTabId);
   };
 
-  const handleViewportChange = async (nextViewport: PreviewViewportSetting) => {
-    if (!tabId) return;
-    const result = await resize({
-      environmentId: threadRef.environmentId,
-      input: {
-        threadId: threadRef.threadId,
-        tabId,
-        viewport: nextViewport,
-      },
-    });
-    if (result._tag === "Failure") {
-      const error = squashAtomCommandFailure(result);
-      toastManager.add({
-        type: "error",
-        title: "Unable to resize browser viewport",
-        description: error instanceof Error ? error.message : "An error occurred.",
-      });
-      throw error;
-    }
-    updatePreviewServerSnapshot(threadRef, result.value);
-  };
-
   const handleToggleDeviceToolbar = () => {
-    if (!runtimeTabId) return;
+    if (!runtimeTabId || !tabId) return;
+    const target = { threadRef, tabId, runtimeTabId };
     if (viewport._tag !== "fill") {
-      void commitBrowserViewportChange(runtimeTabId, FILL_PREVIEW_VIEWPORT).catch(() => undefined);
+      void commitBrowserViewportChange(target, FILL_PREVIEW_VIEWPORT).catch(() => undefined);
       return;
     }
 
     void commitBrowserViewportChange(
-      runtimeTabId,
+      target,
       browserResponsiveViewportForToggle({
         defaults: browserDefaults,
         panelRect,
@@ -439,14 +395,6 @@ export function PreviewView({
       }),
     ).catch(() => undefined);
   };
-
-  const onViewportChange = useEffectEvent(handleViewportChange);
-  useEffect(() => {
-    if (!runtimeTabId) return;
-    return subscribeBrowserViewportChange(runtimeTabId, (nextViewport) =>
-      onViewportChange(nextViewport),
-    );
-  }, [runtimeTabId]);
 
   const handleBack = () => {
     if (isServerTab) serverSurfaceRef.current?.history(-1);
@@ -1002,7 +950,7 @@ export function PreviewView({
           handleRefresh();
           return;
         case "focus-url":
-          setFocusUrlNonce((value) => (value ?? 0) + 1);
+          urlInputRef.current?.focus();
           return;
         case "zoom-in":
           handleZoomIn();
@@ -1035,7 +983,7 @@ export function PreviewView({
         canGoForward={canGoForward && !serverInputDisabled}
         refreshDisabled={refreshDisabled || serverInputDisabled}
         inputDisabled={serverInputDisabled}
-        focusUrlNonce={focusUrlNonce}
+        urlInputRef={urlInputRef}
         // Fork: in a frame these controls answer to the guest runtime, and stay
         // absent rather than dead until it has announced itself.
         onBack={framed ? (frameNavigation.ready ? handleFrameBack : undefined) : handleBack}
@@ -1132,7 +1080,12 @@ export function PreviewView({
                   width={serverToolbarWidth}
                   aspectRatio={serverAspectRatioLocked ? viewport.width / viewport.height : null}
                   onAspectRatioChange={(ratio) => setServerAspectRatioLocked(ratio !== null)}
-                  onChange={(setting) => commitBrowserViewportChange(runtimeTabId, setting)}
+                  onChange={(setting) =>
+                    commitBrowserViewportChange(
+                      { threadRef, tabId: snapshot.tabId, runtimeTabId },
+                      setting,
+                    )
+                  }
                 />
               </div>
             ) : null}

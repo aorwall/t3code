@@ -106,6 +106,7 @@ import { CodexSetupSection, CodexManagedRuntimeFields } from "./CodexSetupSectio
 import { readCodexSetupMode } from "./CodexSetupSection.logic";
 import { providerClients } from "./providerDriverMeta";
 import { searchableSetting } from "./settingsSearch";
+import { CompactIdleThreadsRow } from "./SettingsPanels";
 import {
   backgroundActivityOverrideSettings,
   buildProviderInstanceUpdatePatch,
@@ -1112,10 +1113,10 @@ export function EnvironmentProviderSettings({
         />
       ) : null}
 
-      {/* Fork: the health-check interval is part of backgroundActivity, a
-        server setting this backend neither returns nor accepts. */}
-      {FEATURES.providerConfiguration ? (
-        <SettingsSection title="Advanced">
+      <SettingsSection title="Advanced">
+        {/* Fork: the health-check interval is part of backgroundActivity, a
+            server setting this backend neither returns nor accepts. */}
+        {FEATURES.providerConfiguration ? (
           <SettingsRow
             id={searchableSetting("provider-health-check-interval").id}
             title={
@@ -1124,7 +1125,7 @@ export function EnvironmentProviderSettings({
                 <PolicyTooltip>
                   This interval is configured here, then the shared Background activity policy
                   decides whether provider probes may run when the timer fires. Custom intervals
-                  appear as Advanced in General settings.
+                  appear as Advanced in Maintenance settings.
                 </PolicyTooltip>
               </span>
             }
@@ -1134,16 +1135,28 @@ export function EnvironmentProviderSettings({
               defaultProviderHealthRefreshIntervalSeconds ? (
                 <span
                   inert={!canWriteSettings}
-                  className={!canWriteSettings ? "opacity-50" : undefined}
+                  aria-disabled={!canWriteSettings || undefined}
+                  className={cn(
+                    "flex shrink-0 items-center gap-2",
+                    !canWriteSettings && "opacity-50 select-none",
+                  )}
                 >
-                  <SettingResetButton
-                    label="provider health check interval"
-                    onClick={() =>
+                  <NumberField
+                    value={providerHealthRefreshIntervalSeconds}
+                    min={0}
+                    step={PROVIDER_HEALTH_INTERVAL_STEP_SECONDS}
+                    size="sm"
+                    className="w-32"
+                    onValueChange={(value) =>
                       updateSettings(
                         backgroundActivityOverrideSettings(
                           settings.backgroundActivity,
                           resolvedBackgroundActivity,
-                          { providerHealthRefreshInterval: undefined },
+                          {
+                            providerHealthRefreshInterval: Duration.seconds(
+                              normalizeIntervalSeconds(value),
+                            ),
+                          },
                         ),
                       )
                     }
@@ -1190,8 +1203,9 @@ export function EnvironmentProviderSettings({
               </div>
             }
           />
-        </SettingsSection>
-      ) : null}
+        ) : null}
+        <CompactIdleThreadsRow />
+      </SettingsSection>
 
       {isAddInstanceDialogOpen && !readOnly ? (
         <AddProviderInstanceDialog

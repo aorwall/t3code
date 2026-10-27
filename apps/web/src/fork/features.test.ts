@@ -8,6 +8,7 @@ import { describe, expect, it } from "vite-plus/test";
 import inventoryRaw from "../../../../docs/fork/inventory.json?raw";
 import commandPaletteSource from "../components/CommandPalette.tsx?raw";
 import connectionsRouteSource from "../routes/_chat.settings.connections.tsx?raw";
+import devicesRouteSource from "../routes/_chat.settings.devices.tsx?raw";
 import diagnosticsRouteSource from "../routes/_chat.settings.diagnostics.tsx?raw";
 import keybindingsRouteSource from "../routes/_chat.settings.keybindings.tsx?raw";
 import providersRouteSource from "../routes/_chat.settings.providers.tsx?raw";
@@ -91,6 +92,7 @@ const ROUTE_SOURCES: Readonly<Record<string, string>> = {
   "/settings/providers": providersRouteSource,
   "/settings/source-control": sourceControlRouteSource,
   "/settings/connections": connectionsRouteSource,
+  "/settings/devices": devicesRouteSource,
   "/settings/diagnostics": diagnosticsRouteSource,
   "/settings/scheduled-tasks": scheduledTasksRouteSource,
 };

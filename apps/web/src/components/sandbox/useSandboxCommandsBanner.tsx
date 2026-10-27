@@ -30,7 +30,6 @@ export function useSandboxCommandsBanner(
   return {
     id: `sandbox-commands:${threadRef.threadId}`,
     variant: "default",
-    priority: "activity",
     icon: <TerminalIcon className="size-3.5" aria-hidden="true" />,
     title: running.length === 1 ? "1 command running" : `${running.length} commands running`,
     description: summary,
