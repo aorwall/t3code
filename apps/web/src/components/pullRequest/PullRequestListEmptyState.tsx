@@ -2,6 +2,8 @@ import { RefreshIcon } from "~/components/ui/refresh-icon";
 import { PlusIcon, SearchIcon } from "lucide-react";
 
 import { openCommandPalette } from "../../commandPaletteBus";
+// Fork: gates the Add project button.
+import { FEATURES } from "../../fork/features";
 import { Button } from "../ui/button";
 import { PullRequestListGhost } from "./PullRequestGhosts";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "../ui/empty";
@@ -78,12 +80,15 @@ export function PullRequestListEmptyState({
             Add a project, and the pull requests from its repository appear here.
           </EmptyDescription>
         </EmptyHeader>
-        <EmptyContent>
-          <Button size="sm" onClick={() => openCommandPalette({ open: "add-project" })}>
-            <PlusIcon className="size-3.5" />
-            Add project
-          </Button>
-        </EmptyContent>
+        {/* Fork: a server without `projectManagement` cannot add a project. */}
+        {FEATURES.projectManagement ? (
+          <EmptyContent>
+            <Button size="sm" onClick={() => openCommandPalette({ open: "add-project" })}>
+              <PlusIcon className="size-3.5" />
+              Add project
+            </Button>
+          </EmptyContent>
+        ) : null}
       </Empty>
     );
   }

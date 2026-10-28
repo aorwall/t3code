@@ -1513,9 +1513,11 @@
         "apps/web/src/components/CommandPalette.tsx",
         "apps/web/src/components/Sidebar.tsx",
         "apps/web/src/components/LegacySidebar.tsx",
-        "apps/web/src/components/chat/DraftHeroHeadline.tsx"
+        "apps/web/src/components/chat/DraftHeroHeadline.tsx",
+        "apps/web/src/commandPaletteBus.ts",
+        "apps/web/src/components/pullRequest/PullRequestListEmptyState.tsx"
       ],
-      "mustSurvive": "Re-apply list filtering gates. FEATURES.projectManagement also hides the New project affordance wherever it is offered: both sidebars and the draft hero's project picker, which upstream grew a New project menu item on 2026-09-05. A Moatless deployment creates projects from its own admin surfaces, so an enabled New project entry here leads nowhere."
+      "mustSurvive": "Re-apply list filtering gates. FEATURES.projectManagement also hides the New project affordance wherever it is offered: both sidebars and the draft hero's project picker, which upstream grew a New project menu item on 2026-09-05. A Moatless deployment creates projects from its own admin surfaces, so an enabled New project entry here leads nowhere. The same flag drops `openCommandPalette({ open: \"add-project\" })` in commandPaletteBus.ts, the backstop for every caller of that intent, and hides the pull request list's empty-state Add project button."
     },
     {
       "id": "checkpoint-file-restore-gate",

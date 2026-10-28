@@ -1,6 +1,8 @@
 import type { EnvironmentId, PullRequestLinkedThreadsResult } from "@t3tools/contracts";
 
 import { dispatchCommandPalette, isCommandPaletteMounted } from "./commandPaletteStore";
+// Fork: gates the add-project intent.
+import { FEATURES } from "./fork/features";
 
 export interface CommandPaletteLinkedThreads {
   readonly environmentId: EnvironmentId;
@@ -17,6 +19,8 @@ export function openCommandPalette(detail: CommandPaletteOpenDetail = {}): void 
   // With no palette on screen (e.g. /pair) the request is dropped; kept in the
   // store, it would pop a stale palette once the app shell mounts.
   if (!isCommandPaletteMounted()) return;
+  // Fork: every add-project path ends in a method a server without `projectManagement` refuses.
+  if (detail.open === "add-project" && !FEATURES.projectManagement) return;
   if (detail.open === "new-thread-in") {
     dispatchCommandPalette({ _tag: "OpenNewThreadIn" });
   } else if (detail.open === "add-project") {

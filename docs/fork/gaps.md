@@ -166,34 +166,28 @@ most `capabilities.X === true` checks in the clients with `serverConfig !==
 null`: every protocol-2 server is assumed to support them. Moatless advertises
 most (`threadSettlement`, `threadSnooze`, `threadPinning`, `pullRequests`,
 `threadPullRequests`, title regeneration), so those surfaces are unchanged.
-Three it does not advertise now run unconditionally:
+Three it did not advertise now run unconditionally:
 
 - **`inlineMessageContext`** — the composer always sends a turn's context
   (terminal, review comment, thread, environment chips) as a separate field;
-  the legacy path that serialized it into the text is gone
-  (`useComposerSend.ts`, `useMultipleModelSend.ts`, mobile
-  `threadOutboxDelivery.ts`). Moatless's `message.dispatch` reads no `context`
-  field, so a chip a person attaches is dropped with no error.
+  the client's legacy path that serialized it into the text is gone. Moatless
+  now folds `context` into the text itself, in the same legacy form
+  (`crates/t3code/src/message_context.rs`), and advertises the capability.
+  Against a Moatless older than that change a chip is dropped with no error.
 - **`projectCloneTracking`** — adding a project by URL calls
-  `startProjectClone` / `projectClones` (`CommandPalette.tsx`,
-  `NewThreadLinkView.tsx`, `state/projectClones.ts`), which Moatless does not
-  dispatch. `FEATURES.projectManagement` hides the add-project button, but not
-  every entry point.
+  `startProjectClone` / `projectClones`, which Moatless does not dispatch.
+  Moatless lists `projectManagement` unsupported, which removes the palette's
+  Add project action and, through `commandPaletteBus.ts`, every
+  `open: "add-project"` intent. The `projectClones` subscription still fails
+  quietly to an empty list on each connect.
 - **`attachmentUploads`** — the composer always takes the signed-upload path.
-  Moatless reports it only when `session_jwt_secret` is set; a deployment
+  Moatless reports it only when `SESSION_JWT_SECRET` is set; a deployment
   without one has no inline fallback left. `ChatView.tsx` keeps the fork's
   capability checks for uploads, file attachments and `questionAttachments`,
   but the send path no longer consults them.
 
-This merge kept the fork's checks where a conflict landed on them and did not
-restore the deleted ones, which would re-grow code upstream removed across
-many files.
-
-- **Closes when:** Moatless reads `context` on `message.dispatch` and advertises
-  `inlineMessageContext`, dispatches the project-clone methods or hides every
-  add-by-URL entry, and every deployment sets `session_jwt_secret`. Check with
-  `grep -n '"context"' crates/t3code/src/v2_commands.rs` in the
-  backend and `git grep -n 'startProjectClone' apps/web/src`.
+- **Closes when:** every deployment sets `SESSION_JWT_SECRET`, and Moatless
+  answers `projectClones` with an empty list.
 - **Then here:** delete this entry, and the capability checks `ChatView.tsx`
   still carries for `attachmentUploads` and `questionAttachments`.
 
