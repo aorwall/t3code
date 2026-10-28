@@ -56,7 +56,7 @@ export function useFrameUnrenderedHint(url: string): boolean {
     setState({ url, elapsed: false });
   }
 
-  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: a timer that flips the hint on after a delay.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Fork: a timer that flips the hint on after a delay.
   useEffect(() => {
     if (url === "") return;
     const timer = window.setTimeout(

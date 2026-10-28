@@ -1,9 +1,4 @@
 export {
-  resetPrimaryEnvironmentDescriptorForTests,
-  resolveInitialPrimaryEnvironmentDescriptor,
-} from "./context";
-
-export {
   createServerPairingCredential,
   consumeMoatlessAuthReturnTo,
   fetchMoatlessAuthMode,
@@ -37,3 +32,8 @@ export {
   isLoopbackHostname,
   type PrimaryEnvironmentTarget,
 } from "./target";
+// Fork: `context.ts` is fork-owned since upstream deleted it; `__root.tsx` reads the descriptor through it.
+export {
+  resetPrimaryEnvironmentDescriptorForTests,
+  resolveInitialPrimaryEnvironmentDescriptor,
+} from "./context";

@@ -22,7 +22,7 @@ function MoatlessTaskLinkRouteView() {
   const catalogReady = useAtomValue(environmentCatalog.catalogValueAtom).isReady;
   const resolution = resolveMoatlessTaskLink({ taskId, primaryEnvironmentId, catalogReady });
 
-  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: navigates once the environment catalog resolves the task link.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Fork: navigates once the environment catalog resolves the task link.
   useEffect(() => {
     if (resolution.kind !== "resolved") {
       return;

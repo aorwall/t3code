@@ -24,6 +24,7 @@ import { ThreadShellGetResult } from "./threadShellLookup.ts";
 
 const decodePreviewList = Schema.decodeUnknownSync(PreviewListResult);
 const decodeSubtasksList = Schema.decodeUnknownSync(SubtasksListResult);
+const decodeArtifactSetVisibility = Schema.decodeUnknownSync(ArtifactSetVisibilityResult);
 // V2 timestamps are `DateTimeUtc`, which the RPC layer carries as ISO text.
 const decodeThreadShell = Schema.decodeUnknownSync(Schema.toCodecJson(ThreadShellGetResult));
 const decodeThreadProjection = Schema.decodeUnknownSync(
@@ -32,7 +33,7 @@ const decodeThreadProjection = Schema.decodeUnknownSync(
 
 describe("Moatless artifacts.setVisibility", () => {
   it("decodes the visibility the Artifact now has", () => {
-    expect(Schema.decodeUnknownSync(ArtifactSetVisibilityResult)(artifactsSetVisibility)).toEqual({
+    expect(decodeArtifactSetVisibility(artifactsSetVisibility)).toEqual({
       artifactId: "art-1",
       visibility: "private",
     });

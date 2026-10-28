@@ -174,12 +174,12 @@
       "see": "inventory `hosted-env-contract`, and 'A subtask is a Moatless concept' in gaps.md"
     },
     {
-      "id": "artifacts-set-visibility-upstream-refusal",
-      "method": "artifacts.setVisibility",
+      "id": "preview-navigate-upstream-refusal",
+      "method": "preview.navigate",
       "direction": "DROP",
-      "reason": "An Artifact is a page a Moatless task publishes and upstream has none, so `apps/server` answers the method with `UnsupportedMethodError` unconditionally while Moatless dispatches it. The derivation reads backwards for the same reason `scripts.run` does.",
-      "retiredWhen": "Upstream grows published pages, or the method leaves the contract — at which point delete this entry and let the DROP stand.",
-      "see": "inventory `thread-artifacts-section`"
+      "reason": "Upstream deleted `preview.navigate` from its contract and server, while Moatless still serves it for framed previews. The fork re-declares it, and `apps/server` answers it with `UnsupportedMethodError` unconditionally, so the derivation reads backwards for the same reason `scripts.run` does.",
+      "retiredWhen": "The fork's framed preview stops calling `previewEnvironment.navigate`, or `apps/server` serves the method again — at which point delete this entry and let the DROP stand.",
+      "see": "inventory `preview-navigate-fork-method`"
     },
     {
       "id": "projects-go-to-definition-upstream-refusal",
@@ -309,6 +309,13 @@
       "line": "continue;",
       "reason": "Two `continue` statements in separate loops: the fork's Workspace branch in `writeTargets` skips the settings write, and upstream's keybinding loop skips an unchanged script. Neither is a copy of the other.",
       "retiredWhen": "Either loop stops using `continue`; the check then reports this entry stale."
+    },
+    {
+      "id": "sidebar-logic-pick-generic",
+      "path": "apps/web/src/components/Sidebar.logic.ts",
+      "line": "T extends Pick<",
+      "reason": "Two generic bounds in different functions: upstream's earlier helper, and `filterSidebarV2VisibleThreads`, whose bound the fork's `source` key pushes past one line. Neither is a copy of the other.",
+      "retiredWhen": "Either bound fits on one line again; the check then reports this entry stale."
     }
   ],
   "pathPolicy": [
@@ -326,6 +333,12 @@
       ],
       "verdict": "decide",
       "note": "Keep cookie session behavior, the x-csrf-token echo Moatless requires on unsafe requests, and the absent same-origin gate. Take upstream's transport changes."
+    },
+    {
+      "id": "primary-environment-context",
+      "paths": ["apps/web/src/environments/primary/context.ts"],
+      "verdict": "ours",
+      "note": "Upstream deleted it in #26238; the fork's boot path still reads the descriptor through it. See inventory `primary-environment-descriptor`."
     },
     {
       "id": "login-route",
@@ -837,6 +850,12 @@
       "note": "Take upstream, then re-apply one verification adaptation, recorded here because it is the fork's only delta in apps/server outside auth.ts and rpc.ts and nothing else would catch its loss. Upstream's \"makes background upstream status fetches non-interactive\" case proves the environment by writing an SSH wrapper script to a temp dir and reading back what git handed it; that needs a working ssh on PATH and an executable temp dir, and the sandbox has neither reliably. The fork asserts the same thing one layer in: it intercepts ChildProcessSpawner, matches the status fetch by its `fetch --quiet --no-tags` args, records `command.options.env`, and checks the same key list minus GIT_SSH. Re-apply it whenever upstream rewrites the case; drop it if upstream stops shelling out to ssh for this."
     },
     {
+      "id": "agent-context-budget",
+      "paths": ["apps/server/src/provider/agentContextBudget.json"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-run apps/server's AgentContextBudget.test.ts and set mcpToolListJsonBytes to what it measures. The fork's `ProjectScript.port` (packages/contracts/src/project.ts) appears in the t3_project_create and t3_project_update input schemas, so the fork's tool list is larger than upstream's by those bytes (108 at 2026-10-28). The other two values are upstream's. Drop this entry when `port` leaves ProjectScript."
+    },
+    {
       "id": "command-palette-gates",
       "paths": ["apps/web/src/components/CommandPalette.tsx"],
       "verdict": "converged",
@@ -1015,6 +1034,30 @@
         "apps/web/src/components/chat/ThreadDetailsPanel.tsx"
       ],
       "mustSurvive": "Against Moatless, the thread details panel lists the task's published Artifacts below the Lineage (agents) section, read from GET /api/v1/tasks/<thread id>/artifacts through moatless/query.ts and refetched when the thread's latest run changes status. A row opens the latest version (/api/v1/artifacts/<id> on the primary origin) in the right panel's browser, and a modifier click opens a new tab. Beside it a Globe or Lock icon shows the list's `visibility` on every viewport, and its menu sets it with `artifacts.setVisibility` over the socket, then refetches the list; the menu is disabled without the orchestration operate scope, and Moatless refuses a viewer who cannot change the task with an EnvironmentAuthorizationError the menu shows. The section renders nothing on a server without the Moatless API or for a thread with no Artifacts. The ThreadDetailsPanel.tsx delta is one import and one element after ThreadRelationshipsPanel."
+    },
+    {
+      "id": "preview-navigate-fork-method",
+      "name": "preview.navigate kept for framed previews",
+      "paths": [
+        "packages/contracts/src/preview.ts",
+        "packages/contracts/src/rpc.ts",
+        "packages/client-runtime/src/state/preview.ts",
+        "apps/server/src/ws.ts",
+        "apps/server/src/auth/RpcAuthorization.ts",
+        "apps/server/src/observability/RpcInstrumentation.ts",
+        "apps/web/src/components/preview/PreviewView.tsx"
+      ],
+      "mustSurvive": "Upstream deleted `preview.navigate` (#26238) as unreachable from its own client. The fork keeps it because a framed preview navigates by writing the server's record, which Moatless serves: `PreviewNavigateInput`, `WS_METHODS.previewNavigate` and `WsPreviewNavigateRpc` (with `UnsupportedMethodError`) in contracts, `previewEnvironment.navigate` in client-runtime, and an `apps/server` stub that refuses it plus its scope and instrumentation rows."
+    },
+    {
+      "id": "primary-environment-descriptor",
+      "name": "Primary environment descriptor read at boot",
+      "paths": [
+        "apps/web/src/environments/primary/context.ts",
+        "apps/web/src/environments/primary/index.ts",
+        "apps/web/src/environments/primary/auth.ts"
+      ],
+      "mustSurvive": "`__root.tsx` awaits `resolveInitialPrimaryEnvironmentDescriptor()` before rendering, and writing the descriptor calls `applyPrimaryEnvironmentDescriptor`, which sets `FEATURES` from the server's `unsupportedSurfaces`. Upstream deleted `context.ts` as unreachable (#26238), so it is fork-owned: `index.ts` re-exports it and `auth.ts` exports `retryTransientBootstrap` for it."
     },
     {
       "id": "subtasks-agents-panel",

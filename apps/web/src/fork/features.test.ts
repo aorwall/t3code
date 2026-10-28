@@ -128,6 +128,7 @@ describe("the settings search id map", () => {
       isWslSettingsRowVisible: true,
       hasThreadAutoSettlement: true,
       forgejoEnabled: true,
+      hasPeerLinkHost: true,
     }).map((item) => item.id),
   );
 

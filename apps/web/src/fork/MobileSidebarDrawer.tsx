@@ -51,7 +51,7 @@ export function MobileSidebarDrawer({
   const [isDragging, setIsDragging] = React.useState(false);
   const [panelWidth, setPanelWidth] = React.useState(SIDEBAR_DRAG_FALLBACK_WIDTH);
 
-  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: Escape listener and body scroll lock while the drawer is open.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Fork: Escape listener and body scroll lock while the drawer is open.
   React.useEffect(() => {
     if (!open) return;
 
@@ -72,7 +72,7 @@ export function MobileSidebarDrawer({
     };
   }, [onOpenChange, open]);
 
-  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: document-level touch listeners for the drawer's drag gesture.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Fork: document-level touch listeners for the drawer's drag gesture.
   React.useEffect(() => {
     const gesture = {
       claimed: false,
@@ -213,7 +213,7 @@ export function MobileSidebarDrawer({
 
   const isVisible = open || isDragging;
 
-  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: reports the panel element to the parent after the close transition.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Fork: reports the panel element to the parent after the close transition.
   React.useEffect(() => {
     if (!onPanelElementChange) return;
     if (isVisible) {
@@ -226,7 +226,7 @@ export function MobileSidebarDrawer({
     return () => window.clearTimeout(timeout);
   }, [isVisible, onPanelElementChange]);
 
-  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: releases the panel element on unmount.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Fork: releases the panel element on unmount.
   React.useEffect(() => () => onPanelElementChange?.(null), [onPanelElementChange]);
 
   const progress = resolveBackdropProgress({ isOpen: open, offset: dragOffset, panelWidth });

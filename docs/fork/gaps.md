@@ -159,6 +159,44 @@ the answer varies by deployment; keep the flag when it cannot.
   backend fills `thread.pullRequests` from the Task's bindings and reports the
   boolean, so every pull-request surface is upstream's.
 
+### Upstream stopped reading the capabilities Moatless leaves absent
+
+Upstream's #26238 ("delete 18k lines of code that nothing reaches") replaced
+most `capabilities.X === true` checks in the clients with `serverConfig !==
+null`: every protocol-2 server is assumed to support them. Moatless advertises
+most (`threadSettlement`, `threadSnooze`, `threadPinning`, `pullRequests`,
+`threadPullRequests`, title regeneration), so those surfaces are unchanged.
+Three it does not advertise now run unconditionally:
+
+- **`inlineMessageContext`** — the composer always sends a turn's context
+  (terminal, review comment, thread, environment chips) as a separate field;
+  the legacy path that serialized it into the text is gone
+  (`useComposerSend.ts`, `useMultipleModelSend.ts`, mobile
+  `threadOutboxDelivery.ts`). Moatless's `message.dispatch` reads no `context`
+  field, so a chip a person attaches is dropped with no error.
+- **`projectCloneTracking`** — adding a project by URL calls
+  `startProjectClone` / `projectClones` (`CommandPalette.tsx`,
+  `NewThreadLinkView.tsx`, `state/projectClones.ts`), which Moatless does not
+  dispatch. `FEATURES.projectManagement` hides the add-project button, but not
+  every entry point.
+- **`attachmentUploads`** — the composer always takes the signed-upload path.
+  Moatless reports it only when `session_jwt_secret` is set; a deployment
+  without one has no inline fallback left. `ChatView.tsx` keeps the fork's
+  capability checks for uploads, file attachments and `questionAttachments`,
+  but the send path no longer consults them.
+
+This merge kept the fork's checks where a conflict landed on them and did not
+restore the deleted ones, which would re-grow code upstream removed across
+many files.
+
+- **Closes when:** Moatless reads `context` on `message.dispatch` and advertises
+  `inlineMessageContext`, dispatches the project-clone methods or hides every
+  add-by-URL entry, and every deployment sets `session_jwt_secret`. Check with
+  `grep -n '"context"' crates/t3code/src/v2_commands.rs` in the
+  backend and `git grep -n 'startProjectClone' apps/web/src`.
+- **Then here:** delete this entry, and the capability checks `ChatView.tsx`
+  still carries for `attachmentUploads` and `questionAttachments`.
+
 ### Moatless grants the new permission scopes only through their legacy parents
 
 The 2026-10-07 merge split upstream's coarse scopes into granular ones
@@ -268,6 +306,18 @@ what a person loses, which is the part the derivation cannot tell you:
   finishes and the union entry is the only stand-in. Closes when Moatless
   streams command output and advertises the capability; delete the union entry
   then.
+- **Linked environments, triage and dev-server stop** — the 2026-10-28 merge
+  added six. `peerLinks.list`, `link`, `unlink` and `answerRequest` back
+  upstream's linked environments (a server links to another and its agents work
+  there); the Labs page's `LinkedEnvironmentsRow` and its search item are held
+  by `serverBehaviorSettings`, and the composer's environment chips have no
+  links to name. `server.prepareTriage` drafts a triage thread for an issue
+  from the command palette (`useStartTriage.ts`), offered only with
+  `capabilities.triage`, which Moatless omits. `preview.stopLocalServer` stops
+  a thread's discovered dev server from `ThreadServersPanel.tsx`, which renders
+  nothing without discovered ports. Closes when Moatless dispatches a family;
+  delete its union entries and the two settings-search ids in
+  `FEATURE_BY_SETTINGS_SEARCH_ID` then.
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
   `getConfig`), so Settings renders and nothing in it can be saved. Holds open
@@ -2023,6 +2073,20 @@ One more arrived in the 2026-10-01 merge:
   checkout on the next message (#18359, `ProviderTurnStartService.ts`); a
   resumed Claude turn retries an MCP registration that stalled (#25372); and
   new-model badges expire after seven days (#25609, `ModelManifest.ts`).
+  The 2026-10-28 merge adds: pending agent questions survive a server restart
+  (867112cda0); a hung delegated-stop effect is time-bounded (36d4d711b7); a
+  child delivery no longer reopens a completed or settled parent run
+  (d033768ec7, 32bf48f428); handoff recovers an interrupted transfer
+  (07242abff3); Claude and Codex retry and recovery fixes (531cee6f16,
+  fe867b86c8, bc8d02ffd5, 8d94203c17, 740de0e642, b88da91397); OpenCode honours
+  the runtime mode (b5af4608ca); parallel worktree creation serializes the
+  `.git/config` lock (3b22620a5c); the GitHub token is sent only to its own host
+  (80b7b0fd23, security); a Forgejo glob no longer hangs (a846084236);
+  renumbered pull requests re-link (3a87681d95); Antigravity paths are contained
+  to the workspace (82515785bb, security); MCP tool schemas are compacted
+  (bc813670d9); the ACP session index is reused (3b2f958603); cgroup delegation
+  for spawned runtimes (4b00290ef0); and terminal grid size syncs on attach
+  (49a9e80e0b).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
