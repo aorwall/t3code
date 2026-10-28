@@ -227,12 +227,12 @@ function CodexDeviceLogin() {
   // of the interval effect below it would tear the timer down and restack it on
   // every render. Declared first, so it is current before that effect reads it.
   const pollRef = useRef(poll.run);
-  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: keeps the interval's ref current; see the comment above.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Fork: keeps the interval's ref current; see the comment above.
   useEffect(() => {
     pollRef.current = poll.run;
   });
 
-  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: the device-auth poll interval.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Fork: the device-auth poll interval.
   useEffect(() => {
     if (started === null) return;
     let cancelled = false;

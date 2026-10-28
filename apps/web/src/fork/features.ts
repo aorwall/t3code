@@ -229,6 +229,8 @@ export const FEATURE_BY_SETTINGS_SEARCH_ID: Readonly<Record<string, FeatureName>
   "text-generation-model": "serverBehaviorSettings",
   "thread-title-instructions": "serverBehaviorSettings",
   "guest-links": "serverBehaviorSettings",
+  "snooze-options": "serverBehaviorSettings",
+  "linked-environments": "serverBehaviorSettings",
   diagnostics: "diagnostics",
   "mobile-app": "connections",
 };

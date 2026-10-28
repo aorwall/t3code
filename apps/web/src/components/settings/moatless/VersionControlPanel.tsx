@@ -116,7 +116,7 @@ function GithubDetail() {
     githubConnectOutcome(window.location.search),
   );
 
-  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: strips the OAuth return parameters from the URL and refetches.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Fork: strips the OAuth return parameters from the URL and refetches.
   useEffect(() => {
     if (outcome === null) return;
     window.history.replaceState(null, "", withoutConnectOutcome(window.location.href));
@@ -261,7 +261,7 @@ function ForgejoDetail() {
     host: forgejoConnectHost(window.location.search),
   }));
 
-  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: strips the OAuth return parameters from the URL and refetches.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Fork: strips the OAuth return parameters from the URL and refetches.
   useEffect(() => {
     if (returned.outcome === null && returned.host === "") return;
     window.history.replaceState(null, "", withoutConnectOutcome(window.location.href));

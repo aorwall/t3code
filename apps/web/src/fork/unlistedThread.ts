@@ -41,7 +41,7 @@ export function useAdoptedThread(
   environmentId: EnvironmentId | null,
   threadId: ThreadId | null,
 ): void {
-  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: registers the thread with the adoption store for as long as it is shown.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Fork: registers the thread with the adoption store for as long as it is shown.
   useEffect(() => {
     if (environmentId === null || threadId === null) {
       return;
@@ -99,7 +99,7 @@ export function useAutoFollowThread(ref: ScopedThreadRef | null): void {
   const shell = useThreadShell(ref);
   const decided = useRef<string | null>(null);
 
-  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: follows an unlisted thread on the backend once the snapshot answers.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Fork: follows an unlisted thread on the backend once the snapshot answers.
   useEffect(() => {
     // A null snapshot is a listing that has not answered, and asking early
     // would follow a thread the snapshot was about to carry anyway.

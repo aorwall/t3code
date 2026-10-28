@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 
-import { AuthSurfaceShell } from "../components/auth/AuthSurfaceShell";
+import { StandalonePage } from "../components/ui/standalone-page";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import {
@@ -35,7 +35,7 @@ function LoginRouteView() {
   const [isLoadingMode, setIsLoadingMode] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: reads the sign-in mode from the Moatless API on mount.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Fork: reads the sign-in mode from the Moatless API on mount.
   useEffect(() => {
     let cancelled = false;
     fetchMoatlessAuthMode().then(
@@ -72,7 +72,7 @@ function LoginRouteView() {
   }
 
   return (
-    <AuthSurfaceShell>
+    <StandalonePage>
       <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Sign in to Moatless</h1>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
         Use the Moatless account for this deployment.
@@ -130,7 +130,7 @@ function LoginRouteView() {
           </Button>
         </div>
       )}
-    </AuthSurfaceShell>
+    </StandalonePage>
   );
 }
 

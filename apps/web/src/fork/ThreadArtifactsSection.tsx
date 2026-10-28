@@ -142,7 +142,7 @@ function useRefreshWhenRunSettles(threadRef: ScopedThreadRef, refresh: () => voi
   const latestRun = useThreadShell(threadRef)?.latestRun ?? null;
   const runKey = latestRun === null ? null : `${latestRun.runId}:${latestRun.status}`;
   const previous = useRef(runKey);
-  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: refetches an outside resource when the run settles; the run key changes with no handler to hook.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Fork: refetches an outside resource when the run settles; the run key changes with no handler to hook.
   useEffect(() => {
     if (previous.current === runKey) return;
     previous.current = runKey;

@@ -77,7 +77,7 @@ export function MoatlessArtifactChip(props: {
 function useArtifactTitle(taskId: string | undefined, artifactId: string): string | null {
   const [title, setTitle] = useState<{ readonly key: string; readonly value: string } | null>(null);
   const key = `${taskId}/${artifactId}`;
-  // oxlint-disable-next-line t3code/react-effect-budget -- Fork: fetches the artifact title from the Moatless API.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Fork: fetches the artifact title from the Moatless API.
   useEffect(() => {
     if (taskId === undefined) return;
     let current = true;

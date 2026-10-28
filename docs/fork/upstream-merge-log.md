@@ -28,6 +28,53 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-28 — merged upstream to 49a9e80e0b
+
+- Upstream: `49a9e80e0b` from base `f6a9315d19` (`174` commits). Branch point:
+  `main`; no open merge PR to stack on.
+- Landed: `1736` files from `git diff HEAD^1 HEAD` against `1724` in the
+  upstream range. The 15 extra are fork files this merge edited (the
+  `react-effect-budget` → `no-unreasoned-state-sync` directive rename in 11,
+  `fork/features.ts`, `login.tsx`, `inventory.json`,
+  `moatlessResponses.test.ts`); the 3 missing
+  are `cli/pair.ts` and `pair.test.ts` (kept deleted) and
+  `environments/primary/context.ts` (kept as the fork's, new path policy
+  `primary-environment-context`). Fork delta `763` files, up from `758`.
+- Upstream #26238 deleted code "nothing reaches": capability checks collapsed
+  to `serverConfig !== null`, and RPCs removed. `preview.navigate` is restored
+  (`preview-navigate-fork-method`) because the framed preview calls it; the
+  rest are unused by the fork client. The capability collapse is not undone:
+  see [the gaps entry](./gaps.md#upstream-stopped-reading-the-capabilities-moatless-leaves-absent).
+- Conflicts: `AGENTS.md` (upstream's test bullets, fork's tsc/routeTree/Taste
+  bullets); `Sidebar.logic.ts`/`Sidebar.tsx`/`threadShell.ts` (upstream's
+  `isShownUnderParent` replaced by the fork's `delegatedUnderParent` set;
+  duplicate-add exception `sidebar-logic-pick-generic`); `ChatView.tsx`
+  (upstream's `isWorking` and rewind without rollback, fork's fork-from-run,
+  sandbox and attachment gates); thread menus use upstream's
+  `readEnvironmentServerConfigLoaded` plus fork visibility/follow; settings
+  gate upstream's Snooze presets and Linked environments behind
+  `serverBehaviorSettings`; `/login` moved to `StandalonePage` after upstream
+  deleted `AuthSurfaceShell`; `pnpm-lock.yaml` re-derived.
+- Unsupported methods: ADD 6 (`peerLinks.*`, `server.prepareTriage`,
+  `preview.stopLocalServer`); stale exception
+  `artifacts-set-visibility-upstream-refusal` replaced by
+  `preview-navigate-upstream-refusal`. See
+  [methods the backend does not dispatch](./gaps.md#methods-the-backend-does-not-dispatch).
+- Sweep: 26 new files hit the concern pattern (peer pairing, mobile, relay,
+  triage); all upstream-owned, taken as upstream's. New workflow
+  `agent-context-budget.yml` arrives enabled; disable it after this lands.
+- Verification: `verify.mjs` (full, parallel). Every check except `test` green.
+  - Confirmed failing alone, as on 2026-10-27: `t3` `RepositoryIdentityResolver`,
+    `GitVcsDriver`, `CodexChatGptAuth`, `CodexManagedRuntime` (`/tmp` gap) and
+    `provider-opencode` `OpenCodeServerLedger`.
+  - Fixed after the run: upstream's new `AgentContextBudget.test.ts` measured
+    the fork's `ProjectScript.port` in two MCP tool schemas (+108 bytes; new
+    entry `agent-context-budget`); `threadShell.test.ts`'s linked-environment
+    case now expects the non-provider helper listed (`thread-shell-subtasks`);
+    `features.test.ts` passes `hasPeerLinkHost`. `web` was 454/455 before the
+    fix; the fixed files and `client-runtime` were re-run green, `web` whole was
+    not.
+
 ### 2026-10-27 — merged upstream to f6a9315d19
 
 - Upstream: `f6a9315d19` from base `7510e5e43c` (`135` commits). Branch point:

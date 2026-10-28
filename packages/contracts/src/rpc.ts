@@ -17,6 +17,16 @@ import {
   McpAppUpdateModelContextInput,
 } from "./mcpApps.ts";
 import {
+  PeerLink,
+  PeerLinkCreateInput,
+  PeerLinkError,
+  PeerLinkRemoveInput,
+  PeerLinkRemoveResult,
+  PeerLinkRequestAnswerInput,
+  PeerLinkRequestError,
+  PeerLinkSummary,
+} from "./peerLink.ts";
+import {
   ChatGptReconnectProfileInput,
   ChatGptReconnectProfile,
   ChatGptImportProfileInput,
@@ -29,8 +39,6 @@ import * as RpcGroup from "effect/rpc/RpcGroup";
 import * as RpcMiddleware from "effect/rpc/RpcMiddleware";
 import { NonNegativeInt, TrimmedNonEmptyString } from "./baseSchemas.ts";
 import {
-  CodexAuthCallbackInput,
-  CodexAuthCallbackState,
   ProviderAuthCancelInput,
   ProviderAuthCompleteInput,
   ProviderAuthState,
@@ -74,11 +82,7 @@ import {
   EnvironmentAuthorizationError,
   UnsupportedMethodError,
 } from "./auth.ts";
-import {
-  BackgroundPolicySnapshot,
-  ClientActivityReportInput,
-  HostPowerSnapshot,
-} from "./background.ts";
+import { ClientActivityReportInput } from "./background.ts";
 import {
   FilesystemGetMetadataInput,
   FilesystemGetMetadataResult,
@@ -253,11 +257,9 @@ import {
   TerminalClearInput,
   TerminalCloseInput,
   TerminalError,
-  TerminalEvent,
   TerminalMetadataStreamEvent,
   TerminalOpenInput,
   TerminalResizeInput,
-  TerminalRestartInput,
   TerminalSessionSnapshot,
   TerminalWriteInput,
 } from "./terminal.ts";
@@ -272,9 +274,11 @@ import {
   PreviewClearProfileError,
   PreviewClearProfileInput,
   PreviewReportProfilesInput,
-  PreviewNavigateInput,
+  PreviewStopLocalServerError,
+  PreviewStopLocalServerInput,
   PreviewOpenInput,
-  PreviewRefreshInput,
+  // Fork: see `WsPreviewNavigateRpc`.
+  PreviewNavigateInput,
   PreviewReportStatusInput,
   PreviewResizeInput,
   PreviewAdjustInput,
@@ -302,6 +306,9 @@ import {
   ServerConfigStreamEvent,
   DesktopUpdateCommitInput,
   OtlpEndpointCheckInput,
+  ServerPrepareTriageError,
+  ServerPrepareTriageInput,
+  ServerPrepareTriageResult,
   OtlpEndpointCheckResult,
   ServerConfig,
   ServerProviderUpdateError,
@@ -425,9 +432,6 @@ import { VcsError } from "./vcs.ts";
 import { Project, ProjectMutation, ProjectMutationError } from "./project.ts";
 
 export const WS_METHODS = {
-  projectsList: "projects.list",
-  projectsAdd: "projects.add",
-  projectsRemove: "projects.remove",
   projectsListEntries: "projects.listEntries",
   projectsListIgnoredFiles: "projects.listIgnoredFiles",
   projectsReadFile: "projects.readFile",
@@ -463,7 +467,6 @@ export const WS_METHODS = {
   chatGptReconnectProfile: "provider.chatgpt.reconnect-profile",
   chatGptImportProfile: "provider.chatgpt.import-profile",
   chatGptHandoffSubscribe: "provider.chatgpt.handoff.subscribe",
-  codexAuthCallbackSubscribe: "provider.codex.auth-callback.subscribe",
   providerAuthRespond: "provider.auth.respond",
   providerAuthCancel: "provider.auth.cancel",
   providerAuthLogout: "provider.auth.logout",
@@ -495,19 +498,19 @@ export const WS_METHODS = {
   terminalWrite: "terminal.write",
   terminalResize: "terminal.resize",
   terminalClear: "terminal.clear",
-  terminalRestart: "terminal.restart",
   terminalClose: "terminal.close",
 
   previewOpen: "preview.open",
+  // Fork: served by Moatless only; upstream deleted it.
   previewNavigate: "preview.navigate",
   previewResize: "preview.resize",
   previewAdjust: "preview.adjust",
-  previewRefresh: "preview.refresh",
   previewClose: "preview.close",
   previewList: "preview.list",
   previewClearProfile: "preview.clearProfile",
   previewReportProfiles: "preview.reportProfiles",
   previewReportStatus: "preview.reportStatus",
+  previewStopLocalServer: "preview.stopLocalServer",
 
   // Fork: the threads a thread spawned; upstream has no task tree.
   subtasksList: "subtasks.list",
@@ -563,7 +566,10 @@ export const WS_METHODS = {
   serverRunStorageCleanup: "server.runStorageCleanup",
   serverGetStorageCleanupReport: "server.getStorageCleanupReport",
   serverGetDatabaseStorage: "server.getDatabaseStorage",
-  serverGetSettings: "server.getSettings",
+  peerLinksList: "peerLinks.list",
+  peerLinksLink: "peerLinks.link",
+  peerLinksUnlink: "peerLinks.unlink",
+  peerLinksAnswerRequest: "peerLinks.answerRequest",
   serverUpdateSettings: "server.updateSettings",
   serverDiscoverSourceControl: "server.discoverSourceControl",
   serverSearchAcpRegistry: "server.searchAcpRegistry",
@@ -584,14 +590,12 @@ export const WS_METHODS = {
   serverGetResourceTelemetryHistory: "server.getResourceTelemetryHistory",
   serverRetryResourceTelemetry: "server.retryResourceTelemetry",
   serverCheckOtlpEndpoint: "server.checkOtlpEndpoint",
+  serverPrepareTriage: "server.prepareTriage",
   serverSignalProcess: "server.signalProcess",
   serverReportClientActivity: "server.reportClientActivity",
-  serverReportHostPowerState: "server.reportHostPowerState",
-  serverGetBackgroundPolicy: "server.getBackgroundPolicy",
   serverGetUsageSummary: "server.getUsageSummary",
   serverRefreshUsageRates: "server.refreshUsageRates",
 
-  scheduledTasksList: "scheduledTasks.list",
   scheduledTasksSubscribe: "scheduledTasks.subscribe",
   scheduledTasksUpsert: "scheduledTasks.upsert",
   scheduledTasksSetEnabled: "scheduledTasks.setEnabled",
@@ -652,7 +656,6 @@ export const WS_METHODS = {
   subscribeVcsStatus: "subscribeVcsStatus",
   subscribeWorktreeSetup: "subscribeWorktreeSetup",
   worktreeSetupCancel: "worktreeSetup.cancel",
-  subscribeTerminalEvents: "subscribeTerminalEvents",
   subscribeTerminalMetadata: "subscribeTerminalMetadata",
   subscribePreviewEvents: "subscribePreviewEvents",
   subscribeDiscoveredLocalServers: "subscribeDiscoveredLocalServers",
@@ -660,7 +663,6 @@ export const WS_METHODS = {
   subscribeServerConfig: "subscribeServerConfig",
   subscribeServerLifecycle: "subscribeServerLifecycle",
   subscribeAuthAccess: "subscribeAuthAccess",
-  subscribeBackgroundPolicy: "subscribeBackgroundPolicy",
   subscribeResourceTelemetry: "subscribeResourceTelemetry",
 } as const;
 
@@ -780,12 +782,6 @@ const WsChatGptHandoffSubscribeRpc = Rpc.make(WS_METHODS.chatGptHandoffSubscribe
   error: ProviderSetupRpcError,
   stream: true,
 });
-const WsCodexAuthCallbackSubscribeRpc = Rpc.make(WS_METHODS.codexAuthCallbackSubscribe, {
-  payload: CodexAuthCallbackInput,
-  success: CodexAuthCallbackState,
-  error: ProviderSetupRpcError,
-  stream: true,
-});
 
 const WsProviderAuthCancelRpc = Rpc.make(WS_METHODS.providerAuthCancel, {
   payload: ProviderAuthCancelInput,
@@ -887,10 +883,31 @@ const WsServerGetDatabaseStorageRpc = Rpc.make(WS_METHODS.serverGetDatabaseStora
   error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
 });
 
-const WsServerGetSettingsRpc = Rpc.make(WS_METHODS.serverGetSettings, {
+const WsPeerLinksListRpc = Rpc.make(WS_METHODS.peerLinksList, {
   payload: Schema.Struct({}),
-  success: ServerSettings,
-  error: Schema.Union([ServerSettingsError, EnvironmentAuthorizationError]),
+  success: Schema.Struct({ links: Schema.Array(PeerLinkSummary) }),
+  error: Schema.Union([PeerLinkError, EnvironmentAuthorizationError, UnsupportedMethodError]),
+});
+
+const WsPeerLinksLinkRpc = Rpc.make(WS_METHODS.peerLinksLink, {
+  payload: PeerLinkCreateInput,
+  success: PeerLink,
+  error: Schema.Union([PeerLinkError, EnvironmentAuthorizationError, UnsupportedMethodError]),
+});
+
+const WsPeerLinksUnlinkRpc = Rpc.make(WS_METHODS.peerLinksUnlink, {
+  payload: PeerLinkRemoveInput,
+  success: PeerLinkRemoveResult,
+  error: Schema.Union([PeerLinkError, EnvironmentAuthorizationError, UnsupportedMethodError]),
+});
+
+const WsPeerLinksAnswerRequestRpc = Rpc.make(WS_METHODS.peerLinksAnswerRequest, {
+  payload: PeerLinkRequestAnswerInput,
+  error: Schema.Union([
+    PeerLinkRequestError,
+    EnvironmentAuthorizationError,
+    UnsupportedMethodError,
+  ]),
 });
 
 const WsServerUpdateSettingsRpc = Rpc.make(WS_METHODS.serverUpdateSettings, {
@@ -1068,6 +1085,16 @@ const WsServerCheckOtlpEndpointRpc = Rpc.make(WS_METHODS.serverCheckOtlpEndpoint
   error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
 });
 
+const WsServerPrepareTriageRpc = Rpc.make(WS_METHODS.serverPrepareTriage, {
+  payload: ServerPrepareTriageInput,
+  success: ServerPrepareTriageResult,
+  error: Schema.Union([
+    ServerPrepareTriageError,
+    EnvironmentAuthorizationError,
+    UnsupportedMethodError,
+  ]),
+});
+
 const WsServerGetUsageSummaryRpc = Rpc.make(WS_METHODS.serverGetUsageSummary, {
   payload: UsageSummaryInput,
   success: UsageSummary,
@@ -1107,17 +1134,6 @@ const WsCloudInstallRelayClientRpc = Rpc.make(WS_METHODS.cloudInstallRelayClient
 const WsServerReportClientActivityRpc = Rpc.make(WS_METHODS.serverReportClientActivity, {
   payload: ClientActivityReportInput,
   error: EnvironmentAuthorizationError,
-});
-
-const WsServerReportHostPowerStateRpc = Rpc.make(WS_METHODS.serverReportHostPowerState, {
-  payload: HostPowerSnapshot,
-  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
-});
-
-const WsServerGetBackgroundPolicyRpc = Rpc.make(WS_METHODS.serverGetBackgroundPolicy, {
-  payload: Schema.Struct({}),
-  success: BackgroundPolicySnapshot,
-  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
 });
 
 const PullRequestRpcError = Schema.Union([
@@ -1750,12 +1766,6 @@ const WsTerminalClearRpc = Rpc.make(WS_METHODS.terminalClear, {
   error: Schema.Union([TerminalError, EnvironmentAuthorizationError]),
 });
 
-const WsTerminalRestartRpc = Rpc.make(WS_METHODS.terminalRestart, {
-  payload: TerminalRestartInput,
-  success: TerminalSessionSnapshot,
-  error: Schema.Union([TerminalError, EnvironmentAuthorizationError]),
-});
-
 const WsTerminalCloseRpc = Rpc.make(WS_METHODS.terminalClose, {
   payload: TerminalCloseInput,
   error: Schema.Union([TerminalError, EnvironmentAuthorizationError]),
@@ -1767,10 +1777,14 @@ const WsPreviewOpenRpc = Rpc.make(WS_METHODS.previewOpen, {
   error: Schema.Union([PreviewError, EnvironmentAuthorizationError]),
 });
 
+/**
+ * Fork: a framed preview's navigation. `UnsupportedMethodError` because `apps/server`
+ * dropped the method; Moatless still serves it.
+ */
 const WsPreviewNavigateRpc = Rpc.make(WS_METHODS.previewNavigate, {
   payload: PreviewNavigateInput,
   success: PreviewSessionSnapshot,
-  error: Schema.Union([PreviewError, EnvironmentAuthorizationError]),
+  error: Schema.Union([PreviewError, EnvironmentAuthorizationError, UnsupportedMethodError]),
 });
 
 const WsPreviewResizeRpc = Rpc.make(WS_METHODS.previewResize, {
@@ -1784,11 +1798,6 @@ const WsPreviewAdjustRpc = Rpc.make(WS_METHODS.previewAdjust, {
   success: PreviewSessionSnapshot,
   // Fork: Moatless does not dispatch preview.adjust. See gaps.md.
   error: Schema.Union([PreviewError, EnvironmentAuthorizationError, UnsupportedMethodError]),
-});
-
-const WsPreviewRefreshRpc = Rpc.make(WS_METHODS.previewRefresh, {
-  payload: PreviewRefreshInput,
-  error: Schema.Union([PreviewError, EnvironmentAuthorizationError]),
 });
 
 const WsPreviewCloseRpc = Rpc.make(WS_METHODS.previewClose, {
@@ -1993,6 +2002,15 @@ export const WsSandboxSetIdleTimeoutRpc = Rpc.make(WS_METHODS.sandboxSetIdleTime
   payload: SandboxSetIdleTimeoutInput,
   success: SandboxSetIdleTimeoutResult,
   error: EnvironmentAuthorizationError,
+});
+
+const WsPreviewStopLocalServerRpc = Rpc.make(WS_METHODS.previewStopLocalServer, {
+  payload: PreviewStopLocalServerInput,
+  error: Schema.Union([
+    PreviewStopLocalServerError,
+    EnvironmentAuthorizationError,
+    UnsupportedMethodError,
+  ]),
 });
 
 const WsSubscribeDiscoveredLocalServersRpc = Rpc.make(WS_METHODS.subscribeDiscoveredLocalServers, {
@@ -2223,16 +2241,6 @@ const WsOrchestrationV2LaunchThreadRpc = Rpc.make(ORCHESTRATION_V2_WS_METHODS.la
   error: Schema.Union([OrchestrationV2ThreadLaunchError, EnvironmentAuthorizationError]),
 });
 
-const WsOrchestrationV2SubscribeArchivedShellRpc = Rpc.make(
-  ORCHESTRATION_V2_WS_METHODS.subscribeArchivedShell,
-  {
-    payload: OrchestrationV2RpcSchemas.subscribeArchivedShell.input,
-    success: OrchestrationV2RpcSchemas.subscribeArchivedShell.output,
-    error: Schema.Union([OrchestrationV2GetShellSnapshotError, EnvironmentAuthorizationError]),
-    stream: true,
-  },
-);
-
 const WsOrchestrationV2SubscribeShellRpc = Rpc.make(ORCHESTRATION_V2_WS_METHODS.subscribeShell, {
   payload: OrchestrationV2RpcSchemas.subscribeShell.input,
   success: OrchestrationV2RpcSchemas.subscribeShell.output,
@@ -2261,13 +2269,6 @@ const WsOrchestrationV2SubscribeCommandOutputRpc = Rpc.make(
   },
 );
 
-const WsSubscribeTerminalEventsRpc = Rpc.make(WS_METHODS.subscribeTerminalEvents, {
-  payload: Schema.Struct({}),
-  success: TerminalEvent,
-  error: EnvironmentAuthorizationError,
-  stream: true,
-});
-
 const WsSubscribeTerminalMetadataRpc = Rpc.make(WS_METHODS.subscribeTerminalMetadata, {
   payload: Schema.Struct({}),
   success: TerminalMetadataStreamEvent,
@@ -2295,12 +2296,6 @@ const WsSubscribeServerLifecycleRpc = Rpc.make(WS_METHODS.subscribeServerLifecyc
   success: ServerLifecycleStreamEvent,
   error: EnvironmentAuthorizationError,
   stream: true,
-});
-
-const WsScheduledTasksListRpc = Rpc.make(WS_METHODS.scheduledTasksList, {
-  payload: ScheduledTaskListInput,
-  success: ScheduledTaskListResult,
-  error: Schema.Union([ScheduledTaskError, EnvironmentAuthorizationError, UnsupportedMethodError]),
 });
 
 const WsScheduledTasksSubscribeRpc = Rpc.make(WS_METHODS.scheduledTasksSubscribe, {
@@ -2396,13 +2391,6 @@ const WsSubscribeAuthAccessRpc = Rpc.make(WS_METHODS.subscribeAuthAccess, {
   stream: true,
 });
 
-const WsSubscribeBackgroundPolicyRpc = Rpc.make(WS_METHODS.subscribeBackgroundPolicy, {
-  payload: Schema.Struct({}),
-  success: BackgroundPolicySnapshot,
-  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
-  stream: true,
-});
-
 const WsSubscribeResourceTelemetryRpc = Rpc.make(WS_METHODS.subscribeResourceTelemetry, {
   payload: Schema.Struct({}),
   success: ResourceTelemetrySnapshot,
@@ -2427,7 +2415,6 @@ export const WsRpcGroup = RpcGroup.make(
   WsChatGptReconnectProfileRpc,
   WsChatGptImportProfileRpc,
   WsChatGptHandoffSubscribeRpc,
-  WsCodexAuthCallbackSubscribeRpc,
   WsProviderAuthRespondRpc,
   WsProviderAuthCancelRpc,
   WsProviderAuthLogoutRpc,
@@ -2444,8 +2431,11 @@ export const WsRpcGroup = RpcGroup.make(
   WsServerRunStorageCleanupRpc,
   WsServerGetStorageCleanupReportRpc,
   WsServerGetDatabaseStorageRpc,
-  WsServerGetSettingsRpc,
   WsServerUpdateSettingsRpc,
+  WsPeerLinksListRpc,
+  WsPeerLinksLinkRpc,
+  WsPeerLinksUnlinkRpc,
+  WsPeerLinksAnswerRequestRpc,
   WsServerDiscoverSourceControlRpc,
   WsServerSearchAcpRegistryRpc,
   WsServerPrepareAcpRegistryAgentRpc,
@@ -2465,10 +2455,10 @@ export const WsRpcGroup = RpcGroup.make(
   WsServerGetResourceTelemetryHistoryRpc,
   WsServerRetryResourceTelemetryRpc,
   WsServerCheckOtlpEndpointRpc,
+  WsServerPrepareTriageRpc,
   WsServerGetUsageSummaryRpc,
   WsServerRefreshUsageRatesRpc,
   WsServerSignalProcessRpc,
-  WsScheduledTasksListRpc,
   WsScheduledTasksSubscribeRpc,
   WsScheduledTasksUpsertRpc,
   WsScheduledTasksSetEnabledRpc,
@@ -2479,8 +2469,6 @@ export const WsRpcGroup = RpcGroup.make(
   WsScheduledTasksListWebhookDeliveriesRpc,
   WsScheduledTasksGetWebhookDeliveryRpc,
   WsServerReportClientActivityRpc,
-  WsServerReportHostPowerStateRpc,
-  WsServerGetBackgroundPolicyRpc,
   WsCloudGetRelayClientStatusRpc,
   WsCloudInstallRelayClientRpc,
   WsPullRequestsListRpc,
@@ -2571,15 +2559,13 @@ export const WsRpcGroup = RpcGroup.make(
   WsTerminalWriteRpc,
   WsTerminalResizeRpc,
   WsTerminalClearRpc,
-  WsTerminalRestartRpc,
   WsTerminalCloseRpc,
-  WsSubscribeTerminalEventsRpc,
   WsSubscribeTerminalMetadataRpc,
   WsPreviewOpenRpc,
+  // Fork: see `WsPreviewNavigateRpc`.
   WsPreviewNavigateRpc,
   WsPreviewResizeRpc,
   WsPreviewAdjustRpc,
-  WsPreviewRefreshRpc,
   WsPreviewCloseRpc,
   WsPreviewListRpc,
   WsPreviewClearProfileRpc,
@@ -2609,6 +2595,7 @@ export const WsRpcGroup = RpcGroup.make(
   WsSandboxRedeployRpc,
   WsSandboxCleanupRpc,
   WsSandboxSetIdleTimeoutRpc,
+  WsPreviewStopLocalServerRpc,
   WsSubscribeDiscoveredLocalServersRpc,
   WsDeviceConfigureRpc,
   WsDeviceListRpc,
@@ -2623,7 +2610,6 @@ export const WsRpcGroup = RpcGroup.make(
   WsSubscribeServerConfigRpc,
   WsSubscribeServerLifecycleRpc,
   WsSubscribeAuthAccessRpc,
-  WsSubscribeBackgroundPolicyRpc,
   WsSubscribeResourceTelemetryRpc,
   WsOrchestrationV2DispatchCommandRpc,
   WsOrchestrationV2GetWorkflowScriptRpc,
@@ -2640,7 +2626,6 @@ export const WsRpcGroup = RpcGroup.make(
   WsOrchestrationV2GetOlderSettledThreadsRpc,
   WsOrchestrationV2GetThreadProjectionRpc,
   WsOrchestrationV2LaunchThreadRpc,
-  WsOrchestrationV2SubscribeArchivedShellRpc,
   WsOrchestrationV2SubscribeShellRpc,
   WsOrchestrationV2SubscribeThreadRpc,
   WsOrchestrationV2SubscribeCommandOutputRpc,
