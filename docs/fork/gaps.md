@@ -312,6 +312,14 @@ what a person loses, which is the part the derivation cannot tell you:
   nothing without discovered ports. Closes when Moatless dispatches a family;
   delete its union entries and the two settings-search ids in
   `FEATURE_BY_SETTINGS_SEARCH_ID` then.
+- **GitHub sign-in through the T3 Code for GitHub app** — the 2026-10-29 merge
+  added four (#26245, upstream marks it internal testing only).
+  `sourceControl.signInStart`, `signInWait` and `signInCancel` run a device-flow
+  sign-in the server finishes on its own, and `sourceControl.appAccess` reports
+  which repositories the app can reach. Moatless holds GitHub credentials
+  itself, so a refused sign-in leaves the person with the backend's own GitHub
+  access and nothing worse. Closes when Moatless dispatches the family; delete
+  the four union entries then.
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
   `getConfig`), so Settings renders and nothing in it can be saved. Holds open
@@ -342,6 +350,12 @@ what a person loses, which is the part the derivation cannot tell you:
   The fix that closes both at once is a `settingsPathEnabled(item.to)` filter in
   `filterAvailableSettingsSearchItems`, which is a behaviour change to make
   outside a merge.
+  The 2026-10-29 merge added `fallbackModelSelection` (#26164): the model a new
+  thread starts on when the default model's provider is out of usage. Its
+  "Fallback model" row on General sits behind `defaultModelSetting` beside the
+  default model row, and with the key absent the composer never offers a
+  fallback. Moatless would need both halves — the stored key and a usage limit
+  the client can read — before the row is worth showing.
   The 2026-10-10 merge added **storage cleanup** to the Storage page:
   `server.getStorageCleanupReport` (a pushed report of what browser artifacts,
   logs and worktrees a sweep would reclaim) and `server.runStorageCleanup`.
@@ -665,6 +679,11 @@ what a person loses, which is the part the derivation cannot tell you:
   and `device.easAccount`, which looks up the Expo account and its apps. That
   method is the tenth union entry, and the EAS hosts section sits on the same
   Devices page the flag already drops.
+  The 2026-10-29 merge added Simlock pools (#25259, #26706): a fourth host kind
+  that leases simulators from a shared pool, a `simlockDeviceHostsEnabled`
+  server setting, and `device.simlockIdentity`, the eleventh union entry. The
+  Labs page's `SimlockHostsRow` and its `simlock-hosts` search item are held by
+  `serverBehaviorSettings`; the hosts editor sits on the Devices page.
 - **Ignored files for "Add project to another machine"** — `projects.listIgnoredFiles`
   (#22180) lists the untracked, ignored files (`.env` and the like) the dialog
   offers to copy to the new machine. The dialog asks only when the source
@@ -2081,6 +2100,21 @@ One more arrived in the 2026-10-01 merge:
   (bc813670d9); the ACP session index is reused (3b2f958603); cgroup delegation
   for spawned runtimes (4b00290ef0); and terminal grid size syncs on attach
   (49a9e80e0b).
+  The 2026-10-29 merge adds: a new thread falls back to another provider when
+  the default one is out of usage (#26164), and provider usage refreshes the
+  moment a turn hits its limit (#26234); a stale Codex usage limit is not
+  replayed (#26331); a watched pull request that merges settles its thread at
+  once (#26395 — Moatless reads no pull request for settlement, see
+  _Settlement rules Moatless owns_, so this is a decision rather than a fix);
+  long thread history loads in bounded pages (#26240); local git status
+  publishes before the remote lookup (#21046); completed pull request sweep
+  data is released (#25177); outside MCP clients get thread links they can
+  open (#26642); agents list snoozed threads across projects in one call
+  (#26442); Claude command approvals show the command (#20145) and ACP ID-only
+  approvals keep the tracked command (#26647); Cursor subagent results no
+  longer fail the parent (#26592); OpenCode subagents follow runtime mode
+  changes (#26302); Codex shadow homes share thread writer locks (c4606e564d);
+  and remote reconnect and command delays are shorter (#25754).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
