@@ -29,6 +29,9 @@ node_modules
 
 # Brand/source material and prose the build does not read.
 assets
+# Except what `apps/web/src` imports: unresolved, the bundle fails with
+# `UNRESOLVED_IMPORT` in the image build only, since a checkout has the file.
+!assets/prod/t3-black-web-apple-touch-180.png
 docs
 .plans
 experiments

@@ -28,6 +28,51 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-29 — merged upstream to fe219c4de1
+
+- Upstream: `fe219c4de1` from base `49a9e80e0b` (`95` commits). Branch point:
+  `main`; no open merge PR to stack on.
+- Landed: `595` files from `git diff HEAD^1 HEAD` against `593` in the
+  upstream range. The 3 extra are fork files this merge edited
+  (`fork/features.ts`, `inventory.json`, `upstream-merge-inventory.md`); the 1
+  missing is `ThreadTerminalRouteScreen.tsx` (mobile), kept as the fork's
+  because its metadata atom holds `TerminalMetadataState`. Fork delta `766`
+  files, unchanged.
+- Conflicts: `AGENTS.md` (upstream now verifies in a real client without
+  asking; restated with the fork's skill routing); `LegacySidebar.tsx` deleted
+  upstream (#21039) — taken, its paths dropped from three inventory entries,
+  and its only helper `buildMultiSelectThreadContextMenuItems` dropped from
+  `Sidebar.logic.ts`; `Sidebar.tsx` (upstream's boring-sidebar folders beside
+  the fork's browse/closed/subtask filter; duplicate-add exception
+  `sidebar-logic-pick-generic` retired); `SidebarThreadRow.tsx` (upstream
+  extracted `metaLine`, the fork's owner name and parent/child links moved into
+  it); composer — upstream's Permissions chip, compact menu section and
+  effort-menu section each gated on `FEATURES.accessMode`, and the new
+  `ComposerControlsBar.tsx` joins `chat-composer-gates`; `ChatView.tsx` (fork's
+  duplicate `nowMinute` dropped after upstream hoisted it); settings — Labs
+  keeps the boring-sidebar rows ungated and puts Simlock hosts with the
+  `serverBehaviorSettings` rows, `ProjectDefaultsSettings` hides upstream's
+  Fallback model row with the default model row; `TimelineWorkGroupRows.tsx`
+  (upstream's boolean `compacting` plus the fork's "Starting sandbox…");
+  `agentContextBudget.json` upstream's plus 108 bytes (`46015`, measured);
+  `pnpm-lock.yaml` re-derived.
+- Unsupported methods: ADD 5 (`sourceControl.signInStart`, `signInWait`,
+  `signInCancel`, `appAccess`, `device.simlockIdentity`). See
+  [methods the backend does not dispatch](./gaps.md#methods-the-backend-does-not-dispatch).
+- Sweep: 15 new files hit the concern pattern (Simlock, EAS host editor,
+  T3 Chat accounts, tunnel usage, relay); all upstream-owned, taken as
+  upstream's. New workflow `mobile-fingerprint-label.yml` arrives enabled;
+  disable it after this lands.
+- Verification: `verify.mjs` (full, parallel). Every check except `test`
+  green; `web` and `client-runtime` passed. Confirmed failing alone, as on
+  2026-10-28: `t3` `RepositoryIdentityResolver`, `GitVcsDriver`,
+  `CodexChatGptAuth`, `CodexManagedRuntime` (`/tmp` gap) and
+  `provider-opencode` `OpenCodeServerLedger`.
+- Image build: upstream's `T3AppIcon.tsx` (#26245) imports a root
+  `assets/prod/` PNG that `.dockerignore` excluded, so only the image build
+  failed (`UNRESOLVED_IMPORT`); `verify.mjs`'s `build` runs on the checkout and
+  cannot see it. Re-included that file in `.dockerignore`.
+
 ### 2026-10-28 — merged upstream to 49a9e80e0b
 
 - Upstream: `49a9e80e0b` from base `f6a9315d19` (`174` commits). Branch point:

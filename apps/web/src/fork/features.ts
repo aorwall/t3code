@@ -231,6 +231,7 @@ export const FEATURE_BY_SETTINGS_SEARCH_ID: Readonly<Record<string, FeatureName>
   "guest-links": "serverBehaviorSettings",
   "snooze-options": "serverBehaviorSettings",
   "linked-environments": "serverBehaviorSettings",
+  "simlock-hosts": "serverBehaviorSettings",
   diagnostics: "diagnostics",
   "mobile-app": "connections",
 };

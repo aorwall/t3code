@@ -309,13 +309,6 @@
       "line": "continue;",
       "reason": "Two `continue` statements in separate loops: the fork's Workspace branch in `writeTargets` skips the settings write, and upstream's keybinding loop skips an unchanged script. Neither is a copy of the other.",
       "retiredWhen": "Either loop stops using `continue`; the check then reports this entry stale."
-    },
-    {
-      "id": "sidebar-logic-pick-generic",
-      "path": "apps/web/src/components/Sidebar.logic.ts",
-      "line": "T extends Pick<",
-      "reason": "Two generic bounds in different functions: upstream's earlier helper, and `filterSidebarV2VisibleThreads`, whose bound the fork's `source` key pushes past one line. Neither is a copy of the other.",
-      "retiredWhen": "Either bound fits on one line again; the check then reports this entry stale."
     }
   ],
   "pathPolicy": [
@@ -613,10 +606,11 @@
       "paths": [
         "apps/web/src/components/chat/ChatComposer.tsx",
         "apps/web/src/components/chat/CompactComposerControlsMenu.tsx",
-        "apps/web/src/components/chat/ComposerFooterControls.tsx"
+        "apps/web/src/components/chat/ComposerFooterControls.tsx",
+        "apps/web/src/components/chat/ComposerControlsBar.tsx"
       ],
       "verdict": "converged",
-      "note": "Take upstream, then re-state the two deltas `chat-surface-gates` describes: the runtime-mode picker lifted into a `runtimeModePicker` const gated on FEATURES.accessMode (in ComposerFooterControls.tsx since upstream extracted ComposerFooterModeControls there in 2026-10), and `phase === \"running\"` left out of collapsedComposerPrimaryActionDisabled. Upstream works in this file constantly and both deltas sit at stable anchors, so the conflict is usually the import block alone — keep both import lines. CompactComposerControlsMenu.tsx is the same Access control at the narrow width and carries the same gate: the label and its MenuRadioGroup wrapped in one FEATURES.accessMode conditional. The two move together — gating one leaves the picker reachable at the other width."
+      "note": "Take upstream, then re-state the two deltas `chat-surface-gates` describes: the Access control gated on FEATURES.accessMode (in ComposerFooterControls.tsx, where it is `permissionsChip`), and `phase === \"running\"` left out of collapsedComposerPrimaryActionDisabled. Upstream works in this file constantly and both deltas sit at stable anchors, so the conflict is usually the import block alone — keep both import lines. CompactComposerControlsMenu.tsx is the same Access control at the narrow width and carries the same gate: the label and its MenuRadioGroup wrapped in one FEATURES.accessMode conditional. Since 2026-10-29 upstream renders the Access control as a Permissions chip (ComposerFooterControls.tsx), a menu section (CompactComposerControlsMenu.tsx) and the effort menu's `extraMenuContent` and `extraMenuHint` (ComposerControlsBar.tsx); all three carry the FEATURES.accessMode gate. They move together — gating one leaves the picker reachable from another."
     },
     {
       "id": "thread-fork-fork-files",
@@ -678,7 +672,6 @@
       "paths": [
         "apps/web/src/components/ui/sidebar.tsx",
         "apps/web/src/components/Sidebar.tsx",
-        "apps/web/src/components/LegacySidebar.tsx",
         "apps/web/src/contextMenuFallback.ts",
         "apps/web/src/components/sidebar/SidebarThreadRow.tsx"
       ],
@@ -1207,7 +1200,7 @@
         "symbol": "FEATURES.accessMode",
         "files": ["apps/web/src/components/chat/ComposerFooterControls.tsx"]
       },
-      "mustSurvive": "Re-apply additive gates only. PanelLayoutControls.tsx left this entry when the fork took the terminal-drawer button back: the file is upstream's byte for byte again, so a merge has nothing to re-apply there. ChatComposer.tsx carries two deltas. The composer's runtime-mode picker — upstream's read-only/write access modes — is lifted into a `runtimeModePicker` const gated on FEATURES.accessMode, because Moatless runs the agent in its own sandbox and the mode the picker sets is not a mode the backend honours; the interaction-mode toggle beside it is untouched and still renders. The lift is the additive shape here: the picked JSX keeps upstream's indentation and the return renders `{runtimeModePicker}` in its place, so re-indenting that block to inline the condition is the thing not to do. Separately, `phase === \"running\"` is dropped from collapsedComposerPrimaryActionDisabled, the mobile collapsed composer's Send button: a message sent while the agent is running is a follow-up the thread accepts, and the expanded composer never disabled it, so the collapsed one greying out was the odd case rather than the rule. Re-adding that term is a regression, not a re-sync."
+      "mustSurvive": "Re-apply additive gates only. PanelLayoutControls.tsx left this entry when the fork took the terminal-drawer button back: the file is upstream's byte for byte again, so a merge has nothing to re-apply there. ChatComposer.tsx carries two deltas. The composer's Access control — upstream's read-only/write access modes, which upstream renders as a Permissions chip, a compact-menu section and an effort-menu section — is gated on FEATURES.accessMode in each place, because Moatless runs the agent in its own sandbox and the mode the control sets is not a mode the backend honours; the interaction-mode toggle beside it is untouched and still renders. Each gate sits on an existing conditional or prop value rather than re-indenting upstream JSX. Separately, `phase === \"running\"` is dropped from collapsedComposerPrimaryActionDisabled, the mobile collapsed composer's Send button: a message sent while the agent is running is a follow-up the thread accepts, and the expanded composer never disabled it, so the collapsed one greying out was the odd case rather than the rule. Re-adding that term is a regression, not a re-sync."
     },
     {
       "id": "persisted-panel-gating",
@@ -1225,7 +1218,6 @@
         "apps/web/src/fork/touchContextMenu.ts",
         "apps/web/src/components/ui/sidebar.tsx",
         "apps/web/src/components/Sidebar.tsx",
-        "apps/web/src/components/LegacySidebar.tsx",
         "apps/web/src/contextMenuFallback.ts",
         "apps/web/src/components/sidebar/SidebarThreadRow.tsx"
       ],
@@ -1278,7 +1270,7 @@
         "apps/web/src/components/threadActionMenu.logic.test.ts",
         "apps/web/src/contextMenuFallback.ts"
       ],
-      "mustSurvive": "Right-clicking a thread in the sidebar, or opening the chat header's menu, offers one visibility item: \"Make public\" on a private thread and \"Make private\" on a public one. The label is the only indicator — a sidebar row shows no badge — so it names the level the click moves to, not the one the thread is on. It sits directly above \"Archive thread\" and opens that group, so it carries the group's separator and `archive` gives it up while the item is present. Going public confirms first (`confirmAndSetThreadVisibility` in useThreadActions.ts, shared by both surfaces); going private dispatches straight away. Only that direction confirms because public is not read-only on Moatless: `ScopeContext::can_control` treats it as the whole of the control grant, so a public thread hands every signed-in viewer its turns, terminal, scripts and sandbox. The confirmation copy says so, and must keep saying so. The item is gated on the `threadVisibility` capability, which covers both halves: the `thread.visibility.set` command and the `visibility` field on a thread row that the label reads. A server sending neither leaves the item out rather than showing a control it cannot label. The level is sent whole rather than toggled, so two clients that disagree about the current value cannot flip each other's write. Moatless carries visibility on the Task itself and keeps writes with the owner, so a public reader's toggle is refused; the bundled server refuses the command outright. LegacySidebar.tsx builds its own menu array and is deliberately left without the item."
+      "mustSurvive": "Right-clicking a thread in the sidebar, or opening the chat header's menu, offers one visibility item: \"Make public\" on a private thread and \"Make private\" on a public one. The label is the only indicator — a sidebar row shows no badge — so it names the level the click moves to, not the one the thread is on. It sits directly above \"Archive thread\" and opens that group, so it carries the group's separator and `archive` gives it up while the item is present. Going public confirms first (`confirmAndSetThreadVisibility` in useThreadActions.ts, shared by both surfaces); going private dispatches straight away. Only that direction confirms because public is not read-only on Moatless: `ScopeContext::can_control` treats it as the whole of the control grant, so a public thread hands every signed-in viewer its turns, terminal, scripts and sandbox. The confirmation copy says so, and must keep saying so. The item is gated on the `threadVisibility` capability, which covers both halves: the `thread.visibility.set` command and the `visibility` field on a thread row that the label reads. A server sending neither leaves the item out rather than showing a control it cannot label. The level is sent whole rather than toggled, so two clients that disagree about the current value cannot flip each other's write. Moatless carries visibility on the Task itself and keeps writes with the owner, so a public reader's toggle is refused; the bundled server refuses the command outright."
     },
     {
       "id": "thread-follow",
@@ -1512,12 +1504,11 @@
       "paths": [
         "apps/web/src/components/CommandPalette.tsx",
         "apps/web/src/components/Sidebar.tsx",
-        "apps/web/src/components/LegacySidebar.tsx",
         "apps/web/src/components/chat/DraftHeroHeadline.tsx",
         "apps/web/src/commandPaletteBus.ts",
         "apps/web/src/components/pullRequest/PullRequestListEmptyState.tsx"
       ],
-      "mustSurvive": "Re-apply list filtering gates. FEATURES.projectManagement also hides the New project affordance wherever it is offered: both sidebars and the draft hero's project picker, which upstream grew a New project menu item on 2026-09-05. A Moatless deployment creates projects from its own admin surfaces, so an enabled New project entry here leads nowhere. The same flag drops `openCommandPalette({ open: \"add-project\" })` in commandPaletteBus.ts, the backstop for every caller of that intent, and hides the pull request list's empty-state Add project button."
+      "mustSurvive": "Re-apply list filtering gates. FEATURES.projectManagement also hides the New project affordance wherever it is offered: the sidebar and the draft hero's project picker, which upstream grew a New project menu item on 2026-09-05. A Moatless deployment creates projects from its own admin surfaces, so an enabled New project entry here leads nowhere. The same flag drops `openCommandPalette({ open: \"add-project\" })` in commandPaletteBus.ts, the backstop for every caller of that intent, and hides the pull request list's empty-state Add project button."
     },
     {
       "id": "checkpoint-file-restore-gate",

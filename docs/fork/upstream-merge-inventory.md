@@ -167,15 +167,12 @@ re-state:
   re-derive the branch from the drawer's own contract — it needs `openMobile`,
   `setOpenMobile`, `side`, and `setMobileSheetElement` (so `mobileSheetMounted`
   hides the floating trigger while the drawer is open), and nothing else.
-- **`Sidebar.tsx` and `LegacySidebar.tsx`** — `useTouchContextMenu(handler)`
-  beside the row's existing `onContextMenu` handler, spread onto the row element
-  in place of the bare `onContextMenu` attribute. Two rows in `Sidebar.tsx`
-  (slim and card), one in `LegacySidebar.tsx`. Upstream renamed both of these on
-  2026-08-08 — the file that was `SidebarV2.tsx` is now `Sidebar.tsx`, and the
-  old `Sidebar.tsx` is now `LegacySidebar.tsx` — so a merge that predates that
-  rename will find this delta under the other names. Behavior that must survive:
-  a long press on a thread row opens the same menu a right-click does, and the
-  press does not also register as a tap on the row.
+- **`sidebar/SidebarThreadRow.tsx`** — `useTouchContextMenu(handler)` beside
+  the row's existing `onContextMenu` handler, spread onto the row element in
+  place of the bare `onContextMenu` attribute, on both row variants. Upstream
+  deleted `LegacySidebar.tsx` on 2026-10-29, which carried the third copy.
+  Behavior that must survive: a long press on a thread row opens the same menu a
+  right-click does, and the press does not also register as a tap on the row.
 - **`contextMenuFallback.ts`** — submenus open on `click` as well as
   `mouseenter`, and the menu's `max-width` is clamped to the viewport. Behavior
   that must survive: a submenu is reachable without a hover, and the menu fits a
@@ -268,8 +265,7 @@ re-state:
 - The level is sent whole rather than toggled, so two clients that disagree
   about the current value cannot flip each other's write.
 - **`decider.ts`** — a refusal; the bundled server has no per-thread read grant
-  to move. `LegacySidebar.tsx` builds its own menu array and is deliberately
-  left without the item.
+  to move.
 
 ### Thread Follow Delta
 

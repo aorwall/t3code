@@ -1,5 +1,5 @@
 import { ProviderInteractionMode, RuntimeMode } from "@t3tools/contracts";
-import { memo, type ReactNode } from "react";
+import { memo, type ReactNode, useRef } from "react";
 import { EllipsisIcon } from "lucide-react";
 // Fork: surface-gating registry gate for the access-mode control.
 import { FEATURES } from "../../fork/features";
@@ -12,18 +12,17 @@ import {
   MenuTrigger,
 } from "../ui/menu";
 import { ComposerControl, ComposerControlIcon } from "./ComposerControl";
-import { useComposerMenuProps } from "./composerEventScope";
+import { focusRequestedPermission, useComposerMenuProps } from "./composerEventScope";
 import { useComposerMenuState } from "./useComposerMenuState";
+import { ComposerPermissionsSection, type RuntimeModeOption } from "./ComposerFooterControls";
 
 export const CompactComposerControlsMenu = memo(function CompactComposerControlsMenu(props: {
   interactionMode: ProviderInteractionMode;
   runtimeMode: RuntimeMode;
-  runtimeModeOptions: ReadonlyArray<{
-    readonly mode: RuntimeMode;
-    readonly label: string;
-  }>;
+  runtimeModeOptions: ReadonlyArray<RuntimeModeOption>;
   showInteractionModeToggle: boolean;
   traitsMenuContent?: ReactNode;
+  showPermissions?: boolean;
   size?: "sm" | "xs";
   /** Close the portaled popup when its trigger hides. */
   hidden?: boolean;
@@ -33,17 +32,28 @@ export const CompactComposerControlsMenu = memo(function CompactComposerControls
   const composerFloatingLayerProps = useComposerMenuProps();
   const size = props.size ?? "sm";
   const [open, setOpen] = useComposerMenuState(props.hidden);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <Menu open={open} onOpenChange={setOpen}>
+    <Menu
+      open={open}
+      onOpenChange={setOpen}
+      onOpenChangeComplete={(isOpen) => focusRequestedPermission(isOpen, triggerRef.current)}
+    >
       <MenuTrigger
         render={
           <ComposerControl
+            ref={triggerRef}
             size={size}
             className="shrink-0"
             aria-label="More composer controls"
             data-composer-shortcut={
-              props.traitsMenuContent ? "composer.mode composer.effort" : "composer.mode"
+              [
+                props.showPermissions !== false ? "composer.mode" : null,
+                props.traitsMenuContent ? "composer.effort" : null,
+              ]
+                .filter(Boolean)
+                .join(" ") || undefined
             }
           />
         }
@@ -54,7 +64,9 @@ export const CompactComposerControlsMenu = memo(function CompactComposerControls
         {props.traitsMenuContent ? (
           <>
             {props.traitsMenuContent}
-            <MenuDivider />
+            {props.showInteractionModeToggle || props.showPermissions !== false ? (
+              <MenuDivider />
+            ) : null}
           </>
         ) : null}
         {props.showInteractionModeToggle ? (
@@ -70,27 +82,17 @@ export const CompactComposerControlsMenu = memo(function CompactComposerControls
               <MenuRadioItem value="default">Chat</MenuRadioItem>
               <MenuRadioItem value="plan">Plan</MenuRadioItem>
             </MenuRadioGroup>
-            <MenuDivider />
+            {props.showPermissions !== false && FEATURES.accessMode ? <MenuDivider /> : null}
           </>
         ) : null}
-        {FEATURES.accessMode ? (
-          <>
-            <div className="px-2 py-1.5 font-medium text-muted-foreground text-xs">Access</div>
-            <MenuRadioGroup
-              value={props.runtimeMode}
-              onValueChange={(value) => {
-                if (!value || value === props.runtimeMode) return;
-                props.onRuntimeModeChange(value as RuntimeMode);
-              }}
-            >
-              {props.runtimeModeOptions.map((option) => (
-                <MenuRadioItem key={option.mode} value={option.mode}>
-                  {option.label}
-                </MenuRadioItem>
-              ))}
-            </MenuRadioGroup>
-          </>
-        ) : null}
+        {/* Fork: FEATURES.accessMode gates the access-mode control. */}
+        {props.showPermissions === false || !FEATURES.accessMode ? null : (
+          <ComposerPermissionsSection
+            runtimeMode={props.runtimeMode}
+            runtimeModeOptions={props.runtimeModeOptions}
+            onRuntimeModeChange={props.onRuntimeModeChange}
+          />
+        )}
       </MenuPopup>
     </Menu>
   );
