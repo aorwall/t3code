@@ -11,6 +11,7 @@ import {
   PortSchema,
   PositiveInt,
   ProjectId,
+  ThreadId,
   TrimmedNonEmptyString,
   TrimmedString,
   type UnknownUnionMember,
@@ -533,6 +534,16 @@ export const ProjectCreateNewResult = Schema.Struct({
   commitError: Schema.optionalKey(TrimmedNonEmptyString),
 });
 export type ProjectCreateNewResult = typeof ProjectCreateNewResult.Type;
+
+export const ProjectCreateFromThreadInput = Schema.Struct({
+  threadId: ThreadId,
+});
+export type ProjectCreateFromThreadInput = typeof ProjectCreateFromThreadInput.Type;
+
+export const ProjectCreateFromThreadResult = Schema.Struct({
+  projectId: ProjectId,
+});
+export type ProjectCreateFromThreadResult = typeof ProjectCreateFromThreadResult.Type;
 
 export class ProjectWriteFileError extends Schema.TaggedError<ProjectWriteFileError>()(
   "ProjectWriteFileError",
