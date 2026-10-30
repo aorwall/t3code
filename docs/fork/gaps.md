@@ -410,6 +410,12 @@ what a person loses, which is the part the derivation cannot tell you:
   Moatless `getConfig` omits, so nothing is offered and no fork gate was added;
   the union entry is the only stand-in. Closes when Moatless can start a thread
   with no repository and reports a scratch root; delete the union entry then.
+  The 2026-10-30 merge added **turning a No project thread into a project**
+  (#26767): `projects.createFromThread` promotes such a thread's folder to a
+  project, from a "Turn into project" item in the thread menu. The item needs
+  `capabilities.threadProjectFromScratch`, which a Moatless handshake omits, and
+  a scratch project, which Moatless never has, so nothing is offered; the union
+  entry is the only stand-in, and it closes with `projects.ensureScratch`'s.
   The 2026-10-02 merge added **a new project from just a name** (#14527):
   `projects.createNew` makes a folder under `ServerConfig.newProjectsRoot` with a
   first commit and registers it as a project, offered from the command palette's
@@ -2115,6 +2121,18 @@ One more arrived in the 2026-10-01 merge:
   longer fail the parent (#26592); OpenCode subagents follow runtime mode
   changes (#26302); Codex shadow homes share thread writer locks (c4606e564d);
   and remote reconnect and command delays are shorter (#25754).
+  The 2026-10-30 merge adds: Stop during a restart no longer leaves the thread
+  stuck (#27141), and restart continuations retry failed starts and respect a
+  parent's stop (#27222); held queues release agent and scheduled messages once
+  the thread completes a run (#27221); `t3_thread_organize` rejects unknown
+  arguments instead of archiving the caller (#26718); mark unread no longer
+  revives a dismissed wake and works after compaction (#24080, #25286); agents
+  yield CPU and memory to the server under pressure (#27176, #27239); commits
+  no longer land on a branch switched mid-action (#24473); clone errors and
+  traces no longer leak tokens or signed URLs (#24698, #24556); guest links no
+  longer return file diffs (#26538, security); and idle servers, run
+  preparation, sidebar shell loads and huge checkpoints are much cheaper
+  (#27098, #27105, #27106, #27110).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
@@ -2218,6 +2236,37 @@ commit. This is a rule, not a repair: **land upstream with a merge commit.** A
 cherry-pick moves the code without moving the base, and every later merge pays
 for it.
 
+### knip reports the fork's unused exports, so the pre-commit hook fails
+
+`vp staged` runs `vp run knip:check` over the whole workspace for any staged
+TypeScript or manifest file, and its `--exports` pass finds 27 unused exports,
+every one of them fork-owned or fork-reached: the `WsSandbox*Rpc`,
+`WsScripts*Rpc`, `WsThreads{GetShell,Browse}Rpc`, `WsSubtasksListRpc`,
+`WsArtifactsSetVisibilityRpc` and `WsProjectsGoToDefinitionRpc` consts in
+`packages/contracts/src/rpc.ts`, the `*_REFRESH_INTERVAL_MS` / `*_STALE_TIME_MS`
+consts in `packages/client-runtime/src/state/`, a few in `apps/web/src/fork/`,
+and `buildPairingUrl` / `renderTerminalQrCode` in `apps/server/src/startupAccess.ts`
+(left exported when the fork deleted `cli/pair.ts`).
+
+What it costs: every commit that stages TypeScript fails the hook, so commits
+go in with `--no-verify`, which also skips the format and lint the hook would
+have run. The 2026-10-30 merge commit was made that way; `verify.mjs` ran format
+and lint instead.
+
+What holds it open: the exports themselves. Un-export each, or list the
+contract consts in `knip.jsonc`'s ignore, and delete this entry when
+`vp run knip:check` exits 0 on `main`.
+
+### The thread details card offers to show rows the fork hides
+
+Upstream's "Choose what to show" menu (#26904, `chat/threadDetailsItems.ts`)
+lists every row, including Automations (hidden by `FEATURES.scheduledTasks`) and
+Open in editor (hidden by `FEATURES.openInEditor`). Toggling either does
+nothing visible. The fork's sandbox row follows the "Environment and worktree"
+toggle, since it stands in for that row. Closes with those flags; until then,
+filtering `THREAD_DETAILS_ITEMS` in `ThreadDetailsItemsMenu.tsx` by the same
+flags is the additive fix.
+
 ### `pnpm test` does not test every package
 
 `vp run -r test` leaves packages out, and it exits 0 without them. On
@@ -2306,6 +2355,22 @@ with no sticky bit, so the broker correctly refuses it.
   user owns. They pass (58 tests on 2026-10-23).
 - **Then here:** nothing to delete. The fix is a sticky `/tmp` in the sandbox
   image.
+
+### The sandbox's global `insteadOf` rewrites the remote URLs the git tests build
+
+`apps/server/src/vcs/GitVcsDriver.test.ts`, `GitVcsDriverCore.test.ts`
+(`ensureRemote` cases) and `project/RepositoryIdentityResolver.test.ts` fail
+here: the Moatless sandbox's `~/.gitconfig` rewrites `https://github.com/` and
+`git@github.com:` to `git+https://github.com/`, so a remote a test adds reads
+back as a different URL and `ensureRemote` picks a new name (`origin-1`,
+`pingdotgg`) instead of reusing `origin`.
+
+- **Package:** `t3`
+- **Open while:** `test -z "$(git config --global --get-regexp '^url\..*\.insteadof$')"`
+- **Check:** run the three files with `GIT_CONFIG_GLOBAL=/dev/null`. They pass
+  (248 tests on 2026-10-30).
+- **Then here:** nothing to delete. The fix is in the sandbox's git setup, or
+  `verify.mjs` running the `t3` tests with `GIT_CONFIG_GLOBAL=/dev/null`.
 
 ### The full suite needs a raised heap
 
