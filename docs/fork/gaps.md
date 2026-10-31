@@ -320,6 +320,18 @@ what a person loses, which is the part the derivation cannot tell you:
   itself, so a refused sign-in leaves the person with the backend's own GitHub
   access and nothing worse. Closes when Moatless dispatches the family; delete
   the four union entries then.
+- **Force stop, branch commits, npm releases and stars** — the 2026-10-31
+  merge added four. `orchestration.forceStopThread` (#27252) ends an agent that
+  ignored Stop, from a Force stop button `useForceStopThread.ts` offers only
+  with `capabilities.threadForceStop`, which a Moatless handshake omits.
+  `review.getBranchCommits` (#19941) fills the Diff pane's new Commits submenu,
+  so on Moatless that submenu opens empty; working-tree and branch diffs are
+  unaffected. `server.getNpmRelease` (#27847) answers the desktop update-track
+  dialog, which a browser never reaches. `sourceControl.starred` (#27832) asks
+  whether the server's GitHub account starred `pingdotgg/t3code`; refused, the
+  answer is "no", so the star prompt shows — see _Upstream's GitHub star prompt
+  asks Moatless users to star T3 Code_ below. Closes when Moatless dispatches a
+  method; delete its union entry then.
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
   `getConfig`), so Settings renders and nothing in it can be saved. Holds open
@@ -2133,11 +2145,41 @@ One more arrived in the 2026-10-01 merge:
   longer return file diffs (#26538, security); and idle servers, run
   preparation, sidebar shell loads and huge checkpoints are much cheaper
   (#27098, #27105, #27106, #27110).
+  The 2026-10-31 merge adds: Stop always completes, and an agent that ignores
+  it can be force stopped (#27252, `orchestration.forceStopThread` above);
+  subagents no longer inherit their parent's settlement protections (#26035,
+  `provider-core/src/server/subagentProjection.ts`); agents wait on a deploy
+  instead of ending the turn (#26681); launched threads step down to a runtime
+  mode their provider offers (#26682); deleted worktree threads recover from a
+  detached checkout (#26758); a task cancelled as its usage limit lands no
+  longer resumes at the reset (#24634); turns no longer start on a provider
+  instance being replaced (#24480); event ingestion that cannot write reports
+  the database error (#26782); connection tickets stay out of request traces
+  (#27904, security); and provider environment variables and Bitbucket/GitCafe
+  credentials can come from a secret provider such as 1Password (#27115,
+  #27746).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
 
 ## This fork
+
+### Upstream's GitHub star prompt asks Moatless users to star T3 Code
+
+Upstream's `apps/web/src/components/GitHubStarPrompt.tsx` (#27832), called
+from `useComposerSend.ts`, shows an "Enjoying T3 Code? Give us a star on
+GitHub" toast once a session after a viewer's fifth sent prompt, until
+dismissed. It skips the toast only when `sourceControl.starred` says the
+server's GitHub account already starred `pingdotgg/t3code`, and Moatless
+refuses that method, so every Moatless viewer sees the toast once and then
+dismisses it. Nothing holds it off here. A `FEATURES` surface would need the
+backend to list it in `unsupportedSurfaces` too, so it was left for a person
+to decide rather than added during the 2026-10-31 merge.
+
+- **Check:** `git grep -n 'recordPromptSent' apps/web/src` lists a call that
+  no `FEATURES` gate guards.
+- **Then here:** either gate `recordPromptSent`'s call on a new surface flag
+  the backend opts out of, or decide the prompt stays and delete this entry.
 
 ### Two union entries refuse conditionally; the other eleven were dropped
 

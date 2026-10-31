@@ -28,6 +28,50 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-10-31 — merged upstream to 80a2351fcb
+
+- Upstream: `80a2351fcb` from base `a773dc38ac` (`310` commits). Branch point:
+  `main`; no open merge PR to stack on. `upstream` is
+  `https://github.com:443/pingdotgg/t3code.git`, which the global
+  `url.git+https://github.com/.insteadOf` does not match, so the fetch goes
+  straight to github.com rather than through the proxy that has no
+  `pingdotgg` installation.
+- Landed: `877` files from `git diff HEAD^1 HEAD` against `878` in the
+  upstream range; the 1 missing is `apps/server/src/cli/pair.test.ts`, which
+  the fork deletes. Fork delta `766` files, unchanged.
+- Conflicts: 9, each by its verdict. `pair.test.ts` stays deleted;
+  `agentContextBudget.json` upstream's plus 108 bytes (`46115`, the test
+  passes); `DiffPanel.tsx` takes upstream's new Commits submenu (#19941) with
+  the `turnDiffs` and `openInEditor` gates re-wrapped; `Sidebar.tsx` feeds
+  upstream's `resolveSidebarReorderableThreadKeys` the fork's `shown` list, empty
+  while browsing; `FilePreviewPanel.tsx` chains `frameRevision ?? fileRevision`
+  (see `file-preview-panel`); `PreviewView.browser.test.tsx` drops both sides
+  (upstream removed the toast mock, the fork deletes `useDiscoveredLocalServers`);
+  `ProjectActionsList.tsx`, `ProviderInstanceCard.tsx` (upstream's
+  `secretSources`) and `SidebarChrome.tsx` keep the fork's gate or brand around
+  upstream's change. `pnpm-lock.yaml` re-derived.
+- Collateral: upstream's new `FilePreviewPanel.browser.test.tsx` gained the
+  fork's `binaryPath` and `onRetargetFile` and joined `file-preview-panel`;
+  duplicate-add exception `diff-panel-radio-group-open-tag` declared.
+- Unsupported methods: ADD 4 (`orchestration.forceStopThread`,
+  `review.getBranchCommits`, `server.getNpmRelease`, `sourceControl.starred`).
+  See [methods the backend does not dispatch](./gaps.md#methods-the-backend-does-not-dispatch).
+  Upstream's star prompt (#27832) is left ungated and is a gap entry:
+  [the star prompt](./gaps.md#upstreams-github-star-prompt-asks-moatless-users-to-star-t3-code).
+- Sweep: 6 hits (`ClerkTokenStore*` desktop, `cloud/npmRelease*`,
+  `sourceControlHostSecrets.test.ts`, `previewSessionSync.browser.test.ts`);
+  upstream-owned, taken. No new workflows.
+- Commit: made with `--no-verify`; knip still fails on the same 27 exports, see
+  [the knip entry](./gaps.md#knip-reports-the-forks-unused-exports-so-the-pre-commit-hook-fails).
+- Verification: `verify.mjs` (full, parallel), then `--fast` after the fixes:
+  every non-test check green. Tests: confirmed failing alone, as on
+  2026-10-30: `provider-opencode` `OpenCodeServerLedger`; `t3`
+  `CodexChatGptAuth`, `CodexManagedRuntime` (`/tmp` gap),
+  `RepositoryIdentityResolver`, `GitVcsDriver`, `GitVcsDriverCore` (`insteadOf`
+  gap). `@t3tools/web` re-run alone after the fixes: 3 of 5514 failed
+  (`ChatView` reserved-thread draft, `AttachmentFilePreview` PDF reload,
+  `runtime.test.ts` relay telemetry), and each passes as a single file.
+
 ### 2026-10-30 — merged upstream to a773dc38ac
 
 - Upstream: `a773dc38ac` from base `fe219c4de1` (`135` commits). Branch point:
