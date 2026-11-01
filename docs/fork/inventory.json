@@ -304,6 +304,13 @@
   ],
   "duplicateAddExceptions": [
     {
+      "id": "diff-panel-radio-group-open-tag",
+      "path": "apps/web/src/components/DiffPanel.tsx",
+      "line": "<DropdownMenuRadioGroup",
+      "reason": "Two different radio groups' opening tags: the fork's `FEATURES.turnDiffs` wrap re-indents the Turn group's tag onto its own line, and upstream's Commits submenu (#19941) opens its group the same way. Neither is a copy of the other.",
+      "retiredWhen": "Either group's opening tag fits on one line again; the check then reports this entry stale."
+    },
+    {
       "id": "project-script-settings-continue",
       "path": "apps/web/src/components/settings/useProjectScriptSettings.ts",
       "line": "continue;",
@@ -681,9 +688,12 @@
     },
     {
       "id": "file-preview-panel",
-      "paths": ["apps/web/src/components/files/FilePreviewPanel.tsx"],
+      "paths": [
+        "apps/web/src/components/files/FilePreviewPanel.tsx",
+        "apps/web/src/components/files/FilePreviewPanel.browser.test.tsx"
+      ],
       "verdict": "decide",
-      "note": "Upstream owns this file and works in it steadily. Two fork deltas to re-state on top: the browser frame keyed on the page's own bytes (frameRevision, from browserPreviewFrameRevision) instead of on the workspace mutation id, following the path the read resolved to (onRetargetFile) so a mention into a subdirectory repository lands on the file actually shown, and the WorkspaceBinaryFile branch (fork/WorkspaceBinaryFile.tsx) that answers a `binary_file` read failure, surfaced as `binaryPath` by projectFilesQueryState.ts, with a download."
+      "note": "Upstream owns this file and works in it steadily. Two fork deltas to re-state on top: the browser frame keyed on the page's own bytes (frameRevision, from browserPreviewFrameRevision) instead of on the workspace mutation id, following the path the read resolved to (onRetargetFile) so a mention into a subdirectory repository lands on the file actually shown, and the WorkspaceBinaryFile branch (fork/WorkspaceBinaryFile.tsx) that answers a `binary_file` read failure, surfaced as `binaryPath` by projectFilesQueryState.ts, with a download. Upstream's FilePreviewPanel.browser.test.tsx (#22339) renders the panel directly, so it carries the two required fork fields: `binaryPath: null` in its `useProjectFileQuery` mock (absent, the binary branch replaces the Markdown preview) and an `onRetargetFile` prop. Upstream's PDF `fileRevision` and the fork's `frameRevision` never meet: `frameRevision` is null for a PDF and `fileRevision` exists only for one, so `WorkspaceBrowserPreview` chains `frameRevision ?? fileRevision ?? workspaceMutationId`."
     },
     {
       "id": "fork-only-workflows",
