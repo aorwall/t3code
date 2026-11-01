@@ -6,10 +6,13 @@ export type SecretRequestItem = Extract<
 >;
 
 /** A `file` request lets the agent's commands read the value, so its card must not promise more. */
-export const secretRequestPrivacyNote = (item: Pick<SecretRequestItem, "delivery">) =>
-  item.delivery === "file"
-    ? "Kept out of chat, in a private file this agent's commands can read for 24 hours"
-    : "Stored securely, never shown to the agent";
+// Fork: a Moatless request names its `storage`, and the agent can read every place it saves to.
+export const secretRequestPrivacyNote = (item: Pick<SecretRequestItem, "delivery" | "storage">) =>
+  item.storage !== undefined
+    ? `Kept out of chat, saved to ${item.storage.scope === "global" ? "the deployment's" : "your"} secrets as ${item.storage.key}, which this agent can read`
+    : item.delivery === "file"
+      ? "Kept out of chat, in a private file this agent's commands can read for 24 hours"
+      : "Stored securely, never shown to the agent";
 export const SECRET_REQUEST_DEFAULT_PLACEHOLDER = "Paste the secret";
 
 export type SecretRequestDisplay =

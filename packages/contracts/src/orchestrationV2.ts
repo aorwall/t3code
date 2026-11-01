@@ -1538,6 +1538,15 @@ export type OrchestrationV2SecretRequestStatus = typeof OrchestrationV2SecretReq
 /** `file`: the value goes to an owner-only file the agent's shell commands can read. */
 export const OrchestrationV2SecretRequestDelivery = Schema.Literal("file");
 
+// Fork: where Moatless saves the answer. An `env` or `runtime_file` secret is
+// readable by the agent, so the card's privacy note reads this, not `delivery`.
+export const OrchestrationV2SecretRequestStorage = Schema.Struct({
+  key: TrimmedNonEmptyString,
+  scope: Schema.Literals(["user", "global"]),
+  kind: Schema.Literals(["env", "runtime_file"]),
+});
+export type OrchestrationV2SecretRequestStorage = typeof OrchestrationV2SecretRequestStorage.Type;
+
 const OrchestrationV2SecretRequestFields = {
   type: Schema.Literal("secret_request"),
   label: TrimmedNonEmptyString,
@@ -1545,6 +1554,8 @@ const OrchestrationV2SecretRequestFields = {
   placeholder: Schema.optional(Schema.String),
   delivery: Schema.optional(OrchestrationV2SecretRequestDelivery),
   secretStatus: OrchestrationV2SecretRequestStatus,
+  // Fork: see OrchestrationV2SecretRequestStorage.
+  storage: Schema.optional(OrchestrationV2SecretRequestStorage),
 } as const;
 
 export const OrchestrationV2LinkRequestStatus = Schema.Literals([

@@ -24,6 +24,19 @@ describe("secretRequestPrivacyNote", () => {
     expect(secretRequestPrivacyNote({})).toBe("Stored securely, never shown to the agent");
     expect(secretRequestPrivacyNote({ delivery: "file" })).not.toContain("never shown");
   });
+
+  // Fork: a Moatless request carries `storage`.
+  it("names the key a Moatless request saves to, and that the agent can read it", () => {
+    const note = secretRequestPrivacyNote({
+      storage: { key: "STRIPE_KEY", scope: "user", kind: "env" },
+    });
+    expect(note).toBe(
+      "Kept out of chat, saved to your secrets as STRIPE_KEY, which this agent can read",
+    );
+    expect(
+      secretRequestPrivacyNote({ storage: { key: "STRIPE_KEY", scope: "global", kind: "env" } }),
+    ).toContain("the deployment's secrets");
+  });
 });
 
 describe("secretRequestFailureMessage", () => {

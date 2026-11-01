@@ -2487,7 +2487,7 @@ const WsGuestShareCreateRpc = Rpc.make(WS_METHODS.guestShareCreate, {
 
 const WsSecretsAnswerRequestRpc = Rpc.make(WS_METHODS.secretsAnswerRequest, {
   payload: SecretRequestAnswerInput,
-  error: Schema.Union([SecretRequestError, EnvironmentAuthorizationError, UnsupportedMethodError]),
+  error: Schema.Union([SecretRequestError, EnvironmentAuthorizationError]),
 });
 
 const WsScheduledTasksListWebhookDeliveriesRpc = Rpc.make(

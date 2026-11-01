@@ -269,12 +269,12 @@ started serving is a union entry to delete, not a no-op. The grouping below is
 what a person loses, which is the part the derivation cannot tell you:
 
 - **Orchestrator V2 diffs and the newer upstream families** — the 2026-10-06
-  merge added `UnsupportedMethodError` to 30 methods, and 26 remain once the V2
+  merge added `UnsupportedMethodError` to 30 methods, and 25 remain once the V2
   backend landed. Three are `orchestration.*` V2 reads (`getTurnDiff`,
   `getFullThreadDiff`, `getWorkflowScript`), plus
   `assets.persistChatAttachments`. The rest are whole upstream families Moatless
   has no counterpart for: `scheduledTasks.*` (held by the `scheduledTasks`
-  flag, which also hides the thread details Automations panel), `server.*AcpRegistry*` and `secrets.answerRequest`.
+  flag, which also hides the thread details Automations panel) and `server.*AcpRegistry*`.
   The 2026-10-08 merge added **MCP apps** (#16236): `mcpApps.callTool`,
   `toolInfo`, `readResource` and `updateModelContext` let a tool call that
   returns an MCP app UI render and run inline in the transcript
