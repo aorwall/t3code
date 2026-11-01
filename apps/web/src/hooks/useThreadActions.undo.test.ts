@@ -17,6 +17,7 @@ const commands = vi.hoisted(() => ({
   unsettle: vi.fn(),
   snooze: vi.fn(),
   unsnooze: vi.fn(),
+  unfollow: vi.fn(),
 }));
 const router = vi.hoisted(() => ({
   navigate: vi.fn(async () => {}),
@@ -59,6 +60,7 @@ const shellLoaded = vi.hoisted(() => ({ current: true }));
 vi.mock("../state/entities", async (original) => ({
   ...(await original<typeof import("../state/entities")>()),
   readEnvironmentServerConfigLoaded: () => true,
+  readEnvironmentSupportsFollow: () => true,
   readThreadShell: () => (shellLoaded.current ? threadShell : null),
 }));
 vi.mock("../state/use-atom-command", () => ({
@@ -82,6 +84,8 @@ vi.mock("../state/use-atom-command", () => ({
         return commands.snooze;
       case threadEnvironment.unsnooze:
         return commands.unsnooze;
+      case threadEnvironment.unfollow:
+        return commands.unfollow;
       default:
         return vi.fn();
     }
@@ -213,28 +217,37 @@ describe("archive Undo", () => {
   });
 });
 
-describe("archive navigation", () => {
+describe("archive and unfollow navigation", () => {
   it.each([
-    { destination: "/undo-env/thread", expected: "/draft/project" },
-    { destination: "/undo-env/other-thread", expected: "/undo-env/other-thread" },
-    { destination: "/settings", expected: "/settings" },
-  ])("ends at $expected after opening $destination while archiving", async (route) => {
+    { handler: "archiveThread", destination: "/undo-env/thread", expected: "/draft/project" },
+    {
+      handler: "archiveThread",
+      destination: "/undo-env/other-thread",
+      expected: "/undo-env/other-thread",
+    },
+    { handler: "archiveThread", destination: "/settings", expected: "/settings" },
+    { handler: "unfollowThread", destination: "/undo-env/thread", expected: "/draft/project" },
+    { handler: "unfollowThread", destination: "/settings", expected: "/settings" },
+  ] as const)("$handler ends at $expected after opening $destination", async (route) => {
+    const command = route.handler === "archiveThread" ? commands.archive : commands.unfollow;
     router.state.location.href = "/undo-env/thread";
     router.state.matches[0]!.params = {
       environmentId: target.environmentId,
       threadId: target.threadId,
     };
-    let finishArchive!: () => void;
-    commands.archive.mockReturnValue(
+    let finish!: () => void;
+    command.mockReturnValue(
       new Promise((resolve) => {
-        finishArchive = () => resolve({ _tag: "Success", value: undefined });
+        finish = () => resolve({ _tag: "Success", value: undefined });
       }),
     );
-    const archived = useThreadActions().archiveThread(target);
+    const done = useThreadActions()[route.handler](target);
     router.state.location.href = route.destination;
-    finishArchive();
-    expect((await archived)._tag).toBe("Success");
-    expect(useThreadUndoNotice.getState().notice).toMatchObject({ action: "Archived" });
+    finish();
+    expect((await done)._tag).toBe("Success");
+    if (route.handler === "archiveThread") {
+      expect(useThreadUndoNotice.getState().notice).toMatchObject({ action: "Archived" });
+    }
     expect(router.state.location.href).toBe(route.expected);
   });
 });

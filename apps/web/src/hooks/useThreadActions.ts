@@ -977,10 +977,31 @@ export function useThreadActions() {
         ),
       );
     }
-    return unfollowThreadMutation({
+    const requestingRouteHref = router.state.location.href;
+    const currentRouteThreadRef = getCurrentRouteThreadRef();
+    const openShell =
+      currentRouteThreadRef?.threadId === target.threadId &&
+      currentRouteThreadRef.environmentId === target.environmentId
+        ? readThreadShell(target)
+        : null;
+    const result = await unfollowThreadMutation({
       environmentId: target.environmentId,
       input: { threadId: target.threadId },
     });
+    // Leave the thread, as archive does, rather than staying on it: the open
+    // route keeps an unfollowed thread in the sidebar (`useAdoptedThread`), and
+    // a reload of its URL follows it again (`useAutoFollowThread`).
+    if (
+      result._tag === "Success" &&
+      openShell !== null &&
+      router.state.location.href === requestingRouteHref
+    ) {
+      const navigation = await settlePromise(() =>
+        handleNewThread(scopeProjectRef(openShell.environmentId, openShell.projectId)),
+      );
+      if (navigation._tag === "Failure") return navigation;
+    }
+    return result;
   };
 
   const runUndoPlan = (target: ScopedThreadRef, plan: ThreadUndo.ThreadUndoPlan) =>
