@@ -31,6 +31,8 @@ import { appAtomRegistry } from "../rpc/atomRegistry";
 import { environmentProjects } from "./projects";
 import { environmentPresentations } from "./presentation";
 import { environmentServerConfigsAtom } from "./server";
+// Fork: the listing snapshot `readThreadFollowed` reads.
+import { environmentSnapshotAtom } from "./shell";
 import {
   allEnvironmentProjectSnapshotsReadyAtom,
   allEnvironmentShellsBootstrappedAtom,
@@ -358,6 +360,18 @@ export function readEnvironmentSupportsFollow(environmentId: EnvironmentId): boo
     appAtomRegistry.get(environmentServerConfigsAtom).get(environmentId)?.environment.capabilities
       .threadFollow === true
   );
+}
+
+/**
+ * Fork: whether the viewer follows this thread, which is whether their listing carries it.
+ * Reads the listing's own snapshot, never the grafted one, or an open thread would read as
+ * followed. A closed thread, or one before the listing answers, reads as followed: the open
+ * listing cannot say, and Unfollow is harmless on a thread nobody follows.
+ */
+export function readThreadFollowed(ref: ScopedThreadRef, archived: boolean): boolean {
+  const snapshot = appAtomRegistry.get(environmentSnapshotAtom(ref.environmentId));
+  if (archived || snapshot === null) return true;
+  return snapshot.threads.some((thread) => thread.id === ref.threadId);
 }
 
 export function readEnvironmentSupportsAutoSettleOptOut(environmentId: EnvironmentId): boolean {

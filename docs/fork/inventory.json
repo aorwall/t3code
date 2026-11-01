@@ -1284,7 +1284,7 @@
     },
     {
       "id": "thread-follow",
-      "name": "Opening a thread by link follows it; the row menu unfollows it",
+      "name": "Opening a thread shows it without following it; the row menu follows and unfollows it",
       "paths": [
         "packages/contracts/src/orchestrationV2.ts",
         "packages/contracts/src/environment.ts",
@@ -1301,10 +1301,13 @@
         "apps/web/src/contextMenuFallback.ts"
       ],
       "guard": {
-        "symbol": "useAutoFollowThread",
-        "files": ["apps/web/src/components/ThreadRouteView.tsx"]
+        "symbol": "readThreadFollowed",
+        "files": [
+          "apps/web/src/hooks/useThreadActionMenu.ts",
+          "apps/web/src/components/Sidebar.tsx"
+        ]
       },
-      "mustSurvive": "A Moatless listing is the open work a viewer follows, so a thread reached by link is readable and absent from the sidebar at the same time. Opening one follows it: `useAutoFollowThread` in fork/unlistedThread.ts dispatches `thread.follow` once per thread from the thread view, and the row stays in the sidebar after the route closes. Upstream's #12015 moved that view out of the route file and into components/ThreadRouteView.tsx, rendered by the `_chat` layout for both `/draft/$draftId` and `/$environmentId/$threadId`; the hook moved with it and takes `target.kind === \"server\" ? target.threadRef : null`, because a draft's reserved ref is the viewer's own work and the listing carries it without being asked. Four conditions bound it, and each one is a bug that does not happen. It decides once per ref and never again after an unfollow, because the row menu's Unfollow acts on the thread the viewer is looking at and a re-follow on the next render would make that item do nothing; a thread already listed on open is decided too (`autoFollowDecision` returns `decided`), or the Unfollow that drops it from the listing reads as an unlisted thread and follows it straight back. It decides against the listing's own snapshot rather than the grafted one, for the reason `missingThreadIds` gives — the graft is what put the thread on screen. It waits for a non-null snapshot, because a listing that has not answered yet was about to carry the thread. It skips a thread with an `archivedAt`, because the sidebar filters on `archivedAt === null` and a followed closed thread would be a follow with no row to unfollow it from. The way out is \"Unfollow thread\" in the per-thread menu, directly below the visibility item and above \"Archive thread\", on both surfaces `buildThreadActionMenuItems` serves; it opens the archive group when the visibility item is absent. It dispatches `thread.unfollow` with no confirmation, because the thread keeps running and only this viewer's listing changes. Both halves are gated on the `threadFollow` capability, so a server without it follows nothing and offers no item. Moatless makes the follow row the listing's membership (`Reach::Followed` over `task_follows`) and records a listing change on each write, so the sidebar updates live for that viewer alone; the bundled server refuses both commands."
+      "mustSurvive": "A Moatless listing is the open work a viewer follows, so a thread reached by link, subtask row or browse is readable and absent from the sidebar at the same time. Opening one does not follow it: the thread view adopts it (`useAdoptedThread`), so it shows in the sidebar while open and leaves when the route closes, and following is a deliberate click. The per-thread menu offers one follow item, \"Follow thread\" or \"Unfollow thread\", directly below the visibility item and above \"Archive thread\", on both surfaces `buildThreadActionMenuItems` serves; it opens the archive group when the visibility item is absent. Which one it shows is `readThreadFollowed` in state/entities.ts, which reads the listing's own snapshot rather than the grafted one, for the reason `missingThreadIds` gives: the graft is what put an unfollowed thread on screen, so reading it would offer Unfollow on every open thread. A closed thread, or one read before the listing answers, reads as followed and offers Unfollow, because the open listing cannot say and an Unfollow of a thread nobody follows is harmless. Neither direction confirms, because the thread keeps running and only this viewer's listing changes. Both are gated on the `threadFollow` capability, so a server without it offers no item. Moatless makes the follow row the listing's membership (`Reach::Followed` over `task_follows`) and records a listing change on each write, so the sidebar updates live for that viewer alone; the bundled server refuses both commands."
     },
     {
       "id": "thread-owner-name",

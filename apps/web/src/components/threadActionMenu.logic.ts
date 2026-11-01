@@ -29,7 +29,8 @@ export type ThreadActionMenuId =
   // Fork: flip the Moatless task between public and private.
   | "make-public"
   | "make-private"
-  // Fork: take the thread out of the viewer's own listing.
+  // Fork: put the thread in, or take it out of, the viewer's own listing.
+  | "follow"
   | "unfollow"
   | "copy-thread"
   | "copy-thread-id"
@@ -91,6 +92,8 @@ export interface ThreadActionMenuState {
   readonly isRunning: boolean;
   /** Fork: who may read the thread, as the server last sent it. */
   readonly isPublic: boolean;
+  /** Fork: see `readThreadFollowed`. */
+  readonly isFollowed: boolean;
   readonly supports: {
     readonly settlement: boolean;
     readonly autoSettleOptOut: boolean;
@@ -271,18 +274,25 @@ export function buildThreadActionMenuItems(
               },
         ]
       : []),
-    // Fork: a listing holds the threads the viewer follows, and opening one by
-    // link adds it, so this is the way back out. It leaves the thread running
-    // and every other viewer's listing alone, which is why it sits above
-    // Archive rather than beside Delete.
+    // Fork: a listing holds the threads the viewer follows, and opening one
+    // shows it without following it, so this is the only way in and out. It
+    // leaves the thread running and every other viewer's listing alone, which
+    // is why it sits above Archive rather than beside Delete.
     ...(state.supports.follow
       ? [
-          {
-            id: "unfollow" as const,
-            label: "Unfollow thread",
-            icon: "bell-off",
-            separatorBefore: !state.supports.visibility,
-          },
+          state.isFollowed
+            ? {
+                id: "unfollow" as const,
+                label: "Unfollow thread",
+                icon: "bell-off",
+                separatorBefore: !state.supports.visibility,
+              }
+            : {
+                id: "follow" as const,
+                label: "Follow thread",
+                icon: "bell",
+                separatorBefore: !state.supports.visibility,
+              },
         ]
       : []),
     {

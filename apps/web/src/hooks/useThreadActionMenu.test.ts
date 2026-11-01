@@ -52,6 +52,7 @@ vi.mock("../state/entities", () => ({
   // Fork: the visibility and follow capabilities, off so the menu matches upstream's.
   readEnvironmentSupportsVisibility: () => false,
   readEnvironmentSupportsFollow: () => false,
+  readThreadFollowed: () => true,
   readThreadShell: () => ({
     id: "thread",
     environmentId: "secondary",

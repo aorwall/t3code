@@ -33,6 +33,8 @@ import {
   // Fork: setting a thread's visibility from its row menu.
   readEnvironmentSupportsFollow,
   readEnvironmentSupportsVisibility,
+  // Fork: picks the Follow or Unfollow item.
+  readThreadFollowed,
   readThreadShell,
   useProjects,
 } from "../state/entities";
@@ -89,7 +91,8 @@ export function useThreadActionMenu(input: {
     deleteThread,
     // Fork: setting a thread's visibility from its row menu.
     confirmAndSetThreadVisibility,
-    // Fork: taking a thread out of the viewer's own listing from its row menu.
+    // Fork: putting a thread in, or taking it out of, the viewer's own listing.
+    followThread,
     unfollowThread,
     markThreadUnread,
     turnThreadIntoProject,
@@ -138,7 +141,7 @@ export function useThreadActionMenu(input: {
         titleRegeneration: configLoaded,
         // Fork: setting a thread's visibility from its row menu.
         visibility: readEnvironmentSupportsVisibility(threadRef.environmentId),
-        // Fork: taking a thread out of the viewer's own listing from its row menu.
+        // Fork: putting a thread in, or taking it out of, the viewer's own listing.
         follow: readEnvironmentSupportsFollow(threadRef.environmentId),
       };
       const isRegeneratingTitle = thread.titleRegeneration != null;
@@ -158,6 +161,8 @@ export function useThreadActionMenu(input: {
         // Fork: absent on a server without the capability, which the
         // `supports` flag above already hides the item for.
         isPublic: thread.source.visibility === "public",
+        // Fork: picks Follow or Unfollow.
+        isFollowed: readThreadFollowed(threadRef, thread.archivedAt != null),
         supports,
         snoozePresets,
         canShareWithGuest,
@@ -327,7 +332,14 @@ export function useThreadActionMenu(input: {
           );
           return;
         // Fork: the thread keeps running and only this viewer's listing
-        // changes, so it drops out of the sidebar with no confirmation.
+        // changes, so neither direction asks for confirmation.
+        case "follow": {
+          const result = await followThread(threadRef);
+          if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
+            failureToast("Failed to follow thread", squashAtomCommandFailure(result));
+          }
+          return;
+        }
         case "unfollow": {
           const result = await unfollowThread(threadRef);
           if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {

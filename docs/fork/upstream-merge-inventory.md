@@ -271,29 +271,20 @@ re-state:
 
 A Moatless listing is the open work a viewer follows, so a thread reached by
 link is readable and absent from the sidebar at the same time. Opening one
-follows it. The fork file is `apps/web/src/fork/unlistedThread.ts`; take
-upstream first, then re-state:
+shows it without following it; following is a click in the thread's menu. The
+fork file is `apps/web/src/fork/unlistedThread.ts`; take upstream first, then
+re-state:
 
-- **`ThreadRouteView.tsx`** — the `useAutoFollowThread` call. Upstream's #12015
-  moved this view out of the route file, and the hook moved with it; it takes
-  `target.kind === "server" ? target.threadRef : null`, because a draft's
-  reserved ref is the viewer's own work and the listing carries it unasked.
-  `inventory.json` guards the symbol in this file for that reason.
-- Four conditions bound the auto-follow, and each one is a bug that does not
-  happen: it fires once per ref and never after an unfollow, or the menu's
-  Unfollow would do nothing on the next render; it decides against the listing's
-  own snapshot rather than the grafted one, because the graft is what put the
-  thread on screen; it waits for a non-null snapshot, because a listing that has
-  not answered was about to carry the thread; and it skips a thread with an
-  `archivedAt`, because the sidebar filters those out and a followed closed
-  thread is a follow with no row to undo it from.
-- **The menu files and `Sidebar.tsx`** — "Unfollow thread" directly below the
-  visibility item and above "Archive thread", on both surfaces
-  `buildThreadActionMenuItems` serves, opening the archive group when the
-  visibility item is absent. Upstream's archive-tail tests need the fork's
-  two-item shift re-applied. No confirmation: the thread keeps running and only
-  this viewer's listing changes.
-- Both halves are gated on the `threadFollow` capability, and **`decider.ts`**
+- **The menu files and `Sidebar.tsx`** — one follow item, "Follow thread" or
+  "Unfollow thread", directly below the visibility item and above "Archive
+  thread", on both surfaces `buildThreadActionMenuItems` serves, opening the
+  archive group when the visibility item is absent. Upstream's archive-tail
+  tests need the fork's two-item shift re-applied. No confirmation either way:
+  the thread keeps running and only this viewer's listing changes.
+- **`readThreadFollowed`** picks the item, and `inventory.json` guards it in
+  both callers. It reads the listing's own snapshot rather than the grafted one,
+  because the graft is what put an unfollowed open thread on screen.
+- Both are gated on the `threadFollow` capability, and **`decider.ts`**
   refuses both commands — the bundled server lists every thread it stores and
   has no per-viewer listing to move one into.
 

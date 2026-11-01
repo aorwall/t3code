@@ -8,11 +8,7 @@ import { SidebarInset } from "./ui/sidebar";
 import { useComposerDraftStore } from "../composerDraftStore";
 // Fork: a Moatless shell listing is the open work you follow, so a thread
 // reached by link, subtask row or archive is absent from it and still real.
-import {
-  useAdoptedThread,
-  useAutoFollowThread,
-  useThreadAwaitingFirstAnswer,
-} from "~/fork/unlistedThread";
+import { useAdoptedThread, useThreadAwaitingFirstAnswer } from "~/fork/unlistedThread";
 import { useSidebarPendingFileDropStore } from "../sidebarPendingFileDropStore";
 import { useEnvironmentThreadRefs, useQuietThreadShell } from "../state/entities";
 import { useEnvironmentShellStatus } from "../state/shell";
@@ -76,16 +72,12 @@ export function ThreadRouteView({
   const environmentHasDraftThreads = useComposerDraftStore((store) =>
     serverThreadRef ? store.hasDraftThreadsInEnvironment(serverThreadRef.environmentId) : false,
   );
-  // Fork: only the thread route adopts and follows. A draft's reserved ref is
+  // Fork: only the thread route adopts. A draft's reserved ref is
   // the viewer's own work and the listing carries it without being asked.
   const linkedThreadRef = target.kind === "server" ? target.threadRef : null;
   // Fork: fetch this thread's listing row, so a thread no listing carried is
   // named, grouped and badged like any other for as long as it is open here.
   useAdoptedThread(linkedThreadRef?.environmentId ?? null, linkedThreadRef?.threadId ?? null);
-  // Fork: opening a thread the listing does not carry follows it, so it stays
-  // in the sidebar after this route closes. Unfollow in the row menu is the way
-  // back out.
-  useAutoFollowThread(linkedThreadRef);
   const serverThreadAwaitingFirstAnswer = useThreadAwaitingFirstAnswer(linkedThreadRef);
   // Until the shell lists the thread, its own load (HTTP, then the socket)
   // decides whether it exists. Read only then: once listed, ChatView keeps

@@ -143,6 +143,8 @@ import { useSidebarThreadList } from "../fork/browsedThreadShells";
 // Fork: the filter's "hide subtasks" rule.
 import { isSidebarSubtaskThread } from "../fork/threadBrowseFilter";
 import {
+  // Fork: picks the Follow or Unfollow item on a row.
+  readThreadFollowed,
   readThreadShell,
   useAllEnvironmentProjectSnapshotsReady,
   useDelegatedUnderParent,
@@ -959,7 +961,8 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
     deleteThread,
     // Fork: setting a thread's visibility from its row menu.
     confirmAndSetThreadVisibility,
-    // Fork: taking a thread out of the viewer's own listing from its row menu.
+    // Fork: putting a thread in, or taking it out of, the viewer's own listing.
+    followThread,
     unfollowThread,
   } = useThreadActions();
   const updateThreadMetadata = useOrchestrationCommand(threadEnvironment.updateMetadata, {
@@ -2597,9 +2600,9 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
         const supportsVisibility =
           serverConfigs.get(thread.environmentId)?.environment.capabilities.threadVisibility ===
           true;
-        // Fork: taking a thread out of the viewer's own listing from its row
-        // menu. A listing holds the threads the viewer follows, so without
-        // this the only way in — opening a link — has no way back out.
+        // Fork: putting a thread in, or taking it out of, the viewer's own
+        // listing from its row menu. Opening a thread does not follow it, so
+        // the menu is the only way in and out.
         const supportsFollow =
           serverConfigs.get(thread.environmentId)?.environment.capabilities.threadFollow === true;
         const isRegeneratingTitle = thread.titleRegeneration != null;
@@ -2643,6 +2646,8 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
               // Fork: absent on a server without the capability, which
               // `supports.visibility` below already hides the item for.
               isPublic: thread.source.visibility === "public",
+              // Fork: picks Follow or Unfollow.
+              isFollowed: readThreadFollowed(threadRef, thread.archivedAt != null),
               canShareWithGuest: appAtomRegistry.get(
                 canShareWithGuestAtom(threadRef.environmentId),
               ),
@@ -2841,7 +2846,21 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
             return;
           }
           // Fork: the thread keeps running and only this viewer's listing
-          // changes, so it drops out of the sidebar with no confirmation.
+          // changes, so neither direction asks for confirmation.
+          case "follow": {
+            const result = await followThread(threadRef);
+            if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
+              const error = squashAtomCommandFailure(result);
+              toastManager.add(
+                stackedThreadToast({
+                  type: "error",
+                  title: "Failed to follow thread",
+                  description: error instanceof Error ? error.message : "An error occurred.",
+                }),
+              );
+            }
+            return;
+          }
           case "unfollow": {
             const result = await unfollowThread(threadRef);
             if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {

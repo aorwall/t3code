@@ -14,6 +14,7 @@ const baseState: ThreadActionMenuState = {
   isRegeneratingTitle: false,
   isRunning: false,
   isPublic: false,
+  isFollowed: true,
   supports: {
     settlement: true,
     autoSettleOptOut: true,
@@ -171,16 +172,21 @@ describe("buildThreadActionMenuItems", () => {
     expect(withNeither.find((item) => item.id === "archive")?.separatorBefore).toBe(true);
   });
 
-  // Fork: a listing holds what the viewer follows, and opening a thread by link
-  // adds it, so the way back out sits directly below the visibility item.
-  it("offers unfollow below the visibility item, gated on the capability", () => {
-    const items = buildThreadActionMenuItems(baseState);
-    const unfollowIndex = items.findIndex((item) => item.id === "unfollow");
-    expect(items[unfollowIndex]).toMatchObject({ label: "Unfollow thread", icon: "bell-off" });
-    expect(items[unfollowIndex - 1]?.id).toBe("make-public");
+  // Fork: opening a thread does not follow it, so the menu is the only way in
+  // and out, directly below the visibility item.
+  it.each([
+    { isFollowed: true, id: "unfollow", label: "Unfollow thread", icon: "bell-off" },
+    { isFollowed: false, id: "follow", label: "Follow thread", icon: "bell" },
+  ])("offers $id below the visibility item when followed is $isFollowed", (row) => {
+    const state = { ...baseState, isFollowed: row.isFollowed };
+    const items = buildThreadActionMenuItems(state);
+    const index = items.findIndex((item) => item.id === row.id);
+    expect(items[index]).toMatchObject({ label: row.label, icon: row.icon });
+    expect(items[index - 1]?.id).toBe("make-public");
+    expect(ids(state)).not.toContain(row.isFollowed ? "follow" : "unfollow");
 
-    expect(ids({ ...baseState, supports: { ...baseState.supports, follow: false } })).not.toContain(
-      "unfollow",
-    );
+    const unsupported = ids({ ...state, supports: { ...state.supports, follow: false } });
+    expect(unsupported).not.toContain("follow");
+    expect(unsupported).not.toContain("unfollow");
   });
 });

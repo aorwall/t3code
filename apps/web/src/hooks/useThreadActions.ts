@@ -335,7 +335,11 @@ export function useThreadActions() {
   const setThreadVisibilityMutation = useAtomCommand(threadEnvironment.setVisibility, {
     reportFailure: false,
   });
-  // Fork: taking a thread out of the viewer's own listing from its row menu.
+  // Fork: putting a thread in, or taking it out of, the viewer's own listing.
+  const followThreadMutation = useAtomCommand(threadEnvironment.follow, {
+    reportFailure: false,
+  });
+  // Fork: see followThreadMutation above.
   const unfollowThreadMutation = useAtomCommand(threadEnvironment.unfollow, {
     reportFailure: false,
   });
@@ -963,10 +967,10 @@ export function useThreadActions() {
     });
   };
 
-  // Fork: the listing is what the viewer follows, so this is how a thread
-  // reached by link leaves it again. It ends nothing and nobody else's listing
-  // changes, so it neither confirms nor warns.
-  const unfollowThread = async (target: ScopedThreadRef) => {
+  // Fork: the listing is what the viewer follows, and opening a thread does
+  // not follow it, so these are the only way in and out. Neither ends anything
+  // or changes anybody else's listing, so neither confirms nor warns.
+  const setThreadFollowed = async (target: ScopedThreadRef, followed: boolean) => {
     if (!readEnvironmentSupportsFollow(target.environmentId)) {
       return AsyncResult.failure(
         Cause.fail(
@@ -977,32 +981,13 @@ export function useThreadActions() {
         ),
       );
     }
-    const requestingRouteHref = router.state.location.href;
-    const currentRouteThreadRef = getCurrentRouteThreadRef();
-    const openShell =
-      currentRouteThreadRef?.threadId === target.threadId &&
-      currentRouteThreadRef.environmentId === target.environmentId
-        ? readThreadShell(target)
-        : null;
-    const result = await unfollowThreadMutation({
+    return (followed ? followThreadMutation : unfollowThreadMutation)({
       environmentId: target.environmentId,
       input: { threadId: target.threadId },
     });
-    // Leave the thread, as archive does, rather than staying on it: the open
-    // route keeps an unfollowed thread in the sidebar (`useAdoptedThread`), and
-    // a reload of its URL follows it again (`useAutoFollowThread`).
-    if (
-      result._tag === "Success" &&
-      openShell !== null &&
-      router.state.location.href === requestingRouteHref
-    ) {
-      const navigation = await settlePromise(() =>
-        handleNewThread(scopeProjectRef(openShell.environmentId, openShell.projectId)),
-      );
-      if (navigation._tag === "Failure") return navigation;
-    }
-    return result;
   };
+  const followThread = (target: ScopedThreadRef) => setThreadFollowed(target, true);
+  const unfollowThread = (target: ScopedThreadRef) => setThreadFollowed(target, false);
 
   const runUndoPlan = (target: ScopedThreadRef, plan: ThreadUndo.ThreadUndoPlan) =>
     ThreadUndo.executeThreadUndo(
@@ -1074,7 +1059,8 @@ export function useThreadActions() {
     setThreadAutoSettle,
     // Fork: setting a thread's visibility from its row menu.
     confirmAndSetThreadVisibility,
-    // Fork: taking a thread out of the viewer's own listing from its row menu.
+    // Fork: putting a thread in, or taking it out of, the viewer's own listing.
+    followThread,
     unfollowThread,
     turnThreadIntoProject: (target: ScopedThreadRef) =>
       createProjectFromThread({
