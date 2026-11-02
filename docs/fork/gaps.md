@@ -74,7 +74,9 @@ not report is most of the booleans added since that handshake was written —
 `threadFind` / `threadFindProgressive` (upstream, 2026-10-09) and
 `threadAutoSettlementScope` and `settledWorktreeCleanup` (upstream,
 2026-10-15) and `threadStop` (upstream, 2026-10-20: `thread.stop` stops a
-thread without resolving its run, #22052) — so
+thread without resolving its run, #22052) and `sideChats`, `projectOrganization`
+and `oneTimeSchedules` (upstream, 2026-11-02: side chats #26901, project pin and
+archive #26154, one-shot scheduled tasks #28104) — so
 each of those
 surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
@@ -979,6 +981,11 @@ the `sandboxStatus` / `scriptsRun` stubs.
   The second documented exception to _drop what DROP lists_.
 - **Closes when:** upstream grows a thread tree, or the method leaves the
   contract. Neither is near.
+
+`artifacts.setVisibility` is the same case: an Artifact is a page a Moatless
+task publishes, Moatless dispatches the method, and `apps/server` refuses it.
+Keep its union entry; the exception is `artifacts-set-visibility-upstream-refusal`
+in `inventory.json`.
 
 The client half is fork-only and self-gating rather than flagged: the section is
 absent when the read comes back with a typed refusal, so a build pointed at
@@ -2158,6 +2165,21 @@ One more arrived in the 2026-10-01 merge:
   (#27904, security); and provider environment variables and Bitbucket/GitCafe
   credentials can come from a secret provider such as 1Password (#27115,
   #27746).
+  The 2026-11-02 merge adds: side chats — a hidden `thread.fork` with
+  `sideChat: true`, seeded from a capped summary of the parent
+  (`orchestration-v2/ContextHandoffService.ts`, #26901) and kept out of thread
+  listings by `lineage.sideChat`; Moatless reports no `sideChats` capability,
+  so the client never offers one. A fork no longer inherits its source's pin,
+  auto-settle or delegation state (#28378); `thread.delete` takes
+  `onlyIfUnused`; a worktree thread whose setup failed is flagged rather than
+  run in the project checkout (`orchestrationV2WorktreePending`); scheduled
+  tasks take a one-shot trigger and interrupted runs stop staying busy
+  (#28104, #28474); usage applies a model filter server-side and counts each
+  request once (#28952, #29001); and worktree creation spawns fewer git
+  processes and lets slow submodule checkouts finish (#28582, #28482).
+  Upstream's managed policy (#27197, `packages/contracts/src/managedPolicy.ts`)
+  stays absent from Moatless's server config, so its locked-setting UI never
+  renders; reproduce it only if an organisation policy is wanted.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
