@@ -166,6 +166,14 @@
       "see": "inventory `task-scoped-scripts`, and 'A script runs on the backend' in gaps.md"
     },
     {
+      "id": "artifacts-set-visibility-upstream-refusal",
+      "method": "artifacts.setVisibility",
+      "direction": "DROP",
+      "reason": "An Artifact is a page a Moatless task publishes and upstream has none, so `apps/server` answers the method with `UnsupportedMethodError` unconditionally while Moatless dispatches it (since moatless 836b9f2ec). The derivation reads backwards for the same reason `scripts.run` does.",
+      "retiredWhen": "The method leaves the contract, or `apps/server` stops refusing it — at which point delete this entry and let the DROP stand.",
+      "see": "inventory `hosted-env-contract`"
+    },
+    {
       "id": "subtasks-list-upstream-refusal",
       "method": "subtasks.list",
       "direction": "DROP",
@@ -304,11 +312,18 @@
   ],
   "duplicateAddExceptions": [
     {
-      "id": "diff-panel-radio-group-open-tag",
-      "path": "apps/web/src/components/DiffPanel.tsx",
-      "line": "<DropdownMenuRadioGroup",
-      "reason": "Two different radio groups' opening tags: the fork's `FEATURES.turnDiffs` wrap re-indents the Turn group's tag onto its own line, and upstream's Commits submenu (#19941) opens its group the same way. Neither is a copy of the other.",
-      "retiredWhen": "Either group's opening tag fits on one line again; the check then reports this entry stale."
+      "id": "chat-view-mobile-viewport-dep",
+      "path": "apps/web/src/components/ChatView.tsx",
+      "line": "isMobileViewport,",
+      "reason": "Two different effects' dependency arrays: the fork's announced-terminal effect and upstream's window-focus effect (2026-11 merge) each list `isMobileViewport` on its own line. Neither is a copy of the other.",
+      "retiredWhen": "Either effect stops depending on `isMobileViewport` or its array fits on one line; the check then reports this entry stale."
+    },
+    {
+      "id": "commands-latest-stable-source-point",
+      "path": "packages/client-runtime/src/operations/commands.ts",
+      "line": "sourcePoint: { type: \"latest_stable\" },",
+      "reason": "Two different `thread.fork` dispatches: the fork's `forkThreadFromLatest` and upstream's `forkSideChat` (2026-11 merge) both fork from the latest stable point. Neither is a copy of the other.",
+      "retiredWhen": "Either command stops forking from `latest_stable`; the check then reports this entry stale."
     },
     {
       "id": "project-script-settings-continue",
@@ -488,6 +503,30 @@
       "note": "Take upstream, then re-apply the metadata scan seeded with `EMPTY_TERMINAL_METADATA_STATE` rather than an empty listing, so the scan carries the environment's announcements beside it (announced-terminal-drawer)."
     },
     {
+      "id": "terminal-sessions-metadata-read",
+      "paths": ["apps/web/src/state/terminalSessions.ts"],
+      "verdict": "converged",
+      "note": "Take upstream, then read the metadata scan's `.terminals` wherever upstream passes the scan result to `terminalMetadataIndex` or `selectKnownTerminalSessions`, because `terminal-metadata-scan` makes the scan carry announcements beside the listing. Upstream moved the known-sessions read into `knownTerminalSessionsFamily` on 2026-11-02."
+    },
+    {
+      "id": "sidebar-hidden-thread",
+      "paths": [
+        "apps/web/src/components/Sidebar.logic.ts",
+        "apps/web/src/components/Sidebar.logic.test.ts"
+      ],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply the `source` arm of `isSidebarHiddenThread` (upstream renamed it from `isSidebarSubagentThread` on 2026-11-02): with a `source`, only a side chat or an `isProviderNativeSubagentThread` child is hidden, so a Moatless child task (`creationSource: \"mcp\"`) is listed beside its parent. The `sidebar-thread-family` inventory entry owns the behavior."
+    },
+    {
+      "id": "chat-view-dispatch-ack",
+      "paths": [
+        "apps/web/src/components/ChatView.logic.ts",
+        "apps/web/src/components/ChatView.logic.test.ts"
+      ],
+      "verdict": "converged",
+      "note": "Take upstream, then keep `hasServerAcknowledgedLocalDispatch` acknowledging on a changed latest user message while the phase is `connecting`, whatever `runtime.status` says: a starting Moatless sandbox reports connecting for minutes. Upstream's narrower queued-only rule (2026-11-02) is a subset; its test table's `preparing` and `starting` rows expect `true` here."
+    },
+    {
       "id": "upstream-preview",
       "paths": ["apps/web/src/components/preview/**"],
       "verdict": "decide",
@@ -614,10 +653,11 @@
         "apps/web/src/components/chat/ChatComposer.tsx",
         "apps/web/src/components/chat/CompactComposerControlsMenu.tsx",
         "apps/web/src/components/chat/ComposerFooterControls.tsx",
-        "apps/web/src/components/chat/ComposerControlsBar.tsx"
+        "apps/web/src/components/chat/ComposerControlsBar.tsx",
+        "apps/web/src/components/chat/ComposerModelEffort.tsx"
       ],
       "verdict": "converged",
-      "note": "Take upstream, then re-state the two deltas `chat-surface-gates` describes: the Access control gated on FEATURES.accessMode (in ComposerFooterControls.tsx, where it is `permissionsChip`), and `phase === \"running\"` left out of collapsedComposerPrimaryActionDisabled. Upstream works in this file constantly and both deltas sit at stable anchors, so the conflict is usually the import block alone — keep both import lines. CompactComposerControlsMenu.tsx is the same Access control at the narrow width and carries the same gate: the label and its MenuRadioGroup wrapped in one FEATURES.accessMode conditional. Since 2026-10-29 upstream renders the Access control as a Permissions chip (ComposerFooterControls.tsx), a menu section (CompactComposerControlsMenu.tsx) and the effort menu's `extraMenuContent` and `extraMenuHint` (ComposerControlsBar.tsx); all three carry the FEATURES.accessMode gate. They move together — gating one leaves the picker reachable from another."
+      "note": "Take upstream, then re-state the two deltas `chat-surface-gates` describes: the Access control gated on FEATURES.accessMode (in ComposerFooterControls.tsx, where it is `permissionsChip`), and `phase === \"running\"` left out of collapsedComposerPrimaryActionDisabled. Upstream works in this file constantly and both deltas sit at stable anchors, so the conflict is usually the import block alone — keep both import lines. CompactComposerControlsMenu.tsx is the same Access control at the narrow width and carries the same gate: the label and its MenuRadioGroup wrapped in one FEATURES.accessMode conditional. Since 2026-10-29 upstream renders the Access control as a Permissions chip (ComposerFooterControls.tsx), a menu section (CompactComposerControlsMenu.tsx) and the effort menu's `extraMenuContent` and `extraMenuHint` (ComposerControlsBar.tsx); all three carry the FEATURES.accessMode gate. Since 2026-11-02 upstream dropped `extraMenuContent` and moved the effort-menu copy into the model picker footer (`PermissionsMenu` in ComposerModelEffort.tsx), so the third gate sits there. They move together — gating one leaves the picker reachable from another."
     },
     {
       "id": "thread-fork-fork-files",
@@ -922,7 +962,7 @@
         "packages/client-runtime/src/state/threadShell.test.ts"
       ],
       "verdict": "converged",
-      "note": "Take upstream, then re-apply the listing filter that skips only `isProviderNativeSubagentThread` children rather than every `relationshipToParent === \"subagent\"` thread, so a Moatless child task stays listed and navigable. The `sidebar-thread-family` inventory entry owns the behavior."
+      "note": "Take upstream, then re-apply the listing filter that skips only `isProviderNativeSubagentThread` children rather than every `relationshipToParent === \"subagent\"` thread, so a Moatless child task stays listed and navigable. The navigation filter also skips `lineage.sideChat === true`, so upstream's side chats (2026-11-02) still roll up into their parent. The `sidebar-thread-family` inventory entry owns the behavior."
     },
     {
       "id": "root-vite-config",

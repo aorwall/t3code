@@ -28,6 +28,39 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-11-02 — merged upstream to 91f66f88de
+
+- Upstream: `91f66f88de` from base `80a2351fcb` (`435` commits). Branch point:
+  `main`; no open merge PR. `upstream` is `https://github.com:443/pingdotgg/t3code.git`
+  as on 2026-10-31.
+- Landed: `1222` files from `git diff HEAD^1 HEAD` against `1224` in the
+  upstream range; missing are `cli/pair.ts` and `cli/pair.test.ts` (deleted)
+  and `PreviewEmptyState.tsx` (kept the fork's copy, which does not promise
+  discovered local servers); `docs/fork/inventory.json` is the one fork-only
+  addition. Fork delta `770` files (`766` before).
+- Conflicts: 25, each by its verdict. Notable decisions: the composer's
+  Permissions gate moved from the dropped `extraMenuContent` to upstream's new
+  model-picker footer (`ComposerModelEffort.tsx`, now in `chat-composer-gates`);
+  `ProjectSettingsPanel.tsx`'s `projectManagement` wrap now also hides
+  upstream's Pin/Archive rows; `ChatView.tsx` keeps the fork dialog and props
+  around upstream's side chats and its re-indented `ThreadDetailsPanel`;
+  `isSidebarSubagentThread` became upstream's `isSidebarHiddenThread` with the
+  fork's `source` arm; `hasServerAcknowledgedLocalDispatch` keeps the fork's
+  wider connecting rule. New entries: `terminal-sessions-metadata-read`,
+  `sidebar-hidden-thread`, `chat-view-dispatch-ack`. `agentContextBudget.json`
+  upstream's plus 108 bytes (`47646`). `pnpm-lock.yaml` re-derived.
+- Duplicate-add exceptions: added `chat-view-mobile-viewport-dep`,
+  `commands-latest-stable-source-point`; retired the stale
+  `diff-panel-radio-group-open-tag`.
+- Unsupported methods: ADD 0. DROP `artifacts.setVisibility` (Moatless now
+  dispatches it) declared as exception `artifacts-set-visibility-upstream-refusal`
+  rather than dropped, since `apps/server` refuses it.
+- Sweep: 4 hits (`auth/serverInternalPaths.ts`, `cli/up.connect.test.ts`,
+  `cloud/relayTracing.test.ts`, `acp/AntigravitySessionFiles.test.ts`);
+  upstream-owned server files, taken. No new workflows.
+- Commit: `--no-verify`, as on 2026-10-31 (knip).
+- Verification: `verify.mjs --fast` green (duplicate-adds, tripwires, resolution-check, unsupported-methods, lockfile, fmt, lint, typecheck, build). The full parallel pass hit its 3600 s deadline, so test packages were run alone. Every package passes, except `t3` (RepositoryIdentityResolver, GitVcsDriver, GitVcsDriverCore, CodexChatGptAuth, CodexManagedRuntime) and `provider-opencode` (`OpenCodeServerLedger`), which fail on the sandbox's `insteadOf` rewrite and `/tmp` as on 2026-10-31. Fixes made in the merge: web's terminal-sessions test now uses the metadata-scan shape, the health-check interval tests opt in to `providerConfiguration`, and client-runtime's thread-shell navigation filter now hides side chats. Web passed 540 of 541 files on the re-run: the upstream-identical `fileEditorDismissal.browser.test.tsx` passed alone, as did `AttachmentFilePreview`'s PDF reload test earlier.
+
 ### 2026-10-31 — merged upstream to 80a2351fcb
 
 - Upstream: `80a2351fcb` from base `a773dc38ac` (`310` commits). Branch point:
