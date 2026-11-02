@@ -116,10 +116,10 @@ const SURFACES = {
    */
   deviceHub: true,
   /**
-   * Merging a fork back into the thread it came from, from the Lineage
-   * section. `thread.merge_back` carries the fork's conversation into its
-   * parent as handed-off context; the backend refuses it, since a Moatless
-   * fork shares no conversation store with its parent to merge.
+   * Merging a fork back into the thread it came from: the Lineage section's
+   * merge action and a side chat's Bring back. `thread.merge_back` queues the
+   * fork's turns as context on the parent's next message; a backend without it
+   * refuses the command, so both controls would only ever fail.
    */
   mergeBack: true,
   /**

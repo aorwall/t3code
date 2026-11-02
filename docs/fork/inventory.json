@@ -1253,6 +1253,22 @@
       "mustSurvive": "Re-apply additive gates only. PanelLayoutControls.tsx left this entry when the fork took the terminal-drawer button back: the file is upstream's byte for byte again, so a merge has nothing to re-apply there. ChatComposer.tsx carries two deltas. The composer's Access control — upstream's read-only/write access modes, which upstream renders as a Permissions chip, a compact-menu section and an effort-menu section — is gated on FEATURES.accessMode in each place, because Moatless runs the agent in its own sandbox and the mode the control sets is not a mode the backend honours; the interaction-mode toggle beside it is untouched and still renders. Each gate sits on an existing conditional or prop value rather than re-indenting upstream JSX. Separately, `phase === \"running\"` is dropped from collapsedComposerPrimaryActionDisabled, the mobile collapsed composer's Send button: a message sent while the agent is running is a follow-up the thread accepts, and the expanded composer never disabled it, so the collapsed one greying out was the odd case rather than the rule. Re-adding that term is a regression, not a re-sync."
     },
     {
+      "id": "merge-back-gate",
+      "name": "Merge-back gate",
+      "paths": [
+        "apps/web/src/components/chat/ThreadRelationshipsControl.tsx",
+        "apps/web/src/components/chat/SideChatPane.tsx"
+      ],
+      "guard": {
+        "symbol": "FEATURES.mergeBack",
+        "files": [
+          "apps/web/src/components/chat/ThreadRelationshipsControl.tsx",
+          "apps/web/src/components/chat/SideChatPane.tsx"
+        ]
+      },
+      "mustSurvive": "Both controls that send `thread.merge_back` sit behind FEATURES.mergeBack: the Lineage section's merge action (a conjunct on `canMerge`) and a side chat's Bring back button (one conditional around its Tooltip). A deployment that lists `mergeBack` in `unsupportedSurfaces` refuses the command, so an ungated control only ever fails. Gate any new upstream control that sends `thread.merge_back` the same way."
+    },
+    {
       "id": "persisted-panel-gating",
       "name": "Persisted panel gating",
       "paths": ["apps/web/src/rightPanelStore.ts"],

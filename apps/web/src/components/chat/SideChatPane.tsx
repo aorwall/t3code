@@ -15,6 +15,7 @@ import { Trash2Icon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { ComposerHandleContext } from "../../composerHandleContext";
+import { FEATURES } from "../../fork/features";
 import { useClientSettings } from "../../hooks/useSettings";
 import type { SideChatParentPanel } from "../../lib/sideChatPane";
 import { readLocalApi } from "../../localApi";
@@ -128,23 +129,26 @@ export default function SideChatPane(props: {
         <span className="min-w-0 flex-1 truncate text-xs font-medium">
           {shell?.title ?? "Side chat"}
         </span>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="xs"
-                aria-disabled={bringBackBlockedReason !== null || bringingBack || undefined}
-                onClick={() => void bringBack()}
-              >
-                Bring back
-              </Button>
-            }
-          />
-          <TooltipPopup side="bottom">
-            {bringBackBlockedReason ?? "Adds this side chat to the main thread's next message."}
-          </TooltipPopup>
-        </Tooltip>
+        {/* Fork: FEATURES.mergeBack off hides Bring back, as it does the Lineage merge action. */}
+        {FEATURES.mergeBack && (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  aria-disabled={bringBackBlockedReason !== null || bringingBack || undefined}
+                  onClick={() => void bringBack()}
+                >
+                  Bring back
+                </Button>
+              }
+            />
+            <TooltipPopup side="bottom">
+              {bringBackBlockedReason ?? "Adds this side chat to the main thread's next message."}
+            </TooltipPopup>
+          </Tooltip>
+        )}
         <Button
           variant="ghost"
           size="icon-xs"

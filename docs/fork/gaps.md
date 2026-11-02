@@ -74,9 +74,9 @@ not report is most of the booleans added since that handshake was written —
 `threadFind` / `threadFindProgressive` (upstream, 2026-10-09) and
 `threadAutoSettlementScope` and `settledWorktreeCleanup` (upstream,
 2026-10-15) and `threadStop` (upstream, 2026-10-20: `thread.stop` stops a
-thread without resolving its run, #22052) and `sideChats`, `projectOrganization`
-and `oneTimeSchedules` (upstream, 2026-11-02: side chats #26901, project pin and
-archive #26154, one-shot scheduled tasks #28104) — so
+thread without resolving its run, #22052) and `projectOrganization` and
+`oneTimeSchedules` (upstream, 2026-11-02: project pin and archive #26154,
+one-shot scheduled tasks #28104) — so
 each of those
 surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
@@ -2165,13 +2165,9 @@ One more arrived in the 2026-10-01 merge:
   (#27904, security); and provider environment variables and Bitbucket/GitCafe
   credentials can come from a secret provider such as 1Password (#27115,
   #27746).
-  The 2026-11-02 merge adds: side chats — a hidden `thread.fork` with
-  `sideChat: true`, seeded from a capped summary of the parent
-  (`orchestration-v2/ContextHandoffService.ts`, #26901) and kept out of thread
-  listings by `lineage.sideChat`; Moatless reports no `sideChats` capability,
-  so the client never offers one. A fork no longer inherits its source's pin,
-  auto-settle or delegation state (#28378); `thread.delete` takes
-  `onlyIfUnused`; a worktree thread whose setup failed is flagged rather than
+  The 2026-11-02 merge adds: a fork no longer inherits its source's pin,
+  auto-settle or delegation state (#28378; already true in Moatless, where
+  those are per-viewer follow columns); a worktree thread whose setup failed is flagged rather than
   run in the project checkout (`orchestrationV2WorktreePending`); scheduled
   tasks take a one-shot trigger and interrupted runs stop staying busy
   (#28104, #28474); usage applies a model filter server-side and counts each
