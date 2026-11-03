@@ -1275,6 +1275,27 @@ calls it only for a thread dropped from _another_ environment, which a
 single-environment Moatless deployment cannot produce, so it holds nothing open
 here; it becomes owed the day a client connects two Moatless environments.
 
+### Native child work, thread tags, and model-switch annotations need backend data
+
+Upstream's native child-work read (`orchestration.getNativeChildWork`,
+`packages/contracts/src/rpc.ts`) is not dispatched by Moatless. Expanding a
+provider-native child's deferred work cannot fetch its history. Its
+`UnsupportedMethodError` union member is the stand-in here. Close this part when
+`unsupported-methods.mjs` derives a DROP for that method and a native-child
+expansion succeeds; remove the union member then.
+
+Thread tags and recording-time hiding (#29053) depend on shell `tags`,
+`thread.tags-updated` events and server settings `hiddenThreadTags` /
+`hideTaggedThreads`. The client filtering is present, but absent tags default to
+empty, so it cannot hide tagged Moatless tasks. Likewise model/effort-change
+annotations (#28995) render only when user turn items carry `modelSwitch`.
+These optional contract fields are compatibility readers, not evidence that
+Moatless emits the data. Close each part by checking backend projection/settings
+sources and verifying a tagged task disappears from display lists while hiding
+is enabled, or a same-harness model change displays its annotation. Remove this
+entry's corresponding paragraph when those checks pass; retain the upstream
+readers, which are not fork stand-ins.
+
 ### Runtime fixes upstream made to its own server
 
 Upstream server fixes the fork cannot use, because Moatless owns the surface
@@ -1282,6 +1303,21 @@ itself. None is a placeholder here — there is nothing in this repository holdi
 them open — so they are recorded only so the next person to touch the Moatless
 runtime knows the answer was already worked out upstream.
 
+- **Provider recovery and VCS behavior from the 61c3794c32 range need parity review.**
+  Imported Claude sessions resume on their first turn (#23219); nested subagent
+  completion persists across turns (#23561); delegated children retain replies
+  after parent settlement (#23456); settled-parent children do not auto-resume
+  after usage limits (#27951); Stop ends a run whose provider already finished
+  (#28520). These prevent lost work and stuck Running states. Review the matching
+  provider/lifecycle code in Moatless against upstream's `apps/server/src/provider`
+  and `orchestration-v2` tests. VCS parity candidates are locale-preserving hooks
+  (#27778), forge CLI calls off the checkpoint/start critical path (#28431), and
+  cleanup of branches left by failed worktree creation (#28373), under
+  `apps/server/src/vcs`. Source-control secret-provider tokens (#27756), Kiro ACP
+  (#14693), and Antigravity 1.4.5 failure/subagent handling (#28629) require
+  backend integrations, not client switches. Nothing here substitutes for these
+  behaviors; remove each item after equivalent backend tests pass, rather than
+  retaining an upstream server implementation as evidence of Moatless support.
 - **A completed turn should get a full idle window before its provider session
   is reaped.** Upstream's `ProviderSessionReaper` now measures idle time from the
   later of the binding's last-seen timestamp and the thread's session
@@ -2448,6 +2484,18 @@ Root `package.json` has no fork delta at all, and upstream already caps
 asymmetry is a choice upstream made with the flag in hand, not an oversight.
 Capping `test` here would open a fresh delta on a hot upstream file to pay for
 one machine size. Raise it upstream, or keep it in the environment.
+
+### OpenCode process-group cleanup tests fail in this sandbox
+
+`packages/provider-opencode/src/server/OpenCodeServerLedger.test.ts` reports
+five failures even when run as a single file: killed groups remain visible to
+`groupExists`, including an already-exited wrapper and interrupted startup.
+This blocks a green full verification; it is not yet established whether the
+cause is sandbox process reaping or upstream runtime behavior. The upstream test
+and implementation are unchanged by the fork. Do not suppress the assertions.
+Close by running that file successfully in the supported runtime and sandbox,
+or identifying and fixing the cleanup defect, then delete this entry. No gate or
+contract declaration stands in for it.
 
 ### CI and the image build run Node 24, not `engines.node`
 

@@ -3745,3 +3745,35 @@ bullet here that no one will read again.
 - Late sweep found auth/relay-owned surfaces including
   `apps/web/src/components/clerk/authRedirect.ts`; accepted temporarily because
   those surfaces are already decided out and will be removed as a group.
+
+## 2026-11-03 — upstream 61c3794c32
+
+- Upstream: `61c3794c32` from base `91f66f88de` (149 commits).
+- Landed: 790 files changed, 33631 insertions(+), 7819 deletions(-).
+  Upstream range: 790 files changed, 33599 insertions(+), 7793 deletions(-).
+  Fork delta at initial merge: 772 files changed, 75911 insertions(+), 3421 deletions(-).
+  The equal totals hide one swap: fork inventory updates landed; upstream's
+  pair.test.ts stayed deliberately deleted. Documentation and verification fixes
+  added afterward account for the final count changes.
+- Eight conflicts: AGENTS.md kept fork guidance plus upstream's Kiro list;
+  pair.test.ts stayed deleted; ChatView took the workspace-mutation context plus
+  fork script/sandbox props; ThreadRelationshipsControl took hidden-relation
+  filtering plus mergeBack gate; ProjectSettingsPanel took checkout grouping plus
+  both projectManagement gates; threadShell combined hidden-tag filtering with
+  native-subagent-only child suppression; workspace catalog took upstream bumps
+  plus TypeScript 7/effect-tsgo; lockfile was re-derived with install.mjs.
+- Owned-surface sweep: Kiro transcript fixture and both migration 077 files are
+  upstream-only runtime fixtures/repair, not new fork task or auth surfaces.
+  No new workflows. Added missing additive-file and merge-back path policies;
+  removed two stale duplicate-add exceptions. Both-parent resolution check and
+  inventory check pass. No route conflict required regeneration.
+- Verification: initial full pass had 7/10 green; fixed the native-child-work
+  unsupported union and Effect 4.1 process-env test type. All 9 fast checks now
+  pass, including production web build. Initial full test run retried packages
+  and files; OpenCodeServerLedger still failed alone, and server failures include
+  the known tmp sticky-bit and global Git URL-rewrite gaps. See
+  [gaps](./gaps.md#opencode-process-group-cleanup-tests-fail-in-this-sandbox).
+  Final sequential verification is pending; PR remains draft until resolved.
+- New backend/data requirements and parity candidates extend the V2/runtime
+  entries in gaps.md rather than treating upstream Node implementations as
+  Moatless support. Commit bypassed the known knip pre-commit failure (27 exports).
