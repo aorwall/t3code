@@ -52,11 +52,17 @@ const SURFACES = {
    */
   diagnostics: true,
   /**
-   * The Connections settings page: device pairing, SSH environments, WSL, and
+   * The Connections settings page: other environments, SSH, WSL, and
    * server-exposure controls for a self-hosted T3 server. The Moatless backend
    * is reached over the web and manages none of this.
    */
   connections: true,
+  /**
+   * The Create pairing link dialog's permission picker. Moatless gives a paired
+   * device the deployment's whole grant, so narrowing it would promise a limit
+   * nothing enforces; the dialog says what the device gets instead.
+   */
+  pairingScopes: true,
   /**
    * Streaming assistant output token-by-token. The Moatless backend delivers
    * each assistant message once it is complete, so the setting governs nothing.

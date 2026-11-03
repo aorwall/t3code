@@ -53,6 +53,8 @@ import {
   type ServerPairingLinkRecord,
 } from "~/environments/primary";
 import { readEnvironmentScope } from "~/state/session";
+// Fork: hides the permission picker where the server cannot narrow a pairing.
+import { FEATURES } from "~/fork/features";
 import { usePrimaryEnvironmentId } from "~/state/environments";
 import { usePrimaryManagedPolicy } from "~/state/managedPolicy";
 import { ManagedControl } from "../ManagedPolicy";
@@ -601,7 +603,8 @@ export const AuthorizedClientsHeaderAction = memo(function AuthorizedClientsHead
     const settled = await settlePromise(async () => {
       const created = await createServerPairingCredential({
         label: pairingLabel,
-        scopes: selectedScopes,
+        // Fork: no scopes where the server grants a device everything.
+        ...(FEATURES.pairingScopes ? { scopes: selectedScopes } : {}),
       });
       onPairingLinkCreated(created);
       setPairingLabel("");
@@ -689,7 +692,15 @@ export const AuthorizedClientsHeaderAction = memo(function AuthorizedClientsHead
                 autoFocus
               />
             </label>
-            <section className="space-y-3">
+            {/* Fork: what a device gets where the picker below is hidden. */}
+            {FEATURES.pairingScopes ? null : (
+              <p className="mt-3 text-xs text-muted-foreground">
+                The paired device acts as you, with the same access you have here. Revoke it below
+                to unpair it.
+              </p>
+            )}
+            {/* Fork: `hidden` rather than unmounted, to leave upstream's block as it is. */}
+            <section className="space-y-3" hidden={!FEATURES.pairingScopes}>
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-xs font-medium text-foreground">Permissions</h3>

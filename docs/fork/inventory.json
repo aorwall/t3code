@@ -37,7 +37,7 @@
     {
       "id": "client-identity",
       "name": "Client / device identity",
-      "forkPosition": "Moatless replaces device pairing.",
+      "forkPosition": "Moatless replaces upstream's pairing server, and serves upstream's own pairing client: the mobile app's bearer pairing, and the Authorized clients section of /settings/access, whose links are Moatless pairing codes and whose clients are paired-device API keys. The fork hides only the permission picker (`pairingScopes`).",
       "upstreamAddition": "Do not adopt; check deleted surfaces."
     },
     {
@@ -927,6 +927,12 @@
       ],
       "verdict": "converged",
       "note": "Take upstream, then re-apply the FEATURES.providerConfiguration gates described in the moatless-provider-auth entry, which is where the reasoning lives. In ProviderSettingsPanel: the driver list narrows to what `serverProviders` publishes, and the Add provider button — in the section's `titleAction` since 2026-10 — is a `? … : null` around the whole Tooltip, and so is the list's own Add provider button below the rows (`FEATURES.providerConfiguration && !readOnly`), and upstream's `<ProviderUpdatesAction />` in the section's `headerAction` is a `? … : null` too, since it calls the refused `server.updateProvider`. In ProviderInstanceCard: the status row's control slot is a ternary between upstream's configuration controls and the fork's ProviderAuthAction, and ProviderAuthSetup owns its own section after upstream's setup block. In ProviderModelsSection: the flag folds into upstream's `driverKind === \"antigravity\" ? null :` head, because adding a custom model writes providerInstances; hiding, ordering and favouriting below it are client settings and stay ungated. Upstream restyles these rows often — the 2026-09-17 merge moved them from `sm:` breakpoints to `@min-[32rem]/settings-row:` container queries — so take upstream's classNames and keep the ternary around them, not the other way round. The environment browser test mocks the flag off through a hoisted switch, and turns it back on only for upstream's per-instance write test."
+    },
+    {
+      "id": "authorized-clients-pairing-scopes",
+      "paths": ["apps/web/src/components/settings/AuthorizedClientsSettings.tsx"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply the `FEATURES.pairingScopes` gate in the Create pairing link dialog: the `scopes` field of the `createServerPairingCredential` call is spread in only when the gate is on, the Permissions `<section>` carries `hidden={!FEATURES.pairingScopes}` rather than being unmounted, and a one-paragraph note above it says the device acts as you. Moatless lists `pairingScopes` as unsupported because a paired device holds the whole grant and the backend refuses a narrower link (`moatless/crates/t3code/src/access.rs`). Against a T3 server the gate is on and the dialog is upstream's."
     },
     {
       "id": "chat-layout-route",

@@ -2293,7 +2293,10 @@ doing it. The argument against doing it piecemeal is that a half-removed auth
 path is worse than an unused one, so this wants to be one change per surface.
 
 Pairing is also the largest of the three and the one that leaks into docs — see
-below.
+below. It is no longer wholly unused: Moatless serves the mobile app's bearer
+pairing and the Authorized clients section of `/settings/access`
+(`moatless/crates/t3code/src/access.rs`), so removing pairing keeps those and
+drops the bundled server's side and `/pair`.
 
 ### Mobile testing against Moatless is undocumented because it is unverified
 
