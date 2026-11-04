@@ -23,15 +23,18 @@
 #   vars.REGISTRY_ORG  registry namespace, defaults to `aorwall` (same
 #                      convention as the moatless repository's workflows).
 #   vars.DOCKER_BUILD_RUNNER
-#                      runner label, defaults to `staging-runners-large`. See
-#                      the runner notes below.
+#                      runner label, defaults to `ci-runners-large`. See the
+#                      runner notes below.
 #
 # Runners:
-#   `staging-runners-large` is an org-scoped ARC scale set defined in
-#   soaplabs/soap-platform-gitops (`apps/nonprod/arc-runner-large-set`) — 4 CPU
+#   `ci-runners-large` is an org-scoped ARC scale set defined in
+#   soaplabs/soap-platform-gitops (`apps/nonprod/arc-runner-ci-large-set`) — 4 CPU
 #   and 8 GiB with a DinD sidecar, which is the set meant for image builds. It
 #   is org-scoped (`githubConfigUrl: https://github.com/soaplabs`), so this
 #   repository can use it with nothing to configure.
+#
+#   It has no staging pod role: the job pushes to Docker Hub with its own
+#   credentials and needs nothing from the cluster or AWS.
 #
 #   It is not merely preferred over GitHub-hosted runners, it is the only thing
 #   that works: every `ubuntu-*` job in this repository's history fails in about
@@ -94,7 +97,7 @@ concurrency:
 jobs:
   build:
     name: Build & push moatless-t3
-    runs-on: ${{ vars.DOCKER_BUILD_RUNNER || 'staging-runners-large' }}
+    runs-on: ${{ vars.DOCKER_BUILD_RUNNER || 'ci-runners-large' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6

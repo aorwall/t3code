@@ -17,9 +17,9 @@
 # than this runner, and its parallel pass is what gets a 4 CPU / 8 GiB box
 # evicted. Every other test stays local and targeted; see AGENTS.md.
 #
-# Runner: `staging-runners-large`, the same org-scoped ARC scale set the image
+# Runner: `ci-runners-large`, the same org-scoped ARC scale set the image
 # build uses — 4 CPU and 8 GiB, defined in soaplabs/soap-platform-gitops under
-# `apps/nonprod/arc-runner-large-set`. Do not change this to `ubuntu-latest`:
+# `apps/nonprod/arc-runner-ci-large-set`. Do not change this to `ubuntu-latest`:
 # GitHub-hosted labels are not answered in this repository at all, and a job
 # asking for one dies in about 30 seconds with no runner assigned and no step
 # recorded. The set's egress allowlist permits only 443/TCP, which every fetch
@@ -43,7 +43,7 @@ concurrency:
 jobs:
   typecheck:
     name: Typecheck
-    runs-on: ${{ vars.CI_RUNNER || 'staging-runners-large' }}
+    runs-on: ${{ vars.CI_RUNNER || 'ci-runners-large' }}
     timeout-minutes: 30
     env:
       CI: "1"

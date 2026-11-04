@@ -20,8 +20,8 @@ Everything except `build-moatless-t3-image.yml` and `typecheck.yml` must report
 
 | Workflow                      | Runner                                                   | What it does                                                                                                                    |
 | ----------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `build-moatless-t3-image.yml` | `vars.DOCKER_BUILD_RUNNER`, else `staging-runners-large` | Builds `apps/web` into a static nginx image and publishes `aorwall/moatless-t3` for the Moatless Helm chart.                    |
-| `typecheck.yml`               | `vars.CI_RUNNER`, else `staging-runners-large`           | `pnpm typecheck` over the whole workspace, then the `@t3tools/contracts` tests, on every pull request and every push to `main`. |
+| `build-moatless-t3-image.yml` | `vars.DOCKER_BUILD_RUNNER`, else `ci-runners-large` | Builds `apps/web` into a static nginx image and publishes `aorwall/moatless-t3` for the Moatless Helm chart.                    |
+| `typecheck.yml`               | `vars.CI_RUNNER`, else `ci-runners-large` | `pnpm typecheck` over the whole workspace, then the `@t3tools/contracts` tests, on every pull request and every push to `main`. |
 
 Both are fork-only — upstream has no equivalent of either, so there is nothing
 for a merge to conflict with.
@@ -54,9 +54,9 @@ It is the token's scopes, not the username, not the secret being absent.
 
 ## Runners: only self-hosted ones start here
 
-`staging-runners-large` is an org-scoped ARC scale set defined in
+`ci-runners-large` is an org-scoped ARC scale set defined in
 [soaplabs/soap-platform-gitops](https://github.com/soaplabs/soap-platform-gitops)
-under `apps/nonprod/arc-runner-large-set` — 4 CPU and 8 GiB with a DinD sidecar,
+under `apps/nonprod/arc-runner-ci-large-set` — 4 CPU and 8 GiB with a DinD sidecar,
 the set intended for image builds. Because it is scoped to the org rather than a
 repository list, this fork can use it with nothing to configure.
 
@@ -130,7 +130,7 @@ gh workflow enable ci.yml --repo soaplabs/t3code
 
 `ci.yml` also needs a runner it can actually reach. Either install Blacksmith on
 the fork, or change `runs-on: blacksmith-8vcpu-ubuntu-2404` to
-`runs-on: staging-runners-large` — not to `ubuntu-24.04`, which does not start
+`runs-on: ci-runners-large` — not to `ubuntu-24.04`, which does not start
 here. The macOS job has no self-hosted equivalent and stays off either way.
 Note that the second option is a fork delta on a file upstream edits often, so
 it will want a row in
