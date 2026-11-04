@@ -28,6 +28,43 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-11-04 — merged upstream to 647bd148b3
+
+- Upstream: `647bd148b3` from base `61c3794c32` (`195` commits). Branch point:
+  `main`; no open merge PR. Most of the 28433-file range is upstream's
+  `.repos/` resync (Effect 4.1.2, Alchemy beta.85, `effect-smol` renamed to
+  `effect`).
+- Landed: `28434` files from `git diff HEAD^1 HEAD` against `28433` in the
+  upstream range; the one extra is `docs/fork/inventory.json`. Fork delta
+  `773` files, unchanged.
+- Conflicts: 4, each by its verdict. `AGENTS.md` keeps the fork's text and
+  takes upstream's one fact (`.repos/effect/LLMS.md`); `test-t3-app/SKILL.md`
+  upstream's plus the scope note; `pnpm-lock.yaml` re-derived (moatless-api
+  edge back); `routeTree.gen.ts` regenerated. New path-policy entries for
+  what auto-merged unlisted: `terminal-metadata-state` (`terminalSession.ts`,
+  its test, mobile's `ThreadTerminalRouteScreen.tsx`) and
+  `route-tree-generated`.
+- Collateral: upstream's new `CommandPalette.browser.test.tsx` subagent case
+  (#29891) used a `web`-created child, which the fork's `isSidebarHiddenThread`
+  lists; its fixture now carries `creationSource: "provider"` (`// Fork:`).
+- Unsupported methods: ADD 1 (`sourceControl.star`, #29922), see
+  [methods the backend does not dispatch](./gaps.md#methods-the-backend-does-not-dispatch);
+  the [star prompt](./gaps.md#upstreams-github-star-prompt-asks-moatless-users-to-star-t3-code)
+  entry is corrected: a refused `starred` keeps the toast hidden.
+- Sweep: 9 hits — 6 `.repos/alchemy-effect` fixtures, mobile
+  `inspector-host*.tsx`, `useHostConnectionChecks.browser.test.tsx`;
+  upstream-owned, taken. No new workflows; tripwires ok (4 workflows allowed).
+- Commit: `--no-verify` (knip, same 27 exports).
+- Verification: `verify.mjs` full parallel pass: every non-test check green
+  after adding the union entry. Tests: confirmed failing alone, all registered
+  gaps — `provider-opencode` `OpenCodeServerLedger`; `t3`
+  `CodexChatGptAuth`, `CodexManagedRuntime` (`/tmp`),
+  `RepositoryIdentityResolver`, `GitVcsDriver`, `GitVcsDriverCore`
+  (`insteadOf`). `@t3tools/web` 1 of 5829 failed (the CommandPalette case
+  above), passing as a single file after the fixture fix. After the fixes:
+  `--fast` green, `@t3tools/contracts` tests green; the full test pass was
+  not re-run (it took ~2 h here).
+
 ### 2026-11-02 — merged upstream to 91f66f88de
 
 - Upstream: `91f66f88de` from base `80a2351fcb` (`435` commits). Branch point:
