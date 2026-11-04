@@ -495,6 +495,22 @@
       "note": "Take upstream, then read the metadata scan's `.terminals` wherever upstream passes the scan result to `terminalMetadataIndex` or `selectKnownTerminalSessions`, because `terminal-metadata-scan` makes the scan carry announcements beside the listing. Upstream moved the known-sessions read into `knownTerminalSessionsFamily` on 2026-11-02."
     },
     {
+      "id": "route-tree-generated",
+      "paths": ["apps/web/src/routeTree.gen.ts"],
+      "verdict": "converged",
+      "note": "Generated. Take upstream, then run `regen-route-tree.mjs`: the delta is the fork's own routes (login-route, moatless-task-link-route), which the generator adds back from the files. Never hand-merge its hunks."
+    },
+    {
+      "id": "terminal-metadata-state",
+      "paths": [
+        "packages/client-runtime/src/state/terminalSession.ts",
+        "packages/client-runtime/src/state/terminalSession.test.ts",
+        "apps/mobile/src/features/terminal/ThreadTerminalRouteScreen.tsx"
+      ],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply `TerminalMetadataState` and `EMPTY_TERMINAL_METADATA_STATE`: `applyTerminalMetadataStreamEvent` scans to the listing plus the last announcement and an `announcedOpens` count, only an announced upsert moves the count, and a snapshot announces nothing. Every reader of the metadata atom, mobile's `readLiveTerminalSessions` included, takes `.terminals` (announced-terminal-drawer)."
+    },
+    {
       "id": "sidebar-hidden-thread",
       "paths": [
         "apps/web/src/components/Sidebar.logic.ts",
@@ -1452,6 +1468,8 @@
         "packages/client-runtime/src/state/terminal.ts",
         "apps/web/src/state/terminalSessions.ts",
         "apps/mobile/src/state/use-terminal-session.ts",
+        "apps/mobile/src/features/terminal/ThreadTerminalRouteScreen.tsx",
+        "packages/client-runtime/src/state/terminalSession.test.ts",
         "apps/web/src/components/ChatView.tsx"
       ],
       "mustSurvive": "Moatless starts terminal sessions nobody on this side asked for: scripts.run and `moat tasks scripts run` open one on the Task's sandbox, and it exists to be watched. The backend sets `announced` on the metadata upsert for exactly those starts and on nothing else, so applyTerminalMetadataStreamEvent scans to a TerminalMetadataState carrying the listing plus the last announcement and a stream-wide announcedOpens count, rather than to the bare summary array upstream returns — which is why every reader of that atom takes .terminals, on mobile as well as web. ChatView raises the drawer for the announced terminal with ensureTerminal({ open: true, active: true }), under the same proactivePanelsEnabled setting as the announced preview tab beside it but held back on isMobileViewport rather than the right panel's sheet breakpoint, since a bottom drawer is not a right-panel surface, and only when the count moves while the view watches that same thread: arriving at a thread is not an announcement, and neither is the snapshot a reconnect replays, which would otherwise reopen every session the viewer had closed. A server that never sets the field leaves the count at 0 and the drawer behaves exactly as upstream's."

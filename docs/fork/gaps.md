@@ -330,10 +330,11 @@ what a person loses, which is the part the derivation cannot tell you:
   so on Moatless that submenu opens empty; working-tree and branch diffs are
   unaffected. `server.getNpmRelease` (#27847) answers the desktop update-track
   dialog, which a browser never reaches. `sourceControl.starred` (#27832) asks
-  whether the server's GitHub account starred `pingdotgg/t3code`; refused, the
-  answer is "no", so the star prompt shows — see _Upstream's GitHub star prompt
-  asks Moatless users to star T3 Code_ below. Closes when Moatless dispatches a
-  method; delete its union entry then.
+  whether the server's GitHub account starred `pingdotgg/t3code`, and
+  `sourceControl.star` (#29922, the 2026-11-04 merge) stars it from the toast
+  in one click; both refused, the prompt never shows — see _Upstream's GitHub
+  star prompt asks Moatless users to star T3 Code_ below. Closes when Moatless
+  dispatches a method; delete its union entry then.
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
   `getConfig`), so Settings renders and nothing in it can be saved. Holds open
@@ -2220,20 +2221,23 @@ One more arrived in the 2026-10-01 merge:
 
 ### Upstream's GitHub star prompt asks Moatless users to star T3 Code
 
-Upstream's `apps/web/src/components/GitHubStarPrompt.tsx` (#27832), called
-from `useComposerSend.ts`, shows an "Enjoying T3 Code? Give us a star on
-GitHub" toast once a session after a viewer's fifth sent prompt, until
-dismissed. It skips the toast only when `sourceControl.starred` says the
-server's GitHub account already starred `pingdotgg/t3code`, and Moatless
-refuses that method, so every Moatless viewer sees the toast once and then
-dismisses it. Nothing holds it off here. A `FEATURES` surface would need the
-backend to list it in `unsupportedSurfaces` too, so it was left for a person
-to decide rather than added during the 2026-10-31 merge.
+Upstream's `apps/web/src/components/GitHubStarPrompt.tsx` (#27832, #29922),
+called from `useComposerSend.ts`, counts sent prompts and after the fifth asks,
+once a session and when the viewer is idle, for a star on `pingdotgg/t3code`,
+which `sourceControl.star` gives as the server's GitHub account. It asks only
+when `sourceControl.starred` succeeds with "no". Moatless refuses that method,
+and `alreadyStarred` reads a refusal as `undefined`, which returns before the
+toast — so today no Moatless viewer sees it, held off by the refusal rather
+than by anything here. Should Moatless ever serve `sourceControl.starred`,
+every viewer would be asked to star T3 Code as Moatless's GitHub account. A
+`FEATURES` surface would need the backend to list it in `unsupportedSurfaces`
+too, so it is left for a person to decide.
 
 - **Check:** `git grep -n 'recordPromptSent' apps/web/src` lists a call that
   no `FEATURES` gate guards.
 - **Then here:** either gate `recordPromptSent`'s call on a new surface flag
-  the backend opts out of, or decide the prompt stays and delete this entry.
+  the backend opts out of before Moatless serves `sourceControl.starred`, or
+  decide the prompt stays and delete this entry.
 
 ### Two union entries refuse conditionally; the other eleven were dropped
 
