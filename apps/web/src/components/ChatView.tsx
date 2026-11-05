@@ -2914,15 +2914,12 @@ export default function ChatView(props: ChatViewProps) {
   }, [embedded, toggleRightPanelStable, toggleRightPanelMaximizedStable]);
 
   usePasteToFocusComposer(embedded ? null : activeThreadId, composerRef);
-  // A delegated task is a remote thread's subagent.
-  const isSubagentThread =
-    activeThread?.lineage.relationshipToParent === "subagent" || delegatedFrom !== null;
-  // Side chats do not nest or start from subagents, and older servers would fork a listed thread.
+  // Fork: every Moatless thread is a Task, so only a side chat cannot start one. Older
+  // servers would fork a listed thread.
   const sideChatsOffered =
     !embedded &&
     canOperateThread &&
     activeThread?.lineage.sideChat !== true &&
-    !isSubagentThread &&
     serverConfig?.environment.capabilities.sideChats === true;
   const sideChat = useSideChat({
     threadRef: sideChatsOffered && isServerThread ? activeThreadRef : null,
@@ -2939,21 +2936,19 @@ export default function ChatView(props: ChatViewProps) {
   const sideChatDisabledReason =
     activeThread?.lineage.sideChat === true
       ? "Side chats cannot start side chats."
-      : isSubagentThread
-        ? "Subagent threads cannot start side chats."
-        : serverConfig === null
-          ? "Side chats are not ready yet. Try again in a moment."
-          : serverConfig.environment.capabilities.sideChats !== true
-            ? "Update this environment's T3 Code server to use side chats."
-            : sideChatsOffered && !isServerThread
-              ? "Side chats start after the first message."
-              : sideChat.available &&
-                  orchestrationV2WorktreePending(
-                    activeThread?.worktreePath ?? null,
-                    serverProjection?.runs ?? [],
-                  )
-                ? "Available once the thread's worktree is set up."
-                : null;
+      : serverConfig === null
+        ? "Side chats are not ready yet. Try again in a moment."
+        : serverConfig.environment.capabilities.sideChats !== true
+          ? "Update this environment's T3 Code server to use side chats."
+          : sideChatsOffered && !isServerThread
+            ? "Side chats start after the first message."
+            : sideChat.available &&
+                orchestrationV2WorktreePending(
+                  activeThread?.worktreePath ?? null,
+                  serverProjection?.runs ?? [],
+                )
+              ? "Available once the thread's worktree is set up."
+              : null;
   const openSideChatStable = useStableCallback(() => void sideChat.open());
   const sendSideChatStable = useStableCallback((prompt: string) => sideChat.open(prompt));
   const {
