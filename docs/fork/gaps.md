@@ -770,6 +770,29 @@ what a person loses, which is the part the derivation cannot tell you:
   is the 93% shell-size saving upstream measured. Closes when Moatless serves
   the method and advertises the capability; delete the union entry then.
 
+- **Thread titles for Lineage rows outside the shell** —
+  `orchestration.getThreadTitles`, new upstream in the 2026-11-05 merge
+  (#29000). `ThreadRelationshipsControl.tsx` asks for the titles of related
+  threads the shell does not list, and hides a row only once a successful
+  lookup omits it, which is how a deleted fork leaves Lineage. Refused, the
+  lookup never succeeds, so every row stays, deleted forks included, under the
+  id rather than a title. No fork gate was added; the union entry is the only
+  stand-in. Closes when Moatless dispatches the method, returning titles for
+  live and archived threads and omitting deleted or unknown ids; delete the
+  union entry then.
+- **Clone layout and secret requests** — the 2026-11-05 merge added the
+  `ghqCloneLayout` server setting (#24904), a Threads settings row that clones
+  into `<host>/<owner>/<repo>` folders. It sits inside the `projectManagement`
+  section, and its search item is mapped to the same flag in
+  `FEATURE_BY_SETTINGS_SEARCH_ID`, because Moatless neither saves server
+  settings nor dispatches `sourceControl.cloneRepository`. The same merge added
+  the `request_secret` orchestrator MCP tool (#30257), which asks the user for
+  a secret through a card rather than chat. It needs a Moatless MCP tool and a
+  secret store; the web card has nothing to render until the backend emits the
+  request. #29803 extends MCP apps to Claude tool calls, and is covered by the
+  MCP apps paragraph above. Closes per feature when the backend serves it; the
+  flag mapping for `ghq-clone-layout` goes with `projectManagement`.
+
 - **Check:** run `unsupported-methods.mjs` rather than reading this list. Where
   the two sides come from is _Deriving the unsupported set_ in the inventory.
 - **Then here:** drop the union entry in `packages/contracts/src/rpc.ts` and, if
@@ -2213,6 +2236,17 @@ One more arrived in the 2026-10-01 merge:
   Upstream's managed policy (#27197, `packages/contracts/src/managedPolicy.ts`)
   stays absent from Moatless's server config, so its locked-setting UI never
   renders; reproduce it only if an organisation policy is wanted.
+  The 2026-11-05 merge adds: interrupting a completion wake keeps its sibling
+  wakeups (#28204); usage-limit auto-resume messages are attributed to T3 Code
+  (#29838); silent Antigravity ACP prompts time out (#30377); pending questions
+  beyond the history page stay answerable (#26435, `threadHistoryPaging.ts`);
+  deleted forks leave the projection (#29000); `vcs.reviewDiff` returns file
+  metadata first and defers patches through the optional `metadataOnly`,
+  `patchesDeferred` and `incomplete` fields (#30567), which the client
+  tolerates being absent; a large server config frame is split into parts so a
+  slow link does not drop the socket (#23758, `socketFrameParts.ts`); idle agent
+  browser tabs free a slot at the 32-tab limit (#24186); and the T3 Connect
+  tunnel restarts when Cloudflare drops it (#24946).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

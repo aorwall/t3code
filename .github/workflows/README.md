@@ -18,10 +18,10 @@ Everything except `build-moatless-t3-image.yml` and `typecheck.yml` must report
 
 ## The two that run
 
-| Workflow                      | Runner                                                   | What it does                                                                                                                    |
-| ----------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Workflow                      | Runner                                              | What it does                                                                                                                    |
+| ----------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | `build-moatless-t3-image.yml` | `vars.DOCKER_BUILD_RUNNER`, else `ci-runners-large` | Builds `apps/web` into a static nginx image and publishes `aorwall/moatless-t3` for the Moatless Helm chart.                    |
-| `typecheck.yml`               | `vars.CI_RUNNER`, else `ci-runners-large` | `pnpm typecheck` over the whole workspace, then the `@t3tools/contracts` tests, on every pull request and every push to `main`. |
+| `typecheck.yml`               | `vars.CI_RUNNER`, else `ci-runners-large`           | `pnpm typecheck` over the whole workspace, then the `@t3tools/contracts` tests, on every pull request and every push to `main`. |
 
 Both are fork-only — upstream has no equivalent of either, so there is nothing
 for a merge to conflict with.

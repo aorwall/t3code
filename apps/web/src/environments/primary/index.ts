@@ -1,5 +1,4 @@
 export {
-  createServerPairingCredential,
   consumeMoatlessAuthReturnTo,
   fetchMoatlessAuthMode,
   peekPairingTokenFromUrl,
@@ -8,9 +7,6 @@ export {
   rememberMoatlessAuthReturnTo,
   resolveInitialServerAuthGateState,
   resolveMoatlessOAuthLoginUrl,
-  revokeOtherServerClientSessions,
-  revokeServerClientSession,
-  revokeServerPairingLink,
   stripPairingTokenFromUrl,
   submitMoatlessPasswordLogin,
   submitServerAuthCredential,
@@ -20,8 +16,6 @@ export {
   type ServerPairingLinkRecord,
   __resetServerAuthBootstrapForTests,
 } from "./auth";
-
-export { usePrimarySessionState } from "./sessionState";
 
 export {
   DesktopEnvironmentBootstrapIncompleteError,

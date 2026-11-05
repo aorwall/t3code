@@ -220,16 +220,11 @@ In `apps/web`, a test that renders React or touches the DOM is named `*.browser.
 and runs in headless Chromium with the React Compiler on, like the app. There is no jsdom; other
 `*.test.ts` files run in Node.
 
-TypeScript workspaces typecheck with `tsc` from the `typescript` package (TypeScript 7, the
-native compiler). The `effect-tsgo patch` prepare step adds the Effect diagnostics to it, so
-run `pnpm run prepare` after an install that skipped scripts.
-
-Do not bring back `tsc-rs`, the unofficial Rust port upstream typechecks with. It is a
-vibe-coded early release, by its author's own account, and we cannot trust it as a gate: on
-`apps/server` it reported a different set of errors from `tsc`, and its error count changed
-with `--checkers`. A tripwire in [inventory.json](../fork/inventory.json) fails the merge
-checks if an upstream merge restores it.
-Marketing keeps `astro check` for Astro files.
+TypeScript workspaces typecheck with `effect-tsgo tsrs --noEmit` from `@effect/tsgo`: the
+[tsrs](https://github.com/oxc-project/tsrs) checker with Effect diagnostics, quick fixes, and
+refactors built in. Only `apps/marketing` installs `typescript`, for Astro. VS Code's TypeScript 7
+extension starts the same checker through `.vscode/tsdk/tsgo` (`js/ts.tsdk.path`), a POSIX
+script, so on Windows open the workspace through WSL.
 
 Use `vp run lint:mobile` for native mobile changes. CI owns the full suite; see
 [ci.yml](../../.github/workflows/ci.yml) for its current jobs.

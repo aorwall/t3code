@@ -1,7 +1,7 @@
 # Typecheck `apps/web` and the workspace packages it depends on, on every pull
 # request and every push to main. The rest of the workspace (`apps/server`,
 # `apps/desktop`, `apps/mobile`, ...) is not shipped by this fork and is not
-# checked here; `tsc` peaks at 8.5 GiB on `apps/server`, more than this runner has.
+# checked here; `tsc` peaked at 8.5 GiB on `apps/server`, more than this runner has.
 #
 # This is a fork-only workflow. It exists because the sentence "CI owns the full
 # suite" is not true here: every workflow inherited from upstream is switched off
@@ -75,10 +75,6 @@ jobs:
       # carries no `make`. A package's `.d.ts` files ship
       # in its tarball, so nothing those builds produce is a typecheck input.
       - run: pnpm install --frozen-lockfile --ignore-scripts
-
-      # `--ignore-scripts` also skips this repo's own `prepare`, which patches
-      # the TypeScript binary `pnpm typecheck` then runs. Run it by hand.
-      - run: pnpm run prepare
 
       # Before the typecheck, so a runner lost to its memory still reports these.
       - run: pnpm --filter @t3tools/contracts test

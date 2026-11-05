@@ -28,6 +28,46 @@ bullet here that no one will read again.
 
 ## Log
 
+### 2026-11-05 — merged upstream to 20e92ffe02
+
+- Upstream: `20e92ffe02` from base `647bd148b3` (`49` commits). Branch point:
+  `main`; no open merge PR.
+- Landed: `562` files from `git diff HEAD^1 HEAD` against `555` in the
+  upstream range. All of it landed; the 7 extra files are fork docs,
+  `features.ts`, the two workflow files and `moatless-api`'s manifest. Fork
+  delta `770` files (was `773`).
+- Toolchain: #31028 moved every package to `effect-tsgo tsrs --noEmit` and
+  dropped `typescript`. Taken whole at a maintainer's request on #276, so the
+  toolchain stops being a per-merge decision: the fork's `tsc` + `effect-tsgo
+  patch` rule, the `tsc-rs` tripwire and the `prepare` step in
+  `typecheck.yml` are gone, `packages/moatless-api` runs the same script, and
+  `typecheck-toolchain` is now `theirs`. Typecheck under tsrs passes on the
+  whole workspace.
+- Conflicts: 13, each by its verdict. `AGENTS.md` keeps the fork's text with
+  upstream's typecheck line; `development.md` is upstream's; `agentContextBudget.json` upstream's
+  values with `mcpToolListJsonBytes` 47606 (+108, test passes);
+  `GitVcsDriverCore.test.ts` keeps the intercepting spawner, env now provided
+  through `HostProcess.Environment`; `ThreadRelationshipsControl` upstream's
+  title lookup plus the `mergeBack` conjunct; `AuthorizedClientsSettings`
+  upstream's atom command plus the gated `scopes` spread; `SettingsPanels`
+  upstream's `ghqCloneLayout` row inside the `projectManagement` gate (search
+  id mapped in `features.ts`); `primary/index.ts` drops the moved pairing
+  exports. Lockfile re-derived. New entries: `primary-environment-index`,
+  `client-runtime-runtime-test`.
+- Unsupported methods: ADD 1 (`orchestration.getThreadTitles`, #29000), see
+  [methods the backend does not dispatch](./gaps.md#methods-the-backend-does-not-dispatch).
+- Sweep: 6 hits (`PayloadSigner`, `CloudMintSigner`, `cloudLinkState`, DPoP
+  proof, `AuthorizedClientsSettings.browser.test.tsx`) — upstream
+  relay/cloud/auth crypto refactors, taken. No new workflows.
+- Commit: `--no-verify` (knip, same 27 exports).
+- Verification: `verify.mjs --fast` all 9 green after the union entry and a
+  workflows README format fix, and again after the tsrs switch. Full pass
+  (run before the switch, which changes no runtime code) timed out at 1h during the `t3` retry; its failures are the registered sandbox gaps
+  (global `insteadOf` remote rewrites, `/tmp` sticky bit in the Codex
+  broker tests) and `provider-opencode` `OpenCodeServerLedger`. The 10
+  packages the timeout left unrun passed one at a time with `--package`;
+  desktop and mobile passed.
+
 ### 2026-11-04 — merged upstream to 647bd148b3
 
 - Upstream: `647bd148b3` from base `61c3794c32` (`195` commits). Branch point:
