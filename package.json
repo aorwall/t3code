@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prepare": "effect-tsgo patch && vp config --no-agent",
+    "prepare": "vp config --no-agent",
     "dev": "node scripts/dev-runner.ts dev",
     "profile:startup": "node scripts/profile-startup.mjs",
     "dev:share": "node scripts/dev-runner.ts dev --share",
@@ -58,11 +58,10 @@
   },
   "devDependencies": {
     "@coderabbitai/config": "1.1.0",
-    "@effect/tsgo": "catalog:",
+    "@effect/tsgo": "0.67.1",
     "@shadcn/lint": "0.1.5",
     "@types/node": "catalog:",
     "knip": "6.34.0",
-    "typescript": "catalog:",
     "vite-plus": "catalog:"
   },
   "engines": {

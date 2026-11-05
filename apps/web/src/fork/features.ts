@@ -226,6 +226,7 @@ export const FEATURE_BY_SETTINGS_SEARCH_ID: Readonly<Record<string, FeatureName>
   "start-from-origin": "worktreeSelection",
   "project-grouping": "projectGrouping",
   "add-project-starts-in": "projectManagement",
+  "ghq-clone-layout": "projectManagement",
   "project-overview": "projectManagement",
   "snooze-limited-threads": "serverBehaviorSettings",
   "auto-resume-limited-threads": "serverBehaviorSettings",
