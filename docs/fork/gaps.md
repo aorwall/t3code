@@ -76,7 +76,11 @@ not report is most of the booleans added since that handshake was written —
 2026-10-15) and `threadStop` (upstream, 2026-10-20: `thread.stop` stops a
 thread without resolving its run, #22052) and `projectOrganization` and
 `oneTimeSchedules` (upstream, 2026-11-02: project pin and archive #26154,
-one-shot scheduled tasks #28104) — so
+one-shot scheduled tasks #28104) and `freshContext`, `voiceTranscription`,
+`secretRequestReferences` and `scheduledTaskThreadModes` (upstream, 2026-11-06:
+`/clear` and fresh-session sends #30323, dictation on a chosen environment
+#30625, secret-provider answers to a secret request #31670, scheduled task
+thread modes #30326) — so
 each of those
 surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
@@ -2247,6 +2251,20 @@ One more arrived in the 2026-10-01 merge:
   slow link does not drop the socket (#23758, `socketFrameParts.ts`); idle agent
   browser tabs free a slot at the 32-tab limit (#24186); and the T3 Connect
   tunnel restarts when Cloudflare drops it (#24946).
+  The 2026-11-06 merge adds: a fresh-session send starts the provider without
+  the thread's earlier context while keeping its history visible (#30323,
+  `freshContext` on the Run); a pending input request can be snoozed (#20058,
+  `ThreadSettlementService.ts`); threads follow their worktree's branch when it
+  changes (#31599, `WorktreeBranchSync.ts`) and divergence refreshes after a
+  merged branch ref moves (#31342); a stopped run no longer shrinks thread
+  history to one row (#31266, `threadHistoryPaging.ts`); side chats inherit the
+  parent's permissions (#31114); an unreadable saved source-control token no
+  longer falls back to another account (#31646) and a settings save no longer
+  re-reads it (#31226); `pullRequests.runAction` can reply with a summary
+  (#25761); the reviewer list searches past the first page (#22489, `query` on
+  `pullRequests.reviewerCandidates`); GitLab gains request-changes, label and
+  source-branch actions (#30549, #30518, #30453, #30483); and Claude turns use
+  the downloaded model catalog (#31717).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

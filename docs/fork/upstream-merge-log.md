@@ -3854,3 +3854,42 @@ bullet here that no one will read again.
 - New backend/data requirements and parity candidates extend the V2/runtime
   entries in gaps.md rather than treating upstream Node implementations as
   Moatless support. Commit bypassed the known knip pre-commit failure (27 exports).
+
+## 2026-11-06 — upstream 3d78e915e3
+
+- Upstream: `3d78e915e3` from base `20e92ffe02` (110 commits).
+- Landed: 913 files changed, 45216 insertions(+), 9396 deletions(-).
+  Upstream range: 913 files changed, 45220 insertions(+), 9396 deletions(-);
+  exact file match. Fork delta at merge: 770 files changed, 75589
+  insertions(+), 3066 deletions(-).
+- Eight conflicts, each by its verdict: agentContextBudget took upstream's
+  values with the fork's +108 tool-list bytes (47926, measured by the test);
+  server.ts kept the `layerWsRoutes` hoist beside upstream's
+  `speechStreamRouteLayer`; ComposerModelEffort kept the `FEATURES.accessMode`
+  gate under upstream's new UltracodeControl; TimelineWorkGroupRows kept
+  `isStartingRun` beside upstream's `liveAnswerPreview`; PreviewView took
+  `isBrowserSettingsReadError` and kept the frame helpers; LabsSettingsPanel
+  took the ungated client-side ToolCallVisibilityRow and kept the
+  `serverBehaviorSettings` gate; textarea kept `font` beside upstream's `rows`;
+  routeTree.gen.ts regenerated. Lockfile re-derived with install.mjs.
+- Added path policy for five unlisted fork-delta files (secretRequest.ts and
+  test, assets.ts, TimelineWorkGroupRows/timelineRowContext,
+  useThreadLifecycle).
+- Owned-surface sweep: six hits. ComposerFreshSession/freshSessionArms are
+  gated by upstream on `capabilities.freshContext`, which Moatless does not
+  report; FreshSessionNotice (mobile), the t3-terminal Kotlin input files and
+  storage.browser.test.ts are not fork-owned surfaces. No new workflows.
+- Upstream #31216 made `extendsNativeError` an error; packages/moatless-api
+  turns it off package-wide beside its `globalFetch` override (orval client,
+  outside Effect).
+- Verification: all checks but tests green after that fix. Tests: t3 and
+  provider-opencode failures are the known sandbox gaps
+  ([`/tmp` sticky bit](./gaps.md#the-sandboxs-tmp-has-no-sticky-bit-so-the-codex-token-broker-refuses-it),
+  [`insteadOf`](./gaps.md#the-sandboxs-global-insteadof-rewrites-the-remote-urls-the-git-tests-build),
+  [OpenCode](./gaps.md#opencode-process-group-cleanup-tests-fail-in-this-sandbox));
+  scripts passed in isolation; web's three failing files (AttachmentFilePreview,
+  MessagesTimeline, useInlineActionConfirm) pass alone. Union buckets: no ADD,
+  no DROP. New capabilities and backend parity items extend
+  [capabilities](./gaps.md#capabilities-are-reported-but-not-the-ones-the-newer-surfaces-need)
+  and [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+  Commit bypassed the known knip pre-commit failure (27 exports).

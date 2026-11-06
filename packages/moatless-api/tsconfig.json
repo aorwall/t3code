@@ -17,9 +17,11 @@
         // overrides here. Same override apps/web carries, for the same reason:
         // this is the orval-generated Moatless REST client, deliberately
         // outside Effect. `HttpClient` would put a runtime and a layer between
-        // a generated call and the request it is meant to make.
+        // a generated call and the request it is meant to make. Its errors are
+        // thrown to TanStack Query, never carried in an Effect failure channel.
         "diagnosticSeverity": {
-          "globalFetch": "off"
+          "globalFetch": "off",
+          "extendsNativeError": "off"
         }
       }
     ]

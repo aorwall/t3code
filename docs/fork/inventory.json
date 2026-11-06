@@ -881,7 +881,7 @@
       "id": "agent-context-budget",
       "paths": ["apps/server/src/provider/agentContextBudget.json"],
       "verdict": "converged",
-      "note": "Take upstream, then re-run apps/server's AgentContextBudget.test.ts and set mcpToolListJsonBytes to what it measures. The fork's `ProjectScript.port` (packages/contracts/src/project.ts) appears in the t3_project_create and t3_project_update input schemas, so the fork's tool list is larger than upstream's by those bytes (108 at 2026-10-28 and 2026-10-30). The other two values are upstream's. Drop this entry when `port` leaves ProjectScript."
+      "note": "Take upstream, then re-run apps/server's AgentContextBudget.test.ts and set mcpToolListJsonBytes to what it measures. The fork's `ProjectScript.port` (packages/contracts/src/project.ts) appears in the t3_project_create and t3_project_update input schemas, so the fork's tool list is larger than upstream's by those bytes (108 at 2026-10-28, 2026-10-30 and 2026-11-06). The other two values are upstream's. Drop this entry when `port` leaves ProjectScript."
     },
     {
       "id": "merge-back-gate",
@@ -994,6 +994,36 @@
       "paths": ["packages/client-runtime/src/state/runtime.test.ts"],
       "verdict": "converged",
       "note": "Take upstream, then keep the fork's adaptation in the environment query lifecycle terminal case: the metadata atom holds `TerminalMetadataState`, so the assertions read `.terminals`. Drop it when the fork's terminal metadata shape returns to a bare list."
+    },
+    {
+      "id": "secret-request-storage-note",
+      "paths": [
+        "packages/client-runtime/src/secretRequest.ts",
+        "packages/client-runtime/src/secretRequest.test.ts"
+      ],
+      "verdict": "converged",
+      "note": "Take upstream, then keep `secretRequestPrivacyNote` reading the optional `storage` of a Moatless `secret_request` first: it names the key and scope it saves to and says the agent can read it, rather than upstream's \"never shown to the agent\". The test keeps the fork's storage case beside upstream's. Drop it when Moatless stops sending `storage`."
+    },
+    {
+      "id": "workspace-file-asset-disposition",
+      "paths": ["packages/contracts/src/assets.ts"],
+      "verdict": "converged",
+      "note": "Take upstream, then keep the optional `disposition` on the `workspace-file` asset resource, which fork/WorkspaceBinaryFile.tsx sets to `attachment` because Moatless mints a download for any file type. Retires with the WorkspaceBinaryFile branch; see the `file-preview-panel` entry and its convergence watch."
+    },
+    {
+      "id": "send-while-sandbox-starts-timeline",
+      "paths": [
+        "apps/web/src/components/chat/TimelineWorkGroupRows.tsx",
+        "apps/web/src/components/chat/timelineRowContext.ts"
+      ],
+      "verdict": "converged",
+      "note": "Take upstream, then keep `isStartingRun` on `TimelineRowActivityState` and in `ThinkingTimelineRow`'s early return. The behavior is the `send-while-sandbox-starts` inventory entry; upstream adds fields to the same destructure often (`liveAnswerPreview` on 2026-11-06), so the conflict is that one line — keep both sides' names."
+    },
+    {
+      "id": "related-thread-open-unlisted",
+      "paths": ["apps/web/src/components/chat/useThreadLifecycle.tsx"],
+      "verdict": "converged",
+      "note": "Take upstream, then keep `onOpenRelatedThread` toasting \"no longer available\" only for a shell row with `deletedAt`, never for a missing row. The behavior is the inventory entry that lists this file (a Moatless listing leaves out subtasks and others' threads)."
     }
   ],
   "inventory": [

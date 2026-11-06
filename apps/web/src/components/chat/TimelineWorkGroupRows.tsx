@@ -365,12 +365,18 @@ function CompactingLabel({ createdAt }: { createdAt: string | null }) {
 export function ThinkingTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "thinking" }> }) {
   const ctx = use(TimelineRowCtx);
   // Fork: a starting sandbox is not thinking yet.
-  const { isCompacting, isPreparingWorktree, isStartingRun } = use(TimelineRowActivityCtx);
+  const { isCompacting, isPreparingWorktree, isStartingRun, liveAnswerPreview } =
+    use(TimelineRowActivityCtx);
   if (isPreparingWorktree || isCompacting || isStartingRun) return <WorkLogRow label="" />;
   // A failed group keeps this disclosure while an approval waits, but nothing is thinking then.
   const live = ctx.pendingApprovals.size === 0;
   const activity = (
-    <LiveActivityRow label="Thinking" iconName="brain" active={live} shimmer={live} />
+    <LiveActivityRow
+      label={liveAnswerPreview ?? "Thinking"}
+      iconName="brain"
+      active={live}
+      shimmer={live}
+    />
   );
   const { groupId } = row;
   if (groupId === undefined) return activity;
