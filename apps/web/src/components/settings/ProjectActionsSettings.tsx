@@ -99,6 +99,7 @@ export function ProjectActionsSettings() {
       runOnWorktreeCreate: fileScript.runOnWorktreeCreate ?? false,
       waitForSetup: fileScript.runOnWorktreeCreate === true && fileScript.async === false,
       runOnSettle: fileScript.runOnSettle ?? false,
+      stopOnSettle: fileScript.stopOnSettle ?? false,
       keybinding: null,
       // Fork: t3.json still carries a free-text preview URL; the fork drives
       // previews off a port, so keep the port when the URL names one.

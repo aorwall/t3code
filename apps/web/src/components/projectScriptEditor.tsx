@@ -85,6 +85,7 @@ export interface NewProjectScriptInput {
   runOnWorktreeCreate: boolean;
   waitForSetup: boolean;
   runOnSettle: boolean;
+  stopOnSettle?: boolean;
   /** Omit to preserve the current shortcut when the form did not edit it. */
   keybinding?: string | null;
   /**
@@ -105,6 +106,7 @@ export const EMPTY_PROJECT_SCRIPT_INPUT: NewProjectScriptInput = {
   runOnWorktreeCreate: false,
   waitForSetup: false,
   runOnSettle: false,
+  stopOnSettle: false,
   keybinding: null,
   port: null,
 };
@@ -128,6 +130,7 @@ export function editorRequestForScript(
       runOnWorktreeCreate: script.runOnWorktreeCreate,
       waitForSetup: script.runOnWorktreeCreate && script.async === false,
       runOnSettle: script.runOnSettle ?? false,
+      stopOnSettle: script.stopOnSettle ?? false,
       keybinding: keybindingValueForCommand(keybindings, commandForProjectScript(script.id)),
       port: script.port ?? null,
     },
@@ -278,6 +281,7 @@ function ProjectScriptEditorForm({
   );
   const [waitForSetup, setWaitForSetup] = useState(request.initial.waitForSetup);
   const [runOnSettle] = useState(request.initial.runOnSettle);
+  const [stopOnSettle] = useState(request.initial.stopOnSettle ?? false);
   const [keybinding, setKeybinding] = useState(request.initial.keybinding ?? "");
   const [port, setPort] = useState(
     request.initial.port === null ? "" : String(request.initial.port),
@@ -372,6 +376,7 @@ function ProjectScriptEditorForm({
         runOnWorktreeCreate,
         waitForSetup: runOnWorktreeCreate && waitForSetup,
         runOnSettle,
+        stopOnSettle,
         ...((request.scriptId === null && canChangeKeybinding) || changesKeybinding
           ? { keybinding: keybindingRule?.key ?? null }
           : {}),
@@ -533,7 +538,7 @@ function ProjectScriptEditorForm({
             </label>
             {/* Fork: no "Open preview automatically" toggle - the Port field stands in for
                 upstream's Preview URL; `buildProjectScript` derives autoOpenPreview from the port.
-                No settle switch: Moatless runs no script on settle, so `runOnSettle` passes through. */}
+                No settle switches: Moatless runs no script on settle, so `runOnSettle` and `stopOnSettle` pass through. */}
             {validationError && <p className="text-sm text-destructive">{validationError}</p>}
           </fieldset>
         </form>
