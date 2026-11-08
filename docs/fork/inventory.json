@@ -827,6 +827,22 @@
       "note": "Take upstream, then re-apply the numeric Port field in place of upstream's Preview URL input and auto-open toggle: `port` on `NewProjectScriptInput` and `EMPTY_PROJECT_SCRIPT_INPUT`, its state, its 1..65535 validation, and the payload built from it. See the `project-script-port-field` inventory entry for why."
     },
     {
+      "id": "project-script-form-plumbing",
+      "paths": [
+        "apps/web/src/projectScripts.ts",
+        "apps/web/src/components/settings/ProjectActionsSettings.tsx",
+        "packages/contracts/src/project.ts"
+      ],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply the `project-script-port-field` delta: `ProjectScript.port` (PortSchema) in contracts/project.ts, `port` in place of `previewUrl`/`autoOpenPreview` on `ProjectScriptInput` with `buildProjectScript` deriving `autoOpenPreview: true` from it, and the t3.json import running `previewUrl` through `portFromPreviewUrl`. Upstream's settle flags (`runOnSettle`, `stopOnSettle`) pass through unchanged."
+    },
+    {
+      "id": "terminal-announced-upsert",
+      "paths": ["packages/contracts/src/terminal.ts"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-add the optional `announced` boolean on `TerminalMetadataUpsertEvent` (the `announced-terminal-drawer` concern): Moatless sets it on the upsert for a session its environment started."
+    },
+    {
       "id": "textarea-mono-font",
       "paths": ["apps/web/src/components/ui/textarea.tsx"],
       "verdict": "converged",
@@ -881,7 +897,7 @@
       "id": "agent-context-budget",
       "paths": ["apps/server/src/provider/agentContextBudget.json"],
       "verdict": "converged",
-      "note": "Take upstream, then re-run apps/server's AgentContextBudget.test.ts and set mcpToolListJsonBytes to what it measures. The fork's `ProjectScript.port` (packages/contracts/src/project.ts) appears in the t3_project_create and t3_project_update input schemas, so the fork's tool list is larger than upstream's by those bytes (108 at 2026-10-28, 2026-10-30 and 2026-11-06). The other two values are upstream's. Drop this entry when `port` leaves ProjectScript."
+      "note": "Take upstream, then re-run apps/server's AgentContextBudget.test.ts and set mcpToolListJsonBytes to what it measures. The fork's `ProjectScript.port` (packages/contracts/src/project.ts) appears in the t3_project_create and t3_project_update input schemas, so the fork's tool list is larger than upstream's by those bytes (108 at 2026-10-28, 2026-10-30, 2026-11-06 and 2026-11-07). The other two values are upstream's. Drop this entry when `port` leaves ProjectScript."
     },
     {
       "id": "merge-back-gate",
@@ -1532,7 +1548,7 @@
         "apps/web/src/projectScripts.test.ts",
         "packages/contracts/src/orchestrationV2.ts"
       ],
-      "mustSurvive": "The script editor sets a numeric Port, not upstream's free-text Preview URL: a script in a remote sandbox has no localhost to point at, so the host publishes the port and returns the real external URL when the script runs (scripts.run). ProjectScript carries port (1..65535); the editor's Port input replaces the Preview URL input and auto-open toggle, and buildProjectScript derives autoOpenPreview from the port's presence. previewUrl / autoOpenPreview stay on the contract for wire-compatibility but the fork's UI never writes a URL. The row badge in ProjectActionsList.tsx reads `preview · :<port>` where upstream reads `preview · desktop only` off previewUrl. Importing a t3.json script in ProjectActionsSettings.tsx runs the free-text previewUrl through portFromPreviewUrl so the import keeps a port rather than a URL. A merge that restores the Preview URL input has dropped the port. Upstream's \"run when a thread settles\" switch (#16290, runOnSettle) is not rendered either, because Moatless runs no script on settle; the form passes runOnSettle through unchanged and buildProjectScript keeps it (gaps.md, A script runs on the backend).",
+      "mustSurvive": "The script editor sets a numeric Port, not upstream's free-text Preview URL: a script in a remote sandbox has no localhost to point at, so the host publishes the port and returns the real external URL when the script runs (scripts.run). ProjectScript carries port (1..65535); the editor's Port input replaces the Preview URL input and auto-open toggle, and buildProjectScript derives autoOpenPreview from the port's presence. previewUrl / autoOpenPreview stay on the contract for wire-compatibility but the fork's UI never writes a URL. The row badge in ProjectActionsList.tsx reads `preview · :<port>` where upstream reads `preview · desktop only` off previewUrl. Importing a t3.json script in ProjectActionsSettings.tsx runs the free-text previewUrl through portFromPreviewUrl so the import keeps a port rather than a URL. A merge that restores the Preview URL input has dropped the port. Upstream's \"run when a thread settles\" switch (#16290, runOnSettle) is not rendered either, because Moatless runs no script on settle; the form passes runOnSettle through unchanged and buildProjectScript keeps it; upstream's \"stop this action when the thread settles\" switch (stopOnSettle) is likewise not rendered and passes through (gaps.md, A script runs on the backend).",
       "guard": {
         "symbol": "port",
         "files": ["apps/web/src/components/projectScriptEditor.tsx"]

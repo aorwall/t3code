@@ -946,11 +946,16 @@ The 2026-10-07 merge brought a second such field, and it was **not** carried:
 nothing runs a script on settle, so `projectScriptEditor.tsx` renders no switch
 for it. The form keeps the value it was handed and writes it back unchanged,
 so a script that already carries the flag does not lose it on edit.
+The 2026-11-07 merge brought its pair, #31857's `stopOnSettle` ("Stop this
+action when the thread settles"), handled the same way: no switch, passed
+through unchanged by the form and `buildProjectScript`.
 
 - **Closed by:** the backend storing `runOnSettle` on a script and running the
   marked one when a worktree thread settles; probe with
-  `git grep -n 'runOnSettle' apps/web/src/components/projectScriptEditor.tsx`.
-- **Then here:** restore upstream's "Run when a thread settles" switch in
+  `git grep -n 'runOnSettle' apps/web/src/components/projectScriptEditor.tsx`;
+  likewise `stopOnSettle`, stopping the marked running script on settle.
+- **Then here:** restore upstream's "Run when a thread settles" and "Stop this
+  action when the thread settles" switches in
   `projectScriptEditor.tsx`, where the `Fork:` comment after the setup switches
   stands, and trim the comment.
 
@@ -2265,6 +2270,16 @@ One more arrived in the 2026-10-01 merge:
   `pullRequests.reviewerCandidates`); GitLab gains request-changes, label and
   source-branch actions (#30549, #30518, #30453, #30483); and Claude turns use
   the downloaded model catalog (#31717).
+  The 2026-11-07 merge adds: a usage-limit auto-resume survives a server
+  restart (#31292) and is not armed for subagents of archived or deleted
+  parents (#30363); settling waits for automatic follow-ups (#31815); a command
+  id reused for two threads at once succeeds for only one (#18385); a late
+  checkpoint keeps the stopped run's baselines (#30830); tool output is
+  coalesced before it fills the live buffer (#16317); thread titles survive an
+  unavailable text-generation provider (#29607); PR generation stays focused on
+  the change (#31819); a branch tracking another local branch no longer shows
+  that branch's PR (#30563); and the headless browser closes after five idle
+  minutes (#30306).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

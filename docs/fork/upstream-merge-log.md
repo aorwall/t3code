@@ -3893,3 +3893,32 @@ bullet here that no one will read again.
   [capabilities](./gaps.md#capabilities-are-reported-but-not-the-ones-the-newer-surfaces-need)
   and [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
   Commit bypassed the known knip pre-commit failure (27 exports).
+
+## 2026-11-07 — upstream 4cb6945dc6
+
+- Upstream: `4cb6945dc6` from base `3d78e915e3` (130 commits). Branch point:
+  `main`; no open merge PR.
+- Landed: 374 files from `git diff HEAD^1 HEAD` against 375 in the upstream
+  range; the gap is `cli/pair.ts` and its test (still deleted, per
+  `deletedUpstreamPaths`) on one side and `docs/fork/inventory.json` on the
+  other. Fork delta 770 files.
+- Six conflicts, each by its verdict: `pair.ts`/`pair.test.ts` stay deleted;
+  agentContextBudget took upstream's values with the fork's +108 tool-list
+  bytes (48227, measured by the test); ChatView kept the fork's
+  `sandboxCommandsItems` beside upstream's new `extensionStatusItems`;
+  projectScriptEditor and projectScripts kept the port field and pass
+  upstream's new `stopOnSettle` (#31857) through without a switch, as with
+  `runOnSettle`. Lockfile re-derived with install.mjs; no route changes.
+- Added path policy for the four unlisted files resolution-check named:
+  `project-script-form-plumbing` (projectScripts.ts, ProjectActionsSettings.tsx,
+  contracts/project.ts) and `terminal-announced-upsert` (contracts/terminal.ts).
+- Sweep: no keyword hits. No new workflows.
+- Verification: every check but tests green. Tests: t3 and provider-opencode
+  failures are the known sandbox gaps
+  ([`/tmp` sticky bit](./gaps.md#the-sandboxs-tmp-has-no-sticky-bit-so-the-codex-token-broker-refuses-it),
+  [`insteadOf`](./gaps.md#the-sandboxs-global-insteadof-rewrites-the-remote-urls-the-git-tests-build),
+  [OpenCode](./gaps.md#opencode-process-group-cleanup-tests-fail-in-this-sandbox));
+  no other package confirmed failing. Union buckets: no ADD, no DROP.
+  `stopOnSettle` extends the settle-script entry; backend parity items extend
+  [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+  Commit bypassed the known knip pre-commit failure (27 exports).

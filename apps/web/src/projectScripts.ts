@@ -14,6 +14,7 @@ export interface ProjectScriptInput {
   readonly runOnWorktreeCreate: ProjectScript["runOnWorktreeCreate"];
   readonly waitForSetup: boolean;
   readonly runOnSettle: boolean;
+  readonly stopOnSettle?: boolean;
   // Fork addition (Moatless). The port the script serves on, or null for a
   // console-only script. Replaces the upstream free-text preview URL: a script
   // running in a remote sandbox has no localhost to point at, so the host
@@ -30,6 +31,7 @@ export function buildProjectScript(id: string, input: ProjectScriptInput): Proje
     runOnWorktreeCreate: input.runOnWorktreeCreate,
     ...(input.runOnWorktreeCreate && input.waitForSetup ? { async: false } : {}),
     ...(input.runOnSettle ? { runOnSettle: true } : {}),
+    ...(input.stopOnSettle ? { stopOnSettle: true } : {}),
     ...(input.port === null
       ? {}
       : {
