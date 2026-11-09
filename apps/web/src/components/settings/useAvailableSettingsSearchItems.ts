@@ -12,14 +12,13 @@ import { useEnvironmentScope } from "~/state/session";
 import { isWslSettingsRowVisible } from "./ConnectionsSettings.logic";
 import { isProviderSettingsEnvironmentAvailable } from "./ProviderSettingsPanel.logic";
 import { featureFlagsQuery } from "./moatless/queries";
-import type { SettingsScopeSearch } from "./settingsScope";
 import {
   filterAvailableSettingsSearchItems,
   getThreadAutoSettlementSearchAvailability,
 } from "./settingsSearch";
 import { useMoatlessQuery } from "~/moatless/query";
 
-export function useAvailableSettingsSearchItems(scopeSearch: SettingsScopeSearch = {}) {
+export function useAvailableSettingsSearchItems() {
   const { environments } = useEnvironments();
   // Explicit booleans keep flags out of the filter cache so environment updates do not rebuild the list.
   const hasEnvironment =
@@ -31,15 +30,12 @@ export function useAvailableSettingsSearchItems(scopeSearch: SettingsScopeSearch
         hasServerConfig: environment.serverConfig !== null,
       }),
     ) === true;
-  const hasMacProviderSettingsEnvironment =
+  // Any machine that offers it; the row then shows for a settings scope where all selected ones do.
+  const hasFastWorktreeCheckoutEnvironment =
     environments.some(
       (environment) =>
-        (scopeSearch.machine === undefined || environment.environmentId === scopeSearch.machine) &&
-        environment.serverConfig?.environment.platform.os === "darwin" &&
-        isProviderSettingsEnvironmentAvailable({
-          connectionPhase: environment.connection.phase,
-          hasServerConfig: true,
-        }),
+        environment.connection.phase === "connected" &&
+        environment.serverConfig?.environment.capabilities.fastWorktreeCheckout === true,
     ) === true;
   const hasThreadAutoSettlement =
     getThreadAutoSettlementSearchAvailability(environments).eligibleEnvironmentIds.length > 0;
@@ -68,7 +64,6 @@ export function useAvailableSettingsSearchItems(scopeSearch: SettingsScopeSearch
     hasCloudPublicConfig: cloudPublicConfig,
     hasEnvironment,
     hasProviderSettingsEnvironment,
-    hasMacProviderSettingsEnvironment,
     canManageLocalBackend,
     isWslSettingsRowVisible: wslSettingsRowVisible,
     hasThreadAutoSettlement,
@@ -76,5 +71,6 @@ export function useAvailableSettingsSearchItems(scopeSearch: SettingsScopeSearch
     forgejoEnabled: moatlessFeatures?.forgejo_enabled === true,
     managedTunnelActive,
     hasPeerLinkHost,
+    hasFastWorktreeCheckoutEnvironment,
   });
 }

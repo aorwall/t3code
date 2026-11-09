@@ -3922,3 +3922,51 @@ bullet here that no one will read again.
   `stopOnSettle` extends the settle-script entry; backend parity items extend
   [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
   Commit bypassed the known knip pre-commit failure (27 exports).
+
+## 2026-11-09 — upstream 357fb754fa
+
+- Upstream: `357fb754fa` from base `4cb6945dc6` (113 commits). Branch point:
+  `main`; no open merge PR.
+- Landed: 626 files from `git diff HEAD^1 HEAD` against 622 in the upstream
+  range; the gap is `AGENTS.md` (the fork's copy kept, below) on one side and
+  the fork's own `fork/features.ts`, `fork/features.test.ts`, `inventory.json`,
+  `gaps.md` and this log on the other. Fork delta 770 files.
+- Eleven conflicts, each by its verdict: AGENTS.md kept the fork's shape
+  (upstream's change was product prose, no new facts); agentContextBudget took
+  upstream's values with the fork's +108 tool-list bytes; Compact and Footer
+  composer controls took upstream's removal of the plan-mode toggle (#33131)
+  and kept the `FEATURES.accessMode` gate; ProviderSettingsPanel kept its gated
+  usage and health rows and dropped `cursorKeychainUsageEnabled` with upstream;
+  SettingsPanels kept the gated Text generation section with upstream's
+  `includePlanAgent`; LabsSettingsPanel took upstream's rows and put the new
+  Prompt suggestions and Fast worktree checkout rows under
+  `FEATURES.serverBehaviorSettings`, their search ids mapped beside it;
+  settingsSearch took upstream's removal of `cursor-keychain-usage`;
+  SettingsSidebarNav and useAvailableSettingsSearchItems took upstream's
+  dropped scope argument and kept the fork filters; ArchivedThreadsPanel took
+  upstream's action buttons (#22160) and kept the title `Link`. Lockfile
+  re-derived with install.mjs; no route changes.
+- Added path policy for the two unlisted files (`archived-thread-open-link`,
+  `command-palette-subagent-test`) and a `duplicateAddExceptions` entry for
+  LabsSettingsPanel's `) : null}`.
+- Sweep: eleven hits, all false positives — cloud voice is gated by the
+  `cloudVoiceTranscription` capability Moatless does not report; the
+  CloudSpeech server, peer TLS fixtures, ConnectAgentSurface and relay unlink
+  reason are upstream server and T3 Connect; the 1Password doc is user docs.
+  No new workflows.
+- Union buckets: ADD five (`subscribeVcsBranch`, `vcs.refreshBranch`,
+  `orchestration.getThreadLinkMetadata`, `orchestration.subscribePromptSuggestion`,
+  `server.reclaimDatabaseSpace`), applied; no DROP. Recorded under
+  [methods not dispatched](./gaps.md#methods-the-backend-does-not-dispatch),
+  [capabilities](./gaps.md#capabilities-are-reported-but-not-the-ones-the-newer-surfaces-need),
+  [settlement](./gaps.md#settlement-rules-moatless-owns) and
+  [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Verification: every check but tests green. Tests: t3 and provider-opencode
+  failures are the known sandbox gaps
+  ([`/tmp` sticky bit](./gaps.md#the-sandboxs-tmp-has-no-sticky-bit-so-the-codex-token-broker-refuses-it),
+  [`insteadOf`](./gaps.md#the-sandboxs-global-insteadof-rewrites-the-remote-urls-the-git-tests-build),
+  [OpenCode](./gaps.md#opencode-process-group-cleanup-tests-fail-in-this-sandbox));
+  web's one failure was `fork/features.test.ts` missing
+  `hasFastWorktreeCheckoutEnvironment` for the newly mapped id, fixed and
+  re-run alone (44/44); the other 563 web files passed. Commit bypassed the
+  known knip pre-commit failure.

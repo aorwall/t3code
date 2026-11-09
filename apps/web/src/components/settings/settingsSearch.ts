@@ -68,12 +68,12 @@ export interface SettingsSearchItem {
   readonly cloudOnly?: boolean;
   readonly environmentOnly?: boolean;
   readonly providerSettingsOnly?: boolean;
-  readonly macProviderSettingsOnly?: boolean;
   readonly localBackendManagementOnly?: boolean;
   readonly localEnvironmentOnly?: boolean;
   readonly wslAvailableOnly?: boolean;
   readonly managedTunnelOnly?: boolean;
   readonly peerLinksOnly?: boolean;
+  readonly fastWorktreeCheckoutOnly?: boolean;
   readonly secondary?: boolean;
   readonly requiresThreadAutoSettlement?: boolean;
   // Fork: the Version control page lists Forgejo only where the Moatless
@@ -94,7 +94,6 @@ export interface SettingsSearchAvailability {
   readonly hasCloudPublicConfig: boolean;
   readonly hasEnvironment: boolean;
   readonly hasProviderSettingsEnvironment: boolean;
-  readonly hasMacProviderSettingsEnvironment: boolean;
   readonly canManageLocalBackend: boolean;
   readonly isWslSettingsRowVisible: boolean;
   readonly hasThreadAutoSettlement: boolean;
@@ -102,6 +101,7 @@ export interface SettingsSearchAvailability {
   readonly forgejoEnabled: boolean;
   readonly managedTunnelActive?: boolean;
   readonly hasPeerLinkHost?: boolean;
+  readonly hasFastWorktreeCheckoutEnvironment?: boolean;
 }
 
 export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
@@ -484,20 +484,22 @@ export const SETTINGS_SEARCH_ITEMS = [
     id: "boring-sidebar",
     title: "Boring sidebar (group by project)",
     to: "/settings/labs",
-    searchTerms: ["beta folders project tree legacy old classic sidebar"],
+    searchTerms: ["beta folders project tree classic sidebar"],
   },
   {
     id: "boring-sidebar-multiline",
     title: "Two-line folder rows",
     to: "/settings/labs",
+    // Shown inside the boring sidebar row only while it is on, so search lands on the parent.
+    targetId: "boring-sidebar",
     searchTerms: ["beta boring sidebar folder rows multiline branch pull request details"],
   },
   {
     id: "tool-call-visibility",
     title: "Tool calls in chat",
-    to: "/settings/labs",
+    to: "/settings/chat",
     searchTerms: [
-      "beta hide tool calls commands edits searches work log activity quiet chat zen final answers only",
+      "hide tool calls commands edits searches work log activity quiet chat zen final answers only",
     ],
   },
   {
@@ -515,6 +517,13 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["beta link another machine vps peer agents work there delegate"],
   },
   {
+    id: "prompt-suggestions-beta",
+    title: "Suggest next prompt",
+    to: "/settings/labs",
+    scope: "environment",
+    searchTerms: ["beta tab autocomplete predict next message claude codex ghost text"],
+  },
+  {
     id: "simlock-hosts",
     title: "Simlock device hosts (alpha)",
     to: "/settings/labs",
@@ -522,10 +531,20 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["beta alpha simlock callstack simulator emulator ios android pool lease gateway"],
   },
   {
+    id: "worktree-fast-checkout",
+    title: "Fast worktree checkout",
+    to: "/settings/labs",
+    scope: "environment",
+    fastWorktreeCheckoutOnly: true,
+    searchTerms: ["beta fast worktree checkout clone apfs copy-on-write cache macos speed"],
+  },
+  {
     id: "voice-transcription-destination",
-    title: "Send microphone audio to",
+    title: "Transcribe with",
     to: "/settings/voice",
-    searchTerms: ["speech voice dictation stt transcription environment machine consent privacy"],
+    searchTerms: [
+      "send microphone audio dictation destination speech voice stt transcription environment machine consent privacy cloud OpenAI Grok OpenRouter",
+    ],
   },
   {
     id: "voice-microphone",
@@ -885,18 +904,6 @@ export const SETTINGS_SEARCH_ITEMS = [
     to: "/settings/about",
   },
   {
-    id: "legacy-plan-mode",
-    title: "Plan mode (legacy)",
-    to: "/settings/labs",
-    searchTerms: ["build plan composer old"],
-  },
-  {
-    id: "legacy-context-window-indicator",
-    title: "Context window indicator (legacy)",
-    to: "/settings/labs",
-    searchTerms: ["composer meter usage tokens circle old"],
-  },
-  {
     id: "keybindings",
     title: "Keybindings",
     to: "/settings/keybindings",
@@ -958,15 +965,6 @@ export const SETTINGS_SEARCH_ITEMS = [
       "usage sources CLIProxyAPI CLI proxy hub quota subscription limits management key add remove",
     ],
     providerSettingsOnly: true,
-    providerConfigurationOnly: true,
-  },
-  {
-    id: "cursor-keychain-usage",
-    title: "Cursor account usage",
-    to: "/settings/providers",
-    searchTerms: ["cursor macOS keychain usage tokens cost limits permission"],
-    providerSettingsOnly: true,
-    macProviderSettingsOnly: true,
     providerConfigurationOnly: true,
   },
   {
@@ -1420,7 +1418,6 @@ const SPLIT_SETTINGS_PATHS: ReadonlySet<string> = new Set([
 // Section anchors that moved but are not search results themselves.
 const MOVED_SECTION_ANCHORS: Readonly<Record<string, SettingsPath>> = {
   "authorized-clients": "/settings/access",
-  "legacy-features": "/settings/labs",
   "text-generation": "/settings/threads",
   about: "/settings/about",
 };
@@ -1521,7 +1518,6 @@ export function filterAvailableSettingsSearchItems(
       (!item.cloudOnly || availability.hasCloudPublicConfig) &&
       (!item.environmentOnly || availability.hasEnvironment) &&
       (!item.providerSettingsOnly || availability.hasProviderSettingsEnvironment) &&
-      (!item.macProviderSettingsOnly || availability.hasMacProviderSettingsEnvironment) &&
       (!item.localBackendManagementOnly || availability.canManageLocalBackend) &&
       (!item.localEnvironmentOnly || !availability.localEnvironmentDisabled) &&
       (!item.wslAvailableOnly || availability.isWslSettingsRowVisible) &&
@@ -1535,7 +1531,8 @@ export function filterAvailableSettingsSearchItems(
       // Fork: rows a settings page gates inline, by search id.
       settingsSearchItemEnabled(item.id) &&
       (!item.managedTunnelOnly || availability.managedTunnelActive === true) &&
-      (!item.peerLinksOnly || availability.hasPeerLinkHost === true),
+      (!item.peerLinksOnly || availability.hasPeerLinkHost === true) &&
+      (!item.fastWorktreeCheckoutOnly || availability.hasFastWorktreeCheckoutEnvironment === true),
   );
 }
 
