@@ -300,6 +300,13 @@
       "line": "continue;",
       "reason": "Two `continue` statements in separate loops: the fork's Workspace branch in `writeTargets` skips the settings write, and upstream's keybinding loop skips an unchanged script. Neither is a copy of the other.",
       "retiredWhen": "Either loop stops using `continue`; the check then reports this entry stale."
+    },
+    {
+      "id": "labs-beta-gate-close",
+      "path": "apps/web/src/components/settings/LabsSettingsPanel.tsx",
+      "line": ") : null}",
+      "reason": "The fork's FEATURES.serverBehaviorSettings fragment around the Beta rows closes with `) : null}`, and upstream's BoringSidebarRow closes its nested BoringSidebarMultilineRow conditional the same way. Two different conditionals, at different indentation.",
+      "retiredWhen": "Either conditional stops ending in `) : null}`; the check then reports this entry stale."
     }
   ],
   "pathPolicy": [
@@ -1040,6 +1047,18 @@
       "paths": ["apps/web/src/components/chat/useThreadLifecycle.tsx"],
       "verdict": "converged",
       "note": "Take upstream, then keep `onOpenRelatedThread` toasting \"no longer available\" only for a shell row with `deletedAt`, never for a missing row. The behavior is the inventory entry that lists this file (a Moatless listing leaves out subtasks and others' threads)."
+    },
+    {
+      "id": "archived-thread-open-link",
+      "paths": ["apps/web/src/components/settings/ArchivedThreadsPanel.tsx"],
+      "verdict": "converged",
+      "note": "Take upstream, then keep each row's `title` a TanStack `Link` to `/$environmentId/$threadId`: an archived thread is readable, so it opens without being unarchived. Since 2026-11-09 upstream renders the row actions from `ARCHIVE_ACTIONS` (unarchive, delete); the Link wraps `thread.title` and touches nothing else."
+    },
+    {
+      "id": "command-palette-subagent-test",
+      "paths": ["apps/web/src/components/CommandPalette.logic.test.ts"],
+      "verdict": "converged",
+      "note": "Take upstream, then keep the `hides subagent threads but keeps forks` case building its subagent with `source.creationSource: \"provider\"`: the fork hides only provider-native subagents (see `isSidebarHiddenThread`), so upstream's lineage-only subagent would stay visible and the test would fail."
     }
   ],
   "inventory": [

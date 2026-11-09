@@ -80,7 +80,11 @@ one-shot scheduled tasks #28104) and `freshContext`, `voiceTranscription`,
 `secretRequestReferences` and `scheduledTaskThreadModes` (upstream, 2026-11-06:
 `/clear` and fresh-session sends #30323, dictation on a chosen environment
 #30625, secret-provider answers to a secret request #31670, scheduled task
-thread modes #30326) — so
+thread modes #30326) and `vcsBranchStatus`, `fastWorktreeCheckout` and
+`cloudVoiceTranscription`, with `threadLinkMetadata` on the server config
+(upstream, 2026-11-09: sidebar branch labels without a full git status #32947,
+cached-checkout worktrees on macOS #32927, cloud dictation #31769, thread link
+titles and project icons #32830) — so
 each of those
 surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
@@ -796,6 +800,21 @@ what a person loses, which is the part the derivation cannot tell you:
   request. #29803 extends MCP apps to Claude tool calls, and is covered by the
   MCP apps paragraph above. Closes per feature when the backend serves it; the
   flag mapping for `ghq-clone-layout` goes with `projectManagement`.
+- **Branch labels, link metadata, prompt suggestions and database reclaim** —
+  five methods new upstream in the 2026-11-09 merge. `subscribeVcsBranch` and
+  `vcs.refreshBranch` (#32947) stream only a checkout's branch name for sidebar
+  labels; the client calls them only when `capabilities.vcsBranchStatus` is
+  true and otherwise falls back to `subscribeVcsStatus`, so Moatless keeps the
+  old path. `orchestration.getThreadLinkMetadata` (#32830) gives thread links a
+  title and project icon; asked only under `threadLinkMetadata: true`, it falls
+  back to `getThreadTitles`, itself refused above, so links to unloaded threads
+  show their id. `orchestration.subscribePromptSuggestion` (#28047) streams a
+  predicted next message; the Labs row that turns it on is a server setting and
+  sits under `FEATURES.serverBehaviorSettings`, and the subscription is not
+  opened while the setting is off. `server.reclaimDatabaseSpace` (#32941)
+  VACUUMs T3's SQLite database from the Storage page, which reads
+  `getDatabaseStorage`, already refused. Closes per method when Moatless
+  dispatches it; delete that union entry then.
 
 - **Check:** run `unsupported-methods.mjs` rather than reading this list. Where
   the two sides come from is _Deriving the unsupported set_ in the inventory.
@@ -1265,6 +1284,10 @@ absent, so their settings rows stay hidden:
   back. Moatless has sandboxes rather than worktrees, but the same "reclaim a
   settled thread's workspace" rule applies.
 - **A settled or idle-released thread stops reading as Waiting.** #19355.
+
+The 2026-11-09 merge added one more: **inactive threads auto-settle after 7
+days by default**, up from 3 (#32325, `sidebarAutoSettleAfterDays`). If
+Moatless's inactivity rule has its own default, it is worth matching.
 
 - **Closes when:** the backend's settlement decision reads pin and snooze state,
   settles a snoozed thread immediately, settles on the pull-request event rather
@@ -2280,6 +2303,18 @@ One more arrived in the 2026-10-01 merge:
   the change (#31819); a branch tracking another local branch no longer shows
   that branch's PR (#30563); and the headless browser closes after five idle
   minutes (#30306).
+  The 2026-11-09 merge adds: an idle parent wakes for a delegated result that
+  arrives after it settled (#32573); hidden (minimized) GitHub comments and
+  reviews stay out of the PR view (#33134) and review-required holds until the
+  required reviewers approve (#32395); `glab mr accept` and tea's `pull`/`m`
+  count as shell merges (#32400, #32401); side chats start with the parent's
+  permission mode and reasoning level (#32315); an agent asks for a sudo
+  password through the private secret card (#27748) and a duplicate variable
+  row no longer deletes a stored secret (#31337); html tools take a file path
+  (#32833); saved preview screenshots keep full resolution (#28255); existing
+  agent sessions pick up refreshed linking tools (#26737); Codex tool calls stop
+  waiting on reasoning summaries (#31149); and worktree branch allocation is
+  batched and cleanup scans skipped when nothing changed (#32934, #32933).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

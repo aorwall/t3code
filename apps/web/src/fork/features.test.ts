@@ -123,12 +123,12 @@ describe("the settings search id map", () => {
       hasCloudPublicConfig: true,
       hasEnvironment: true,
       hasProviderSettingsEnvironment: true,
-      hasMacProviderSettingsEnvironment: true,
       canManageLocalBackend: true,
       isWslSettingsRowVisible: true,
       hasThreadAutoSettlement: true,
       forgejoEnabled: true,
       hasPeerLinkHost: true,
+      hasFastWorktreeCheckoutEnvironment: true,
     }).map((item) => item.id),
   );
 

@@ -239,6 +239,8 @@ export const FEATURE_BY_SETTINGS_SEARCH_ID: Readonly<Record<string, FeatureName>
   "snooze-options": "serverBehaviorSettings",
   "linked-environments": "serverBehaviorSettings",
   "simlock-hosts": "serverBehaviorSettings",
+  "prompt-suggestions-beta": "serverBehaviorSettings",
+  "worktree-fast-checkout": "serverBehaviorSettings",
   diagnostics: "diagnostics",
   "mobile-app": "connections",
 };
