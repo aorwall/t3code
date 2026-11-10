@@ -259,6 +259,7 @@ export function settingsSearchItemEnabled(id: string): boolean {
 export const FEATURE_BY_PALETTE_ACTION: Readonly<Record<string, FeatureName>> = {
   "action:add-project": "projectManagement",
   "action:search-project-contents": "workspaceSearchContents",
+  "action:use-in-another-app": "connections",
 };
 
 /** Whether a palette item is offered in this build. Unlisted values are. */

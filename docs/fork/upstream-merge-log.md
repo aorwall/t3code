@@ -3970,3 +3970,44 @@ bullet here that no one will read again.
   `hasFastWorktreeCheckoutEnvironment` for the newly mapped id, fixed and
   re-run alone (44/44); the other 563 web files passed. Commit bypassed the
   known knip pre-commit failure.
+
+## 2026-11-10 — upstream d1909d68f8
+
+- Upstream: `d1909d68f8` from base `357fb754fa` (122 commits). Branch point:
+  `main`; no open merge PR.
+- Landed: 694 files from `git diff HEAD^1 HEAD` against 693 in the upstream
+  range; the gap is the fork's `inventory.json`. Fork delta 770 files.
+- Four conflicts, each by its verdict: agentContextBudget took upstream's
+  values with the fork's +108 tool-list bytes (48325); `__root.tsx` kept
+  `/login` beside upstream's new `/approve-agent` in the chrome-less list;
+  SettingsPanels kept the gated Text generation section with upstream's new
+  description, and kept `FEATURES.connections` on the mobile-app row beside
+  upstream's new Welcome page row, left ungated like `/welcome` itself; the
+  lockfile re-derived with install.mjs. Route tree regenerated, unchanged.
+- Fixed auto-merges: `getFallbackThreadIdAfterDelete` (upstream now calls
+  `isSidebarHiddenThread`) gained the fork's `source` in its constraint, and
+  its new subagent test case wraps the fixture in `withProviderSource`;
+  settingsSearch's new Welcome test gained `forgejoEnabled`.
+- Gated the new surfaces: `TextGeneratorsSettings` and its search item behind
+  `FEATURES.providerConfiguration`, the "Use T3 Code in another app (MCP)"
+  palette action mapped to `connections`. Path policy:
+  `CommandPalette.browser.test.tsx` joined `sidebar-hidden-thread`.
+- Sweep: 22 hits, all false positives or already covered — Cursor Origin is an
+  upstream server provider; DPoP, T3 Connect state and `connectMcpApproval` are
+  T3 cloud/MCP (see [MCP sign-in](./gaps.md#outside-agents-cannot-sign-in-to-an-mcp-server-here));
+  `hostYield` and FilePreviewSession are client internals; patches are version
+  bumps. New workflow `mobile-dev-client.yml` arrives enabled — disable after
+  this lands.
+- Union buckets: ADD `server.listTextGeneratorModels`, applied; no DROP.
+  Recorded under [methods not dispatched](./gaps.md#methods-the-backend-does-not-dispatch)
+  and [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server);
+  the agent-session-import entry re-pointed at `WelcomePage.tsx` (#33209
+  replaced the wizard).
+- Verification: every check but tests green. Tests: t3 and provider-opencode
+  failures are the known sandbox gaps
+  ([`/tmp` sticky bit](./gaps.md#the-sandboxs-tmp-has-no-sticky-bit-so-the-codex-token-broker-refuses-it),
+  [`insteadOf`](./gaps.md#the-sandboxs-global-insteadof-rewrites-the-remote-urls-the-git-tests-build),
+  [OpenCode](./gaps.md#opencode-process-group-cleanup-tests-fail-in-this-sandbox)).
+  Web: 572 of 573 files passed; `CommandPalette.browser.test.tsx`'s highlight
+  wait timed out under load and passed alone (4/4). Commit bypassed the known
+  knip pre-commit failure.
