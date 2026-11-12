@@ -97,6 +97,7 @@ import { ExpandableText } from "./ExpandableText";
 import { IntervalSecondsField } from "./IntervalSecondsField";
 import { ProviderInstanceCard } from "./ProviderInstanceCard";
 import { useSecretSources } from "./SecretSourceInput";
+import { TextGeneratorsSettings } from "./TextGeneratorsSettings";
 import { UsageProviderSettings } from "./UsageProviderSettings";
 import { ProviderSetupSection, readAntigravityAuthMethod } from "./ProviderSetupSection";
 import { ProviderAuthenticationSection } from "./ProviderAuthenticationSection";
@@ -1102,6 +1103,20 @@ export function EnvironmentProviderSettings({
           environmentId={environmentId}
           environmentLabel={environmentLabel}
           sources={settings.usageLimitSources}
+          readOnly={readOnly}
+        />
+      ) : null}
+
+      {/* The server drops text generators under a provider allow-list. */}
+      {/* Fork: saved via server.updateSettings and listed via
+        server.listTextGeneratorModels, neither of which the backend dispatches. */}
+      {FEATURES.providerConfiguration &&
+      managedPolicy?.limits?.providers?.allowedDrivers === undefined ? (
+        <TextGeneratorsSettings
+          key={`text-generators:${environmentId}`}
+          environmentId={environmentId}
+          environmentLabel={environmentLabel}
+          providers={serverProviders}
           readOnly={readOnly}
         />
       ) : null}

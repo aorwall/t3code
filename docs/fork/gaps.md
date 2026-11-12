@@ -236,10 +236,20 @@ flow, so the consent page has nothing to authorize against. Its entry point,
 "Copy MCP URL" in Connections settings, sits behind `FEATURES.connections`, so
 the route is reachable only by a typed URL.
 
+The 2026-11-10 merge added two more of the same family. "Use T3 Code in another
+app (MCP)" (#33196, `apps/web/src/components/mcp/UseInAnotherAppDialog.tsx`)
+walks a person through connecting an outside app to the server's MCP endpoint;
+its palette action is mapped to `connections` in `FEATURE_BY_PALETTE_ACTION`,
+and its settings button sits on the Connections page, gated by path. Approving
+an agent sign-in through T3 Connect (#33600, #33632) adds `/approve-agent`
+(`apps/web/src/routes/approve-agent.tsx`, `ApproveAgentSurface`), reachable from
+an approval link upstream's cloud sends, which Moatless never does.
+
 - **Closed by:** the backend serving an MCP endpoint with an OAuth
   authorization server.
-- **Until then:** gate `/connect-agent` in `FEATURES`' path map if anyone is
-  found reaching it.
+- **Until then:** gate `/connect-agent` and `/approve-agent` in `FEATURES`'
+  path map if anyone is found reaching them. On closing, delete the
+  `action:use-in-another-app` entry in `FEATURE_BY_PALETTE_ACTION`.
 
 ### A pull request link is a listing change, not an event
 
@@ -484,17 +494,18 @@ what a person loses, which is the part the derivation cannot tell you:
   all served, so "Go to file" works and "search in files" does not. Holds open
   `workspaceSearchContents`.
 - **Agent session import** — `agentSessions.scan` and `agentSessions.import`,
-  new upstream in the 2026-09-06 merge. They back the welcome wizard's "Your
-  projects" step (`ImportStep` in `apps/web/src/components/onboarding/WelcomeWizard.tsx`,
-  state in `apps/web/src/state/agentSessions.ts`): scan walks the machine's
+  new upstream in the 2026-09-06 merge. They back the Welcome page's Projects
+  section (`ProjectsSection` in `apps/web/src/components/onboarding/WelcomePage.tsx`,
+  which replaced the three-step wizard in the 2026-11-10 merge; state in
+  `apps/web/src/state/agentSessions.ts`): scan walks the machine's
   Claude Code and Codex home directories for existing project directories, and
   import creates a T3 project from a chosen one and carries over its recent
-  thread history. Neither is fork-gated by a capability, so the step's own
+  thread history. Neither is fork-gated by a capability, so the section's own
   error handling is what a Moatless user sees: the scan query resolves with an
-  error, `ImportStep` renders "Could not check this computer for projects."
-  with Retry and Skip, and a user who did have Claude Code or Codex projects on
-  disk gets no offer to bring them, or their history, into T3. Holds open no
-  named flag — the step just always falls through to its own no-op path.
+  error, `ProjectsSection` renders "Could not check projects." with Retry, and
+  a user who did have Claude Code or Codex projects on disk gets no offer to
+  bring them, or their history, into T3. Holds open no named flag — the
+  section just always falls through to its own error path.
   Closes when the backend dispatches both methods.
 - **Per-turn diffs** — `orchestration.getTurnDiff`, `getFullThreadDiff`. The
   diff panel's working-tree and branch-range scopes work; "Latest turn" / "Turn"
@@ -815,6 +826,16 @@ what a person loses, which is the part the derivation cannot tell you:
   VACUUMs T3's SQLite database from the Storage page, which reads
   `getDatabaseStorage`, already refused. Closes per method when Moatless
   dispatches it; delete that union entry then.
+- **Text generators** — `server.listTextGeneratorModels`, new upstream in the
+  2026-11-10 merge (#33147). It lets a model API (OpenAI-compatible endpoint,
+  OpenRouter, Ollama, LM Studio) write thread titles, commit messages and
+  transcript cleanup, configured in `TextGeneratorsSettings` on the Providers
+  page and saved into `ServerSettings.textGenerators` via `server.updateSettings`.
+  Moatless dispatches neither, so the block and its `text-generators` search
+  item sit behind `FEATURES.providerConfiguration`; the pickers that list
+  generator models (`useTextGenerationTargets` in `apps/web/src/textGenerators.ts`)
+  just see no generators. Closes when Moatless serves both; drop the union
+  entry and the `FEATURES.providerConfiguration &&` conjunct on the block then.
 
 - **Check:** run `unsupported-methods.mjs` rather than reading this list. Where
   the two sides come from is _Deriving the unsupported set_ in the inventory.
@@ -2315,6 +2336,18 @@ One more arrived in the 2026-10-01 merge:
   agent sessions pick up refreshed linking tools (#26737); Codex tool calls stop
   waiting on reasoning summaries (#31149); and worktree branch allocation is
   batched and cleanup scans skipped when nothing changed (#32934, #32933).
+  The 2026-11-10 merge adds: background command results reach a running Codex
+  goal (#33268) and Codex `/goal` creates the goal once (#33260); steering
+  during a Claude compaction reports stopped, not failed (#33291); delegated
+  Claude tasks report the model that ran (#27753); phones get the approval push
+  when a subagent waits (#24079); MCP links carry thread titles (#33255) and
+  requested WebMCP writes are allowed (#26570); a model picker that opens checks
+  for new models and the CLI update that supports them (#33511, #33515);
+  Cursor Origin joins the source-control providers
+  (`packages/source-control-cursor-origin`, #33093); Pi gains Fast and
+  Ultrafast service tiers (#33177); and Antigravity resolves model names from
+  usage metadata, prices Gemini Flash effort variants and survives a stale
+  Windows Crashpad pipe (#33661, #13809, #26374).
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
