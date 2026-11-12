@@ -19,7 +19,9 @@
 # Configuration:
 #   secrets.DOCKERHUB_USERNAME / secrets.DOCKERHUB_TOKEN
 #                      Docker Hub credentials with write access to the target
-#                      namespace. Only read on the publishing paths.
+#                      namespace, as secrets of the `dockerhub` environment,
+#                      which only `main` can enter (soap-infra
+#                      terraform/github). Only the publishing paths enter it.
 #   vars.REGISTRY_ORG  registry namespace, defaults to `aorwall` (same
 #                      convention as the moatless repository's workflows).
 #   vars.DOCKER_BUILD_RUNNER
@@ -98,6 +100,8 @@ jobs:
   build:
     name: Build & push moatless-t3
     runs-on: ${{ vars.DOCKER_BUILD_RUNNER || 'ci-runners-large' }}
+    # An empty name enters no environment, so a pull request still builds.
+    environment: ${{ github.event_name != 'pull_request' && 'dockerhub' || '' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
