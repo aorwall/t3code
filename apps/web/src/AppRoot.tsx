@@ -3,6 +3,7 @@ import { RouterProvider } from "@tanstack/react-router";
 import { ElectronBrowserHost } from "./browser/ElectronBrowserHost";
 import { WebBrowserHost } from "./browser/WebBrowserHost";
 import { QuitHoldOverlay } from "./components/QuitHoldOverlay";
+import { I18nProvider } from "./i18n/I18nProvider";
 import { AppAtomRegistryProvider } from "./rpc/atomRegistry";
 import type { AppRouter } from "./router";
 
@@ -10,11 +11,13 @@ import type { AppRouter } from "./router";
 // Fork: exactly one host renders anything — Electron in the desktop app, web everywhere else.
 export function AppRoot({ router }: { readonly router: AppRouter }) {
   return (
-    <AppAtomRegistryProvider>
-      <RouterProvider router={router} />
-      <ElectronBrowserHost />
-      <WebBrowserHost />
-      <QuitHoldOverlay />
-    </AppAtomRegistryProvider>
+    <I18nProvider>
+      <AppAtomRegistryProvider>
+        <RouterProvider router={router} />
+        <ElectronBrowserHost />
+        <WebBrowserHost />
+        <QuitHoldOverlay />
+      </AppAtomRegistryProvider>
+    </I18nProvider>
   );
 }

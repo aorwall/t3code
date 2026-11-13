@@ -836,6 +836,16 @@ what a person loses, which is the part the derivation cannot tell you:
   generator models (`useTextGenerationTargets` in `apps/web/src/textGenerators.ts`)
   just see no generators. Closes when Moatless serves both; drop the union
   entry and the `FEATURES.providerConfiguration &&` conjunct on the block then.
+- **Secret checks and keep-awake** — `server.checkSecretSource`, new upstream in
+  the 2026-11-13 merge (#31723), tests a secret reference from the provider
+  settings form. `SecretSourceInput` offers the check only under
+  `capabilities.secretSourceCheck: true`, which Moatless leaves absent, so the
+  button never shows. The same merge added the `keepAwakeWhileAgentsWork`
+  server setting (#34128), a Background activity row that stops the host
+  sleeping; a cluster has no lid, and the row and its
+  `keep-awake-while-agents-work` search item sit under
+  `FEATURES.serverBehaviorSettings` with the rest of that section. Closes for
+  the check when Moatless dispatches it; delete the union entry then.
 
 - **Check:** run `unsupported-methods.mjs` rather than reading this list. Where
   the two sides come from is _Deriving the unsupported set_ in the inventory.
@@ -1379,6 +1389,22 @@ Upstream server fixes the fork cannot use, because Moatless owns the surface
 itself. None is a placeholder here — there is nothing in this repository holding
 them open — so they are recorded only so the next person to touch the Moatless
 runtime knows the answer was already worked out upstream.
+
+- **The bedc8658c3 range (2026-11-13 merge) — watched PRs, turn control,
+  scheduled tasks, worktrees and thread tools.** Watched pull requests react to
+  check-suite and merge-queue events, baseline existing checks when a watch
+  starts, and release the thread hold once checks finish (#35709, #33543,
+  #33214, #34884, #35109). Stop/Force-stop races and steer acceptance are fixed
+  (#31038, #34912, #34597). A missed fixed-time scheduled slot shows as failed,
+  and a recurring task queues one occurrence (#34815, #23609). Commit refuses
+  while conflict markers remain and finishes a merge resolved to the current
+  tree (#35132, #35778); symlinked worktree spellings count as one checkout
+  (#25735). `t3_thread_read` returns the newest items within agent context
+  (#33428), and `t3_thread_list`/`t3_thread_launch` report a missing project
+  (#29187, #29109). Forks whose source session is gone start fresh (#27729), and
+  one unresponsive provider no longer stalls every effect (#35027). Review each
+  against the matching Moatless runtime code; remove the item when equivalent
+  backend tests pass.
 
 - **Provider recovery and VCS behavior from the 61c3794c32 range need parity review.**
   Imported Claude sessions resume on their first turn (#23219); nested subagent
@@ -2354,6 +2380,18 @@ One more arrived in the 2026-10-01 merge:
 
 ## This fork
 
+### The fork's own strings are English in every locale
+
+Upstream localized its web client in the 2026-11-13 merge (#31313, #33161–#33166):
+`apps/web/src/i18n` with nine catalogs, a language switcher, and
+`useGT`/`<T>`/`msg` in upstream's components. The fork's own surfaces — `/login`,
+the sandbox and Artifact panels, gate notices, the version-control page — still
+render plain English strings, so a person who picks German reads a mixed page.
+Nothing on the backend is needed; `language` is a client setting. Holding it
+open: every literal in `apps/web/src/fork/**` and the fork's `// Fork:` JSX.
+Closes when `git grep -L "useGT\|<T>\|msg(" -- 'apps/web/src/fork/*.tsx'`
+lists only files that render no text; nothing to delete then.
+
 ### Upstream's GitHub star prompt asks Moatless users to star T3 Code
 
 Upstream's `apps/web/src/components/GitHubStarPrompt.tsx` (#27832, #29922),
@@ -2648,6 +2686,12 @@ instead. Node 26's Linux binary needs `libatomic.so.1`, which the
 which both use to install pnpm. So CI typechecks on a different Node from
 the one a developer following `engines.node` runs. Nothing the fork ships needs
 26: only upstream's single-executable build does.
+
+The sandbox runs Node 24 too, and since the 2026-11-13 merge upstream's server
+tests lean on Node 26: `ProjectionStore.test.ts` calls `StatementSync.stat`,
+`026_CanonicalizeModelSelectionOptions.test.ts` expects Node 26's SQLite JSON
+decoding, and `outboundHttp.test.ts` expects fetch to call `setTypeOfService`.
+None of the three is in the fork delta, so each fails here and nowhere else.
 
 - **Closes when:** the runner image carries `libatomic1`, so
   `node-version-file: package.json` starts Node 26, and pnpm is installed

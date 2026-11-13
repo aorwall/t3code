@@ -238,6 +238,8 @@ export function MobileSidebarDrawer({
         className={cn(
           "fixed inset-0 z-50 bg-background/60 backdrop-blur-xs",
           isDragging ? "transition-none" : "transition-opacity duration-200",
+          // The app's panel-animations setting, as upstream's panels read it.
+          "[[data-panel-animations=false]_&]:transition-none [[data-panel-animations=false]_&]:duration-0",
           isVisible ? "pointer-events-auto" : "pointer-events-none",
         )}
         onClick={() => onOpenChange(false)}
@@ -251,6 +253,7 @@ export function MobileSidebarDrawer({
           "fixed inset-y-0 z-50 flex h-dvh w-(--sidebar-width) flex-col overflow-x-hidden overscroll-x-none bg-sidebar surface-grain pt-safe pb-safe text-sidebar-foreground",
           side === "left" ? "left-0 pl-safe" : "right-0 pr-safe",
           isDragging ? "transition-none" : "transition-transform duration-200 ease-in-out",
+          "[[data-panel-animations=false]_&]:transition-none [[data-panel-animations=false]_&]:duration-0",
           // At rest the resting place is a class, not a px offset: `panelWidth`
           // is only measured once a touch lands, so a px transform would put
           // the closed panel at the fallback width and leave a sliver of it on

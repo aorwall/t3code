@@ -4011,3 +4011,61 @@ bullet here that no one will read again.
   Web: 572 of 573 files passed; `CommandPalette.browser.test.tsx`'s highlight
   wait timed out under load and passed alone (4/4). Commit bypassed the known
   knip pre-commit failure.
+
+## 2026-11-13 — upstream bedc8658c3
+
+- Upstream: `bedc8658c3` from base `d1909d68f8` (1016 commits). Branch point:
+  `main`; no open merge PR.
+- Landed: 2138 files from `git diff HEAD^1 HEAD` against 2138 in the upstream
+  range; the swap is `cli/pair.ts` and its test (kept deleted) for the fork's
+  `features.ts` and `inventory.json`. Fork delta 771 files.
+- 29 conflicts, each by its verdict. Branding took upstream's desktop-title
+  script and channel label with the `Moatless` title and base name, and
+  upstream's new `t3code:bootstrap-title` Vite plugin now stamps `Moatless`.
+  AGENTS.md kept the fork's shape with upstream's two new dev-server facts
+  (`vp` drops SIGTERM; never detach servers). agentContextBudget took
+  upstream's values plus the fork's 108 bytes (48207). Upstream's i18n
+  (`gt`/`<T>`/`msg`) was taken everywhere and the gates re-wrapped around it:
+  the project-grouping row, the Background activity section (now also holding
+  upstream's keep-awake row), the nav filter on upstream's new keyboard
+  handler, the `Version control` label as `msg()`. Sidebar kept
+  `useSidebarThreadList` feeding upstream's promoting-draft map, and the
+  `projectManagement` gate and browse branch moved to upstream's relocated
+  empty state. ProjectSettingsPanel kept the gated block with upstream's
+  `project={group}`. Timeline kept `isStartingRun` beside upstream's
+  `providerStartingLabel`. `cli/pair*` stayed deleted; lockfile re-derived.
+- Fixed after resolving: the framed preview branch returns `activeProfileId`
+  (upstream's `navigateToResolvedUrl` now returns a profile); the mobile drawer
+  reports through upstream's `setMobileSheetMounted`, which replaced
+  `setMobileSheetElement`; upstream's local-server-card preview test dropped
+  (the card is a deleted surface); `ThreadDetailsPanel` and `AppRoot` tests
+  updated for the fork prop and the `I18nProvider` wrapper.
+- Path policy: seven unlisted both-sides paths joined
+  `fork-additive-upstream-files`; `image-compression-test-budgets` is new.
+- Sweep: 7 hits, all false positives — cloud service lock, ACP registry
+  sessions and host telemetry are upstream server; `clientHostEnvironment`,
+  the ghostty renderer test and the connection driver test are client
+  internals. New workflow `pr-limits.yml` arrives enabled — disable after this
+  lands. `mobile-dev-client.yml` from the last merge was still enabled and was
+  disabled in this run.
+- Union buckets: ADD `server.checkSecretSource`, applied; no DROP. Recorded
+  under [methods not dispatched](./gaps.md#methods-the-backend-does-not-dispatch)
+  and [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server);
+  new [i18n gap](./gaps.md#the-forks-own-strings-are-english-in-every-locale).
+- Verification: the parallel pass was lost to a sandbox restart, so the final
+  pass ran `--sequential`. Every check but tests green after the `useCallback`
+  lint fix. Tests: 33 of 37 packages pass. t3, provider-opencode: known sandbox
+  gaps ([`/tmp`](./gaps.md#the-sandboxs-tmp-has-no-sticky-bit-so-the-codex-token-broker-refuses-it),
+  [`insteadOf`](./gaps.md#the-sandboxs-global-insteadof-rewrites-the-remote-urls-the-git-tests-build),
+  [OpenCode](./gaps.md#opencode-process-group-cleanup-tests-fail-in-this-sandbox),
+  [Node 24](./gaps.md#ci-and-the-image-build-run-node-24-not-enginesnode)),
+  plus `ServerBrowserPage` (no Chromium build 1248 in the image) and
+  `AntigravityInstallation`'s 16 KiB-page case. None of those files is in
+  the fork delta. Web: upstream's Playwright 1.64.1 wants Chromium build
+  1248 and the image ships 1254, so the browser project ran with
+  `PLAYWRIGHT_BROWSERS_PATH` pointed at a fetched 1248: 613 of 616 passed. The
+  three were new upstream tests meeting fork code, fixed here — the settings
+  Tab walk now expects only `settingsPathEnabled` sections, the mobile drawer
+  honours `data-panel-animations=false`, and `useSidebarThreadList` tolerates
+  a stubbed config with no `environment` — and pass alone (25/25). Commit
+  bypassed the known knip pre-commit failure.

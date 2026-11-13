@@ -104,7 +104,8 @@ export function useSidebarThreadList(
   // would answer every filter with an unsupported-method failure. With none of
   // them able to, the filter has nothing to apply and the listing stands.
   const browsableEnvironmentIds = [...serverConfigs]
-    .filter(([, config]) => config.environment.capabilities.threadBrowse === true)
+    // Fork: a partial config (upstream's sidebar tests stub one) has no `environment`.
+    .filter(([, config]) => config.environment?.capabilities.threadBrowse === true)
     .map(([environmentId]) => environmentId)
     .sort();
   const archivedEnvironmentIds = filter.includeClosed
