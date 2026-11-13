@@ -765,10 +765,11 @@
         "apps/web/src/components/settings/SettingsPanels.tsx",
         "apps/web/src/components/settings/SettingsSidebarNav.tsx",
         "apps/web/src/components/settings/LabsSettingsPanel.tsx",
-        "apps/web/src/components/settings/WorktreesSettings.tsx"
+        "apps/web/src/components/settings/WorktreesSettings.tsx",
+        "apps/web/src/components/settings/SettingsSidebarNav.composition.browser.test.tsx"
       ],
       "verdict": "converged",
-      "note": "Take upstream, then re-state the FEATURES gates it wrote around. These are upstream's own files and it restructures them constantly, so the gates are written to survive that: each wraps a whole row or nav item additively and never re-indents the block beside it. SettingsSidebarNav carries only a settingsPathEnabled conjunct on upstream's nav filter and the same filter on the search results. When upstream replaces a gated control outright, the gate moves onto the replacement: the 2026-09-14 merge swapped enableLegacyTokenStreaming for the responseStreamingMode select and FEATURES.assistantStreaming moved with it; the 2026-10-27 merge took upstream's settings-by-concern split (#25651), which moved the Beta page's guest links row into LabsSettingsPanel, the submodules and start-from-origin rows into WorktreesSettings, and the device hub onto its own /settings/devices page, gated by path in FEATURE_BY_SETTINGS_PATH so IntegrationsSettings is upstream's again. SettingsSidebarNav filters each of upstream's SETTINGS_NAV_GROUPS per render and drops a group left empty. A gate silently dropped here un-hides a surface the backend cannot serve, and nothing else catches that."
+      "note": "Take upstream, then re-state the FEATURES gates it wrote around. These are upstream's own files and it restructures them constantly, so the gates are written to survive that: each wraps a whole row or nav item additively and never re-indents the block beside it. SettingsSidebarNav carries only a settingsPathEnabled conjunct on upstream's nav filter and the same filter on the search results. Its composition test's Tab walk filters the expected sections through `settingsPathEnabled` too, since a hidden section has no nav item to reach. When upstream replaces a gated control outright, the gate moves onto the replacement: the 2026-09-14 merge swapped enableLegacyTokenStreaming for the responseStreamingMode select and FEATURES.assistantStreaming moved with it; the 2026-10-27 merge took upstream's settings-by-concern split (#25651), which moved the Beta page's guest links row into LabsSettingsPanel, the submodules and start-from-origin rows into WorktreesSettings, and the device hub onto its own /settings/devices page, gated by path in FEATURE_BY_SETTINGS_PATH so IntegrationsSettings is upstream's again. SettingsSidebarNav filters each of upstream's SETTINGS_NAV_GROUPS per render and drops a group left empty. A gate silently dropped here un-hides a surface the backend cannot serve, and nothing else catches that."
     },
     {
       "id": "settings-search-filters",
@@ -923,10 +924,23 @@
         "apps/web/src/components/ThreadRouteView.tsx",
         "docs/README.md",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/preview.ts"
+        "packages/contracts/src/preview.ts",
+        "apps/web/src/AppRoot.tsx",
+        "apps/web/src/components/chat/ChatOverlayHosts.tsx",
+        "apps/web/src/components/chat/useSystemComposerBanners.tsx",
+        "apps/web/src/threadRoutes.ts",
+        "apps/web/src/threadRoutes.test.ts",
+        "packages/contracts/src/orchestrationProject.ts",
+        "packages/contracts/src/environment.test.ts"
       ],
       "verdict": "converged",
-      "note": "Take upstream, then keep the fork's additive `// Fork:` (or `<!-- Fork: -->`) hunks: the fork-method rows in RpcInstrumentation's method-to-span map, the fork contract re-exports in contracts/index.ts, `PreviewNavigateInput` in preview.ts, the `useAdoptedThread`/`useThreadAwaitingFirstAnswer` hooks in ThreadRouteView, and the Moatless doc links in docs/README.md. The behavior lives in the inventory entries preview-navigate-fork-method, hosted-env-contract, sandbox-panel-surface, unlisted-thread-adoption and thread-follow; this entry exists so resolution-check compares these files against both parents."
+      "note": "Take upstream, then keep the fork's additive `// Fork:` (or `<!-- Fork: -->`) hunks: the fork-method rows in RpcInstrumentation's method-to-span map, the fork contract re-exports in contracts/index.ts, `PreviewNavigateInput` in preview.ts, the `useAdoptedThread`/`useThreadAwaitingFirstAnswer` hooks in ThreadRouteView, the Moatless doc links in docs/README.md, `<WebBrowserHost />` beside upstream's ElectronBrowserHost in AppRoot, the `FEATURES.checkpointFileRestore` gate on \"Revert files too\" in ChatOverlayHosts, the `FEATURES.serverUpdateBanner` conjunct in useSystemComposerBanners, `serverThreadAwaitingFirstAnswer` and the dropped `archivedAt` check in threadRoutes (with its tests), `scriptsEditable` on the project schema in orchestrationProject, and the fork's capability-skew decode cases at the end of environment.test.ts. The behavior lives in the inventory entries preview-navigate-fork-method, hosted-env-contract, sandbox-panel-surface, unlisted-thread-adoption, thread-follow, fork-browser-files, checkpoint-file-restore-gate, server-update-banner-gate and project-script-editing-capability; this entry exists so resolution-check compares these files against both parents."
+    },
+    {
+      "id": "image-compression-test-budgets",
+      "paths": ["apps/web/src/lib/imageCompression.test.ts"],
+      "verdict": "converged",
+      "note": "Take upstream, then keep the fork's explicit `budgetChars` argument and kilobyte-scale fakes in the `compressImageForStash` cases rather than upstream's `MAX_STASH_IMAGE_DATA_URL_CHARS` with megabyte fakes (since the 2026-10-25 merge). Upstream's new cases land beside them unchanged. Drop this entry, and take upstream's file whole, once the fork's cases match upstream's."
     },
     {
       "id": "command-palette-gates",

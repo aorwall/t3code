@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import { ElectronBrowserHost } from "./browser/ElectronBrowserHost";
 import { WebBrowserHost } from "./browser/WebBrowserHost";
 import { QuitHoldOverlay } from "./components/QuitHoldOverlay";
+import { I18nProvider } from "./i18n/I18nProvider";
 import { AppAtomRegistryProvider } from "./rpc/atomRegistry";
 import type { AppRouter } from "./router";
 import { AppRoot } from "./AppRoot";
@@ -18,8 +19,10 @@ vi.mock("react", async (importOriginal) => ({
 
 describe("AppRoot", () => {
   it("shares the application atom registry with routed UI and both browser hosts", () => {
-    const root = AppRoot({ router: {} as AppRouter });
+    const outer = AppRoot({ router: {} as AppRouter });
 
+    expect(outer.type).toBe(I18nProvider);
+    const root = (outer as ReactElement<{ readonly children: ReactElement }>).props.children;
     expect(root.type).toBe(AppAtomRegistryProvider);
     const children = Children.toArray(
       (root as ReactElement<{ readonly children: ReactNode }>).props.children,

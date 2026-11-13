@@ -11,8 +11,9 @@ import {
   PlusIcon,
   Trash2Icon,
   XIcon,
+  LockIcon,
+  LockOpenIcon,
 } from "lucide-react";
-import { Lock as LockGlyph, LockOpen } from "lucide";
 import * as Arr from "effect/Array";
 import * as Result from "effect/Result";
 import { Fragment, useState, type ReactElement, type ReactNode } from "react";
@@ -43,7 +44,6 @@ import { useStableCallback } from "../../hooks/useStableCallback";
 import { normalizeProviderAccentColor } from "../../providerInstances";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import { MorphIcon } from "~/components/MorphIcon";
 import { DraftInput } from "../ui/draft-input";
 import { SecretSourceInput, type SecretSource } from "./SecretSourceInput";
 import { Popover, PopoverPopup, PopoverTrigger } from "../ui/popover";
@@ -74,6 +74,7 @@ import { SettingResetButton, SettingsRow, SettingsSection } from "./settingsLayo
 import { AcpSessionManagementSection } from "./AcpSessionManagementSection";
 import { FoldedSettingsSection } from "./FoldedSettingsSection";
 import { readCodexSetupMode } from "./CodexSetupSection.logic";
+import { getProviderRestartNotice } from "../ProviderUpdateLaunchNotification.logic";
 import {
   getProviderVersionAdvisoryPresentation,
   PROVIDER_STATUS_STYLES,
@@ -288,6 +289,7 @@ function ProviderEnvironmentFieldRow(props: {
   readonly onRemove: (field: ProviderEnvironmentField) => void;
   readonly managedReason?: string | undefined;
   readonly secretSources: ReadonlyArray<SecretSource>;
+  readonly environmentId?: EnvironmentId | undefined;
 }) {
   const inputId = `${props.idPrefix}-environment-${props.field.name}`;
   const value = props.variable?.valueRedacted ? "" : (props.variable?.value ?? "");
@@ -322,6 +324,7 @@ function ProviderEnvironmentFieldRow(props: {
               spellCheck={false}
               aria-label={props.field.label}
               sources={props.secretSources}
+              environmentId={props.environmentId}
               onSecretChange={(secret) => props.onSecretChange(props.field, secret)}
             />
           )}
@@ -348,6 +351,7 @@ export function ProviderEnvironmentSection(props: {
   /** Variables an administrator's policy pins: listed by name, never editable or removable. */
   readonly managed?: { readonly names: ReadonlySet<string>; readonly reason: string } | undefined;
   readonly secretSources?: ReadonlyArray<SecretSource>;
+  readonly environmentId?: EnvironmentId | undefined;
 }) {
   const [storedDraft, setDraft] = useState(() =>
     seedRowsDraft(props.environment, toEnvironmentDraftRows),
@@ -509,10 +513,11 @@ export function ProviderEnvironmentSection(props: {
                         aria-pressed={variable.sensitive}
                         aria-label={`Mark environment variable ${variable.name || index + 1} as sensitive`}
                       >
-                        <MorphIcon
-                          className="size-3"
-                          icon={variable.sensitive ? LockGlyph : LockOpen}
-                        />
+                        {variable.sensitive ? (
+                          <LockIcon className="size-3" />
+                        ) : (
+                          <LockOpenIcon className="size-3" />
+                        )}
                       </Button>
                     }
                   />
@@ -548,6 +553,7 @@ export function ProviderEnvironmentSection(props: {
                     spellCheck={false}
                     aria-label={`Environment variable value ${index + 1}`}
                     sources={props.secretSources ?? []}
+                    environmentId={props.environmentId}
                     onSecretChange={(secret) => setVariableSecret(variable.id, secret)}
                   >
                     {(parts) => layout(parts.source, parts.value)}
@@ -773,6 +779,8 @@ export function ProviderInstanceCard({
     !isUpdating && (updateState?.status === "failed" || updateState?.status === "unchanged")
       ? updateState.message
       : null;
+  const restartNotice =
+    enabled && !isUpdating && liveProvider ? getProviderRestartNotice(liveProvider) : null;
   const hasCompatibilityWarning =
     compatibility !== undefined &&
     compatibility.status !== "supported" &&
@@ -1224,6 +1232,11 @@ export function ProviderInstanceCard({
           {editorStatusNode}
         </div>
       </ProviderStatusDiagnostic>
+      {restartNotice ? (
+        <p aria-live="polite" className="text-xs leading-snug [overflow-wrap:anywhere]">
+          {restartNotice}
+        </p>
+      ) : null}
       {urlAuthAction && onAcceptUrlAuth ? (
         <div className="grid max-w-xl gap-1.5 pt-1 text-xs">
           <p>{urlAuthAction.message}</p>
@@ -1344,6 +1357,7 @@ export function ProviderInstanceCard({
                       : undefined
                   }
                   secretSources={secretSources}
+                  environmentId={environmentId}
                 />
               ))}
             </div>
@@ -1402,6 +1416,7 @@ export function ProviderInstanceCard({
               environment={genericEnvironment}
               onChange={updateGenericEnvironment}
               secretSources={secretSources}
+              environmentId={environmentId}
               managed={
                 instanceLocks && {
                   names: instanceLocks.environmentNames,

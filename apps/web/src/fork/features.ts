@@ -233,6 +233,7 @@ export const FEATURE_BY_SETTINGS_SEARCH_ID: Readonly<Record<string, FeatureName>
   "provider-update-checks": "serverBehaviorSettings",
   "continue-threads-after-server-update": "serverBehaviorSettings",
   "background-activity": "serverBehaviorSettings",
+  "keep-awake-while-agents-work": "serverBehaviorSettings",
   "text-generation-model": "serverBehaviorSettings",
   "thread-title-instructions": "serverBehaviorSettings",
   "guest-links": "serverBehaviorSettings",
