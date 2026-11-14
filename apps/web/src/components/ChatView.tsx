@@ -196,8 +196,6 @@ import {
 import { createChatCanvasStore, resolveChatCanvasModel } from "./chat/canvasStore";
 // Fork: the preview sync runs for the thread on screen, not for an open panel.
 import { useOptionalPreviewSession, usePreviewSession } from "./preview/usePreviewSession";
-// Fork: an in-thread banner for `moat cmd` commands running behind an ended turn.
-import { useSandboxCommandsBanner } from "./sandbox/useSandboxCommandsBanner";
 // Fork: whether the thread's sandbox is up, so a warm one never reads as starting.
 import { useSandboxAvailability } from "./sandbox/useSandboxAvailability";
 
@@ -2748,9 +2746,6 @@ export default function ChatView(props: ChatViewProps) {
           },
         })
       : null;
-  // Fork: `moat cmd` commands still running after the turn ended — the agent
-  // reports idle, so this is the only in-thread sign the sandbox is still busy.
-  const sandboxCommandsBannerItem = useSandboxCommandsBanner(activeThreadRef);
   const composerBannerItems = (() => {
     const fallbackSelection = draftFallback?.selection;
     const defaultSelection =
@@ -2798,11 +2793,6 @@ export default function ChatView(props: ChatViewProps) {
           ]
         : [];
     const limitRecoveryItems = limitRecoveryBanner === null ? [] : [limitRecoveryBanner];
-    // Fork: commands the agent left running after its turn ended. Upstream's
-    // background-work banners render at the timeline's end instead; this one
-    // stays above the composer, since the timeline shows no sandbox state.
-    const sandboxCommandsItems =
-      sandboxCommandsBannerItem === null ? [] : [sandboxCommandsBannerItem];
     const extensionStatusBanner = extensionStatusBannerItem(
       deriveProviderExtensionStatuses(serverProjection),
     );
@@ -2824,8 +2814,6 @@ export default function ChatView(props: ChatViewProps) {
         ...projectCloneItems,
         ...freshSessionItems,
         ...systemComposerBannerItems,
-        // Fork: the sandbox-commands banner.
-        ...sandboxCommandsItems,
       ];
     }
     return [
@@ -2837,8 +2825,6 @@ export default function ChatView(props: ChatViewProps) {
       ...projectCloneItems,
       ...freshSessionItems,
       ...systemComposerBannerItems,
-      // Fork: the sandbox-commands banner.
-      ...sandboxCommandsItems,
       branchMismatchBannerItem({
         mismatchKey: activeBranchMismatchKey,
         mismatch: localCheckoutBranchMismatch,
