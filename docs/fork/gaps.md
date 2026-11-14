@@ -84,7 +84,9 @@ thread modes #30326) and `vcsBranchStatus`, `fastWorktreeCheckout` and
 `cloudVoiceTranscription`, with `threadLinkMetadata` on the server config
 (upstream, 2026-11-09: sidebar branch labels without a full git status #32947,
 cached-checkout worktrees on macOS #32927, cloud dictation #31769, thread link
-titles and project icons #32830) — so
+titles and project icons #32830) and `linkedThreadRefreshes` (upstream,
+2026-11-14: a push stream for linked-thread changes, #35865; absent, the
+client polls `pullRequests.linkedThreads` every ten seconds instead) — so
 each of those
 surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
@@ -303,15 +305,13 @@ what a person loses, which is the part the derivation cannot tell you:
   sends, so nothing renders and no fork gate was added; the four union entries
   are the only stand-in. Closes when Moatless projects MCP app snapshots and
   dispatches the family; delete the four union entries then.
-  The 2026-10-12 merge added two more. `orchestration.stopWorkflow` (#17826)
+  The 2026-10-12 merge added `orchestration.stopWorkflow` (#17826)
   stops a Claude workflow's subagents without stopping their owner, from a Stop
   button in `ThreadRelationshipsControl.tsx`. The button shows only for a thread
   carrying workflow members, which upstream's Claude adapter projects; no fork
   gate was added, so if Moatless ever sends them the Stop button renders and
-  its call is refused. `filesystem.getMetadata` (#17923) gives file chips a server-derived
-  icon via `packages/client-runtime/src/state/fileMetadata.ts`; refused, the
-  chips keep their extension-derived icon. Closes when Moatless dispatches
-  them; delete the two union entries then.
+  its call is refused. Closes when Moatless dispatches it; delete the union
+  entry then.
   The 2026-10-16 merge added `orchestration.subscribeCommandOutput` (#15094),
   which streams a running command's output into `CommandOutputPanel.tsx` in the
   item inspector instead of showing it only once the command ends. It mounts
@@ -490,9 +490,11 @@ what a person loses, which is the part the derivation cannot tell you:
   Start from origin rows beside it (inventory `settings-gates`). The clone-time half is
   worth serving on its own — see the submodule bullet under _Runtime fixes
   upstream made to its own server_.
-- **Content search** — `projects.searchContents`. Path search, read and list are
-  all served, so "Go to file" works and "search in files" does not. Holds open
-  `workspaceSearchContents`.
+- **Content search** — `projects.searchContents` is served since moatless
+  #1499, which also stopped listing `workspaceSearchContents` in
+  `unsupportedSurfaces`. Only the flag is left: delete `workspaceSearchContents`
+  and its palette mapping from `apps/web/src/fork/features.ts` once every
+  deployment runs #1499 or later.
 - **Agent session import** — `agentSessions.scan` and `agentSessions.import`,
   new upstream in the 2026-09-06 merge. They back the Welcome page's Projects
   section (`ProjectsSection` in `apps/web/src/components/onboarding/WelcomePage.tsx`,
@@ -511,9 +513,6 @@ what a person loses, which is the part the derivation cannot tell you:
   diff panel's working-tree and branch-range scopes work; "Latest turn" / "Turn"
   and the inline changed-files cards under each assistant turn do not. Holds
   open `turnDiffs`.
-- **Review file contents** — `review.getDiffFileContents`, new upstream in the
-  2026-08-06 merge. `review.getDiffPreview` is served, so a diff renders and the
-  full file behind a hunk cannot be fetched.
 - **Workflow scripts** — `orchestration.getWorkflowScript`, also new upstream.
 - **Pull requests** — the `pullRequests.*` group except `summary` (list, detail,
   activity, diff, review, comment, reviewer requests), new upstream in the
@@ -546,7 +545,9 @@ what a person loses, which is the part the derivation cannot tell you:
   diff and the guided review (`reviewGuide`, `generateReviewGuide`; moatless
   #1161, #1164, #1169), and reports `capabilities.pullRequests`, so the Pull
   Requests page and the panel are upstream's. `routing`, `routingIdentity`,
-  `stack`, `checks`, `filesViewed`, `subscribeRefreshes` and every write stay
+  `stack`, `checks`, `filesViewed`, `subscribeRefreshes`,
+  `subscribeLinkedThreadRefreshes` (new upstream in the 2026-11-14 merge, read
+  only when `capabilities.linkedThreadRefreshes` is true) and every write stay
   refused, so the panel's write controls fail and the page refreshes only on
   request. The served reads keep their `UnsupportedMethodError` member because
   the family shares `PullRequestRpcError` with the refused ones; the
@@ -2374,6 +2375,22 @@ One more arrived in the 2026-10-01 merge:
   Ultrafast service tiers (#33177); and Antigravity resolves model names from
   usage metadata, prices Gemini Flash effort variants and survives a stale
   Windows Crashpad pipe (#33661, #13809, #26374).
+  The 2026-11-14 merge adds: the server config carries the host's clock
+  (`serverTime`) so live working timers count against host timestamps despite
+  client skew (#36420; absent, clients use their own clock); the thread list
+  builds metadata only for the page it returns (#36434) and a thread visit
+  stores only its read state (#36233); the auto-settle sweep stops rereading
+  every idle branch (#36371); a new thread's first turn starts sooner
+  (#35710); other sites can no longer frame the web app (#36395); a send to a
+  thread whose worktree cannot be recreated fails instead of reporting started
+  (#36251) and turns recreate a worktree folder that lost its checkout
+  (#34894); queued scheduled deliveries follow the thread's current model
+  (#34149); fetched upstream commits no longer show as agent changes (#36332)
+  and turn diffs follow branch switches (#36343); delegated children wait for
+  their awaited background work and subagents (#36411, #34958); and agents can
+  restyle an environment theme with colors and CSS through new MCP theme tools
+  (#35247), which reaches this client only once the backend reports
+  `environmentThemes`.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.

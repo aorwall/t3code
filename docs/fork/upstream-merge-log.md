@@ -4069,3 +4069,50 @@ bullet here that no one will read again.
   honours `data-panel-animations=false`, and `useSidebarThreadList` tolerates
   a stubbed config with no `environment` — and pass alone (25/25). Commit
   bypassed the known knip pre-commit failure.
+
+## 2026-11-14 — upstream 37714a8de5
+
+- Upstream: `37714a8de5` from base `bedc8658c3` (231 commits). Branch point:
+  `main`; no open merge PR.
+- Landed: 854 files from `git diff HEAD^1 HEAD` against 853 in the upstream
+  range; the extra file is `docs/fork/inventory.json`. Fork delta 772 files.
+- 5 conflicts, each by its verdict. AGENTS.md kept the fork's shape with
+  upstream's one new fact, the provider list (Pi, Muse Code, fx).
+  agentContextBudget took upstream's values plus the fork's 108 bytes (49914;
+  `AgentContextBudget.test.ts` passes). ThreadTerminalDrawer took upstream's
+  `resolveTerminalLinkTarget` under the `FEATURES.openInEditor` return.
+  vite.config.ts took upstream's `configuredAppVersion` inside the fork's
+  `defineConfig` with its `NODE_ENV` pin. FilePreviewPanel's test took
+  upstream's `workspaceMutationId` variable beside `onRetargetFile`.
+  Lockfile re-derived from upstream's copy.
+- Path policy: `apps/mobile/src/state/use-terminal-session.ts` (fork reads
+  `.terminals`) joined `terminal-metadata-state`.
+- Sweep: 14 hits, all T3 Connect device approval, Clerk load failure and relay
+  internals — decided-out surfaces or upstream server/infra. New workflow
+  `issue-vouch.yml` arrives enabled — disable after this lands. `pr-limits.yml`
+  from the last merge is disabled.
+- Union buckets: ADD `pullRequests.subscribeLinkedThreadRefreshes`, applied;
+  no DROP. Recorded under [methods not dispatched](./gaps.md#methods-the-backend-does-not-dispatch),
+  [capabilities](./gaps.md#capabilities-are-reported-but-not-the-ones-the-newer-surfaces-need)
+  (`linkedThreadRefreshes`) and [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Fixed after resolving: upstream's new provider-row edge-click test (#32537)
+  selects the unconfigured Claude row, which `FEATURES.providerConfiguration`
+  hides, so the test turns the flag on as the file's other write-path tests do.
+- Verification: every check but tests green. Tests: provider-opencode, t3 —
+  known sandbox gaps ([`/tmp`](./gaps.md#the-sandboxs-tmp-has-no-sticky-bit-so-the-codex-token-broker-refuses-it),
+  [`insteadOf`](./gaps.md#the-sandboxs-global-insteadof-rewrites-the-remote-urls-the-git-tests-build),
+  [OpenCode](./gaps.md#opencode-process-group-cleanup-tests-fail-in-this-sandbox),
+  [Node 24](./gaps.md#ci-and-the-image-build-run-node-24-not-enginesnode)), plus
+  `ServerBrowserPage`/`ServerBrowser` (browser automation fails in the sandbox)
+  and `AntigravityInstallation`; only `GitVcsDriverCore.test.ts` is in the fork
+  delta, and it fails on the `insteadOf` rewrite. Web ran with
+  `PLAYWRIGHT_BROWSERS_PATH` at a fetched Chromium 1248 (the image ships
+  1254): 620 of 624 files passed; `runtime.test.ts`, `ChatView` and
+  `Sidebar.shortcuts` passed alone, and the provider-settings file passes
+  11/11 after the fix above. Commit bypassed the known knip pre-commit failure.
+- Later the same day: `main` merged in (thread-fork progress, no conflict), and
+  moatless #1499 landed, so `unsupported-methods` reported DROP for
+  `filesystem.getMetadata`, `projects.searchContents` and
+  `review.getDiffFileContents`. All three were dropped from the union.
+  `workspaceSearchContents` stays in `FEATURES` until every deployment runs
+  #1499 ([content search](./gaps.md#methods-the-backend-does-not-dispatch)).
