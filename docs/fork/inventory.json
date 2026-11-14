@@ -495,7 +495,8 @@
       "paths": [
         "packages/client-runtime/src/state/terminalSession.ts",
         "packages/client-runtime/src/state/terminalSession.test.ts",
-        "apps/mobile/src/features/terminal/ThreadTerminalRouteScreen.tsx"
+        "apps/mobile/src/features/terminal/ThreadTerminalRouteScreen.tsx",
+        "apps/mobile/src/state/use-terminal-session.ts"
       ],
       "verdict": "converged",
       "note": "Take upstream, then re-apply `TerminalMetadataState` and `EMPTY_TERMINAL_METADATA_STATE`: `applyTerminalMetadataStreamEvent` scans to the listing plus the last announcement and an `announcedOpens` count, only an announced upsert moves the count, and a snapshot announces nothing. Every reader of the metadata atom, mobile's `readLiveTerminalSessions` included, takes `.terminals` (announced-terminal-drawer)."
