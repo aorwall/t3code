@@ -26,11 +26,6 @@ const SURFACES = {
    */
   projectManagement: true,
   /**
-   * Searching workspace files by *content*. The Sandbox has a file-name search RPC but no
-   * content-search one; path search, reading and listing are served.
-   */
-  workspaceSearchContents: true,
-  /**
    * Opening a workspace path in an external editor (`shell.openInEditor`). The workspace is a
    * sandbox in a cluster, so a call that succeeded would open a window nobody sits at.
    * Covers every picker, path-link Open in, terminal links and commit dialog rows.
@@ -259,7 +254,6 @@ export function settingsSearchItemEnabled(id: string): boolean {
  */
 export const FEATURE_BY_PALETTE_ACTION: Readonly<Record<string, FeatureName>> = {
   "action:add-project": "projectManagement",
-  "action:search-project-contents": "workspaceSearchContents",
   "action:use-in-another-app": "connections",
 };
 

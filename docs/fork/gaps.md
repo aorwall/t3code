@@ -145,7 +145,7 @@ provider that actually reports a context window.
 
 The `FEATURES` constant is a separate mechanism, not a stand-in for this record.
 The record mostly grows booleans for thread-lifecycle surfaces; the surfaces
-`FEATURES` gates — `turnDiffs`, `diagnostics`, `workspaceSearchContents` and the
+`FEATURES` gates — `turnDiffs`, `diagnostics`, `openInEditor` and the
 rest — have no boolean in it. Those stay a build-time constant because there is
 nothing on the wire that would carry them.
 
@@ -282,7 +282,7 @@ what a person loses, which is the part the derivation cannot tell you:
   sends, so nothing renders and no fork gate was added; the four union entries
   are the only stand-in. Closes when Moatless projects MCP app snapshots and
   dispatches the family; delete the four union entries then.
-  The 2026-10-12 merge added `orchestration.stopWorkflow` (#17826)
+  The 2026-10-12 merge added `orchestration.stopWorkflow` (#17826), which
   stops a Claude workflow's subagents without stopping their owner, from a Stop
   button in `ThreadRelationshipsControl.tsx`. The button shows only for a thread
   carrying workflow members, which upstream's Claude adapter projects; no fork
@@ -448,11 +448,6 @@ what a person loses, which is the part the derivation cannot tell you:
   Start from origin rows beside it (inventory `settings-gates`). The clone-time half is
   worth serving on its own — see the submodule bullet under _Runtime fixes
   upstream made to its own server_.
-- **Content search** — `projects.searchContents` is served since moatless
-  #1499, which also stopped listing `workspaceSearchContents` in
-  `unsupportedSurfaces`. Only the flag is left: delete `workspaceSearchContents`
-  and its palette mapping from `apps/web/src/fork/features.ts` once every
-  deployment runs #1499 or later.
 - **Agent session import** — `agentSessions.scan` and `agentSessions.import`,
   new upstream in the 2026-09-06 merge. They back the Welcome page's Projects
   section (`ProjectsSection` in `apps/web/src/components/onboarding/WelcomePage.tsx`,
@@ -760,33 +755,6 @@ what a person loses, which is the part the derivation cannot tell you:
   the two sides come from is _Deriving the unsupported set_ in the inventory.
 - **Then here:** drop the union entry in `packages/contracts/src/rpc.ts` and, if
   the method was the last one behind a flag, the flag too.
-
-### A folder expansion re-reads the whole index, because the backend ignores the path it was handed
-
-`projects.listEntries` is served and declares no `UnsupportedMethodError`, so
-this is not a refusal — it is a served method that got a new optional input in
-the 2026-09-14 merge and does not honour it. Upstream's #11527 added
-`directoryPath` to `ProjectListEntriesInput` (present → the immediate
-filesystem children of one directory, including gitignored ones; omitted → the
-old indexed recursive listing), an `ignored` boolean on `ProjectEntry`, and a
-`directory_list_failed` failure literal (`packages/contracts/src/project.ts`,
-`apps/server/src/workspace/WorkspaceEntries.ts`).
-
-Nothing breaks: `useDirectoryEntries` in
-`apps/web/src/components/files/useDirectoryEntries.ts` filters what comes back
-by parent path, so a full recursive listing still yields the right rows. It
-degrades instead, and quietly — every folder expansion re-reads and re-transfers
-the entire workspace index, the four-way request pool it added has nothing to
-pool, and gitignored files stay invisible because the indexed listing excludes
-them. On a large repository that is the difference between a keystroke and a
-wait.
-
-- **Closes when:** the backend reads `directoryPath` and answers with one
-  directory's immediate children, sets `ignored` on the entries that are
-  gitignored, and reports `directory_list_failed` for a path it cannot read.
-- **Then here:** nothing to delete — no flag holds this open, which is why it
-  would otherwise go unnoticed. Strike the entry when the backend honours the
-  field.
 
 ### A turn arrives whole, so there is nothing for a streaming mode to govern
 
