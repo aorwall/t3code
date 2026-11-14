@@ -1663,11 +1663,7 @@ const WsProjectsMutateRpc = Rpc.make(WS_METHODS.projectsMutate, {
 const WsProjectsEnsureScratchRpc = Rpc.make(WS_METHODS.projectsEnsureScratch, {
   payload: Schema.Struct({}),
   success: ProjectEnsureScratchResult,
-  error: Schema.Union([
-    OrchestrationDispatchCommandError,
-    EnvironmentAuthorizationError,
-    UnsupportedMethodError,
-  ]),
+  error: Schema.Union([OrchestrationDispatchCommandError, EnvironmentAuthorizationError]),
 });
 
 const WsProjectsCreateNewRpc = Rpc.make(WS_METHODS.projectsCreateNew, {
@@ -1844,19 +1840,17 @@ const WsVcsRefreshStatusRpc = Rpc.make(WS_METHODS.vcsRefreshStatus, {
   error: Schema.Union([GitManagerServiceError, EnvironmentAuthorizationError]),
 });
 
-// Fork: a Moatless thread gets a sandbox, not a worktree prepared behind a
-// progress stream, so neither worktreeSetup method is dispatched. See gaps.md.
 const WsSubscribeWorktreeSetupRpc = Rpc.make(WS_METHODS.subscribeWorktreeSetup, {
   payload: WorktreeSetupSubscribeInput,
   success: WorktreeSetupStreamEvent,
-  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
+  error: EnvironmentAuthorizationError,
   stream: true,
 });
 
 const WsWorktreeSetupCancelRpc = Rpc.make(WS_METHODS.worktreeSetupCancel, {
   payload: WorktreeSetupCancelInput,
   success: WorktreeSetupCancelResult,
-  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
+  error: EnvironmentAuthorizationError,
 });
 
 const WsGitRunStackedActionRpc = Rpc.make(WS_METHODS.gitRunStackedAction, {

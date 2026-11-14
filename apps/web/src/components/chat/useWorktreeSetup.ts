@@ -18,6 +18,8 @@ import type { Thread } from "../../types";
 import { focusTerminal } from "../../lib/terminalFocus";
 import { resolveVisibleWorktreeSetup, resolveWorktreeSetupProgress } from "../ChatView.logic";
 import { worktreeSetupAgentStarted } from "@t3tools/client-runtime/worktree-setup";
+// Fork: see `blocksSend`.
+import { SANDBOX_SETUP_BLOCKS_SEND } from "../../fork/sandboxSetup";
 
 // Share in-flight preparation retries across ChatView instances.
 const retryingWorkspacePreparationRunIds = new Set<RunId>();
@@ -104,7 +106,9 @@ export function useWorktreeSetup(input: {
     followUpSent,
   });
   // After agent handoff, sends queue behind setup without awaiting its scripts.
+  // Fork: a Moatless turn sent while the sandbox starts queues (fork/sandboxSetup.ts).
   const blocksSend =
+    SANDBOX_SETUP_BLOCKS_SEND &&
     !sendQueuesBehindSetup &&
     (worktreeSetup !== null
       ? worktreeSetup.phase === "running" && !worktreeSetupAgentStarted(worktreeSetup)
@@ -159,7 +163,8 @@ export function useWorktreeSetup(input: {
 
   return {
     worktreeSetup,
-    isPreparingWorktree,
+    // Fork: nor does it hold the composer's status (see `blocksSend`).
+    isPreparingWorktree: SANDBOX_SETUP_BLOCKS_SEND && isPreparingWorktree,
     blocksSend,
     retryableRunIds: retryableRunIds.ids,
     begin,

@@ -156,6 +156,8 @@ import { isElectron } from "../env";
 // Fork: the terminal the environment raised for this thread, if any.
 import { useAnnouncedTerminal } from "../fork/announcedTerminals";
 import { FEATURES } from "../fork/features";
+// Fork: see the WorktreeSetupCard props below.
+import { SANDBOX_SETUP_OFFERS_WORK_LOCALLY } from "../fork/sandboxSetup";
 // Fork: the scripts one thread can run, its own declarations included.
 import { useThreadScripts } from "../fork/threadScripts";
 import { useActiveThreadRef } from "../hooks/useActiveThreadRef";
@@ -3666,7 +3668,8 @@ export default function ChatView(props: ChatViewProps) {
                   onCancelWorktreeSetup={onCancelWorktreeSetupStable}
                   retryableWorkspacePreparationRunIds={retryableWorkspacePreparationRunIds}
                   onRetryWorkspacePreparation={onRetryWorkspacePreparationStable}
-                  {...(draftId
+                  // Fork: a Moatless thread has no local checkout to fall back to.
+                  {...(draftId && SANDBOX_SETUP_OFFERS_WORK_LOCALLY
                     ? { onWorktreeSetupWorkLocally: onWorktreeSetupWorkLocallyStable }
                     : {})}
                   {...(onOpenWorktreeSetupTerminal ? { onOpenWorktreeSetupTerminal } : {})}

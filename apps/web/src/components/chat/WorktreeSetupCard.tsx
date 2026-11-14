@@ -1,8 +1,5 @@
-import {
-  worktreeSetupStageLabel,
-  type WorktreeSetupSnapshot,
-  type WorktreeSetupStage,
-} from "@t3tools/contracts";
+// Fork: a Moatless setup is a sandbox's start, named by the fork's labels.
+import { type WorktreeSetupSnapshot, type WorktreeSetupStage } from "@t3tools/contracts";
 import { formatDuration } from "@t3tools/shared/orchestrationTiming";
 import {
   CheckIcon,
@@ -24,6 +21,8 @@ import { observeVisibleAnimation } from "~/lib/visibleAnimation";
 import { cn } from "~/lib/utils";
 import { useNowSecond } from "~/hooks/useNowSecond";
 import { WorkLogRow } from "./WorkLog";
+// Fork: see the import note above.
+import { sandboxSetupHeaderLabel, sandboxSetupStageLabel } from "~/fork/sandboxSetup";
 
 interface WorktreeSetupCardProps {
   snapshot: WorktreeSetupSnapshot;
@@ -109,19 +108,9 @@ function ShimmerOverlay({ children }: { children: ReactNode }) {
   );
 }
 
+// Fork: the sandbox's words for upstream's worktree phases.
 function headerLabel(snapshot: WorktreeSetupSnapshot): string {
-  switch (snapshot.phase) {
-    case "running":
-      return "Setting up worktree…";
-    case "done":
-      return snapshot.stages.some((stage) => stage.status === "failed")
-        ? "Worktree ready, setup script failed"
-        : "Worktree ready";
-    case "failed":
-      return "Worktree setup failed";
-    case "cancelled":
-      return "Worktree setup cancelled";
-  }
+  return sandboxSetupHeaderLabel(snapshot.phase);
 }
 
 function SetupHeaderRow({ snapshot }: { snapshot: WorktreeSetupSnapshot }) {
@@ -170,7 +159,8 @@ function StageRow({
   scriptName: string | null;
 }) {
   const label =
-    stage.id === "setup-script" && scriptName ? scriptName : worktreeSetupStageLabel(stage.id);
+    // Fork: the sandbox's stage labels.
+    stage.id === "setup-script" && scriptName ? scriptName : sandboxSetupStageLabel(stage.id);
   const running = stage.status === "running";
   const trailing =
     stage.status === "pending"
@@ -332,7 +322,8 @@ export function WorktreeSetupCard({
       (setupStage.status === "running" && setupStage.tail.length > 0));
 
   return (
-    <section aria-label="Worktree setup" data-worktree-setup-phase={snapshot.phase}>
+    // Fork: the sandbox's start, not a worktree's setup.
+    <section aria-label="Sandbox start" data-worktree-setup-phase={snapshot.phase}>
       {showHeader ? <SetupHeaderRow snapshot={snapshot} /> : null}
       {collapsed ? (
         <CollapsedSummaryRow snapshot={snapshot} />

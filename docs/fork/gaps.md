@@ -435,20 +435,12 @@ what a person loses, which is the part the derivation cannot tell you:
   that is not a project offers "clone", which refuses with an "update T3 Code"
   message because the handshake omits `projectCloneTracking`. The rest of the
   link (pick a project, place the prompt in a draft) works against Moatless.
-  The 2026-10-01 merge added **threads without a project** (#13612):
-  `projects.ensureScratch` finds or creates a server-owned scratch project
-  rooted at `ServerConfig.scratchWorkspaceRoot`, and the draft hero, command
-  palette, empty-state hero and the `chat.newWithoutProject` shortcut start a
-  thread in it. Every entry point reads `scratchWorkspaceRoot` first, which a
-  Moatless `getConfig` omits, so nothing is offered and no fork gate was added;
-  the union entry is the only stand-in. Closes when Moatless can start a thread
-  with no repository and reports a scratch root; delete the union entry then.
   The 2026-10-30 merge added **turning a No project thread into a project**
   (#26767): `projects.createFromThread` promotes such a thread's folder to a
   project, from a "Turn into project" item in the thread menu. The item needs
-  `capabilities.threadProjectFromScratch`, which a Moatless handshake omits, and
-  a scratch project, which Moatless never has, so nothing is offered; the union
-  entry is the only stand-in, and it closes with `projects.ensureScratch`'s.
+  `capabilities.threadProjectFromScratch`, which a Moatless handshake omits, so
+  nothing is offered; the union entry is the only stand-in. A Moatless scratch
+  project is a Workspace declared in git, so there is no folder to promote.
   The 2026-10-02 merge added **a new project from just a name** (#14527):
   `projects.createNew` makes a folder under `ServerConfig.newProjectsRoot` with a
   first commit and registers it as a project, offered from the command palette's
@@ -456,22 +448,11 @@ what a person loses, which is the part the derivation cannot tell you:
   first, which a Moatless `getConfig` omits, so nothing is offered; the union
   entry is the only stand-in. Closes when Moatless can create a repository from a
   name and reports a root; delete the union entry then.
-- **Preparing a worktree behind a progress stream** — `subscribeWorktreeSetup`
-  and `worktreeSetup.cancel`, new upstream in this merge (#11372, grown by
-  #11832). Upstream cuts a thread's worktree as a tracked setup with named
-  stages — clone, checkout, setup script — that the transcript renders as a
-  `WorktreeSetupCard` with a cancel button, an "open the terminal" action and a
-  "work locally instead" fallback, and #11832's `async: false` lets a setup
-  script block the agent until it finishes. A Moatless thread gets a sandbox
-  rather than a worktree, so there is no setup to stage and nothing is lost —
-  `FEATURES.worktreeSelection` keeps the composer out of `worktree` send mode,
-  `baseBranchForWorktree` therefore stays null in `ChatView.tsx`, and the
-  subscription is never opened. Holds open the two union entries and that flag,
-  which is the same flag the Workspace picker already holds. Closes only if
-  Moatless ever prepares a checkout in observable stages, which its sandbox
-  model does not currently have a place for. The setup script half is the
-  exception worth reading on its own — see _A script runs on the backend_ below,
-  where `async: false` is recorded as backend behavior rather than a refusal.
+- **Choosing a worktree in the composer** — `FEATURES.worktreeSelection` keeps
+  the composer out of `worktree` send mode, because a Moatless thread gets a
+  sandbox rather than a worktree. The worktree setup progress stream that mode
+  starts upstream (#11372, #11832) is served, as a sandbox's start; see
+  `apps/web/src/fork/sandboxSetup.ts`.
   The 2026-09-18 merge widened what the flag holds back rather than what it
   refuses: #12179 lets one prompt start a thread per selected model, each in its
   own worktree, and the picker that chooses those models is the same
