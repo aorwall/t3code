@@ -14,3 +14,22 @@ export function parseMoatlessTurnNumber(turnId: TurnId | RunId): number | null {
   const parsed = Number(raw);
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
 }
+
+/**
+ * How long a fork waits for its new thread once the request itself failed. Moatless
+ * keeps forking after the socket drops, and a long source has taken 28 s.
+ */
+export const FORK_ARRIVAL_TIMEOUT_MS = 90_000;
+
+/**
+ * Whether a failed `thread.fork` means no fork exists. Only the server's own refusal
+ * says so; a dropped socket interrupts the request while the server may still finish.
+ */
+export function isForkRefusal(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "_tag" in error &&
+    error._tag === "OrchestrationV2DispatchCommandError"
+  );
+}

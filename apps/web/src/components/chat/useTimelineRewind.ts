@@ -35,6 +35,9 @@ import { rewindToMessage } from "./chatViewSend";
 import { makeThreadErrorSetter } from "../ChatView.logic";
 // Fork: ThreadForkDialog's choices travel with the fork request.
 import type { ThreadForkSubmission } from "./ThreadForkDialog";
+// Fork: a slow fork shows progress and survives the socket dropping under it.
+import { FORK_ARRIVAL_TIMEOUT_MS, isForkRefusal } from "../../fork/threadFork";
+import { toastManager } from "../ui/toast";
 interface TimelineRewindInput {
   readonly environmentId: EnvironmentId;
   readonly routeThreadRef: ScopedThreadRef;
@@ -199,7 +202,9 @@ export function useTimelineRewind(input: TimelineRewindInput) {
           : { modelSelection: submission.modelSelection }),
       },
     });
-    if (result._tag === "Failure") {
+    // Fork: only a refusal means no fork. A dropped socket interrupts the request
+    // while the server finishes, so wait for the client-minted thread instead.
+    if (result._tag === "Failure" && isForkRefusal(squashAtomCommandFailure(result))) {
       if (!isAtomCommandInterrupted(result)) {
         const error = squashAtomCommandFailure(result);
         setThreadError(
@@ -209,11 +214,18 @@ export function useTimelineRewind(input: TimelineRewindInput) {
       }
       return;
     }
-    const targetThreadReady = await waitForThreadShell(targetThreadRef);
+    const targetThreadReady = await waitForThreadShell(
+      targetThreadRef,
+      // Fork: see `FORK_ARRIVAL_TIMEOUT_MS`.
+      result._tag === "Failure" ? FORK_ARRIVAL_TIMEOUT_MS : undefined,
+    );
     if (!targetThreadReady) {
       setThreadError(
         activeThread.id,
-        "The fork was created, but its thread data did not reach this client. Reconnect and try opening it from the sidebar.",
+        // Fork: a failed request never confirmed a fork.
+        result._tag === "Failure"
+          ? "The fork did not finish. It may still appear in the sidebar; fork again if it does not."
+          : "The fork was created, but its thread data did not reach this client. Reconnect and try opening it from the sidebar.",
       );
       return;
     }
@@ -222,7 +234,24 @@ export function useTimelineRewind(input: TimelineRewindInput) {
       params: buildThreadRouteParams(targetThreadRef),
     });
   };
-  const onForkFromRunStable = useStableCallback(onForkFromRun);
+  // Fork: the dialog has closed, and a long source takes many seconds to fork.
+  const onForkFromRunWithProgress = async (
+    ...args: Parameters<typeof onForkFromRun>
+  ): Promise<void> => {
+    const forkingToast = toastManager.add({
+      type: "loading",
+      title: "Forking thread…",
+      timeout: 0,
+      data: { threadRef: routeThreadRef, hideCopyButton: true },
+    });
+    try {
+      await onForkFromRun(...args);
+    } finally {
+      toastManager.close(forkingToast);
+    }
+  };
+  // Fork: `onForkFromRunWithProgress` in place of `onForkFromRun`.
+  const onForkFromRunStable = useStableCallback(onForkFromRunWithProgress);
   const onRevertTimelineTurn = (targetTurnCount: number, messageId: MessageId) => {
     void onRevertToTurnCountStable(targetTurnCount, messageId);
   };
