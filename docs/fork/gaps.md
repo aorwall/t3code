@@ -253,29 +253,6 @@ an approval link upstream's cloud sends, which Moatless never does.
   path map if anyone is found reaching them. On closing, delete the
   `action:use-in-another-app` entry in `FEATURE_BY_PALETTE_ACTION`.
 
-### A pull request link is a listing change, not an event
-
-Moatless derives `thread.pullRequests` from the Task's GitHub bindings, and a
-binding write records a listing change
-(`moatless_core::change_feed::listing::record_change`) so the shell row is
-re-sent. It emits no `thread.pull-request-linked`, `-unlinked` or `-synced`
-frame: the T3 event feed is built from `conversation_changes` rows alone, and a
-binding writes none.
-
-A sidebar row and a composer pill therefore update on the next shell, and a
-thread detail already loaded keeps the set it was loaded with. One line in
-`mergeEnvironmentThread`
-(`packages/client-runtime/src/state/threadDetail.ts`) holds the gap open: the
-shell speaks for `pullRequests`, where upstream's merge keeps the detail's.
-
-The 2026-10-15 merge added a fourth frame, `thread.pull-request-link-updated`
-(#19248), which upstream emits only when a link's stored fields change.
-
-- **Closes when:** the backend has a path from a domain event to the T3 event
-  feed, and emits the pull-request frames on it.
-- **Then here:** delete the `pullRequests` line from `mergeEnvironmentThread`,
-  and the two `entities.test.ts` cases that assert the shell wins.
-
 ### Methods the backend does not dispatch
 
 A minority of the contract's WebSocket methods declare `UnsupportedMethodError`.
@@ -495,81 +472,31 @@ what a person loses, which is the part the derivation cannot tell you:
   and the inline changed-files cards under each assistant turn do not. Holds
   open `turnDiffs`.
 - **Workflow scripts** — `orchestration.getWorkflowScript`, also new upstream.
-- **Pull requests** — the `pullRequests.*` group except `summary` (list, detail,
-  activity, diff, review, comment, reviewer requests), new upstream in the
-  2026-08-12 merge and grown on 2026-08-16 by `pullRequests.update`,
-  `updateComment` and `setReaction` — plus filters and qualifiers, all-server
-  listing, update-branch, and sending a PR line request to the agent — with
-  GitHub/GitLab/Bitbucket/Azure DevOps provider backends in
-  `apps/server/src/pullRequest/`. Grown again in the 2026-09-06 merge by
-  `pullRequests.subscribeRefreshes`, a push stream that tells the client a PR's
-  state changed on the host side (new commits, a review, a merge) so it can
-  refetch rather than poll; `createLinkedPullRequestSummaryAtomFamily` in
-  `packages/client-runtime/src/state/pullRequests.ts` wires it as the refresh
-  trigger for a thread's linked PR summary. The client reads
-  `capabilities.pullRequests`, which decodes to unsupported when a deployment's
-  handshake omits it, so the sidebar tab, the `/pull-requests` route, the
-  push-refresh path and a PR link in the transcript — which falls back to
-  opening the host — all stay off on Moatless without a fork gate. The launcher
-  is the exception, because an unavailable surface stays on screen there with a
-  one-line reason, and upstream's reads "No pull request on this branch yet": a
-  wait that never ends here. `FEATURES.pullRequestSurface` on
-  `pullRequestSurfaceAvailable` in `ChatView.tsx` drops that row, and holds open
-  no more than it. `pullRequests.summary` is the exception and is served, because it is
-  the fallback for a bound reference whose state and title the thread row could
-  not carry: a binding records those on its first refresh, and until then a link
-  in `thread.pullRequests` carries a null `snapshot` and every surface that
-  names it resolves one through this call, which is also what performs that
-  refresh. Moatless now also serves `pullRequests.list` (each readable project's
-  primary GitHub repository), `listStats`, `detail`, `preview`, `activity`,
-  `linkedThreads`, `threadComments`, `diffFileContents`, `invalidate`, the HTTP
-  diff and the guided review (`reviewGuide`, `generateReviewGuide`; moatless
-  #1161, #1164, #1169), and reports `capabilities.pullRequests`, so the Pull
-  Requests page and the panel are upstream's. `routing`, `routingIdentity`,
-  `stack`, `checks`, `filesViewed`, `subscribeRefreshes`,
-  `subscribeLinkedThreadRefreshes` (new upstream in the 2026-11-14 merge, read
-  only when `capabilities.linkedThreadRefreshes` is true) and every write stay
-  refused, so the panel's write controls fail and the page refreshes only on
-  request. The served reads keep their `UnsupportedMethodError` member because
-  the family shares `PullRequestRpcError` with the refused ones; the
-  `pull-requests-*-shared-union` exceptions in `inventory.json` declare that,
-  and retire together when the rest is served. The 2026-10-16 merge added
-  deleting a PR's branch after it merges or closes (#19257, a `runAction`
-  option, so refused here) and dragging a linked PR into the composer as a
-  context chip (#20102, client-side). Grown once more in this merge by per-project and
-  last-used **merge-method defaults** (upstream, 2026-09-08): a
-  `pullRequestMergeMethodOverrides` client setting plus a project-level default
-  that preselect merge/squash/rebase in the PR detail panel's merge control
-  (`apps/web/src/components/pullRequest/PullRequestDetailPanel.tsx`, the
-  project field now in `ProjectDefaultsSettings.tsx`, which upstream's
-  scoped-settings work moved it to on 2026-09-09). The setting is client-side and
-  survives, but it preselects a control on a panel the capability already keeps
-  off, so it changes nothing on Moatless until the group is served. Grown again
-  in the 2026-09-14 merge by **cross-account routing** (upstream #11367):
-  `pullRequests.routing` and `pullRequests.routingIdentity`, which answer which
-  GitHub account an environment is authenticated as and pick the environment
-  whose account can act on a given pull request
-  (`packages/client-runtime/src/state/pullRequestRouting.ts`,
-  `connection/githubRoutingPermissions.ts`, `apps/server/src/pullRequest/`).
-  Both declare `PullRequestRpcError`, so they arrived already refusing and the
-  derivation reports no entry to add. Its settings UI mounts inside
-  `ConnectionsSettings.tsx`, so `FEATURES.connections` hides it too. Routing
-  means nothing before the group underneath it is served, so it closes with the
-  rest and not separately. Grown once more in the 2026-09-18 merge by
-  **per-file viewed state** (upstream #7721): `pullRequests.filesViewed` and
-  `pullRequests.setFilesViewed` record which files in a PR a reviewer has
-  checked off, persisted server-side so the marks survive a reload and follow the
-  reviewer between clients. Both declare `PullRequestRpcError` and so arrived
-  already refusing, which is why the derivation reported nothing to add. Same
-  conclusion as routing: it is a refinement of a panel the capability keeps off.
-  Closes when
-  the backend reports `capabilities.pullRequests: true` and dispatches the rest.
-  The 2026-10-12 merge added **guided PR reviews** (#18124, #18143):
-  `pullRequests.reviewGuide`, `generateReviewGuide` and `reportState` drive a
-  Guide tab (`PullRequestGuideTab.tsx`, `guide/*`) that walks a reviewer through
-  an agent-written tour of the diff. All three declare `PullRequestRpcError` and
-  sit inside the panel the capability keeps off, so nothing new is lost; they
-  close with the rest of this bullet.
+- **Pull requests** — the `pullRequests.*` group is served except
+  `routing`, `routingIdentity`, `filterOptions`, `filesViewed`,
+  `setFilesViewed`, `reportState` and `subscribeLinkedThreadRefreshes` (new
+  upstream in the 2026-11-14 merge; the handshake omits
+  `capabilities.linkedThreadRefreshes`, so the client polls `linkedThreads`
+  every ten seconds instead). Moatless dispatches the reads (`list`,
+  `listStats`, `summary`, `detail`, `preview`, `activity`, `checks`, `stack`,
+  `changeBreakdown`, `linkedThreads`, `threadComments`, `diffFileContents`,
+  `reviewGuide`, `generateReviewGuide`, `invalidate`), `subscribeRefreshes`,
+  and the writes (`comment`, `replyToThread`, `setThreadResolution`,
+  `submitReview`, `setReaction`, `update`, `updateComment`, `setLabels`,
+  `labelCandidates`, `requestReviewers`, `reviewerCandidates`, and `runAction`
+  for merge, auto-merge, ready/draft, close/reopen, update branch and delete
+  branch). A write acts as the viewer's own GitHub credential; a viewer with
+  none is told to connect one in Settings → Version control, and
+  `viewerPermissions` offers only what GitHub lets that account do. `stack`
+  answers no stack, and `runAction` refuses `revert` and `approve-workflows`.
+  **Cross-account routing** (upstream #11367) means nothing when every write
+  goes out as the viewer, and its settings UI mounts inside
+  `ConnectionsSettings.tsx`, which `FEATURES.connections` hides. **Per-file
+  viewed state** (upstream #7721) has no store on the backend, so the panel's
+  viewed marks fail. The served methods keep their `UnsupportedMethodError`
+  member because the family shares `PullRequestRpcError` with the refused
+  ones; the `pull-requests-*-shared-union` exceptions in `inventory.json`
+  declare that, and retire together when the rest is served.
 - **Usage writes** — `server.refreshUsageRates` (#9146-era usage-pricing work,
   `apps/server/src/usage/usagePricing.ts`), which re-fetches provider price
   tables on the machine the server runs on, and `provider.consumeResetCredit`,

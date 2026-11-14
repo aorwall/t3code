@@ -200,7 +200,7 @@
       "id": "pull-requests-summary-shared-union",
       "method": "pullRequests.summary",
       "direction": "DROP",
-      "reason": "Moatless dispatches the pull request reads (`list`, `listStats`, `summary`, `detail`, `preview`, `activity`, `linkedThreads`, `threadComments`, `diffFileContents`, `reviewGuide`, `generateReviewGuide`, `invalidate`), but the family shares `PullRequestRpcError` with `routing`, `routingIdentity`, `stack`, `checks`, `filesViewed` and every write method, which it does not dispatch. Splitting a private union off costs more fork delta than an entry the client never receives.",
+      "reason": "Moatless dispatches the pull request reads and writes, but the family shares `PullRequestRpcError` with `filterOptions`, `routing`, `routingIdentity`, `filesViewed`, `setFilesViewed` and `reportState`, which it does not dispatch. Splitting a private union off costs more fork delta than an entry the client never receives.",
       "retiredWhen": "Moatless dispatches the rest of the `PullRequestRpcError` family, or the served methods take an error union of their own — at which point delete every `pull-requests-*-shared-union` entry and let the DROPs stand.",
       "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
     },
@@ -279,6 +279,126 @@
     {
       "id": "pull-requests-reviewGuide-shared-union",
       "method": "pullRequests.reviewGuide",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-changeBreakdown-shared-union",
+      "method": "pullRequests.changeBreakdown",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-checks-shared-union",
+      "method": "pullRequests.checks",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-comment-shared-union",
+      "method": "pullRequests.comment",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-labelCandidates-shared-union",
+      "method": "pullRequests.labelCandidates",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-replyToThread-shared-union",
+      "method": "pullRequests.replyToThread",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-requestReviewers-shared-union",
+      "method": "pullRequests.requestReviewers",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-reviewerCandidates-shared-union",
+      "method": "pullRequests.reviewerCandidates",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-runAction-shared-union",
+      "method": "pullRequests.runAction",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-setLabels-shared-union",
+      "method": "pullRequests.setLabels",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-setReaction-shared-union",
+      "method": "pullRequests.setReaction",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-setThreadResolution-shared-union",
+      "method": "pullRequests.setThreadResolution",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-stack-shared-union",
+      "method": "pullRequests.stack",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-submitReview-shared-union",
+      "method": "pullRequests.submitReview",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-update-shared-union",
+      "method": "pullRequests.update",
+      "direction": "DROP",
+      "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
+      "retiredWhen": "With `pull-requests-summary-shared-union`.",
+      "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "pull-requests-updateComment-shared-union",
+      "method": "pullRequests.updateComment",
       "direction": "DROP",
       "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
       "retiredWhen": "With `pull-requests-summary-shared-union`.",
@@ -1482,15 +1602,6 @@
       "mustSurvive": "A Moatless sidebar lists work other people started — a public Task, a Task an admin can read, a Task followed by opening its link — so a row that is not yours says whose it is. `ownerName` on `OrchestrationThreadShell` carries the display name, and the card row shows it on the meta line directly left of the environment and provider glyphs, truncated, with the whole name on the owner line of the row tooltip. The server decides when to send it: the client is never told which user it is signed in as, so Moatless emits the name only when the Task's owner — the access rule's own `COALESCE(owner_user_id, created_by)` — is not the viewer, and null otherwise. Absence and null both mean \"yours, or a server that does not send it\", so no capability gates this: a row with no name renders exactly as it did before. The slim settled and snoozed rows are deliberately left without it; they carry no provider glyph either, and their point is a quiet tail."
     },
     {
-      "id": "task-bound-pull-request",
-      "name": "A thread's pull requests are the Task's bindings",
-      "paths": [
-        "packages/client-runtime/src/state/threadDetail.ts",
-        "packages/client-runtime/src/state/entities.test.ts"
-      ],
-      "mustSurvive": "Every pull-request surface is upstream's. Moatless fills `thread.pullRequests` from the Task's GitHub bindings, reports the `threadPullRequests` capability and dispatches `thread.pull-request.link` and `.unlink`, so `ThreadPullRequestBadgeControl`, the `pull-requests` stack tab and `useSupportsMultiplePullRequests` answer with no fork delta behind them. It orders the array, and its first element is the primary that `linkedPullRequest` also carries for a client from before the capability. Do not re-derive a thread's pull request from the checked-out branch: `tasks.branch` holds the base picked at creation while the agent commits on whatever branch it cut, so a `refName` match reports nothing for most threads that have one. Do not re-decide the primary on the client either; the server settles it from the bindings. One line of `mergeEnvironmentThread` is the whole delta on the data path: the shell speaks for `pullRequests`, where upstream keeps the detail's. A Task's bindings change while its thread is open and Moatless emits no `thread.pull-request-linked` — a binding write records a listing change and the shell row is re-sent — so nothing folds a change into the detail and a detail loaded before a binding changed keeps the old set for as long as the tab lives. Take the shell's array whole, including an empty one: an unlink leaves the shell reporting none, and a detail that kept its stale set would outlive the unlink. See `docs/fork/gaps.md`, _A pull request link is a listing change, not an event_. The badges are upstream's: a stack or several links opens the `pull-requests` panel from the sidebar and the composer footer alike (#13211), which retired the fork's composer-footer popover."
-    },
-    {
       "id": "host-run-scripts",
       "name": "Host-run project scripts",
       "paths": [
@@ -1872,12 +1983,6 @@
       "name": "Surface gating",
       "watchFor": "New booleans on ExecutionEnvironmentCapabilities. Upstream adds one per thread-lifecycle surface — threadSettlement, threadSnooze, threadPinning and threadPinReorder as of 2026-08-08.",
       "action": "Prefer upstream's capability where one exists and delete the matching FEATURES flag. The server decides, so the surface then follows the backend without a fork edit."
-    },
-    {
-      "id": "task-bound-pull-request",
-      "name": "Where a thread's pull requests come from",
-      "watchFor": "Upstream folding a pull-request event into the thread detail — a `thread.pull-request-linked` or `-unlinked` frame a reducer applies — or `pullRequests` moving off the thread snapshot into a subscription of its own.",
-      "action": "Take upstream's pull-request surfaces whole. Keep only the `pullRequests` line in `mergeEnvironmentThread`, and delete it the day Moatless emits a link event a reducer can apply (see `docs/fork/gaps.md`, _A pull request link is a listing change, not an event_). An event upstream ships is not that day: the gap is the backend emitting one."
     },
     {
       "id": "web-on-phone",

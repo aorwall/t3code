@@ -1426,8 +1426,7 @@ const WsPullRequestsReportStateRpc = Rpc.make(WS_METHODS.pullRequestsReportState
 const WsPullRequestsSubscribeRefreshesRpc = Rpc.make(WS_METHODS.pullRequestsSubscribeRefreshes, {
   payload: Schema.Struct({}),
   success: NonNegativeInt,
-  // Fork: Moatless does not dispatch this method. See docs/fork/gaps.md.
-  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
+  error: EnvironmentAuthorizationError,
   stream: true,
 });
 
