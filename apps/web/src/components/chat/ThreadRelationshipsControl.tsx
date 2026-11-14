@@ -84,6 +84,8 @@ import { ThreadLineageWorkflowRow } from "./ThreadLineageWorkflowRow";
 import { openSideChatTab } from "../../lib/sideChatPane";
 
 import { FEATURES } from "../../fork/features";
+// Fork: forks of this thread the server has not finished.
+import { PendingForkRow, usePendingForks } from "../../fork/pendingForks";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../ui/menu";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { toastManager } from "../ui/toast";
@@ -469,6 +471,8 @@ export function ThreadRelationshipsPanel(props: {
   const mergeErrorToastId = useRef<string | null>(null);
   const detachErrorToastId = useRef<string | null>(null);
   const [stoppingId, setStoppingId] = useState<string | null>(null);
+  // Fork: see `usePendingForks`.
+  const pendingForks = usePendingForks(ref);
   // Derive graphs after hooks to preserve their compiler cache.
   const providers = providersByEnvironment.get(props.environmentId);
   const derivedProviderEntries = deriveProviderInstanceEntries(providers ?? []);
@@ -622,6 +626,8 @@ export function ThreadRelationshipsPanel(props: {
       remoteActive.length > 0 ||
       remotePrevious.length > 0 ||
       delegatedFrom !== undefined ||
+      // Fork: a fork under way shows before the server lists it.
+      pendingForks.length > 0 ||
       // Disconnect lives in this heading, so a thread with only side chats still shows it.
       (canDetach && sideChats.length > 0));
   const sideChatsVisible = props.showSideChats && sideChats.length > 0;
@@ -983,7 +989,9 @@ export function ThreadRelationshipsPanel(props: {
             related.length > 0 ||
             active.length > 0 ||
             remoteActive.length > 0 ||
-            delegatedFrom !== undefined
+            delegatedFrom !== undefined ||
+            // Fork: see `pendingForks` above.
+            pendingForks.length > 0
           }
           data-thread-relationships-panel
           actions={
@@ -1018,6 +1026,14 @@ export function ThreadRelationshipsPanel(props: {
                 delegatedFrom={delegatedFrom}
                 fallbackLabel={currentThread?.linkOrigin?.label}
               />
+            </ThreadLineageRowList>
+          )}
+          {/* Fork: forks of this thread the server has not finished. */}
+          {pendingForks.length === 0 ? null : (
+            <ThreadLineageRowList hiddenCount={0} onShowMore={() => {}}>
+              {pendingForks.map((fork) => (
+                <PendingForkRow key={fork.id} fork={fork} />
+              ))}
             </ThreadLineageRowList>
           )}
           {groups.map((group) => (
