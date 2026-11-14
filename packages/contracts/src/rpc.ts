@@ -1605,11 +1605,7 @@ const WsProjectsSearchEntriesRpc = Rpc.make(WS_METHODS.projectsSearchEntries, {
 const WsProjectsSearchContentsRpc = Rpc.make(WS_METHODS.projectsSearchContents, {
   payload: ProjectSearchContentsInput,
   success: ProjectSearchContentsResult,
-  error: Schema.Union([
-    ProjectSearchContentsError,
-    EnvironmentAuthorizationError,
-    UnsupportedMethodError,
-  ]),
+  error: Schema.Union([ProjectSearchContentsError, EnvironmentAuthorizationError]),
 });
 
 const WsProjectsListEntriesRpc = Rpc.make(WS_METHODS.projectsListEntries, {
@@ -1706,8 +1702,7 @@ const WsShellOpenInEditorRpc = Rpc.make(WS_METHODS.shellOpenInEditor, {
 const WsFilesystemGetMetadataRpc = Rpc.make(WS_METHODS.filesystemGetMetadata, {
   payload: FilesystemGetMetadataInput,
   success: FilesystemGetMetadataResult,
-  // Fork: Moatless does not dispatch filesystem.getMetadata. See gaps.md.
-  error: Schema.Union([EnvironmentAuthorizationError, UnsupportedMethodError]),
+  error: EnvironmentAuthorizationError,
 });
 
 const WsFilesystemBrowseRpc = Rpc.make(WS_METHODS.filesystemBrowse, {
@@ -1942,11 +1937,7 @@ const WsReviewGetDiffPreviewRpc = Rpc.make(WS_METHODS.reviewGetDiffPreview, {
 const WsReviewGetDiffFileContentsRpc = Rpc.make(WS_METHODS.reviewGetDiffFileContents, {
   payload: ReviewDiffFileContentsInput,
   success: ReviewDiffFileContentsResult,
-  error: Schema.Union([
-    ReviewDiffPreviewError,
-    EnvironmentAuthorizationError,
-    UnsupportedMethodError,
-  ]),
+  error: Schema.Union([ReviewDiffPreviewError, EnvironmentAuthorizationError]),
 });
 
 const WsTerminalOpenRpc = Rpc.make(WS_METHODS.terminalOpen, {

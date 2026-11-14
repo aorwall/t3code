@@ -4110,3 +4110,9 @@ bullet here that no one will read again.
   1254): 620 of 624 files passed; `runtime.test.ts`, `ChatView` and
   `Sidebar.shortcuts` passed alone, and the provider-settings file passes
   11/11 after the fix above. Commit bypassed the known knip pre-commit failure.
+- Later the same day: `main` merged in (thread-fork progress, no conflict), and
+  moatless #1499 landed, so `unsupported-methods` reported DROP for
+  `filesystem.getMetadata`, `projects.searchContents` and
+  `review.getDiffFileContents`. All three were dropped from the union.
+  `workspaceSearchContents` stays in `FEATURES` until every deployment runs
+  #1499 ([content search](./gaps.md#methods-the-backend-does-not-dispatch)).

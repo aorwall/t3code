@@ -305,15 +305,13 @@ what a person loses, which is the part the derivation cannot tell you:
   sends, so nothing renders and no fork gate was added; the four union entries
   are the only stand-in. Closes when Moatless projects MCP app snapshots and
   dispatches the family; delete the four union entries then.
-  The 2026-10-12 merge added two more. `orchestration.stopWorkflow` (#17826)
+  The 2026-10-12 merge added `orchestration.stopWorkflow` (#17826)
   stops a Claude workflow's subagents without stopping their owner, from a Stop
   button in `ThreadRelationshipsControl.tsx`. The button shows only for a thread
   carrying workflow members, which upstream's Claude adapter projects; no fork
   gate was added, so if Moatless ever sends them the Stop button renders and
-  its call is refused. `filesystem.getMetadata` (#17923) gives file chips a server-derived
-  icon via `packages/client-runtime/src/state/fileMetadata.ts`; refused, the
-  chips keep their extension-derived icon. Closes when Moatless dispatches
-  them; delete the two union entries then.
+  its call is refused. Closes when Moatless dispatches it; delete the union
+  entry then.
   The 2026-10-16 merge added `orchestration.subscribeCommandOutput` (#15094),
   which streams a running command's output into `CommandOutputPanel.tsx` in the
   item inspector instead of showing it only once the command ends. It mounts
@@ -492,9 +490,11 @@ what a person loses, which is the part the derivation cannot tell you:
   Start from origin rows beside it (inventory `settings-gates`). The clone-time half is
   worth serving on its own — see the submodule bullet under _Runtime fixes
   upstream made to its own server_.
-- **Content search** — `projects.searchContents`. Path search, read and list are
-  all served, so "Go to file" works and "search in files" does not. Holds open
-  `workspaceSearchContents`.
+- **Content search** — `projects.searchContents` is served since moatless
+  #1499, which also stopped listing `workspaceSearchContents` in
+  `unsupportedSurfaces`. Only the flag is left: delete `workspaceSearchContents`
+  and its palette mapping from `apps/web/src/fork/features.ts` once every
+  deployment runs #1499 or later.
 - **Agent session import** — `agentSessions.scan` and `agentSessions.import`,
   new upstream in the 2026-09-06 merge. They back the Welcome page's Projects
   section (`ProjectsSection` in `apps/web/src/components/onboarding/WelcomePage.tsx`,
@@ -513,9 +513,6 @@ what a person loses, which is the part the derivation cannot tell you:
   diff panel's working-tree and branch-range scopes work; "Latest turn" / "Turn"
   and the inline changed-files cards under each assistant turn do not. Holds
   open `turnDiffs`.
-- **Review file contents** — `review.getDiffFileContents`, new upstream in the
-  2026-08-06 merge. `review.getDiffPreview` is served, so a diff renders and the
-  full file behind a hunk cannot be fetched.
 - **Workflow scripts** — `orchestration.getWorkflowScript`, also new upstream.
 - **Pull requests** — the `pullRequests.*` group except `summary` (list, detail,
   activity, diff, review, comment, reviewer requests), new upstream in the
