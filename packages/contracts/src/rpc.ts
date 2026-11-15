@@ -2341,12 +2341,7 @@ const WsOrchestrationV2GetFullThreadDiffRpc = Rpc.make(
 const WsOrchestrationV2SearchThreadRpc = Rpc.make(ORCHESTRATION_V2_WS_METHODS.searchThread, {
   payload: OrchestrationV2SearchThreadInput,
   success: OrchestrationV2SearchThreadResult,
-  // Fork: Moatless does not dispatch orchestration.searchThread{,Stream}. See gaps.md.
-  error: Schema.Union([
-    OrchestrationV2SearchThreadError,
-    EnvironmentAuthorizationError,
-    UnsupportedMethodError,
-  ]),
+  error: Schema.Union([OrchestrationV2SearchThreadError, EnvironmentAuthorizationError]),
 });
 
 const WsOrchestrationV2SearchThreadStreamRpc = Rpc.make(
@@ -2354,11 +2349,7 @@ const WsOrchestrationV2SearchThreadStreamRpc = Rpc.make(
   {
     payload: OrchestrationV2SearchThreadInput,
     success: OrchestrationV2SearchThreadResult,
-    error: Schema.Union([
-      OrchestrationV2SearchThreadError,
-      EnvironmentAuthorizationError,
-      UnsupportedMethodError,
-    ]),
+    error: Schema.Union([OrchestrationV2SearchThreadError, EnvironmentAuthorizationError]),
     stream: true,
   },
 );
@@ -2392,12 +2383,7 @@ const WsOrchestrationV2GetThreadFamilyRpc = Rpc.make(ORCHESTRATION_V2_WS_METHODS
 const WsOrchestrationV2GetThreadTitlesRpc = Rpc.make(ORCHESTRATION_V2_WS_METHODS.getThreadTitles, {
   payload: OrchestrationV2RpcSchemas.getThreadTitles.input,
   success: OrchestrationV2RpcSchemas.getThreadTitles.output,
-  // Fork: Moatless does not dispatch the title lookup; see gaps.md.
-  error: Schema.Union([
-    OrchestrationV2GetShellSnapshotError,
-    EnvironmentAuthorizationError,
-    UnsupportedMethodError,
-  ]),
+  error: Schema.Union([OrchestrationV2GetShellSnapshotError, EnvironmentAuthorizationError]),
 });
 
 const WsOrchestrationV2GetThreadLinkMetadataRpc = Rpc.make(
@@ -2405,12 +2391,7 @@ const WsOrchestrationV2GetThreadLinkMetadataRpc = Rpc.make(
   {
     payload: OrchestrationV2RpcSchemas.getThreadLinkMetadata.input,
     success: OrchestrationV2RpcSchemas.getThreadLinkMetadata.output,
-    // Fork: Moatless does not dispatch the link-metadata lookup; see gaps.md.
-    error: Schema.Union([
-      OrchestrationV2GetShellSnapshotError,
-      EnvironmentAuthorizationError,
-      UnsupportedMethodError,
-    ]),
+    error: Schema.Union([OrchestrationV2GetShellSnapshotError, EnvironmentAuthorizationError]),
   },
 );
 

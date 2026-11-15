@@ -71,7 +71,6 @@ not report is most of the booleans added since that handshake was written —
 `projectSettingsOverrides` (upstream, 2026-09-09) and
 `requiredWorktreeBootstrap`, `storageCleanup` and `projectWorktreeCleanup`
 (upstream, 2026-09-18) and
-`threadFind` / `threadFindProgressive` (upstream, 2026-10-09) and
 `threadAutoSettlementScope` and `settledWorktreeCleanup` (upstream,
 2026-10-15) and `projectOrganization` and
 `oneTimeSchedules` (upstream, 2026-11-02: project pin and archive #26154,
@@ -80,10 +79,9 @@ one-shot scheduled tasks #28104) and `freshContext`, `voiceTranscription`,
 `/clear` and fresh-session sends #30323, dictation on a chosen environment
 #30625, secret-provider answers to a secret request #31670, scheduled task
 thread modes #30326) and `vcsBranchStatus`, `fastWorktreeCheckout` and
-`cloudVoiceTranscription`, with `threadLinkMetadata` on the server config
-(upstream, 2026-11-09: sidebar branch labels without a full git status #32947,
-cached-checkout worktrees on macOS #32927, cloud dictation #31769, thread link
-titles and project icons #32830) and `linkedThreadRefreshes` (upstream,
+`cloudVoiceTranscription` (upstream, 2026-11-09: sidebar branch labels without
+a full git status #32947, cached-checkout worktrees on macOS #32927, cloud
+dictation #31769) and `linkedThreadRefreshes` (upstream,
 2026-11-14: a push stream for linked-thread changes, #35865; absent, the
 client polls `pullRequests.linkedThreads` every ten seconds instead) and
 `serverUpdateStaging` (upstream, 2026-11-15: "Update everything" stages a
@@ -135,15 +133,6 @@ whether a user may attach files to an answer to an agent's async question
 the answer composer drops its attach control and the text-only answer path is
 unchanged, so nothing breaks — a user simply cannot send a screenshot back to a
 question that asked for one.
-
-A sibling record has the same shape one level down. `ServerProvider` grew a
-`reportsContextWindow` flag (upstream, 2026-09-08,
-`apps/server/src/provider/providerSnapshot.ts`), which upstream's own Claude and
-Codex providers set true so the composer footer reserves space for the
-context-window meter instead of reflowing when the first reading arrives.
-Moatless builds its own provider descriptors, so until it sets the flag the
-footer keeps the pre-reservation layout — cosmetic, and fixed by one boolean per
-provider that actually reports a context window.
 
 The `FEATURES` constant is a separate mechanism, not a stand-in for this record.
 The record mostly grows booleans for thread-lifecycle surfaces; the surfaces
@@ -470,6 +459,10 @@ what a person loses, which is the part the derivation cannot tell you:
   and the inline changed-files cards under each assistant turn do not. Holds
   open `turnDiffs`.
 - **Workflow scripts** — `orchestration.getWorkflowScript`, also new upstream.
+  No client here calls it yet (the `workflowScript` query atom has no
+  consumer), Moatless marks no message `workflowScript`, and the file it reads
+  lives in the Task's Sandbox rather than on the server. Closes when a client
+  calls it; Moatless records the condition in `docs/deferred-changes.md`.
 - **Pull requests** — the `pullRequests.*` group is served except
   `routing`, `routingIdentity`, `filterOptions`, `filesViewed`,
   `setFilesViewed`, `reportState` and `subscribeLinkedThreadRefreshes` (new
@@ -576,16 +569,6 @@ what a person loses, which is the part the derivation cannot tell you:
   `preview.reportProfiles` (#16956): `BrowserProfileReporter` tells each
   environment which browser profiles the client holds, and sends it only to an
   environment reporting `serverBrowser`, so it is never sent here either.
-- **Find in thread** — `orchestration.searchThread` and
-  `orchestration.searchThreadStream`, new upstream in the 2026-10-09 merge
-  (#10439). Find-in-page for the current thread's messages and plans
-  (`apps/web/src/components/chat/useThreadFind.ts`, `ThreadFindBar.tsx`). The
-  client opens the bar only when the server config reports the optional
-  `threadFind` capability (`threadFindProgressive` for the streamed count);
-  Moatless reports neither, so opening it shows "Thread search is unavailable on
-  this server" and no request is sent. No fork gate is needed. Closes when the
-  backend searches a thread's projected messages and reports `threadFind`;
-  delete the two union entries then.
 - **Passive terminal observation** — `terminal.observe` (#9791). The client
   sends it only with `terminal:read` and without `terminal:operate`; Moatless
   grants operate to every session, so it attaches instead. It becomes owed
@@ -696,16 +679,6 @@ what a person loses, which is the part the derivation cannot tell you:
   is the 93% shell-size saving upstream measured. Closes when Moatless serves
   the method and advertises the capability; delete the union entry then.
 
-- **Thread titles for Lineage rows outside the shell** —
-  `orchestration.getThreadTitles`, new upstream in the 2026-11-05 merge
-  (#29000). `ThreadRelationshipsControl.tsx` asks for the titles of related
-  threads the shell does not list, and hides a row only once a successful
-  lookup omits it, which is how a deleted fork leaves Lineage. Refused, the
-  lookup never succeeds, so every row stays, deleted forks included, under the
-  id rather than a title. No fork gate was added; the union entry is the only
-  stand-in. Closes when Moatless dispatches the method, returning titles for
-  live and archived threads and omitting deleted or unknown ids; delete the
-  union entry then.
 - **Clone layout and secret requests** — the 2026-11-05 merge added the
   `ghqCloneLayout` server setting (#24904), a Threads settings row that clones
   into `<host>/<owner>/<repo>` folders. It sits inside the `projectManagement`
@@ -718,15 +691,12 @@ what a person loses, which is the part the derivation cannot tell you:
   request. #29803 extends MCP apps to Claude tool calls, and is covered by the
   MCP apps paragraph above. Closes per feature when the backend serves it; the
   flag mapping for `ghq-clone-layout` goes with `projectManagement`.
-- **Branch labels, link metadata, prompt suggestions and database reclaim** —
-  five methods new upstream in the 2026-11-09 merge. `subscribeVcsBranch` and
+- **Branch labels, prompt suggestions and database reclaim** —
+  four methods new upstream in the 2026-11-09 merge. `subscribeVcsBranch` and
   `vcs.refreshBranch` (#32947) stream only a checkout's branch name for sidebar
   labels; the client calls them only when `capabilities.vcsBranchStatus` is
   true and otherwise falls back to `subscribeVcsStatus`, so Moatless keeps the
-  old path. `orchestration.getThreadLinkMetadata` (#32830) gives thread links a
-  title and project icon; asked only under `threadLinkMetadata: true`, it falls
-  back to `getThreadTitles`, itself refused above, so links to unloaded threads
-  show their id. `orchestration.subscribePromptSuggestion` (#28047) streams a
+  old path. `orchestration.subscribePromptSuggestion` (#28047) streams a
   predicted next message; the Labs row that turns it on is a server setting and
   sits under `FEATURES.serverBehaviorSettings`, and the subscription is not
   opened while the setting is off. `server.reclaimDatabaseSpace` (#32941)
@@ -1240,7 +1210,7 @@ calls it only for a thread dropped from _another_ environment, which a
 single-environment Moatless deployment cannot produce, so it holds nothing open
 here; it becomes owed the day a client connects two Moatless environments.
 
-### Native child work and model-switch annotations need backend data
+### Native child work needs backend data
 
 Upstream's native child-work read (`orchestration.getNativeChildWork`,
 `packages/contracts/src/rpc.ts`) is not dispatched by Moatless. Expanding a
@@ -1248,12 +1218,6 @@ provider-native child's deferred work cannot fetch its history. Its
 `UnsupportedMethodError` union member is the stand-in here. Close this part when
 `unsupported-methods.mjs` derives a DROP for that method and a native-child
 expansion succeeds; remove the union member then.
-
-Model/effort-change annotations (#28995) render only when user turn items carry
-`modelSwitch`. That optional contract field is a compatibility reader, not
-evidence that Moatless emits the data. Close this part by checking the backend
-projection and verifying a same-harness model change displays its annotation;
-retain the upstream reader, which is not a fork stand-in.
 
 ### Runtime fixes upstream made to its own server
 
