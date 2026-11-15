@@ -9,16 +9,16 @@ import type { PreviewSessionSnapshot } from "@t3tools/contracts";
 import type { RightPanelKind, RightPanelSurface } from "~/rightPanelStore";
 
 /**
- * Surfaces the environment serves rather than the live workspace.
- * `files`/`file` come from the S3 snapshot, `pull-requests` from the backend's store, `pull-request`
- * from the git host. A kind absent here needs the sandbox (the safe default). `sandbox` must stay
- * open precisely when the sandbox is down: it is where one is started.
+ * Surfaces the environment serves rather than the live workspace: the S3 snapshot, the backend's
+ * PR store, the git host, and a side chat's thread. Absent kinds need the sandbox (the safe
+ * default). `sandbox` must stay open precisely when the sandbox is down: it is where one starts.
  */
 const SANDBOX_INDEPENDENT_KINDS: ReadonlySet<RightPanelKind> = new Set<RightPanelKind>([
   "files",
   "file",
   "pull-requests",
   "pull-request",
+  "side-chat",
   "sandbox",
 ]);
 

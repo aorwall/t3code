@@ -86,7 +86,10 @@ thread modes #30326) and `vcsBranchStatus`, `fastWorktreeCheckout` and
 cached-checkout worktrees on macOS #32927, cloud dictation #31769, thread link
 titles and project icons #32830) and `linkedThreadRefreshes` (upstream,
 2026-11-14: a push stream for linked-thread changes, #35865; absent, the
-client polls `pullRequests.linkedThreads` every ten seconds instead) — so
+client polls `pullRequests.linkedThreads` every ten seconds instead) and
+`serverUpdateStaging` (upstream, 2026-11-15: "Update everything" stages a
+server update with `server.updateServer`'s `stageOnly` while providers
+install, #35346; absent, the client skips staging) — so
 each of those
 surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
@@ -2581,7 +2584,8 @@ the one a developer following `engines.node` runs. Nothing the fork ships needs
 26: only upstream's single-executable build does.
 
 The sandbox runs Node 24 too, and since the 2026-11-13 merge upstream's server
-tests lean on Node 26: `ProjectionStore.test.ts` calls `StatementSync.stat`,
+tests lean on Node 26: `ProjectionStore.test.ts` and (since 2026-11-15)
+`Orchestrator.control-reads.test.ts` call `StatementSync.stat`,
 `026_CanonicalizeModelSelectionOptions.test.ts` expects Node 26's SQLite JSON
 decoding, and `outboundHttp.test.ts` expects fetch to call `setTypeOfService`.
 None of the three is in the fork delta, so each fails here and nowhere else.

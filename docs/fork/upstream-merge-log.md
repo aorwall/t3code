@@ -28,6 +28,58 @@ bullet here that no one will read again.
 
 ## Log
 
+## 2026-11-15 — upstream 2370e338f7
+
+- Upstream: `2370e338f7` from base `37714a8de5` (`501` commits). Branch point:
+  `main`; no open merge PR to stack on.
+- Landed: `1146` files from `git diff HEAD^1 HEAD` against `1144` in the
+  upstream range; the 2 extra are `inventory.json` and `gaps.md`. Fork delta
+  `775` files.
+- Conflicts: 11, each by its verdict. `Orchestrator.ts` takes upstream's
+  `readDelegatedCompletionPlanRecords` and keeps the fork's subagent type guard
+  on `parentTask.turnItems`; `agentContextBudget.json` upstream's plus 108
+  (`49846`); `environment.ts` and `orchestrationV2.ts` keep both sides
+  (`serverUpdateStaging`, `initialMessage` beside the fork's keys);
+  `ChatView.tsx` upstream's `deriveTimelineWorking` plus the fork's
+  `isStartingRun`/`sandboxReady`; `Sidebar.logic.ts` both generics, and
+  upstream's new `isShownUnderParent` call in `getFallbackThreadIdAfterDelete`
+  became `isSidebarHiddenThread` plus the delegated check, as the sidebar filter
+  does; `CommandPalette.browser.test.tsx` upstream's new fixtures, fork's
+  `withProviderSource` kept on the subagent; `SettingsPanels.tsx` the fork's
+  gated section with upstream's `pickModelSelection`; `FilePreviewPanel.tsx`
+  chains `frameRevision ?? fileRevision ?? (pdf ? mutationId : settledMutationId)`;
+  `PreviewEmptyState.tsx` the fork's (no local-server discovery) with
+  upstream's `parseUrl`; `previewEmptyStateLogic.ts` upstream's (no caller on
+  either side now). Lockfile re-derived. New inventory entry
+  `fork-additive-web-files` for 6 previously unlisted auto-merged fork files;
+  `projectFilesQueryState.ts` joined `file-preview-panel`; duplicate-add
+  exception `git-vcs-driver-status-details-call`.
+- Follow-on fix: React Compiler now bails on `try`/`finally`, so
+  `useTimelineRewind.ts`'s fork progress wrapper uses `.finally`.
+- Unsupported methods: no ADD or DROP. New capability `serverUpdateStaging`
+  added to [the capabilities entry](./gaps.md#capabilities-are-reported-but-not-the-ones-the-newer-surfaces-need).
+- Sweep: 8 hits (mobile environment cleanup/retry, cloud connect list test,
+  libghostty headers); upstream-owned, taken. No new workflows.
+- Commit: `--no-verify` (knip, 28 exports; see
+  [the knip entry](./gaps.md#knip-reports-the-forks-unused-exports-so-the-pre-commit-hook-fails)).
+- Verification: `verify.mjs` full pass, then `--fast` (9/9 green) after the
+  fixes. Tests: t3 and `provider-opencode` fail only on registered sandbox
+  gaps ([Node 24](./gaps.md#ci-and-the-image-build-run-node-24-not-enginesnode),
+  now also `Orchestrator.control-reads.test.ts`;
+  [`insteadOf`](./gaps.md#the-sandboxs-global-insteadof-rewrites-the-remote-urls-the-git-tests-build);
+  [`/tmp`](./gaps.md#the-sandboxs-tmp-has-no-sticky-bit-so-the-codex-token-broker-refuses-it);
+  OpenCode ledger; `ServerBrowser*` and `AntigravityInstallation` as before).
+  Web, with `PLAYWRIGHT_BROWSERS_PATH` at a fetched Chromium 1248: a full run
+  over all 643 files had 13 failures, every one a new upstream test meeting fork
+  code and fixed here — `getFallbackThreadIdAfterDelete` (above),
+  `useTimelineRewind` compiler coverage, `PreviewView.frame` mock missing
+  upstream's new `DesktopPreviewOverlay.navStatus`, `WorktreeSetupCard` asserting
+  upstream's labels (entry `worktree-setup-card-labels`), and upstream's
+  side-chat focus test, which showed the fork's sandbox gate covering
+  `side-chat` (now in `SANDBOX_INDEPENDENT_KINDS`). `runtime.test.ts` passed
+  alone. Each fixed file passes alone. Two later full web runs lost Chromium
+  under memory pressure (peak 11.9 GB of 14) with no test failure.
+
 ### 2026-11-05 — merged upstream to 20e92ffe02
 
 - Upstream: `20e92ffe02` from base `647bd148b3` (`49` commits). Branch point:

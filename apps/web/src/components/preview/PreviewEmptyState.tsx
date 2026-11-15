@@ -1,4 +1,5 @@
 import type { ScopedThreadRef } from "@t3tools/contracts";
+import { parseUrl } from "@t3tools/shared/url";
 import { Globe, History } from "lucide-react";
 
 import type { BrowserHistoryEntry } from "~/browserHistoryStore";
@@ -15,7 +16,7 @@ interface Props {
 }
 
 export function PreviewEmptyState({ threadRef, recentEntries, onRemoveRecent, onOpenUrl }: Props) {
-  const recents = recentEntries.filter((entry) => URL.canParse(entry.url)).slice(0, 8);
+  const recents = recentEntries.filter((entry) => parseUrl(entry.url) !== null).slice(0, 8);
 
   if (recents.length === 0) {
     return (

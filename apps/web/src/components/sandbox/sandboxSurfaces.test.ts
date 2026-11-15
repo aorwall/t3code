@@ -20,7 +20,14 @@ describe("surfaceNeedsSandbox", () => {
   it("frees the surfaces the environment serves and gates the rest", () => {
     // `sandbox` is here for the opposite reason to the others: it reads the
     // live machine, but it is also the only way to start one.
-    for (const kind of ["files", "file", "pull-requests", "pull-request", "sandbox"] as const) {
+    for (const kind of [
+      "files",
+      "file",
+      "pull-requests",
+      "pull-request",
+      "side-chat",
+      "sandbox",
+    ] as const) {
       expect(surfaceNeedsSandbox(kind)).toBe(false);
     }
     for (const kind of ["diff", "preview", "terminal"] as const) {

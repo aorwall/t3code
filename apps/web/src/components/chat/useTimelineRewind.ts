@@ -236,18 +236,13 @@ export function useTimelineRewind(input: TimelineRewindInput) {
   };
   // Fork: the dialog has closed, and a long source takes many seconds to fork, so the
   // source's Lineage section shows the fork until it settles.
-  const onForkFromRunWithProgress = async (
-    ...args: Parameters<typeof onForkFromRun>
-  ): Promise<void> => {
+  const onForkFromRunWithProgress = (...args: Parameters<typeof onForkFromRun>): Promise<void> => {
     const settle = beginPendingFork(
       scopeThreadRef(environmentId, args[0].sourceThreadId),
       `${activeThread?.title ?? "Thread"} fork`,
     );
-    try {
-      await onForkFromRun(...args);
-    } finally {
-      settle();
-    }
+    // `.finally` rather than `try`/`finally`, which React Compiler cannot compile.
+    return onForkFromRun(...args).finally(settle);
   };
   // Fork: `onForkFromRunWithProgress` in place of `onForkFromRun`.
   const onForkFromRunStable = useStableCallback(onForkFromRunWithProgress);
