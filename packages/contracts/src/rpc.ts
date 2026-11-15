@@ -2465,12 +2465,7 @@ const WsOrchestrationV2StopWorkflowRpc = Rpc.make(ORCHESTRATION_V2_WS_METHODS.st
 const WsOrchestrationV2ForceStopThreadRpc = Rpc.make(ORCHESTRATION_V2_WS_METHODS.forceStopThread, {
   payload: OrchestrationV2RpcSchemas.forceStopThread.input,
   success: OrchestrationV2RpcSchemas.forceStopThread.output,
-  // Fork: Moatless does not dispatch orchestration.forceStopThread. See gaps.md.
-  error: Schema.Union([
-    OrchestrationV2ForceStopThreadError,
-    EnvironmentAuthorizationError,
-    UnsupportedMethodError,
-  ]),
+  error: Schema.Union([OrchestrationV2ForceStopThreadError, EnvironmentAuthorizationError]),
 });
 
 const WsOrchestrationV2GetWorkflowScriptRpc = Rpc.make(

@@ -73,8 +73,7 @@ not report is most of the booleans added since that handshake was written —
 (upstream, 2026-09-18) and
 `threadFind` / `threadFindProgressive` (upstream, 2026-10-09) and
 `threadAutoSettlementScope` and `settledWorktreeCleanup` (upstream,
-2026-10-15) and `threadStop` (upstream, 2026-10-20: `thread.stop` stops a
-thread without resolving its run, #22052) and `projectOrganization` and
+2026-10-15) and `projectOrganization` and
 `oneTimeSchedules` (upstream, 2026-11-02: project pin and archive #26154,
 one-shot scheduled tasks #28104) and `freshContext`, `voiceTranscription`,
 `secretRequestReferences` and `scheduledTaskThreadModes` (upstream, 2026-11-06:
@@ -320,11 +319,8 @@ what a person loses, which is the part the derivation cannot tell you:
   itself, so a refused sign-in leaves the person with the backend's own GitHub
   access and nothing worse. Closes when Moatless dispatches the family; delete
   the four union entries then.
-- **Force stop, branch commits, npm releases and stars** — the 2026-10-31
-  merge added four. `orchestration.forceStopThread` (#27252) ends an agent that
-  ignored Stop, from a Force stop button `useForceStopThread.ts` offers only
-  with `capabilities.threadForceStop`, which a Moatless handshake omits.
-  `review.getBranchCommits` (#19941) fills the Diff pane's new Commits submenu,
+- **Branch commits, npm releases and stars** — the 2026-10-31 merge added
+  three. `review.getBranchCommits` (#19941) fills the Diff pane's new Commits submenu,
   so on Moatless that submenu opens empty; working-tree and branch diffs are
   unaffected. `server.getNpmRelease` (#27847) answers the desktop update-track
   dialog, which a browser never reaches. `sourceControl.starred` (#27832) asks
@@ -1071,9 +1067,7 @@ order for the active thread list (upstream #9729), and
 `thread.user-input.dismiss`, which drops an async question without answering it
 (upstream #10431). Both are ordinary controls the client renders unconditionally
 — a sidebar drag and a Dismiss button — and both fail generically on a backend
-that does not implement them. The 2026-10-22 merge added `queued-run.start`
-to `OrchestrationV2Command`: the "Send now" action on a held queued message in a
-stopped thread (#22790), rendered whenever `canSendNow` holds.
+that does not implement them.
 
 This is the reason `checkpointFileRestore` is a build flag and not a typed
 refusal, and it will be the reason for the next one too. Moatless serves
@@ -2170,7 +2164,7 @@ One more arrived in the 2026-10-01 merge:
   preparation, sidebar shell loads and huge checkpoints are much cheaper
   (#27098, #27105, #27106, #27110).
   The 2026-10-31 merge adds: Stop always completes, and an agent that ignores
-  it can be force stopped (#27252, `orchestration.forceStopThread` above);
+  it can be force stopped (#27252, `orchestration.forceStopThread`);
   subagents no longer inherit their parent's settlement protections (#26035,
   `provider-core/src/server/subagentProjection.ts`); agents wait on a deploy
   instead of ending the turn (#26681); launched threads step down to a runtime
