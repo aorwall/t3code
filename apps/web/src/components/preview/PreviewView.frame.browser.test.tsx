@@ -99,6 +99,8 @@ vi.mock(import("~/previewStateStore"), async (original) => ({
     desktopByTabId: {
       "tab-1": {
         hasWebContents: true,
+        // Idle, so the view reads the session's navStatus below.
+        navStatus: { _tag: "Idle" },
         canGoBack: false,
         canGoForward: false,
         loading: mocks.loading,

@@ -40,6 +40,7 @@ import { releaseComposerDraftUploads } from "../lib/composerDraftUploads";
 import { announce } from "../lib/announce";
 import { readLocalApi } from "../localApi";
 import {
+  readDelegatedUnderParent,
   readEnvironmentServerConfigLoaded,
   readEnvironmentSupportsAutoSettleOptOut,
   // Fork: setting a thread's visibility from its row menu.
@@ -544,10 +545,16 @@ export function useThreadActions() {
             }),
           )
         : undefined;
-    const survivingThreads =
-      deletedIds && deletedIds.size > 0
-        ? threads.filter((entry) => entry.id === threadRef.threadId || !deletedIds.has(entry.id))
-        : threads;
+    // Deleting a thread also deletes its side chats, which share its worktree.
+    const removedIds = new Set<ThreadId>(deletedIds);
+    for (const entry of threads) {
+      if (entry.lineage.sideChat === true && entry.lineage.parentThreadId === threadRef.threadId) {
+        removedIds.add(entry.id);
+      }
+    }
+    const survivingThreads = threads.filter(
+      (entry) => entry.id === threadRef.threadId || !removedIds.has(entry.id),
+    );
     const environmentConfig = appAtomRegistry
       .get(environmentServerConfigsAtom)
       .get(threadRef.environmentId);
@@ -565,7 +572,7 @@ export function useThreadActions() {
       if (
         occupants._tag !== "Success" ||
         occupants.value.threadIds.some(
-          (threadId) => threadId !== threadRef.threadId && deletedIds?.has(threadId) !== true,
+          (threadId) => threadId !== threadRef.threadId && !removedIds.has(threadId),
         )
       ) {
         orphanedWorktreePath = null;
@@ -630,6 +637,7 @@ export function useThreadActions() {
       deletedThreadIds,
       sortOrder: sidebarThreadSortOrder,
       now: new Date().toISOString(),
+      delegatedUnderParent: readDelegatedUnderParent(),
     });
     let navigatedDuringDelete = false;
     // The missing-thread redirect and the index draft replace this entry; any other history
@@ -741,7 +749,7 @@ export function useThreadActions() {
     return deleteResult;
   };
 
-  const unsettleThread = async (target: ScopedThreadRef) => {
+  const unsettleThread = async (target: ScopedThreadRef, restoreUnsettledAt?: string | null) => {
     if (!readEnvironmentServerConfigLoaded(target.environmentId)) {
       return AsyncResult.failure(
         Cause.fail(
@@ -756,7 +764,11 @@ export function useThreadActions() {
     // reason "user" pins active until real activity, suppressing auto-settle.
     return unsettleThreadMutation({
       environmentId: target.environmentId,
-      input: { threadId: target.threadId, reason: "user" },
+      input: {
+        threadId: target.threadId,
+        reason: "user",
+        ...(restoreUnsettledAt === undefined ? {} : { restoreUnsettledAt }),
+      },
     });
   };
 
@@ -1059,11 +1071,13 @@ export function useThreadActions() {
       async (step) => {
         switch (step.action) {
           case "unsettle":
-            return unsettleThread(target);
+            return unsettleThread(target, step.restoreUnsettledAt);
           case "unsnooze":
             return unsnoozeThread(target);
           case "pin":
             return sendPin(target, step.orderKey === undefined ? {} : { orderKey: step.orderKey });
+          case "reorderActive":
+            return reorderActiveThread(target, step.orderKey);
           case "snooze":
             return snoozeThreadMutation({
               environmentId: target.environmentId,

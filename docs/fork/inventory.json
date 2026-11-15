@@ -427,6 +427,13 @@
       "line": ") : null}",
       "reason": "The fork's FEATURES.serverBehaviorSettings fragment around the Beta rows closes with `) : null}`, and upstream's BoringSidebarRow closes its nested BoringSidebarMultilineRow conditional the same way. Two different conditionals, at different indentation.",
       "retiredWhen": "Either conditional stops ending in `) : null}`; the check then reports this entry stale."
+    },
+    {
+      "id": "git-vcs-driver-status-details-call",
+      "path": "apps/server/src/vcs/GitVcsDriverCore.test.ts",
+      "line": "yield* driver.statusDetails(cwd);",
+      "reason": "Two different tests make a bare `yield* driver.statusDetails(cwd)`: upstream's automatic-fetch-interval test and the non-interactive status-fetch test the fork rewrote for Effect 4.1's redacted env. Each parent holds one; the `yield*` prefix keeps the weak-evidence rule from treating it as a bare call.",
+      "retiredWhen": "Either test stops making the bare call; the check then reports this entry stale."
     }
   ],
   "pathPolicy": [
@@ -845,10 +852,11 @@
       "id": "file-preview-panel",
       "paths": [
         "apps/web/src/components/files/FilePreviewPanel.tsx",
-        "apps/web/src/components/files/FilePreviewPanel.browser.test.tsx"
+        "apps/web/src/components/files/FilePreviewPanel.browser.test.tsx",
+        "apps/web/src/components/files/projectFilesQueryState.ts"
       ],
       "verdict": "decide",
-      "note": "Upstream owns this file and works in it steadily. Two fork deltas to re-state on top: the browser frame keyed on the page's own bytes (frameRevision, from browserPreviewFrameRevision) instead of on the workspace mutation id, following the path the read resolved to (onRetargetFile) so a mention into a subdirectory repository lands on the file actually shown, and the WorkspaceBinaryFile branch (fork/WorkspaceBinaryFile.tsx) that answers a `binary_file` read failure, surfaced as `binaryPath` by projectFilesQueryState.ts, with a download. Upstream's FilePreviewPanel.browser.test.tsx (#22339) renders the panel directly, so it carries the two required fork fields: `binaryPath: null` in its `useProjectFileQuery` mock (absent, the binary branch replaces the Markdown preview) and an `onRetargetFile` prop. Upstream's PDF `fileRevision` and the fork's `frameRevision` never meet: `frameRevision` is null for a PDF and `fileRevision` exists only for one, so `WorkspaceBrowserPreview` chains `frameRevision ?? fileRevision ?? workspaceMutationId`."
+      "note": "Upstream owns this file and works in it steadily. Two fork deltas to re-state on top: the browser frame keyed on the page's own bytes (frameRevision, from browserPreviewFrameRevision) instead of on the workspace mutation id, following the path the read resolved to (onRetargetFile) so a mention into a subdirectory repository lands on the file actually shown, and the WorkspaceBinaryFile branch (fork/WorkspaceBinaryFile.tsx) that answers a `binary_file` read failure, surfaced as `binaryPath` by projectFilesQueryState.ts, with a download. Upstream's FilePreviewPanel.browser.test.tsx (#22339) renders the panel directly, so it carries the two required fork fields: `binaryPath: null` in its `useProjectFileQuery` mock (absent, the binary branch replaces the Markdown preview) and an `onRetargetFile` prop. Upstream's PDF `fileRevision` and the fork's `frameRevision` never meet: `frameRevision` is null for a PDF and `fileRevision` exists only for one, so `WorkspaceBrowserPreview` chains `frameRevision ?? fileRevision ?? (pdf ? workspaceMutationId : settledMutationId)`, the last arm upstream's (2026-11-15). projectFilesQueryState.ts carries only the `binaryPath` field; take upstream and keep it."
     },
     {
       "id": "fork-only-workflows",
@@ -1029,6 +1037,28 @@
       "paths": ["apps/server/src/provider/agentContextBudget.json"],
       "verdict": "converged",
       "note": "Take upstream, then re-run apps/server's AgentContextBudget.test.ts and set mcpToolListJsonBytes to what it measures. The fork's `ProjectScript.port` (packages/contracts/src/project.ts) appears in the t3_project_create and t3_project_update input schemas, so the fork's tool list is larger than upstream's by those bytes (108 at 2026-10-28, 2026-10-30, 2026-11-06 and 2026-11-07). The other two values are upstream's. Drop this entry when `port` leaves ProjectScript."
+    },
+    {
+      "id": "fork-additive-web-files",
+      "paths": [
+        "apps/web/src/components/ChatMarkdown.permissions.browser.test.tsx",
+        "apps/web/src/components/chat/useWorktreeSetup.ts",
+        "apps/web/src/lib/attachmentUploadQueue.ts",
+        "apps/web/src/lib/attachmentUploadQueue.test.ts",
+        "apps/web/src/previewStateStore.ts",
+        "apps/web/src/previewStateStore.test.ts"
+      ],
+      "verdict": "converged",
+      "note": "Take upstream, then keep each file's `Fork:` lines. ChatMarkdown.permissions.browser.test.tsx mocks `FEATURES.openInEditor` on and `isPreviewAvailableFor` off so upstream's permission cases run against upstream's runtime. useWorktreeSetup.ts gates send-blocking and `isPreparingWorktree` on `SANDBOX_SETUP_BLOCKS_SEND` (fork/sandboxSetup.ts). attachmentUploadQueue.ts carries the composer attachment's own discriminator so a generic file uploads as a ChatFileAttachment; its test holds the two fork cases. previewStateStore.ts adds `announcedTabId`/`announcedOpens`, which `ChatView` reads to raise the browser panel on a script-opened tab, plus the runtime surface capability; its test holds the announce cases."
+    },
+    {
+      "id": "worktree-setup-card-labels",
+      "paths": [
+        "apps/web/src/components/chat/WorktreeSetupCard.tsx",
+        "apps/web/src/components/chat/WorktreeSetupCard.browser.test.tsx"
+      ],
+      "verdict": "converged",
+      "note": "Take upstream, then keep the fork's labels: the card's region is `Sandbox start` and its header and stage labels come from `sandboxSetupHeaderLabel`/`sandboxSetupStageLabel` (fork/sandboxSetup.ts). Upstream's browser test (2026-11-15) asserts upstream's `Worktree setup` region and stage labels, so the fork's copy reads the fork's labels instead; keep any new upstream case and translate its labels the same way."
     },
     {
       "id": "merge-back-gate",
