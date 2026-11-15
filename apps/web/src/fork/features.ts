@@ -36,9 +36,9 @@ const SURFACES = {
   serverAdministration: true,
   /**
    * Configuring a provider instance (add/remove, names, flags, env vars, models, limits,
-   * health interval). All persists via `server.updateSettings`, which the backend does not
-   * dispatch, and `server.getSettings` answers `{}`, so controls would show contract defaults
-   * as the server's config. The provider list, status and client-side model settings stay.
+   * health interval). All persists via `server.updateSettings`, which the backend refuses for
+   * every key but the viewer's tag hiding, and `server.getSettings` omits these, so controls
+   * would show contract defaults as the server's config. The provider list, status and client-side model settings stay.
    */
   providerConfiguration: true,
   /**
@@ -130,9 +130,9 @@ const SURFACES = {
    */
   scheduledTasks: true,
   /**
-   * The General page's Model row under New threads. The backend refuses
-   * `server.updateSettings` and reports `settings: {}`, so the row would show the built-in
-   * default and every change would fail to save.
+   * The General page's Model row under New threads. The backend refuses a
+   * `server.updateSettings` patch naming it and reports no default model, so the row would show
+   * the built-in default and every change would fail to save.
    */
   defaultModelSetting: true,
   /**

@@ -335,7 +335,11 @@ what a person loses, which is the part the derivation cannot tell you:
   dispatches a method; delete its union entry then.
 - **Editing server settings** — `server.updateSettings`, `upsertKeybinding`,
   `removeKeybinding`, `updateProvider`. Reading is served (`server.getSettings`,
-  `getConfig`), so Settings renders and nothing in it can be saved. Holds open
+  `getConfig`), so Settings renders and nothing in it can be saved.
+  `server.updateSettings` is dispatched for one pair only: it saves a viewer's
+  `hiddenThreadTags` / `hideTaggedThreads` (in `users.settings`) and refuses a
+  patch naming any other key with `UnsupportedMethodError`, which is why its
+  union entry stays. Holds open
   `serverAdministration` and `providerConfiguration`, and on General
   `defaultModelSetting` and `serverBehaviorSettings`. The default model is the
   cheap one to close: the client applies `defaultModelSelection` to a new draft
@@ -344,7 +348,7 @@ what a person loses, which is the part the derivation cannot tell you:
   one-click "update every machine" button (#14678, `ProviderUpdatesAction.tsx`)
   calls `updateProvider` and sits behind `providerConfiguration` too — it would
   render nothing anyway, because Moatless publishes no `versionAdvisory`. `server.getSettings`
-  answers `{}`, so an ungated control does not merely fail to save — it shows a
+  answers only the deployment's few settings and the viewer's tag hiding, so an ungated control does not merely fail to save — it shows a
   contract default as though it were the server's configuration. A project's
   scripts are the exception: the backend serves `projects.mutate`'s
   `project.update` for them — see _A script runs on the backend_ below. Everything upstream adds to
@@ -1242,7 +1246,7 @@ calls it only for a thread dropped from _another_ environment, which a
 single-environment Moatless deployment cannot produce, so it holds nothing open
 here; it becomes owed the day a client connects two Moatless environments.
 
-### Native child work, thread tags, and model-switch annotations need backend data
+### Native child work and model-switch annotations need backend data
 
 Upstream's native child-work read (`orchestration.getNativeChildWork`,
 `packages/contracts/src/rpc.ts`) is not dispatched by Moatless. Expanding a
@@ -1251,17 +1255,11 @@ provider-native child's deferred work cannot fetch its history. Its
 `unsupported-methods.mjs` derives a DROP for that method and a native-child
 expansion succeeds; remove the union member then.
 
-Thread tags and recording-time hiding (#29053) depend on shell `tags`,
-`thread.tags-updated` events and server settings `hiddenThreadTags` /
-`hideTaggedThreads`. The client filtering is present, but absent tags default to
-empty, so it cannot hide tagged Moatless tasks. Likewise model/effort-change
-annotations (#28995) render only when user turn items carry `modelSwitch`.
-These optional contract fields are compatibility readers, not evidence that
-Moatless emits the data. Close each part by checking backend projection/settings
-sources and verifying a tagged task disappears from display lists while hiding
-is enabled, or a same-harness model change displays its annotation. Remove this
-entry's corresponding paragraph when those checks pass; retain the upstream
-readers, which are not fork stand-ins.
+Model/effort-change annotations (#28995) render only when user turn items carry
+`modelSwitch`. That optional contract field is a compatibility reader, not
+evidence that Moatless emits the data. Close this part by checking the backend
+projection and verifying a same-harness model change displays its annotation;
+retain the upstream reader, which is not a fork stand-in.
 
 ### Runtime fixes upstream made to its own server
 
