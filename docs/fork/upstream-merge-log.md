@@ -28,6 +28,44 @@ bullet here that no one will read again.
 
 ## Log
 
+## 2026-11-16 — upstream 05ccd6bfb5
+
+- Upstream: `05ccd6bfb5` from base `2370e338f7` (`270` commits). Branch point:
+  `main`; no open merge PR to stack on.
+- Landed: `681` files from `git diff HEAD^1 HEAD` against `683` in the
+  upstream range. Missing from landed: `pair.ts`/`pair.test.ts` (deleted in the
+  fork) and `Sidebar.logic.ts` (see below). Extra: `inventory.json`. Fork delta
+  `776` files.
+- Conflicts: 8, each by its verdict. `pair.ts`/`pair.test.ts` stay deleted
+  (`deletedUpstreamPaths`). `agentContextBudget.json` takes upstream's value
+  plus 108 (`49844`, measured). `authBootstrap.test.ts` and
+  `terminalSession.test.ts` keep both sides' tests. `CommandPalette.logic.test.ts`
+  takes upstream's delegated-task fixture and keeps the fork's `provider`
+  subagent. `ThreadTerminalDrawer.tsx` takes upstream's `readHostname()` and
+  keeps the `FEATURES.openInEditor` return. In `Sidebar.logic.ts`, upstream's
+  only change made `isSidebarHiddenThread` module-private. The fork keeps the
+  export because its `showsClosed` filter and tests import it, recorded on
+  `sidebar-hidden-thread`. `resolution-check.mjs` flags this path once, for
+  this merge only. Lockfile re-derived; install left it unchanged. Removed the
+  stale duplicate-add exception `git-vcs-driver-status-details-call`.
+- Unsupported methods: no ADD or DROP. New
+  [terminal write flags and `hostname`](./gaps.md#moatless-ignores-the-new-terminal-write-flags-and-omits-the-server-hostname)
+  gap, plus a 05ccd6bfb5 bullet under
+  [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Sweep: 3 hits (`096_RepairStaleTitleRegeneration` migration and its test,
+  the terminal-hostname e2e scenario). All upstream-owned and taken. No new
+  workflows.
+- Commit: `--no-verify` (knip, 28 exports; see
+  [the knip entry](./gaps.md#knip-reports-the-forks-unused-exports-so-the-pre-commit-hook-fails)).
+- Verification: `verify.mjs` full pass. duplicate-adds, tripwires,
+  unsupported-methods, lockfile, fmt, lint, typecheck and build are green.
+  resolution-check fails only on `Sidebar.logic.ts` (above). Tests: t3 and
+  `provider-opencode` fail only on registered sandbox gaps (Node 24
+  `statement.stat`/`setTypeOfService`, `insteadOf`, `/tmp`, OpenCode ledger,
+  `ServerBrowser*`, `AntigravityInstallation`). Web was re-run alone with
+  `PLAYWRIGHT_BROWSERS_PATH` pointing at a fetched Chromium 1248: 650/650 files
+  pass.
+
 ## 2026-11-15 — upstream 2370e338f7
 
 - Upstream: `2370e338f7` from base `37714a8de5` (`501` commits). Branch point:

@@ -427,13 +427,6 @@
       "line": ") : null}",
       "reason": "The fork's FEATURES.serverBehaviorSettings fragment around the Beta rows closes with `) : null}`, and upstream's BoringSidebarRow closes its nested BoringSidebarMultilineRow conditional the same way. Two different conditionals, at different indentation.",
       "retiredWhen": "Either conditional stops ending in `) : null}`; the check then reports this entry stale."
-    },
-    {
-      "id": "git-vcs-driver-status-details-call",
-      "path": "apps/server/src/vcs/GitVcsDriverCore.test.ts",
-      "line": "yield* driver.statusDetails(cwd);",
-      "reason": "Two different tests make a bare `yield* driver.statusDetails(cwd)`: upstream's automatic-fetch-interval test and the non-interactive status-fetch test the fork rewrote for Effect 4.1's redacted env. Each parent holds one; the `yield*` prefix keeps the weak-evidence rule from treating it as a bare call.",
-      "retiredWhen": "Either test stops making the bare call; the check then reports this entry stale."
     }
   ],
   "pathPolicy": [
@@ -636,7 +629,7 @@
         "apps/web/src/components/CommandPalette.browser.test.tsx"
       ],
       "verdict": "converged",
-      "note": "Take upstream, then re-apply the `source` arm of `isSidebarHiddenThread` (upstream renamed it from `isSidebarSubagentThread` on 2026-11-02): with a `source`, only a side chat or an `isProviderNativeSubagentThread` child is hidden, so a Moatless child task (`creationSource: \"mcp\"`) is listed beside its parent. The `sidebar-thread-family` inventory entry owns the behavior. In CommandPalette.browser.test.tsx the fork wraps upstream's subagent fixture in `withProviderSource`, so it stays hidden under that arm; take upstream's tests and keep the wrapper on any fixture that expects a hidden subagent."
+      "note": "Take upstream, then re-apply the `source` arm of `isSidebarHiddenThread` (upstream renamed it from `isSidebarSubagentThread` on 2026-11-02): with a `source`, only a side chat or an `isProviderNativeSubagentThread` child is hidden, so a Moatless child task (`creationSource: \"mcp\"`) is listed beside its parent. Keep it exported: upstream made it module-private (merge of 2026-11-16), but the fork's `showsClosed` filter in Sidebar.tsx and Sidebar.logic.test.ts import it. The `sidebar-thread-family` inventory entry owns the behavior. In CommandPalette.browser.test.tsx the fork wraps upstream's subagent fixture in `withProviderSource`, so it stays hidden under that arm; take upstream's tests and keep the wrapper on any fixture that expects a hidden subagent."
     },
     {
       "id": "chat-view-dispatch-ack",
@@ -1036,7 +1029,7 @@
       "id": "agent-context-budget",
       "paths": ["apps/server/src/provider/agentContextBudget.json"],
       "verdict": "converged",
-      "note": "Take upstream, then re-run apps/server's AgentContextBudget.test.ts and set mcpToolListJsonBytes to what it measures. The fork's `ProjectScript.port` (packages/contracts/src/project.ts) appears in the t3_project_create and t3_project_update input schemas, so the fork's tool list is larger than upstream's by those bytes (108 at 2026-10-28, 2026-10-30, 2026-11-06 and 2026-11-07). The other two values are upstream's. Drop this entry when `port` leaves ProjectScript."
+      "note": "Take upstream, then re-run apps/server's AgentContextBudget.test.ts and set mcpToolListJsonBytes to what it measures. The fork's `ProjectScript.port` (packages/contracts/src/project.ts) appears in the t3_project_create and t3_project_update input schemas, so the fork's tool list is larger than upstream's by those bytes (108 at 2026-10-28, 2026-10-30, 2026-11-06, 2026-11-07 and 2026-11-16). The other two values are upstream's. Drop this entry when `port` leaves ProjectScript."
     },
     {
       "id": "fork-additive-web-files",

@@ -785,6 +785,30 @@ repository and fails on first contact with a deployment.
 - **Then here:** nothing to delete. Strike the entry once that check has been
   run against a deployment.
 
+### Moatless ignores the new terminal write flags and omits the server hostname
+
+Upstream (2026-11-16 merge, #37223 and #37233) added two optional flags to
+`TerminalWriteInput` in `packages/contracts/src/terminal.ts`. With `binary`,
+`data` is one byte per UTF-16 code unit. The ghostty renderer sets it for
+legacy X10 mouse reports (`apps/web/src/terminal/ghostty/core.ts`) and
+`ProviderAuthTerminal.tsx` sets it for raw input. With `reply`, the write is a
+renderer's answer to a DA/DSR/DECRQM query, and the server passes on only one
+viewer's replies. The terminal dispatch in Moatless
+(`crates/t3code/src/rpc/dispatch/terminal.rs`) reads neither flag. So a legacy
+mouse report past column 95 is written as UTF-8 and lands on the wrong cell, and
+a terminal with two viewers gets every query answered twice. The new optional
+`error` field on `TerminalSessionSnapshot`, which shows a shell startup failure
+to later attachments, is also not sent. Neither is `ServerConfig.hostname`
+(#37133), so a `file://<host>/…` link printed by a sandbox shell does not
+resolve to a file. The client treats a missing hostname as an older server.
+
+- **Closes when:** `git grep -n 'binary\|reply' crates/t3code/src/rpc/dispatch/terminal.rs`
+  in the Moatless repository shows both flags handled, with `binary` written as
+  Latin-1 bytes and replies dropped from all but one viewer, and `server.getConfig`
+  returns `hostname`.
+- **Then here:** nothing to delete; the client sends the flags already. Strike
+  the entry.
+
 ### A script runs on the backend, and only the backend can edit one
 
 `scripts.run` is the first method that runs the derivation _backwards_: the
@@ -1225,6 +1249,22 @@ Upstream server fixes the fork cannot use, because Moatless owns the surface
 itself. None is a placeholder here — there is nothing in this repository holding
 them open — so they are recorded only so the next person to touch the Moatless
 runtime knows the answer was already worked out upstream.
+
+- **The 05ccd6bfb5 range (2026-11-16 merge) — run recovery, wake locking,
+  terminals, search and VCS.** Work a dead provider process was running no
+  longer stays Running (#37325), an ACP agent's open tool call ends when its
+  process dies (#37377), and restarts keep prompts the provider never accepted
+  (#34413). One busy thread's lock or a stuck wake no longer stalls other
+  threads, and a delegated child re-offers only its own parent's wake (#37417,
+  #37416, #37399). Terminal output within 2 ms is batched (#37060), and closed
+  terminal kills finish before shutdown (#37113). A big first file search no
+  longer freezes the server (#37451), and content search recovers from a slow
+  first index (#33138). A timed-out branch-totals diff is not rerun until HEAD
+  moves (#37455), and a pushed commit no longer reports failure when the final
+  status read fails (#32705). Migration `096_RepairStaleTitleRegeneration`
+  repairs stale title markers in upstream's projection store (#37364). Review
+  each against the matching code in `crates/`, and remove the item when an
+  equivalent backend test passes.
 
 - **The bedc8658c3 range (2026-11-13 merge) — watched PRs, turn control,
   scheduled tasks, worktrees and thread tools.** Watched pull requests react to
