@@ -124,6 +124,15 @@ describe("terminal session reducers", () => {
     expect(restarted.announcedOpens).toBe(2);
   });
 
+  it("keeps a startup failure carried by an attach snapshot", () => {
+    const attached = applyTerminalAttachStreamEvent(nextTerminalAttachSeedState(), {
+      type: "snapshot",
+      snapshot: { ...BASE_SNAPSHOT, status: "error", pid: null, error: "Failed to spawn PTY." },
+    });
+
+    expect(attached).toMatchObject({ status: "error", error: "Failed to spawn PTY." });
+  });
+
   it("follows the shared PTY grid from snapshots and activity without disturbing output", () => {
     const attached = applyTerminalAttachStreamEvent(nextTerminalAttachSeedState(), {
       type: "snapshot",
