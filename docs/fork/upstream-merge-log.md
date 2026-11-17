@@ -28,6 +28,43 @@ bullet here that no one will read again.
 
 ## Log
 
+## 2026-11-17 — upstream d7373c44fe
+
+- Upstream: `d7373c44fe` from base `05ccd6bfb5` (`146` commits). Branch point:
+  `main`; no open merge PR to stack on.
+- Landed: `511` files from `git diff HEAD^1 HEAD` against `508` in the
+  upstream range; the 3 extra are `inventory.json`, `gaps.md` and this log. Fork delta
+  `776` files.
+- Conflicts: 5. `agentContextBudget.json` upstream's plus 108 (`49845`,
+  measured). `runtime.ts` (unlisted, now entry `web-runtime-csrf-client`) keeps
+  the fork's CSRF-wrapped `layerHttpClient` with upstream's `isEnabled` relay
+  gate. Upstream (#37500) replaced `resolveSidebarRowThreadId` with
+  client-runtime's `resolveListedAncestorThreadRef`. `Sidebar.tsx` and
+  `Sidebar.logic*.ts` take it as upstream wrote it, pass it `threadShells`, and keep
+  `isSidebarHiddenThread` exported (and its `isListedThreadLineage` import,
+  which upstream dropped). The fork's `source` arm never reached row
+  resolution: see
+  [the child-task row gap](./gaps.md#an-open-moatless-child-task-highlights-its-parents-sidebar-row).
+  Lockfile auto-merged; install left it unchanged and it keeps the fork edges.
+- Unsupported methods: no ADD or DROP. New capability `peerLinkPairingCodes`
+  added to [the capabilities entry](./gaps.md#capabilities-are-reported-but-not-the-ones-the-newer-surfaces-need);
+  a d7373c44fe bullet under
+  [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Sweep: 1 hit (`apps/web/src/speech/voiceInputSession.ts`, "session" in the
+  speech sense); upstream-owned, taken. No new workflows.
+- Commit: `--no-verify` (knip, 28 exports; see
+  [the knip entry](./gaps.md#knip-reports-the-forks-unused-exports-so-the-pre-commit-hook-fails)).
+- Verification: `verify.mjs --fast` 9/9 green after the follow-up fixes above.
+  Tests: `client-runtime` 166/166 files. t3 and `provider-opencode` fail only
+  on registered sandbox gaps (Node 24, `insteadOf` — now also
+  `RunFinalizationService.test.ts` — `/tmp`, OpenCode ledger, `ServerBrowser*`,
+  `AntigravityInstallation`). `@t3tools/ssh` `tunnel.test.ts` (new upstream
+  test) fails on
+  [the sandbox's non-reaping PID 1](./gaps.md#the-sandboxs-pid-1-does-not-reap-orphans-so-a-killed-ssh-server-stays-alive).
+  Web, with `PLAYWRIGHT_BROWSERS_PATH` at a fetched Chromium 1248: 655/656
+  files pass; `runtime.test.ts`'s two desktop relay-policy tests failed in the
+  package run (timeout, then a double call) and pass alone 3 of 3.
+
 ## 2026-11-16 — upstream 05ccd6bfb5
 
 - Upstream: `05ccd6bfb5` from base `2370e338f7` (`270` commits). Branch point:
@@ -71,7 +108,7 @@ bullet here that no one will read again.
 - Upstream: `2370e338f7` from base `37714a8de5` (`501` commits). Branch point:
   `main`; no open merge PR to stack on.
 - Landed: `1146` files from `git diff HEAD^1 HEAD` against `1144` in the
-  upstream range; the 2 extra are `inventory.json` and `gaps.md`. Fork delta
+  upstream range; the 3 extra are `inventory.json`, `gaps.md` and this log. Fork delta
   `775` files.
 - Conflicts: 11, each by its verdict. `Orchestrator.ts` takes upstream's
   `readDelegatedCompletionPlanRecords` and keeps the fork's subagent type guard
