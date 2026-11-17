@@ -446,6 +446,12 @@
       "note": "Keep cookie session behavior, the x-csrf-token echo Moatless requires on unsafe requests, and the absent same-origin gate. Take upstream's transport changes."
     },
     {
+      "id": "web-runtime-csrf-client",
+      "paths": ["apps/web/src/lib/runtime.ts"],
+      "verdict": "converged",
+      "note": "Take upstream, then keep `layerHttpClient` wrapped in `PrimaryEnvironmentHttpLayer.withSameOriginMoatlessCsrfToken`: the pull request diff is a cookie-authenticated POST through this client, and Moatless refuses an unsafe request without the x-csrf-token echo. The options argument to `RelayTracing.layer` (its `isEnabled` gate) is upstream's."
+    },
+    {
       "id": "primary-environment-context",
       "paths": ["apps/web/src/environments/primary/context.ts"],
       "verdict": "ours",
@@ -629,7 +635,7 @@
         "apps/web/src/components/CommandPalette.browser.test.tsx"
       ],
       "verdict": "converged",
-      "note": "Take upstream, then re-apply the `source` arm of `isSidebarHiddenThread` (upstream renamed it from `isSidebarSubagentThread` on 2026-11-02): with a `source`, only a side chat or an `isProviderNativeSubagentThread` child is hidden, so a Moatless child task (`creationSource: \"mcp\"`) is listed beside its parent. Keep it exported: upstream made it module-private (merge of 2026-11-16), but the fork's `showsClosed` filter in Sidebar.tsx and Sidebar.logic.test.ts import it. The `sidebar-thread-family` inventory entry owns the behavior. In CommandPalette.browser.test.tsx the fork wraps upstream's subagent fixture in `withProviderSource`, so it stays hidden under that arm; take upstream's tests and keep the wrapper on any fixture that expects a hidden subagent."
+      "note": "Take upstream, then re-apply the `source` arm of `isSidebarHiddenThread` (upstream renamed it from `isSidebarSubagentThread` on 2026-11-02): with a `source`, only a side chat or an `isProviderNativeSubagentThread` child is hidden, so a Moatless child task (`creationSource: \"mcp\"`) is listed beside its parent. Keep it exported: upstream made it module-private (merge of 2026-11-16), but the fork's `showsClosed` filter in Sidebar.tsx and Sidebar.logic.test.ts import it. Row resolution for an open thread moved to client-runtime's `resolveListedAncestorThreadRef` (merge of 2026-11-17), taken as upstream's: `EnvironmentThreadShell` carries no `creationSource`, so the fork's `source` arm never reached it, and Sidebar.tsx passes it the unfiltered `threadShells`. The `sidebar-thread-family` inventory entry owns the behavior. In CommandPalette.browser.test.tsx the fork wraps upstream's subagent fixture in `withProviderSource`, so it stays hidden under that arm; take upstream's tests and keep the wrapper on any fixture that expects a hidden subagent."
     },
     {
       "id": "chat-view-dispatch-ack",

@@ -86,7 +86,9 @@ dictation #31769) and `linkedThreadRefreshes` (upstream,
 client polls `pullRequests.linkedThreads` every ten seconds instead) and
 `serverUpdateStaging` (upstream, 2026-11-15: "Update everything" stages a
 server update with `server.updateServer`'s `stageOnly` while providers
-install, #35346; absent, the client skips staging) — so
+install, #35346; absent, the client skips staging) and `peerLinkPairingCodes`
+(upstream, 2026-11-17: automatic pairing codes bound to peer links, #37825;
+absent, `peerPairingCode.ts` mints no code) — so
 each of those
 surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
@@ -1250,6 +1252,24 @@ itself. None is a placeholder here — there is nothing in this repository holdi
 them open — so they are recorded only so the next person to touch the Moatless
 runtime knows the answer was already worked out upstream.
 
+- **The d7373c44fe range (2026-11-17 merge) — Claude and ACP sessions,
+  delegated work, PR watches and settlement.** A Claude request with no answer
+  fails after 10 minutes (#37728), a Claude session gone on resume starts fresh
+  (#37610), `/clear` resets the context meter (#29961), and background tasks
+  survive a failed turn on a live process (#31840). Idle ACP child output no
+  longer leaks into root history (#37556), pending ACP tools end when their
+  prompt fails (#37537), and history replay keeps whitespace (#37505). A
+  `thread_send` follow-up waits only on its own runs' background work (#37793),
+  and a child's question no longer waits behind another coordinator's lock
+  (#37470). PR watches wake when CI passes before the first sweep (#37741), and
+  failing PR link reads back off (#31969). Settlement cleanup skips deleted
+  threads (#37833); `t3_thread_launch` refuses an explicit branch that already
+  exists (#31279); MCP retries enforce authorization (#37822); checkpoint
+  capture stops rehashing unchanged untracked files (#37482); a hung branch name
+  no longer holds a new thread in setup (#37538). Review each against the
+  matching code in `crates/`, and remove the item when an equivalent backend
+  test passes.
+
 - **The 05ccd6bfb5 range (2026-11-16 merge) — run recovery, wake locking,
   terminals, search and VCS.** Work a dead provider process was running no
   longer stays Running (#37325), an ACP agent's open tool call ends when its
@@ -2272,6 +2292,26 @@ One more arrived in the 2026-10-01 merge:
 
 ## This fork
 
+### An open Moatless child task highlights its parent's sidebar row
+
+The sidebar lists a Moatless child task (`creationSource: "mcp"`) as a row of
+its own, but opening it selects its parent's row instead. `Sidebar.tsx` resolves
+the open thread's row with client-runtime's `resolveListedAncestorThreadRef`,
+which hides by `isListedThreadLineage` alone, and `EnvironmentThreadShell` (in
+`packages/client-runtime/src/state/models.ts`) carries no `creationSource`, so
+the fork's `isProviderNativeSubagentThread` rule cannot be applied there. The
+fork's `resolveSidebarRowThreadId` had the same blind spot before upstream
+replaced it (merge of 2026-11-17).
+
+- **Costs:** the highlighted row is the parent's, so the child's own row never
+  looks selected and the sidebar does not scroll to it.
+- **Held open by:** the missing `creationSource` on `EnvironmentThreadShell`.
+- **Closes when:** `presentThreadShell` copies `creationSource` and
+  `resolveListedAncestorThreadRef` hides only side chats and
+  `isProviderNativeSubagentThread` children; a `threadShell.test.ts` case with an
+  `mcp` subagent resolving to itself passes. Then record the rule on the
+  `thread-shell-subtasks` inventory entry.
+
 ### The fork's own strings are English in every locale
 
 Upstream localized its web client in the 2026-11-13 merge (#31313, #33161–#33166):
@@ -2524,19 +2564,35 @@ with no sticky bit, so the broker correctly refuses it.
 - **Then here:** nothing to delete. The fix is a sticky `/tmp` in the sandbox
   image.
 
+### The sandbox's PID 1 does not reap orphans, so a killed SSH server stays alive
+
+`packages/ssh/src/tunnel.test.ts`'s "a newer client still replaces an older
+managed server" (upstream, #29428) asserts the older server is gone with
+`process.kill(pid, 0)`. The server is detached, so once killed it is reparented
+to PID 1, and the sandbox's PID 1 (`sandbox`) never reaps it: the zombie keeps
+its PID and the probe still succeeds. `packages/ssh` carries no fork delta.
+
+- **Package:** `@t3tools/ssh`
+- **Open while:** `test "$(ps -p 1 -o comm=)" = sandbox`
+- **Check:** run the file under an init that reaps (`tini`, `docker run --init`).
+- **Then here:** nothing to delete. The fix is a reaping PID 1 in the sandbox
+  image.
+
 ### The sandbox's global `insteadOf` rewrites the remote URLs the git tests build
 
 `apps/server/src/vcs/GitVcsDriver.test.ts`, `GitVcsDriverCore.test.ts`
-(`ensureRemote` cases) and `project/RepositoryIdentityResolver.test.ts` fail
-here: the Moatless sandbox's `~/.gitconfig` rewrites `https://github.com/` and
+(`ensureRemote` cases), `project/RepositoryIdentityResolver.test.ts` and (since
+2026-11-17) `orchestration-v2/RunFinalizationService.test.ts`'s remote-identity
+case fail here: the Moatless sandbox's `~/.gitconfig` rewrites `https://github.com/` and
 `git@github.com:` to `git+https://github.com/`, so a remote a test adds reads
 back as a different URL and `ensureRemote` picks a new name (`origin-1`,
 `pingdotgg`) instead of reusing `origin`.
 
 - **Package:** `t3`
 - **Open while:** `test -z "$(git config --global --get-regexp '^url\..*\.insteadof$')"`
-- **Check:** run the three files with `GIT_CONFIG_GLOBAL=/dev/null`. They pass
-  (248 tests on 2026-10-30).
+- **Check:** run the four files with `GIT_CONFIG_GLOBAL=/dev/null`. They pass
+  (248 tests on 2026-10-30; `RunFinalizationService.test.ts` 10/10 on
+  2026-11-17).
 - **Then here:** nothing to delete. The fix is in the sandbox's git setup, or
   `verify.mjs` running the `t3` tests with `GIT_CONFIG_GLOBAL=/dev/null`.
 
