@@ -413,22 +413,7 @@
       "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
     }
   ],
-  "duplicateAddExceptions": [
-    {
-      "id": "project-script-settings-continue",
-      "path": "apps/web/src/components/settings/useProjectScriptSettings.ts",
-      "line": "continue;",
-      "reason": "Two `continue` statements in separate loops: the fork's Workspace branch in `writeTargets` skips the settings write, and upstream's keybinding loop skips an unchanged script. Neither is a copy of the other.",
-      "retiredWhen": "Either loop stops using `continue`; the check then reports this entry stale."
-    },
-    {
-      "id": "labs-beta-gate-close",
-      "path": "apps/web/src/components/settings/LabsSettingsPanel.tsx",
-      "line": ") : null}",
-      "reason": "The fork's FEATURES.serverBehaviorSettings fragment around the Beta rows closes with `) : null}`, and upstream's BoringSidebarRow closes its nested BoringSidebarMultilineRow conditional the same way. Two different conditionals, at different indentation.",
-      "retiredWhen": "Either conditional stops ending in `) : null}`; the check then reports this entry stale."
-    }
-  ],
+  "duplicateAddExceptions": [],
   "pathPolicy": [
     {
       "id": "primary-auth",
@@ -1002,6 +987,21 @@
       "note": "Take upstream, then gate the picker's `ADD_PROJECT_VALUE` entry on `FEATURES.projectManagement` where `pickerItems` is built: a conditional spread in place of the one array element. Upstream turned the picker into a Combobox whose Add project row is a list item rather than a separate menu item, so the gate sits at the item filter and the render path stays upstream's. See the `navigation-gates` inventory entry."
     },
     {
+      "id": "pull-request-list-empty-state",
+      "paths": ["apps/web/src/components/pullRequest/PullRequestListEmptyState.tsx"],
+      "verdict": "converged",
+      "note": "Take upstream, then re-wrap the empty state's Add project `EmptyContent` in `FEATURES.projectManagement ? … : null`, with its `FEATURES` import. See the `navigation-gates` inventory entry."
+    },
+    {
+      "id": "project-script-workspace-save",
+      "paths": [
+        "apps/web/src/components/chat/useProjectScriptEditing.ts",
+        "apps/web/src/components/settings/useProjectScriptSettings.ts"
+      ],
+      "verdict": "converged",
+      "note": "Take upstream, then re-apply the Workspace branch: a project that reports `scriptsEditable` saves its scripts through `updateWorkspaceScripts` (`projectEnvironment.update`) rather than `server.updateSettings`, and in useProjectScriptSettings.ts `isWorkspace` exempts it from the settings-write scope check and turns a reset into a write of its unchanged list. See the `project-script-editing-capability` inventory entry."
+    },
+    {
       "id": "thread-adoption-graft",
       "paths": ["apps/web/src/state/threads.ts"],
       "verdict": "converged",
@@ -1035,7 +1035,7 @@
       "id": "agent-context-budget",
       "paths": ["apps/server/src/provider/agentContextBudget.json"],
       "verdict": "converged",
-      "note": "Take upstream, then re-run apps/server's AgentContextBudget.test.ts and set mcpToolListJsonBytes to what it measures. The fork's `ProjectScript.port` (packages/contracts/src/project.ts) appears in the t3_project_create and t3_project_update input schemas, so the fork's tool list is larger than upstream's by those bytes (108 at 2026-10-28, 2026-10-30, 2026-11-06, 2026-11-07 and 2026-11-16). The other two values are upstream's. Drop this entry when `port` leaves ProjectScript."
+      "note": "Take upstream, then re-run apps/server's AgentContextBudget.test.ts and set mcpToolListJsonBytes to what it measures. The fork's `ProjectScript.port` (packages/contracts/src/project.ts) appears in the t3_project_create and t3_project_update input schemas, so the fork's tool list is larger than upstream's by those bytes (108 at 2026-10-28, 2026-10-30, 2026-11-06, 2026-11-07, 2026-11-16 and 2026-11-18). The other two values are upstream's. Drop this entry when `port` leaves ProjectScript."
     },
     {
       "id": "fork-additive-web-files",

@@ -24,7 +24,7 @@ import { useMoatlessCommand, useMoatlessQuery } from "../../../moatless/query";
 import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
 import { SettingsPageContainer, SettingsSection } from "../settingsLayout";
-import { searchableSetting } from "../settingsSearch";
+import { useSearchableSetting } from "../settingsSearch";
 import {
   canConnectGithubApp,
   githubConnectLabel,
@@ -59,6 +59,7 @@ export function VersionControlPanel({
   readonly entry: VersionControlEntryId | null;
   readonly onSelectEntry: (id: VersionControlEntryId) => void;
 }) {
+  const setting = useSearchableSetting();
   const { data: features } = useMoatlessQuery(featureFlagsQuery);
 
   const entries: MasterDetailEntry<VersionControlEntryId>[] = [
@@ -85,7 +86,7 @@ export function VersionControlPanel({
 
   return (
     <SettingsPageContainer width="wide">
-      <SettingsSection {...searchableSetting("version-control")} hideTitle variant="plain">
+      <SettingsSection {...setting("version-control")} hideTitle variant="plain">
         <SettingsMasterDetail entries={entries} selectedId={entry} onSelect={onSelectEntry} />
       </SettingsSection>
     </SettingsPageContainer>

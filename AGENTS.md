@@ -84,6 +84,8 @@ That describes `apps/server`. It is also the vocabulary the wire is written in, 
 
 Complexity belongs at the adapter boundary: orchestration stays pure, UI stays dumb.
 
+User-facing text ships in every locale: wrap it for translation, run `vp run i18n:generate`, and translate the new keys in `apps/{web,mobile}/src/i18n/translations` (`vp run i18n:check` gates it).
+
 ## Dev servers
 
 `vp i` installs. Worktrees get this from the t3.json setup script; if module resolution looks broken, it probably did not run. Setup runs in the background: while `.t3/setup-running` names a live PID, wait for it and do not run `vp i`. It ends with `.t3/setup-done` or `.t3/setup-failed` (with the error tail); with no marker at all, setup never ran here, so run `vp i` yourself. Ports derive from the worktree path and are stable across restarts, but read the real ones from the `[dev-runner]` line since occupied ports shift, and stop what you started by the PID you tracked — see rule 1. `vp` does not pass SIGTERM on, so signalling the `vp run dev` PID alone leaves Vite and the server running: stop the background task with your harness's own stop, which ends the whole tree. Run dev servers, Metro, and builds from your own shell so they end with your session; do not detach them with `systemd-run`, `nohup`, `setsid`, or `tmux` unless asked, since detached servers have run for weeks and filled RAM and swap. The dev runner stops itself above `--memory-limit-gb` (half of RAM, at most 16 GiB) on Linux. Need a second checkout? `git worktree add` it next to this worktree, not in `/tmp`, and remove it when done.

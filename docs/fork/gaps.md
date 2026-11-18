@@ -725,6 +725,20 @@ what a person loses, which is the part the derivation cannot tell you:
   `keep-awake-while-agents-work` search item sit under
   `FEATURES.serverBehaviorSettings` with the rest of that section. Closes for
   the check when Moatless dispatches it; delete the union entry then.
+- **Issue trackers** — the 2026-11-18 merge added `issues.list`, `detail`,
+  `comments`, `templates`, `candidates`, `create`, `comment`, `update`,
+  `setState`, `react` and `issueTrackers.list`, `connect`, `bindProject`: an
+  Issues page, an `issue` right-panel surface, thread issue links
+  (`thread.issue.link`/`unlink`) and Linear, GitHub, GitLab, Azure DevOps and
+  Forgejo tracker connections. A person on Moatless cannot list, open or link
+  an issue from T3. Every client entry point (`IssuesPage`, the command
+  palette, `openIssueLink`, `ChatView`'s `issuesSupported`) waits on
+  `capabilities.issues === true`, which Moatless leaves absent, and the tracker
+  settings live on the source-control page that `FEATURES.projectManagement`
+  already hides, so no fork gate was added. Both error unions
+  (`IssueRpcError`, `IssueTrackerRpcError`) carry `UnsupportedMethodError`.
+  Closes when Moatless dispatches the family and reports `issues: true`;
+  delete `UnsupportedMethodError` from both unions then.
 
 - **Check:** run `unsupported-methods.mjs` rather than reading this list. Where
   the two sides come from is _Deriving the unsupported set_ in the inventory.
@@ -2286,6 +2300,19 @@ One more arrived in the 2026-10-01 merge:
   restyle an environment theme with colors and CSS through new MCP theme tools
   (#35247), which reaches this client only once the backend reports
   `environmentThemes`.
+  The 2026-11-18 merge adds the following. Settling a thread closes its waiting
+  link cards, and a waiting child run marks its parent waiting. Delegated tasks
+  keep their report when a later run ends without text or an awaited Monitor
+  ends, and a background result still shows when the turn before fails.
+  One-time scheduled tasks are removed after their turn. Claude gains a native
+  fork of a running thread and one fresh-session retry after a startup or MCP
+  timeout, and a provider switch sent mid-turn is queued. A Codex speed change
+  made mid-turn reaches Codex. A refused usage read keeps the last good
+  reading. Attachment text extraction covers DOCX, PPTX, RTF and ODF and
+  truncates on a Unicode boundary. New worktrees can use sparse checkout
+  (`worktreeSparsePatternsPath` in `t3.json`). Saved secrets reach only the
+  destination they were saved for, and media streams close when a session is
+  invalidated.
 - **Then here:** nothing to delete — behaviour to reproduce, not a stand-in.
   Strike each bullet once it is confirmed in the backend, and the entry when the
   last one goes.
@@ -2323,6 +2350,21 @@ Nothing on the backend is needed; `language` is a client setting. Holding it
 open: every literal in `apps/web/src/fork/**` and the fork's `// Fork:` JSX.
 Closes when `git grep -L "useGT\|<T>\|msg(" -- 'apps/web/src/fork/*.tsx'`
 lists only files that render no text; nothing to delete then.
+
+The 2026-11-18 merge brought upstream's `t3code/no-untranslated-copy` lint rule
+and the `vp run i18n:check` CI step. The rule flagged 274 fork literals, so
+`vite.config.ts` turns it off for the fork-only directories and the files
+listed beside them (the `// Fork: the fork's own copy` override), and fork
+copy stays out of the catalogs, which `i18n:check` compares against the
+source. The cost is that new fork copy in those upstream files is not flagged
+either. To shrink it: wrap a file's fork copy, run `vp run i18n:generate` in
+`apps/web`, translate the new keys in every locale catalog, and delete the
+path from the override. `vp lint` with the override removed is the check;
+delete the override when it reports nothing.
+The same merge regenerated the catalogs so `i18n:check` passes: that dropped
+the keys of upstream copy the fork removed and added the fork's one catalogued
+key, the "Version control" settings title, to every locale in English. That key
+needs a real translation in each locale.
 
 ### Upstream's GitHub star prompt asks Moatless users to star T3 Code
 
