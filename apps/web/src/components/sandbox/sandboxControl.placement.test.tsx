@@ -9,8 +9,15 @@ import { DEFAULT_RESOLVED_KEYBINDINGS } from "@t3tools/shared/keybindings";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vite-plus/test";
 
+import { GTProvider, initializeGT } from "gt-react";
+
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "~/i18n/locales";
 import type { RightPanelSurface } from "~/rightPanelStore";
 import { RightPanelTabs } from "../RightPanelTabs";
+
+// The tab bar reads GT's hooks, which need its singletons and a `GTProvider`.
+// `initializeI18n` is the browser entry and throws under node, so this uses GT's server one.
+initializeGT({ defaultLocale: DEFAULT_LOCALE, locales: [...SUPPORTED_LOCALES] });
 
 const NO_SESSIONS: Readonly<Record<string, PreviewSessionSnapshot>> = {};
 const CONTROL_MARKER = "data-sandbox-control-marker";
@@ -27,52 +34,54 @@ function render(options: {
   onAddSandbox?: (() => void) | undefined;
 }) {
   return renderToStaticMarkup(
-    <RightPanelTabs
-      mode="inline"
-      keybindings={DEFAULT_RESOLVED_KEYBINDINGS}
-      getShortcutContext={() => ({
-        terminalFocus: false,
-        terminalOpen: false,
-        previewFocus: false,
-        previewOpen: false,
-        isWeb: true,
-        isDesktop: false,
-      })}
-      environmentId={null}
-      surfaces={options.surfaces ?? []}
-      activeSurfaceId={options.activeSurfaceId ?? null}
-      pendingSurfaceIds={new Set()}
-      previewSessions={NO_SESSIONS}
-      desktopByTabId={{}}
-      terminalLabelsById={new Map()}
-      onActivate={() => undefined}
-      onCloseSurface={() => undefined}
-      onCloseOtherSurfaces={() => undefined}
-      onCloseSurfacesToRight={() => undefined}
-      onCloseAllSurfaces={() => undefined}
-      onCopyFilePath={() => undefined}
-      onAddBrowser={() => undefined}
-      onAddBrowserInProfile={() => undefined}
-      onAddTerminal={() => undefined}
-      onAddPullRequest={() => undefined}
-      onAddPullRequests={() => undefined}
-      onAddDiff={() => undefined}
-      onAddFiles={() => undefined}
-      onAddDevice={() => undefined}
-      onAddSandbox={"onAddSandbox" in options ? options.onAddSandbox : () => undefined}
-      browserAvailable
-      terminalAvailable
-      diffAvailable
-      filesAvailable
-      pullRequestAvailable
-      pullRequestsAvailable
-      deviceAvailable
-      surfaceDisabled={options.surfaceDisabled}
-      surfaceDisabledReason="Start the sandbox to use right-panel surfaces."
-      sandboxControl={<span {...{ [CONTROL_MARKER]: "" }} />}
-    >
-      <div>content</div>
-    </RightPanelTabs>,
+    <GTProvider locale={DEFAULT_LOCALE} translations={{}}>
+      <RightPanelTabs
+        mode="inline"
+        keybindings={DEFAULT_RESOLVED_KEYBINDINGS}
+        getShortcutContext={() => ({
+          terminalFocus: false,
+          terminalOpen: false,
+          previewFocus: false,
+          previewOpen: false,
+          isWeb: true,
+          isDesktop: false,
+        })}
+        environmentId={null}
+        surfaces={options.surfaces ?? []}
+        activeSurfaceId={options.activeSurfaceId ?? null}
+        pendingSurfaceIds={new Set()}
+        previewSessions={NO_SESSIONS}
+        desktopByTabId={{}}
+        terminalLabelsById={new Map()}
+        onActivate={() => undefined}
+        onCloseSurface={() => undefined}
+        onCloseOtherSurfaces={() => undefined}
+        onCloseSurfacesToRight={() => undefined}
+        onCloseAllSurfaces={() => undefined}
+        onCopyFilePath={() => undefined}
+        onAddBrowser={() => undefined}
+        onAddBrowserInProfile={() => undefined}
+        onAddTerminal={() => undefined}
+        onAddPullRequest={() => undefined}
+        onAddPullRequests={() => undefined}
+        onAddDiff={() => undefined}
+        onAddFiles={() => undefined}
+        onAddDevice={() => undefined}
+        onAddSandbox={"onAddSandbox" in options ? options.onAddSandbox : () => undefined}
+        browserAvailable
+        terminalAvailable
+        diffAvailable
+        filesAvailable
+        pullRequestAvailable
+        pullRequestsAvailable
+        deviceAvailable
+        surfaceDisabled={options.surfaceDisabled}
+        surfaceDisabledReason="Start the sandbox to use right-panel surfaces."
+        sandboxControl={<span {...{ [CONTROL_MARKER]: "" }} />}
+      >
+        <div>content</div>
+      </RightPanelTabs>
+    </GTProvider>,
   );
 }
 

@@ -1,3 +1,4 @@
+import { T } from "gt-react";
 import type { ScopedThreadRef } from "@t3tools/contracts";
 import { parseUrl } from "@t3tools/shared/url";
 import { Globe, History } from "lucide-react";
@@ -24,7 +25,9 @@ export function PreviewEmptyState({ threadRef, recentEntries, onRemoveRecent, on
         <EmptyMedia variant="icon">
           <Globe className="size-4.5 text-muted-foreground" />
         </EmptyMedia>
-        <EmptyTitle>No preview yet</EmptyTitle>
+        <EmptyTitle>
+          <T>No preview yet</T>
+        </EmptyTitle>
         <EmptyDescription>Type a URL above to open a preview.</EmptyDescription>
       </Empty>
     );
@@ -36,7 +39,9 @@ export function PreviewEmptyState({ threadRef, recentEntries, onRemoveRecent, on
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <History className="size-4 shrink-0" />
-            <h2 className="font-medium">Recently used</h2>
+            <h2 className="font-medium">
+              <T>Recently used</T>
+            </h2>
           </div>
           <DiscoveryList>
             {recents.map((entry) => (

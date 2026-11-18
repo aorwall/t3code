@@ -583,6 +583,52 @@ export default defineConfig({
           ],
         },
       },
+      // Registered always so a disable comment for intentional English counts as used.
+      // `vp run i18n:untranslated` counts what it flags.
+      {
+        files: ["apps/web/src/**", "apps/mobile/src/**", "packages/client-runtime/src/**"],
+        excludeFiles: [
+          "**/*.{test,spec,bench}.{ts,tsx}",
+          "**/{test,testkit,testing,fixtures}/**",
+          "**/*.test-fixtures.ts",
+          "**/{test-fixtures,*TestFixtures}.ts",
+          "apps/mobile/src/features/development/**",
+          "packages/client-runtime/src/rpc/**",
+        ],
+        rules: { "t3code/no-untranslated-copy": "error" },
+      },
+      {
+        // Fork: the fork's own copy is English-only until it is in the catalogs; see
+        // "Fork copy is not translated" in docs/fork/gaps.md, which owns shrinking this list.
+        files: [
+          "apps/web/src/fork/**",
+          "apps/web/src/components/sandbox/**",
+          "apps/web/src/components/settings/moatless/**",
+          "apps/web/src/browser/HostedBrowserFrame.tsx",
+          "apps/web/src/components/RightPanelTabs.tsx",
+          "apps/web/src/components/Sidebar.tsx",
+          "apps/web/src/components/chat/ThreadForkDialog.tsx",
+          "apps/web/src/components/chat/WorktreeSetupCard.tsx",
+          "apps/web/src/components/chat/messageOrigin.ts",
+          "apps/web/src/components/chat/useChatTerminalActions.ts",
+          "apps/web/src/components/chat/useTimelineRewind.ts",
+          "apps/web/src/components/preview/PreviewEmptyState.tsx",
+          "apps/web/src/components/preview/PreviewFrameMoreMenu.tsx",
+          "apps/web/src/components/preview/PreviewFrameUnrendered.tsx",
+          "apps/web/src/components/preview/PreviewPanel.tsx",
+          "apps/web/src/components/preview/PreviewView.tsx",
+          "apps/web/src/components/projectScriptEditor.tsx",
+          "apps/web/src/components/settings/AuthorizedClientsSettings.tsx",
+          "apps/web/src/components/settings/ProjectActionsList.tsx",
+          "apps/web/src/components/settings/SettingsPanels.tsx",
+          "apps/web/src/components/settings/settingsSearch.ts",
+          "apps/web/src/components/threadActionMenu.logic.ts",
+          "apps/web/src/hooks/useThreadActionMenu.ts",
+          "apps/web/src/routes/_chat.tasks.$taskId.tsx",
+          "apps/web/src/routes/login.tsx",
+        ],
+        rules: { "t3code/no-untranslated-copy": "off" },
+      },
       {
         // React Compiler owns memoization; upstream rules do not ban redundant useMemo/useCallback.
         files: ["apps/web/src/**/*.{ts,tsx}"],
@@ -653,6 +699,7 @@ export default defineConfig({
           "apps/mobile/src/features/review/useNativeReviewDiffBridge.ts",
           "apps/mobile/src/features/settings/SettingsEnvironmentsRouteScreen.tsx",
           "apps/mobile/src/features/threads/ThreadComposer.tsx",
+          "apps/mobile/src/components/ComposerSurface.tsx",
           "apps/mobile/src/features/threads/ThreadFeed.tsx",
           "apps/mobile/src/features/threads/ThreadQueueControl.tsx",
           "apps/mobile/src/features/review/ReviewCommentCard.tsx",

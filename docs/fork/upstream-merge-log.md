@@ -28,6 +28,68 @@ bullet here that no one will read again.
 
 ## Log
 
+## 2026-11-18 — upstream b8b5affac4
+
+- Upstream: `b8b5affac4` from base `d7373c44fe` (`159` commits). Branch point:
+  `main`; no open merge PR to stack on.
+- Landed: `1871` files from `git diff HEAD^1 HEAD` against `1870` in the
+  upstream range. Only in landed: `VersionControlPanel.tsx`, `gaps.md` and
+  `inventory.json`. Only upstream: `PreviewLocalServerCard.tsx`, which the
+  fork deletes, and `PreviewPanel.tsx`, where upstream's only change
+  translated the copy the fork replaces. Fork delta `786` files.
+- Conflicts: 45. Nearly all came from upstream's whole-app translation
+  (#37893) meeting a fork gate or a fork string. Each was resolved by taking
+  upstream's `<T>`/`gt()`/`msg()` wrapping and re-applying the gate, and the
+  fork's own strings stay English. The larger re-indented files were rebuilt
+  by applying base→upstream onto the fork side whitespace-insensitively, then
+  checking that the fork delta against upstream was unchanged. Decisions:
+  - `AGENTS.md` keeps the fork's shape plus upstream's new fact (translate
+    user-facing text, `i18n:check`).
+  - `ChatView` keeps the fork's removal of the subagent side-chat refusal.
+  - `WorktreeSetupCard` is upstream's file with the sandbox labels
+    re-applied.
+  - `PreviewLocalServerCard.tsx` was re-deleted (modify/delete).
+  - `agentContextBudget.json` takes upstream's values plus 108 (`52253`,
+    measured).
+  - Lockfile re-derived; it keeps the `moatless-api` edges.
+- Inventory: the unlisted `PullRequestListEmptyState.tsx`,
+  `useProjectScriptEditing.ts` and `useProjectScriptSettings.ts` got entries
+  (`pull-request-list-empty-state`, `project-script-workspace-save`). Two
+  stale `duplicateAddExceptions` were deleted.
+- Translation: upstream's `t3code/no-untranslated-copy` rule flagged 274 fork
+  literals. `vite.config.ts` turns it off for fork-only paths and the
+  upstream files that carry fork copy. The catalogs were regenerated, so
+  `vp run i18n:check` passes. See
+  [fork strings](./gaps.md#the-forks-own-strings-are-english-in-every-locale).
+- Unsupported methods: ADD 13 (`issues.*`, `issueTrackers.*`). Both error
+  unions now carry `UnsupportedMethodError`. The UI waits on
+  `capabilities.issues`, which Moatless leaves absent. See
+  [methods not dispatched](./gaps.md#methods-the-backend-does-not-dispatch)
+  and [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Sweep: 7 hits, all upstream's issue tracker (server, source-control-core,
+  web), `hostDrivePath.ts` (WSL rename) and two e2e scenarios. All are
+  upstream-owned and taken. No new workflows.
+- Commit: `--no-verify` (knip, see
+  [the knip entry](./gaps.md#knip-reports-the-forks-unused-exports-so-the-pre-commit-hook-fails)).
+- Verification: every check but tests is green: duplicate-adds, tripwires,
+  resolution-check, unsupported-methods, lockfile, fmt, lint, typecheck, build
+  and `vp run i18n:check`. resolution-check flags `PreviewPanel.tsx` as the
+  fork's copy, which is deliberate (see Landed).
+  - The parallel test pass timed out at 60 min. Packages run alone instead:
+    client-runtime 171/171, relay, provider-acp, provider-cursor,
+    source-control-github and source-control-forgejo all pass, and desktop
+    123/123 and mobile 316/316 passed in the full run. `@t3tools/ssh`
+    `tunnel.test.ts` fails on
+    [PID 1](./gaps.md#the-sandboxs-pid-1-does-not-reap-orphans-so-a-killed-ssh-server-stays-alive).
+  - Web, with `PLAYWRIGHT_BROWSERS_PATH` at a fetched Chromium 1248: 661/662
+    files pass. The fork's `sandboxControl.placement.test.tsx` failed because
+    `RightPanelTabs` now needs GT. It was fixed with `initializeGT` and a
+    `GTProvider`, and passes 4/4.
+  - t3 hit its 60 min deadline alone too, so the result is partial. Every
+    failure seen is a registered sandbox gap: `StatementSync.stat`
+    ([Node 24](./gaps.md#ci-and-the-image-build-run-node-24-not-enginesnode)),
+    `ServerBrowser`, and `GitVcsDriverCore` `ensureRemote` (`insteadOf`).
+
 ## 2026-11-17 — upstream d7373c44fe
 
 - Upstream: `d7373c44fe` from base `05ccd6bfb5` (`146` commits). Branch point:
