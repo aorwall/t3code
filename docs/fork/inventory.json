@@ -411,6 +411,94 @@
       "reason": "Served, but shares `PullRequestRpcError` with methods Moatless does not dispatch; see `pull-requests-summary-shared-union`.",
       "retiredWhen": "With `pull-requests-summary-shared-union`.",
       "see": "`PullRequestRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "issues-list-shared-union",
+      "method": "issues.list",
+      "direction": "DROP",
+      "reason": "Moatless serves the Linear issue reads and writes, but the family shares `IssueRpcError` with `issues.react`, which it declares unsupported because `capabilities.reactions` is false. Splitting a private union off costs more fork delta than an entry the client never receives.",
+      "retiredWhen": "Moatless serves `issues.react`, or the served methods take an error union of their own — at which point delete every `issues-*-shared-union` entry and let the DROPs stand.",
+      "see": "`IssueRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "issues-detail-shared-union",
+      "method": "issues.detail",
+      "direction": "DROP",
+      "reason": "Served, but shares `IssueRpcError` with `issues.react`, which Moatless does not serve; see `issues-list-shared-union`.",
+      "retiredWhen": "With `issues-list-shared-union`.",
+      "see": "`IssueRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "issues-comments-shared-union",
+      "method": "issues.comments",
+      "direction": "DROP",
+      "reason": "Served, but shares `IssueRpcError` with `issues.react`, which Moatless does not serve; see `issues-list-shared-union`.",
+      "retiredWhen": "With `issues-list-shared-union`.",
+      "see": "`IssueRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "issues-templates-shared-union",
+      "method": "issues.templates",
+      "direction": "DROP",
+      "reason": "Served, but shares `IssueRpcError` with `issues.react`, which Moatless does not serve; see `issues-list-shared-union`.",
+      "retiredWhen": "With `issues-list-shared-union`.",
+      "see": "`IssueRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "issues-candidates-shared-union",
+      "method": "issues.candidates",
+      "direction": "DROP",
+      "reason": "Served, but shares `IssueRpcError` with `issues.react`, which Moatless does not serve; see `issues-list-shared-union`.",
+      "retiredWhen": "With `issues-list-shared-union`.",
+      "see": "`IssueRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "issues-create-shared-union",
+      "method": "issues.create",
+      "direction": "DROP",
+      "reason": "Served, but shares `IssueRpcError` with `issues.react`, which Moatless does not serve; see `issues-list-shared-union`.",
+      "retiredWhen": "With `issues-list-shared-union`.",
+      "see": "`IssueRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "issues-comment-shared-union",
+      "method": "issues.comment",
+      "direction": "DROP",
+      "reason": "Served, but shares `IssueRpcError` with `issues.react`, which Moatless does not serve; see `issues-list-shared-union`.",
+      "retiredWhen": "With `issues-list-shared-union`.",
+      "see": "`IssueRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "issues-update-shared-union",
+      "method": "issues.update",
+      "direction": "DROP",
+      "reason": "Served, but shares `IssueRpcError` with `issues.react`, which Moatless does not serve; see `issues-list-shared-union`.",
+      "retiredWhen": "With `issues-list-shared-union`.",
+      "see": "`IssueRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "issues-setState-shared-union",
+      "method": "issues.setState",
+      "direction": "DROP",
+      "reason": "Served, but shares `IssueRpcError` with `issues.react`, which Moatless does not serve; see `issues-list-shared-union`.",
+      "retiredWhen": "With `issues-list-shared-union`.",
+      "see": "`IssueRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "issues-linkedThreads-shared-union",
+      "method": "issues.linkedThreads",
+      "direction": "DROP",
+      "reason": "Served, but shares `IssueRpcError` with `issues.react`, which Moatless does not serve; see `issues-list-shared-union`.",
+      "retiredWhen": "With `issues-list-shared-union`.",
+      "see": "`IssueRpcError` in packages/contracts/src/rpc.ts"
+    },
+    {
+      "id": "issue-trackers-list-shared-union",
+      "method": "issueTrackers.list",
+      "direction": "DROP",
+      "reason": "Moatless serves the tracker listing so a Linear link in chat resolves, but `IssueTrackerRpcError` is shared with `issueTrackers.connect` and `bindProject`, which it does not serve: a connection is the installed Linear app and a binding is the Workspace's Linear team.",
+      "retiredWhen": "Moatless serves `connect` and `bindProject`, or `list` takes an error union of its own.",
+      "see": "`IssueTrackerRpcError` in packages/contracts/src/rpc.ts, and 'Issue trackers' in gaps.md"
     }
   ],
   "duplicateAddExceptions": [],

@@ -725,26 +725,21 @@ what a person loses, which is the part the derivation cannot tell you:
   `keep-awake-while-agents-work` search item sit under
   `FEATURES.serverBehaviorSettings` with the rest of that section. Closes for
   the check when Moatless dispatches it; delete the union entry then.
-- **Issue trackers** — the 2026-11-18 merge added `issues.list`, `detail`,
-  `comments`, `templates`, `candidates`, `create`, `comment`, `update`,
-  `setState`, `react` and `issueTrackers.list`, `connect`, `bindProject`: an
-  Issues page, an `issue` right-panel surface, thread issue links
-  (`thread.issue.link`/`unlink`) and Linear, GitHub, GitLab, Azure DevOps and
-  Forgejo tracker connections. A person on Moatless cannot list, open or link
-  an issue from T3. Every client entry point (`IssuesPage`, the command
-  palette, `openIssueLink`, `ChatView`'s `issuesSupported`) waits on
-  `capabilities.issues === true`, which Moatless leaves absent, and the tracker
-  settings live on the source-control page that `FEATURES.projectManagement`
-  already hides, so no fork gate was added. Both error unions
-  (`IssueRpcError`, `IssueTrackerRpcError`) carry `UnsupportedMethodError`.
-  The 2026-11-19 merge built more on the same family: linked issues beside a
-  thread's pull requests (`ChatView`'s `linkedItemsSurfaceAvailable`, #38282)
-  and as a sidebar row badge (#38282), a project filter on the issues list
-  (#38256), every thread an issue is linked to (#38771), and a hover preview
-  card on issue links (#38294). All of them read `thread.issues` or the
-  `issues.*` methods, so they stay dark while Moatless sends neither.
-  Closes when Moatless dispatches the family and reports `issues: true`;
-  delete `UnsupportedMethodError` from both unions then.
+- **Issue trackers** — the 2026-11-18 merge added the `issues.*` and
+  `issueTrackers.*` families, thread issue links (`thread.issue.link`/`unlink`)
+  and five tracker connections; the 2026-11-19 merge built linked-issue rows,
+  badges, a project filter, linked threads and hover cards on them. Moatless
+  serves Linear only (soaplabs/moatless#1552): a project's scope is its
+  Workspace's Linear team, every call goes out as the Moatless Linear app, and
+  `capabilities.issues` and `issueLinkedThreads` are true. Three methods stay
+  refused: `issues.react` (`capabilities.reactions` is false), and
+  `issueTrackers.connect` and `bindProject`, whose settings sit on the
+  source-control page `FEATURES.projectManagement` already hides. A GitHub,
+  GitLab, Azure DevOps or Forgejo issue is not served. So both error unions
+  (`IssueRpcError`, `IssueTrackerRpcError`) keep `UnsupportedMethodError`,
+  recorded as the `issues-*-shared-union` and `issue-trackers-list-shared-union`
+  exceptions in the inventory. Closes when Moatless serves those three; delete
+  the union entries and those exceptions then.
 
 - **Check:** run `unsupported-methods.mjs` rather than reading this list. Where
   the two sides come from is _Deriving the unsupported set_ in the inventory.
