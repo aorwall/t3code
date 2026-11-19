@@ -94,7 +94,11 @@ export type AssetImageDimensions = typeof AssetImageDimensions.Type;
 export const AssetCreateUrlResult = Schema.Struct({
   relativeUrl: TrimmedNonEmptyString.check(
     Schema.isMaxLength(4096),
-    Schema.isPattern(/^\/api\/assets\/(?!\.{1,2}\/)[\w.-]+\/(?!(?:\.|%2[eE]){1,2}$)[^/\\?#\s]+$/u),
+    // Fork: Moatless serves a workspace file at its nested path, so relative links in a previewed
+    // page resolve, and marks a download with `?download=1` (`crates/t3code/src/assets.rs`).
+    Schema.isPattern(
+      /^\/api\/assets\/(?!\.{1,2}\/)[\w.-]+(?:\/(?!(?:\.|%2[eE]){1,2}(?:\/|$))[^/\\?#\s]+)+(?:\?download=1)?$/u,
+    ),
   ),
   expiresAt: Schema.Number,
   sourcePath: Schema.optional(

@@ -17,6 +17,13 @@ describe("WebSocket RPC contracts", () => {
         decodeAsset({ relativeUrl: "/api/assets/token.sig/my%20file.png", expiresAt }),
       ),
     ).toBe(true);
+    // Fork: Moatless mints a workspace file's nested path, and a download with `?download=1`.
+    for (const relativeUrl of [
+      "/api/assets/task-1/docs/images/my%20file.png",
+      "/api/assets/task-1/report.pdf?download=1",
+    ]) {
+      expect(Exit.isSuccess(decodeAsset({ relativeUrl, expiresAt }))).toBe(true);
+    }
     expect(
       Exit.isSuccess(
         decodeUpload({
@@ -33,6 +40,10 @@ describe("WebSocket RPC contracts", () => {
       "https://other.example/document",
       "//other.example/document",
       "/api/assets/token/../../../other",
+      // Fork: a traversal deeper in a nested path, and any other query.
+      "/api/assets/token/docs/../../other",
+      "/api/assets/token/docs/%2e%2E/other",
+      "/api/assets/token/file.png?download=0",
     ]) {
       expect(Exit.isFailure(decodeAsset({ relativeUrl, expiresAt }))).toBe(true);
       expect(
