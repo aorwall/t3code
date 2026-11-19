@@ -736,8 +736,10 @@ what a person loses, which is the part the derivation cannot tell you:
   `issueTrackers.connect` and `bindProject`, whose settings sit on the
   source-control page `FEATURES.projectManagement` already hides. A GitHub,
   GitLab, Azure DevOps or Forgejo issue is not served. So both error unions
-  (`IssueRpcError`, `IssueTrackerRpcError`) keep `UnsupportedMethodError`.
-  Closes when Moatless serves those three; delete the union entries then.
+  (`IssueRpcError`, `IssueTrackerRpcError`) keep `UnsupportedMethodError`,
+  recorded as the `issues-*-shared-union` and `issue-trackers-list-shared-union`
+  exceptions in the inventory. Closes when Moatless serves those three; delete
+  the union entries and those exceptions then.
 
 - **Check:** run `unsupported-methods.mjs` rather than reading this list. Where
   the two sides come from is _Deriving the unsupported set_ in the inventory.
