@@ -737,6 +737,12 @@ what a person loses, which is the part the derivation cannot tell you:
   settings live on the source-control page that `FEATURES.projectManagement`
   already hides, so no fork gate was added. Both error unions
   (`IssueRpcError`, `IssueTrackerRpcError`) carry `UnsupportedMethodError`.
+  The 2026-11-19 merge built more on the same family: linked issues beside a
+  thread's pull requests (`ChatView`'s `linkedItemsSurfaceAvailable`, #38282)
+  and as a sidebar row badge (#38282), a project filter on the issues list
+  (#38256), every thread an issue is linked to (#38771), and a hover preview
+  card on issue links (#38294). All of them read `thread.issues` or the
+  `issues.*` methods, so they stay dark while Moatless sends neither.
   Closes when Moatless dispatches the family and reports `issues: true`;
   delete `UnsupportedMethodError` from both unions then.
 
@@ -1265,6 +1271,25 @@ Upstream server fixes the fork cannot use, because Moatless owns the surface
 itself. None is a placeholder here — there is nothing in this repository holding
 them open — so they are recorded only so the next person to touch the Moatless
 runtime knows the answer was already worked out upstream.
+
+- **The d06eaff2f4 range (2026-11-19 merge) — steering, sessions, VCS and
+  attachments.** Accepted steers replay after the target turn ends (#38831),
+  and steering a running turn carries MCP app model context (#38554). A
+  message after a fresh session no longer returns to a pre-clear session that
+  background work woke (#38824), and a Resume that carries a context handoff
+  asks the agent to continue (#38847). Subagents from earlier turns keep their
+  model after history loads (#38724), and a resumed Claude subagent keeps its
+  earlier result (#34663). A fork renamed before its first message keeps that
+  name (#38683). Provider commits are batched without blocking unrelated
+  writes (#38544), and Git status path lookups are batched (#38707). SSH host
+  aliases no longer split a repository into separate groups (#38852), and the
+  Changes base follows the remote that a recorded base branch tracks (#38543).
+  Servers on one machine no longer update a shared provider CLI at once
+  (#38849), and managed runtimes prune old versions (#38740). Running a paused
+  one-time task by hand no longer deletes it (#38463). RTF, notebook and Mac
+  Roman attachment text is extracted more faithfully (#38598, #38605, #38612,
+  #38645). Review each against the matching code in `crates/`, and remove the
+  item when an equivalent backend test passes.
 
 - **The d7373c44fe range (2026-11-17 merge) — Claude and ACP sessions,
   delegated work, PR watches and settlement.** A Claude request with no answer
@@ -2489,14 +2514,17 @@ for it.
 ### knip reports the fork's unused exports, so the pre-commit hook fails
 
 `vp staged` runs `vp run knip:check` over the whole workspace for any staged
-TypeScript or manifest file, and its `--exports` pass finds 27 unused exports,
+TypeScript or manifest file, and its `--exports` pass finds 28 unused exports
+(27 until the 2026-11-19 merge),
 every one of them fork-owned or fork-reached: the `WsSandbox*Rpc`,
 `WsScripts*Rpc`, `WsThreads{GetShell,Browse}Rpc`, `WsSubtasksListRpc`,
 `WsArtifactsSetVisibilityRpc` and `WsProjectsGoToDefinitionRpc` consts in
 `packages/contracts/src/rpc.ts`, the `*_REFRESH_INTERVAL_MS` / `*_STALE_TIME_MS`
 consts in `packages/client-runtime/src/state/`, a few in `apps/web/src/fork/`,
 and `buildPairingUrl` / `renderTerminalQrCode` in `apps/server/src/startupAccess.ts`
-(left exported when the fork deleted `cli/pair.ts`).
+(left exported when the fork deleted `cli/pair.ts`), with `hostShellWord` in
+`apps/server/src/cli/invocation.ts` and `DEFAULT_TAILSCALE_SERVE_PORT` in
+`packages/tailscale/src/tailscale.ts` orphaned by the same deletion.
 
 What it costs: every commit that stages TypeScript fails the hook, so commits
 go in with `--no-verify`, which also skips the format and lint the hook would
