@@ -10,7 +10,7 @@ import type { RightPanelKind, RightPanelSurface } from "~/rightPanelStore";
 
 /**
  * Surfaces the environment serves rather than the live workspace: the S3 snapshot, the backend's
- * PR store, the git host, and a side chat's thread. Absent kinds need the sandbox (the safe
+ * PR store, the git host or issue tracker, and a side chat's thread. Absent kinds need the sandbox (the safe
  * default). `sandbox` must stay open precisely when the sandbox is down: it is where one starts.
  */
 const SANDBOX_INDEPENDENT_KINDS: ReadonlySet<RightPanelKind> = new Set<RightPanelKind>([
@@ -18,6 +18,7 @@ const SANDBOX_INDEPENDENT_KINDS: ReadonlySet<RightPanelKind> = new Set<RightPane
   "file",
   "pull-requests",
   "pull-request",
+  "issue",
   "side-chat",
   "sandbox",
 ]);

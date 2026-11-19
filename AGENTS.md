@@ -183,6 +183,6 @@ Reusable Effect functions use `Effect.fn("Service.operation")` with a stable spa
 
 People drive agents through this UI all day and notice a dropped frame, a lying spinner, and a stale label. Upstream's performance discipline is worth keeping: watch what you send over the socket, how long lists render, and what the GPU is asked to paint. No continuously repainting animations — they peg the GPU on high-refresh displays.
 
-Security matters but is not worth over-indexing on for dev-mode and maintainer-only features.
+Security matters but is not worth over-indexing on for dev-mode and maintainer-only features. Before a security audit or triaging a vulnerability report, read [SECURITY.md](SECURITY.md) for the trust model and what is intended.
 
 These are good defaults, not hard rules — the developer's preferences override anything here. If a rule fights the task in front of you, say so and get a human sign-off before breaking it.

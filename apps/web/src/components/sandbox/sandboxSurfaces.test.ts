@@ -25,6 +25,7 @@ describe("surfaceNeedsSandbox", () => {
       "file",
       "pull-requests",
       "pull-request",
+      "issue",
       "side-chat",
       "sandbox",
     ] as const) {

@@ -28,6 +28,51 @@ bullet here that no one will read again.
 
 ## Log
 
+## 2026-11-19 — upstream d06eaff2f4
+
+- Upstream: `d06eaff2f4` from base `b8b5affac4` (`135` commits). Branch point:
+  `main`; no open merge PR to stack on.
+- Landed: `565` files from `git diff HEAD^1 HEAD` against `565` in the
+  upstream range, an exact match. Fork delta `786` files.
+- Conflicts: 5, each by its verdict.
+  - `AGENTS.md` keeps the fork's shape plus upstream's new fact: read
+    `SECURITY.md` before a security audit.
+  - `agentContextBudget.json` takes upstream's values plus 108 (`52253`); the
+    budget test passes.
+  - `ChatView.tsx` keeps the ThreadForkDialog wiring and the
+    `FEATURES.deviceHub` gate. It takes upstream's `sideChat.open` callback and
+    `linkedItemsSurfaceAvailable`.
+  - `PreviewView.tsx` keeps the framed `window.open` branch and applies
+    upstream's `resolveExternalServerUrl` to the desktop branch.
+  - `SidebarThreadRow.tsx` keeps both import sets.
+  - The lockfile auto-merged. A re-install left it unchanged, and it keeps the
+    fork's edges.
+- Fix: upstream's new sidebar issue-badge test (`ChatView.browser.test.tsx`)
+  showed that the `issue` right-panel kind added on 2026-11-18 fell through to
+  the sandbox gate's "needs sandbox" default. Issue details come from the
+  tracker, so `issue` joins `SANDBOX_INDEPENDENT_KINDS` in
+  `sandbox/sandboxSurfaces.ts`.
+- Unsupported methods: no ADD or DROP. The new issue surfaces ride the
+  existing `issues.*` gap, which is
+  [extended](./gaps.md#methods-the-backend-does-not-dispatch).
+- Sweep: 2 hits, `infra/relay/migrations/postgres/20261118203809_relay_write_churn`.
+  Both are upstream's relay, a false positive, and taken as is. No new
+  workflows.
+- Commit: `--no-verify`, because knip now fails on 28 exports (see
+  [the knip entry](./gaps.md#knip-reports-the-forks-unused-exports-so-the-pre-commit-hook-fails)).
+- Verification: duplicate-adds, tripwires, resolution-check,
+  unsupported-methods, lockfile, fmt, lint, typecheck and build are green.
+  - Web: 663/664 passed with `PLAYWRIGHT_BROWSERS_PATH` at a fetched
+    headless shell 1248 (the image has 1254). The one failure is the fix
+    above; `ChatView.browser.test.tsx` now passes 15/15.
+  - t3: every failure is a registered sandbox gap (`/tmp` sticky bit for
+    Codex, Node 24 `StatementSync.stat`, `insteadOf`, ServerBrowser), except
+    `AntigravityInstallation.test.ts`'s 16 KiB-page case, which gets
+    `cancelled` instead of `failed`. The fork has no delta in `provider/`, so
+    it is upstream's test in this sandbox, not this merge.
+  - ssh `tunnel.test.ts` failed on PID 1, and opencode `OpenCodeServerLedger`
+    failed. Both are registered gaps.
+
 ## 2026-11-18 — upstream b8b5affac4
 
 - Upstream: `b8b5affac4` from base `d7373c44fe` (`159` commits). Branch point:
