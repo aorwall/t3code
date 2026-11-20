@@ -1,6 +1,4 @@
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
-import { threadRuntimeIsActive } from "@t3tools/client-runtime/state/shell";
-import { resolveLatestMergeBackRun } from "@t3tools/client-runtime/state/thread-workflows";
 import {
   isAtomCommandInterrupted,
   settlePromise,
@@ -11,19 +9,19 @@ import {
   type ScopedThreadRef,
   type ThreadId,
 } from "@t3tools/contracts";
+import { threadContextRecord } from "@t3tools/shared/composerContextReferences";
 import { T, useGT } from "gt-react";
 import { Trash2Icon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useComposerDraftStore } from "../../composerDraftStore";
 import { ComposerHandleContext } from "../../composerHandleContext";
-import { FEATURES } from "../../fork/features";
 import { useClientSettings } from "../../hooks/useSettings";
 import { releaseComposerDraftUploads } from "../../lib/composerDraftUploads";
 import type { SideChatParentPanel } from "../../lib/sideChatPane";
 import { readLocalApi } from "../../localApi";
 import { hostRightPanel, useRightPanelStore } from "../../rightPanelStore";
-import { useQuietThreadProjection, useQuietThreadShell } from "../../state/entities";
+import { useQuietThreadShell } from "../../state/entities";
 import { useEnvironmentScope } from "../../state/session";
 import { useEnvironmentShellHasSnapshot } from "../../state/shell";
 import { threadEnvironment } from "../../state/threads";
@@ -34,7 +32,7 @@ import { toastManager } from "../ui/toast";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { BackgroundThreadContext } from "./backgroundThread";
 
-/** A side chat tab: its title, Bring back, Delete and Close, over the side chat's own chat. */
+/** A side chat tab: its title, Add to chat, Delete and Close, over the side chat's own chat. */
 export default function SideChatPane(props: {
   readonly parentRef: ScopedThreadRef;
   readonly threadId: ThreadId;
@@ -50,47 +48,20 @@ export default function SideChatPane(props: {
     [parentRef, threadId],
   );
   const shell = useQuietThreadShell(threadRef);
-  const parent = useQuietThreadShell(parentRef);
   const snapshotLoaded = useEnvironmentShellHasSnapshot(parentRef.environmentId);
-  const projection = useQuietThreadProjection(shell === null ? null : threadRef)?.projection;
   const canOperate = useEnvironmentScope(parentRef.environmentId, AuthOrchestrationOperateScope);
-  const mergeBack = useAtomCommand(threadEnvironment.mergeBack, { reportFailure: false });
   const deleteThread = useAtomCommand(threadEnvironment.delete, { reportFailure: false });
   const confirmThreadDelete = useClientSettings((settings) => settings.confirmThreadDelete);
-  const [bringingBack, setBringingBack] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const mergeRun = projection ? resolveLatestMergeBackRun(projection) : null;
-  // A pending merge-back would fail the main thread's queued message, so the server refuses it.
-  const bringBackBlockedReason = !canOperate
-    ? gt("This connection cannot change threads.")
-    : threadRuntimeIsActive(parent?.runtime)
-      ? gt("Available when the main thread is idle.")
-      : mergeRun === null
-        ? gt("Available after a finished reply.")
-        : null;
-
-  const bringBack = async () => {
-    if (bringBackBlockedReason !== null || mergeRun === null || bringingBack) return;
-    setBringingBack(true);
-    const result = await mergeBack({
-      environmentId: parentRef.environmentId,
-      input: { sourceThreadId: threadId, targetThreadId: parentRef.threadId, runId: mergeRun.id },
-    });
-    setBringingBack(false);
-    if (result._tag === "Success") {
-      toastManager.add({
-        type: "success",
-        title: gt("Brought back"),
-        description: gt("The main thread gets this side chat with your next message there."),
+  // Closing an unused side chat deletes it, which would leave the link unreadable.
+  const canAddToChat = shell !== null && shell.latestUserMessageAt !== null;
+  const addToChat = () => {
+    if (!canAddToChat) return;
+    useComposerDraftStore
+      .getState()
+      .addThreadContexts(parentRef, [threadContextRecord(threadRef, shell.title)], {
+        insertAtCaret: false,
       });
-    } else if (!isAtomCommandInterrupted(result)) {
-      const error = squashAtomCommandFailure(result);
-      toastManager.add({
-        type: "error",
-        title: gt("Could not bring back the side chat"),
-        ...(error instanceof Error ? { description: error.message } : {}),
-      });
-    }
   };
 
   const deleteSideChat = async () => {
@@ -135,27 +106,25 @@ export default function SideChatPane(props: {
         <span className="min-w-0 flex-1 truncate text-xs font-medium">
           {shell?.title ?? gt("Side chat")}
         </span>
-        {/* Fork: FEATURES.mergeBack off hides Bring back, as it does the Lineage merge action. */}
-        {FEATURES.mergeBack && (
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  aria-disabled={bringBackBlockedReason !== null || bringingBack || undefined}
-                  onClick={() => void bringBack()}
-                >
-                  <T>Bring back</T>
-                </Button>
-              }
-            />
-            <TooltipPopup side="bottom">
-              {bringBackBlockedReason ??
-                gt("Adds this side chat to the main thread's next message.")}
-            </TooltipPopup>
-          </Tooltip>
-        )}
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="xs"
+                aria-disabled={!canAddToChat || undefined}
+                onClick={addToChat}
+              >
+                <T>Add to chat</T>
+              </Button>
+            }
+          />
+          <TooltipPopup side="bottom">
+            {canAddToChat
+              ? gt("Adds this side chat to the main thread's next message.")
+              : gt("Available after the first message.")}
+          </TooltipPopup>
+        </Tooltip>
         <Button
           variant="ghost"
           size="icon-xs"

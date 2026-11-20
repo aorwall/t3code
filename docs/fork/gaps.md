@@ -88,7 +88,10 @@ client polls `pullRequests.linkedThreads` every ten seconds instead) and
 server update with `server.updateServer`'s `stageOnly` while providers
 install, #35346; absent, the client skips staging) and `peerLinkPairingCodes`
 (upstream, 2026-11-17: automatic pairing codes bound to peer links, #37825;
-absent, `peerPairingCode.ts` mints no code) — so
+absent, `peerPairingCode.ts` mints no code) and `previewTunnelSetting`
+(upstream, 2026-11-20: a switch for the preview tunnel with
+`settings.enablePreviewTunnel`, #39415; absent, `ConnectionsSettings.tsx`
+shows no switch) — so
 each of those
 surfaces is
 decided by the record's decoding default (absent → unsupported) rather than by a
@@ -818,13 +821,21 @@ a terminal with two viewers gets every query answered twice. The new optional
 to later attachments, is also not sent. Neither is `ServerConfig.hostname`
 (#37133), so a `file://<host>/…` link printed by a sandbox shell does not
 resolve to a file. The client treats a missing hostname as an older server.
+The 2026-11-20 merge (#38998) added an optional `managerId` to the terminal
+metadata `snapshot` event, which the client keeps as the feed's `snapshotId`
+and hands to `reconcileTerminalIds` (`apps/web/src/terminalUiStateStore.ts`).
+Moatless builds its snapshots without it (`crates/t3code/src/terminal.rs`,
+`rpc/watch.rs`, `rpc/dispatch/streams.rs`), so every snapshot gets a fresh
+`Symbol` and the client never drops a terminal another client closed while it
+was disconnected.
 
 - **Closes when:** `git grep -n 'binary\|reply' crates/t3code/src/rpc/dispatch/terminal.rs`
   in the Moatless repository shows both flags handled, with `binary` written as
   Latin-1 bytes and replies dropped from all but one viewer, and `server.getConfig`
-  returns `hostname`.
-- **Then here:** nothing to delete; the client sends the flags already. Strike
-  the entry.
+  returns `hostname`, and `git grep -n managerId crates/t3code/src` shows a
+  stable per-process id on every terminal metadata snapshot.
+- **Then here:** nothing to delete; the client sends the flags and reads
+  `managerId` already. Strike the entry.
 
 ### A script runs on the backend, and only the backend can edit one
 
@@ -1266,6 +1277,26 @@ Upstream server fixes the fork cannot use, because Moatless owns the surface
 itself. None is a placeholder here — there is nothing in this repository holding
 them open — so they are recorded only so the next person to touch the Moatless
 runtime knows the answer was already worked out upstream.
+
+- **The db51b6719f range (2026-11-20 merge) — delegation, side chats,
+  compaction, terminals, VCS and preview.** A message from another agent, a
+  scheduled task or MCP carries a sender note for the model, skipped when the
+  text starts with a command (#39306). Background subagents can delegate after
+  the parent turn ends (#38869), delegated wakes name the child thread
+  (#39297), self-settle survives a cancelled wake (#39221), and a compacting
+  subagent no longer adds a task to its parent (#39455). Archiving a thread
+  archives its side chats (#32213). Messages queued behind `/compact` keep send
+  order (#39417). Runs no longer stay preparing after a full disk (#28029), and
+  threads stay Working during background waits (#38638). Closing a terminal
+  stops its background jobs (#34444). The HEAD watch no longer spawns Git in a
+  removed worktree (#39294), checkpoints capture workspaces with unreadable
+  files (#38862), and VCS status snapshots are bounded (#35631). A linked
+  workspace file is previewed only when its target is previewable (#39491),
+  signed preview URLs stay out of HTTP logs (#39464), and secret names cannot
+  escape the secrets directory (#39483). Pull request watches gain
+  `until: "checks" | "merged"` (#38926), which rides the unserved
+  `threadPullRequestWatch` capability. Review each against `crates/`, and
+  remove the item when an equivalent backend test passes.
 
 - **The d06eaff2f4 range (2026-11-19 merge) — steering, sessions, VCS and
   attachments.** Accepted steers replay after the target turn ends (#38831),

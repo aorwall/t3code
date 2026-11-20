@@ -1026,10 +1026,11 @@
       "id": "project-scripts-control",
       "paths": [
         "apps/web/src/components/ProjectScriptsControl.tsx",
+        "apps/web/src/components/ProjectScriptsControl.browser.test.tsx",
         "apps/web/src/components/chat/ThreadDetailsPanel.tsx"
       ],
       "verdict": "converged",
-      "note": "Take upstream, then re-apply three things. In ProjectScriptsControl: the `taskScoped` const and its `task` badge on a row the thread declared, `editable && !taskScoped` on the per-script Edit button, and `editable` on the t3.json import items and every Add action — including the one the collapsed menu offers when a project has no scripts at all. In ThreadDetailsPanel, where upstream moved the header's scripts and Open in controls in 2026-10: the `activeProjectScriptsEditable` and `activeTaskScopedScriptIds` props feeding ProjectScriptsControl's `editable` and `taskScopedScriptIds`, and `FEATURES.openInEditor` on the Open in picker. Upstream's #26904 (2026-10-30) put every row behind a `show` map of per-row flags inside the density render prop: the fork's gates are conjuncts in that map (`environment` takes `FEATURES.worktreeSelection`, `openIn` takes `FEATURES.openInEditor`), a fork `sandbox` key there renders `SandboxDetailsRow` and joins the Workspace section's condition, `FEATURES.scheduledTasks` heads the automations condition, and `ThreadArtifactsSection` sits after the lineage panel. Upstream moves this control's rows between presentations — it extracted `scriptItems` and a portalled `headerActions` on 2026-09-20 for the collapsed header menu — so take upstream's structure and re-apply the gates at whatever anchor it now has. See the `task-scoped-scripts`, `project-script-editing-capability` and `open-in-editor-gate` inventory entries for what each gate is standing in for."
+      "note": "Take upstream, then re-apply three things, and pass `editable` wherever an upstream test renders ProjectScriptsControl (the fork makes the prop required). In ProjectScriptsControl: the `taskScoped` const and its `task` badge on a row the thread declared, `editable && !taskScoped` on the per-script Edit button, and `editable` on the t3.json import items and every Add action — including the one the collapsed menu offers when a project has no scripts at all. In ThreadDetailsPanel, where upstream moved the header's scripts and Open in controls in 2026-10: the `activeProjectScriptsEditable` and `activeTaskScopedScriptIds` props feeding ProjectScriptsControl's `editable` and `taskScopedScriptIds`, and `FEATURES.openInEditor` on the Open in picker. Upstream's #26904 (2026-10-30) put every row behind a `show` map of per-row flags inside the density render prop: the fork's gates are conjuncts in that map (`environment` takes `FEATURES.worktreeSelection`, `openIn` takes `FEATURES.openInEditor`), a fork `sandbox` key there renders `SandboxDetailsRow` and joins the Workspace section's condition, `FEATURES.scheduledTasks` heads the automations condition, and `ThreadArtifactsSection` sits after the lineage panel. Upstream moves this control's rows between presentations — it extracted `scriptItems` and a portalled `headerActions` on 2026-09-20 for the collapsed header menu — so take upstream's structure and re-apply the gates at whatever anchor it now has. See the `task-scoped-scripts`, `project-script-editing-capability` and `open-in-editor-gate` inventory entries for what each gate is standing in for."
     },
     {
       "id": "project-script-editor",
@@ -1149,12 +1150,9 @@
     },
     {
       "id": "merge-back-gate",
-      "paths": [
-        "apps/web/src/components/chat/ThreadRelationshipsControl.tsx",
-        "apps/web/src/components/chat/SideChatPane.tsx"
-      ],
+      "paths": ["apps/web/src/components/chat/ThreadRelationshipsControl.tsx"],
       "verdict": "converged",
-      "note": "Take upstream, then re-apply the FEATURES.mergeBack gates the merge-back-gate inventory entry describes: one conjunct on `canMerge` in ThreadRelationshipsControl, one conditional around the Bring back Tooltip in SideChatPane. Upstream reshapes the `orderWebThreadLineageRows(...)` chain above `canMerge` (the 2026-11-03 merge added a hidden-relation `.filter`), so take its chain and keep only the conjunct."
+      "note": "Take upstream, then re-apply the FEATURES.mergeBack gate the merge-back-gate inventory entry describes: one conjunct on `canMerge` in ThreadRelationshipsControl. SideChatPane is plain upstream since 2026-11-20: #38323 replaced its Bring back (`thread.merge_back`) with Add to chat, a `t3-context://v1/thread/` composer reference Moatless folds (`moatless/crates/t3code/src/message_context.rs`). Upstream reshapes the `orderWebThreadLineageRows(...)` chain above `canMerge` (the 2026-11-03 merge added a hidden-relation `.filter`), so take its chain and keep only the conjunct."
     },
     {
       "id": "fork-additive-upstream-files",
@@ -1598,18 +1596,12 @@
     {
       "id": "merge-back-gate",
       "name": "Merge-back gate",
-      "paths": [
-        "apps/web/src/components/chat/ThreadRelationshipsControl.tsx",
-        "apps/web/src/components/chat/SideChatPane.tsx"
-      ],
+      "paths": ["apps/web/src/components/chat/ThreadRelationshipsControl.tsx"],
       "guard": {
         "symbol": "FEATURES.mergeBack",
-        "files": [
-          "apps/web/src/components/chat/ThreadRelationshipsControl.tsx",
-          "apps/web/src/components/chat/SideChatPane.tsx"
-        ]
+        "files": ["apps/web/src/components/chat/ThreadRelationshipsControl.tsx"]
       },
-      "mustSurvive": "Both controls that send `thread.merge_back` sit behind FEATURES.mergeBack: the Lineage section's merge action (a conjunct on `canMerge`) and a side chat's Bring back button (one conditional around its Tooltip). A deployment that lists `mergeBack` in `unsupportedSurfaces` refuses the command, so an ungated control only ever fails. Gate any new upstream control that sends `thread.merge_back` the same way."
+      "mustSurvive": "The control that sends `thread.merge_back` sits behind FEATURES.mergeBack: the Lineage section's merge action (a conjunct on `canMerge`). A side chat's Add to chat does not send it and stays ungated. A deployment that lists `mergeBack` in `unsupportedSurfaces` refuses the command, so an ungated control only ever fails. Gate any new upstream control that sends `thread.merge_back` the same way."
     },
     {
       "id": "persisted-panel-gating",
