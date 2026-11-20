@@ -28,6 +28,59 @@ bullet here that no one will read again.
 
 ## Log
 
+## 2026-11-20 — upstream db51b6719f
+
+- Upstream: `db51b6719f` from base `d06eaff2f4` (`263` commits). Branch point:
+  `main`; no open merge PR to stack on.
+- Landed: `908` files from `git diff HEAD^1 HEAD` against `908` in the
+  upstream range. The lists differ by one file each way: `cli/pair.test.ts`
+  stays deleted (deliberately deleted upstream path) and `inventory.json` is
+  the fork's. Fork delta `786` files.
+- Conflicts: 8.
+  - `AGENTS.md` keeps the fork's shape plus upstream's new facts: a plain
+    clone shares `~/.t3/dev` (isolate with `migrate-dev-db`), and the reusable
+    dev credential doc link.
+  - `cli/pair.test.ts` (modified upstream, deleted here) stays deleted.
+  - `agentContextBudget.json` takes upstream's values plus 108 (`57429`).
+  - `SideChatPane.tsx` is now plain upstream. #38323 replaced Bring back
+    (`thread.merge_back`) with Add to chat, a `t3-context://v1/thread/`
+    composer reference Moatless already folds, so its `FEATURES.mergeBack`
+    gate lost its anchor. `merge-back-gate` now covers only
+    ThreadRelationshipsControl.
+  - `PreviewView.tsx` keeps the fork's `framed` and upstream's
+    `useDesktopLoadsLoopback`.
+  - `threadActionMenu.logic.test.ts` keeps the fork's visibility and follow
+    tests and upstream's rename test.
+  - `terminal.ts` takes upstream's `metadataFeed` / derived `metadata` split
+    (#38998). The feed scans the fork's `TerminalMetadataState` plus
+    `snapshotId`, and `metadata` still yields `TerminalMetadataState`.
+    `runtime.test.ts` takes upstream's feed assertions with `.terminals` on
+    the metadata atom.
+  - The lockfile auto-merged, was taken from upstream and re-installed, and
+    keeps the fork's edges.
+- Fix: upstream's new `ProjectScriptsControl.browser.test.tsx` omitted the
+  fork's required `editable` prop. It now passes `editable`, and the file
+  joins `project-scripts-control`.
+- Unsupported methods: no ADD or DROP; `rpc.ts` is unchanged upstream. New
+  gaps: `previewTunnelSetting` and terminal `managerId` (see
+  [capabilities](./gaps.md#capabilities-are-reported-but-not-the-ones-the-newer-surfaces-need)
+  and [terminal](./gaps.md#moatless-ignores-the-new-terminal-write-flags-and-omits-the-server-hostname)).
+  Backend fixes are listed under
+  [runtime fixes](./gaps.md#runtime-fixes-upstream-made-to-its-own-server).
+- Sweep: 5 hits. `LinkSeveralEnvironments.tsx` (mobile peer links) and
+  `cloud/t3ConnectState.test.ts` are surfaces the fork replaces, taken as is
+  and unreached. The three `scripts/scenarios/*.e2e.ts` hits are false
+  positives. No new workflows.
+- Commit: `--no-verify`; knip fails on the same 28 exports.
+- Verification: duplicate-adds, tripwires, resolution-check,
+  unsupported-methods, lockfile, fmt, lint, typecheck and build are green.
+  - Web: 666/666 files with `PLAYWRIGHT_BROWSERS_PATH` at a fetched
+    headless shell 1248.
+  - Client-runtime: 2245/2245 tests.
+  - Registered sandbox gaps only: t3 (`/tmp` sticky bit, ServerBrowser,
+    `insteadOf`, Antigravity), ssh `tunnel.test.ts` (PID 1), opencode
+    `OpenCodeServerLedger`. The full parallel test step took 2h42m.
+
 ## 2026-11-19 — upstream d06eaff2f4
 
 - Upstream: `d06eaff2f4` from base `b8b5affac4` (`135` commits). Branch point:

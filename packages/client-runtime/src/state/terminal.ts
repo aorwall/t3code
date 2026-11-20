@@ -26,13 +26,18 @@ import { subscribe, subscribeDynamic, type EnvironmentRpcInput } from "../rpc/cl
 import {
   applyTerminalAttachStreamEvent,
   applyTerminalMetadataStreamEvent,
-  // Fork: see the scan below.
+  // Fork: see the metadata scan below.
   EMPTY_TERMINAL_METADATA_STATE,
   EMPTY_TERMINAL_BUFFER_STATE,
   nextTerminalAttachSeedState,
   type TerminalBufferState,
+  type TerminalMetadataState,
 } from "./terminalSession.ts";
 import { terminalOutputText } from "./terminalOutput.ts";
+
+interface TerminalMetadataFeed extends TerminalMetadataState {
+  readonly snapshotId: string | symbol;
+}
 
 export function createTerminalEnvironmentAtoms<R, E>(
   runtime: Atom.AtomRuntime<EnvironmentRegistry | R, E>,
@@ -54,6 +59,31 @@ export function createTerminalEnvironmentAtoms<R, E>(
     readonly input: { readonly threadId: string; readonly terminalId?: string | undefined };
   }) => JSON.stringify([environmentId, input.threadId, input.terminalId ?? null]);
   const lifecycleConcurrency = { mode: "serial" as const, key: terminalThreadKey };
+  const metadataFeed = createEnvironmentSubscriptionAtomFamily(runtime, {
+    label: "environment-data:terminal:metadata",
+    subscribe: (_input: null) =>
+      subscribe(WS_METHODS.subscribeTerminalMetadata, {}).pipe(
+        // Fork: the scan carries the environment's announcements beside the
+        // listing; see `TerminalMetadataState`.
+        Stream.scan(
+          (): TerminalMetadataFeed => ({ ...EMPTY_TERMINAL_METADATA_STATE, snapshotId: Symbol() }),
+          (feed, event): TerminalMetadataFeed => ({
+            ...applyTerminalMetadataStreamEvent(feed, event),
+            snapshotId: event.type === "snapshot" ? (event.managerId ?? Symbol()) : feed.snapshotId,
+          }),
+        ),
+        // The scan seed is not an authoritative empty server snapshot.
+        Stream.drop(1),
+      ),
+  });
+  const terminalMetadataSummaries = Atom.family((feed: ReturnType<typeof metadataFeed>) =>
+    // Fork: `metadata` holds `TerminalMetadataState`, not the bare listing.
+    Atom.mapResult(feed, ({ terminals, announced, announcedOpens }): TerminalMetadataState => ({
+      terminals,
+      announced,
+      announcedOpens,
+    })),
+  );
   const atoms = {
     observe: createEnvironmentSubscriptionAtomFamily(runtime, {
       label: "environment-data:terminal:observe",
@@ -87,17 +117,9 @@ export function createTerminalEnvironmentAtoms<R, E>(
         );
       },
     }),
-    metadata: createEnvironmentSubscriptionAtomFamily(runtime, {
-      label: "environment-data:terminal:metadata",
-      subscribe: (_input: null) =>
-        subscribe(WS_METHODS.subscribeTerminalMetadata, {}).pipe(
-          // Fork: the scan carries the environment's announcements beside the
-          // listing; see `TerminalMetadataState`.
-          Stream.scan(() => EMPTY_TERMINAL_METADATA_STATE, applyTerminalMetadataStreamEvent),
-          // The scan seed is not an authoritative empty server snapshot.
-          Stream.drop(1),
-        ),
-    }),
+    metadataFeed,
+    metadata: (target: { readonly environmentId: EnvironmentId; readonly input: null }) =>
+      terminalMetadataSummaries(metadataFeed(target)),
     open: createEnvironmentRpcCommand(runtime, {
       label: "environment-data:terminal:open",
       tag: WS_METHODS.terminalOpen,
