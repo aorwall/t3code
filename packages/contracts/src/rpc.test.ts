@@ -21,6 +21,10 @@ describe("WebSocket RPC contracts", () => {
     for (const relativeUrl of [
       "/api/assets/task-1/docs/images/my%20file.png",
       "/api/assets/task-1/report.pdf?download=1",
+      // Fork: a message attachment at its upload, and an Artifact attachment at its version.
+      "/api/v1/uploads/0b1c2d3e-4f50-6172-8394-a5b6c7d8e9f0",
+      "/api/v1/artifacts/4b1c/v3",
+      "/api/v1/artifacts/4b1c/v3?download=1",
     ]) {
       expect(Exit.isSuccess(decodeAsset({ relativeUrl, expiresAt }))).toBe(true);
     }
@@ -44,6 +48,12 @@ describe("WebSocket RPC contracts", () => {
       "/api/assets/token/docs/../../other",
       "/api/assets/token/docs/%2e%2E/other",
       "/api/assets/token/file.png?download=0",
+      // Fork: an upload or Artifact URL with a path, a traversal, or a version that is no number.
+      "/api/v1/uploads/a-1/other",
+      "/api/v1/uploads/..",
+      "/api/v1/uploads/a-1?download=1",
+      "/api/v1/artifacts/../v3",
+      "/api/v1/artifacts/4b1c/latest",
     ]) {
       expect(Exit.isFailure(decodeAsset({ relativeUrl, expiresAt }))).toBe(true);
       expect(

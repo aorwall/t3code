@@ -96,8 +96,9 @@ export const AssetCreateUrlResult = Schema.Struct({
     Schema.isMaxLength(4096),
     // Fork: Moatless serves a workspace file at its nested path, so relative links in a previewed
     // page resolve, and marks a download with `?download=1` (`crates/t3code/src/assets.rs`).
+    // A message attachment is minted at its upload, an Artifact attachment at its version.
     Schema.isPattern(
-      /^\/api\/assets\/(?!\.{1,2}\/)[\w.-]+(?:\/(?!(?:\.|%2[eE]){1,2}(?:\/|$))[^/\\?#\s]+)+(?:\?download=1)?$/u,
+      /^(?:\/api\/assets\/(?!\.{1,2}\/)[\w.-]+(?:\/(?!(?:\.|%2[eE]){1,2}(?:\/|$))[^/\\?#\s]+)+(?:\?download=1)?|\/api\/v1\/uploads\/(?!\.{1,2}$)[\w.~%-]+|\/api\/v1\/artifacts\/(?!\.{1,2}\/)[\w.~%-]+\/v\d+(?:\?download=1)?)$/u,
     ),
   ),
   expiresAt: Schema.Number,
